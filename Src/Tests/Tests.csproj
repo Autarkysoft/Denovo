@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Version>0.0.0</Version>
+    <Authors>Coding-Enthusiast</Authors>
+    <Company>Autarkysoft</Company>
+    <Copyright>Copyright (c) 2020 Autarkysoft</Copyright>
+    <PackageProjectUrl>https://github.com/Autarkysoft/Denovo</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Autarkysoft/Denovo</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
+    <PackageReference Include="xunit" Version="2.4.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+    <PackageReference Include="coverlet.collector" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Denovo\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Autarkysoft.Bitcoin\Autarkysoft.Bitcoin.csproj" />
+    <ProjectReference Include="..\Denovo\Denovo.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29613.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Denovo", "Denovo\Denovo.csproj", "{43D7E8F4-A634-438B-9FBC-E027807920B4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autarkysoft.Bitcoin", "Autarkysoft.Bitcoin\Autarkysoft.Bitcoin.csproj", "{653F5B78-1E6E-4012-A499-6447989D7658}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{1DDA5FD6-3892-4056-9B3F-BD51C97318F1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{43D7E8F4-A634-438B-9FBC-E027807920B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43D7E8F4-A634-438B-9FBC-E027807920B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43D7E8F4-A634-438B-9FBC-E027807920B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43D7E8F4-A634-438B-9FBC-E027807920B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{653F5B78-1E6E-4012-A499-6447989D7658}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{653F5B78-1E6E-4012-A499-6447989D7658}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{653F5B78-1E6E-4012-A499-6447989D7658}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{653F5B78-1E6E-4012-A499-6447989D7658}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DDA5FD6-3892-4056-9B3F-BD51C97318F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DDA5FD6-3892-4056-9B3F-BD51C97318F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DDA5FD6-3892-4056-9B3F-BD51C97318F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DDA5FD6-3892-4056-9B3F-BD51C97318F1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D44CA47E-E75C-4A47-804F-5FCFB1E28C44}
+	EndGlobalSection
+EndGlobal
