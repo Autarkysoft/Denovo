@@ -69,8 +69,8 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
-        /// Reads the <see cref="CompactInt"/> value from the given byte array starting from the specified offset. 
-        /// changing that offset based on the length of data that was read. The return value indicates success.
+        /// Reads the <see cref="CompactInt"/> value from the given<see cref="FastStreamReader"/>. 
+        /// The return value indicates success.
         /// </summary>
         /// <param name="stream">Stream containing the <see cref="CompactInt"/></param>
         /// <param name="result">The result</param>
@@ -237,8 +237,8 @@ namespace Autarkysoft.Bitcoin
         #region Interfaces and overrides
 
         /// <summary>
-        /// Compares the value of a given <see cref="CompactInt"/> with the value of this instance and 
-        /// And returns -1 if smaller, 0 if equal and 1 if bigger.
+        /// Compares the value of a given <see cref="CompactInt"/> with the value of this instance 
+        /// and returns -1 if smaller, 0 if equal and 1 if bigger.
         /// </summary>
         /// <param name="other">Other <see cref="CompactInt"/> to compare to this instance.</param>
         /// <returns>-1 if smaller, 0 if equal and 1 if bigger.</returns>

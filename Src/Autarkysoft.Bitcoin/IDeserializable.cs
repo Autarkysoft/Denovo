@@ -5,8 +5,15 @@
 
 namespace Autarkysoft.Bitcoin
 {
+    /// <summary>
+    /// Defines methods that a class implements to have serialize capabilities.
+    /// </summary>
     public interface IDeserializable
     {
+        /// <summary>
+        /// Converts this object to its byte array representation and writes those bytes to the given stream.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
         void Serialize(FastStream stream);
     }
 }

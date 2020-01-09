@@ -9,7 +9,8 @@ using System;
 namespace Autarkysoft.Bitcoin
 {
     /// <summary>
-    /// Represents values used in bitcoin scripts indicating length of the data to be push to stack.
+    /// Represents values up to 32-bit, used in bitcoin scripts indicating length of the data to be push to the stack.
+    /// <para/>All explicit operations convert values without throwing any exceptions (data may be lost, caller must consider this).
     /// </summary>
     public readonly struct StackInt : IComparable, IComparable<StackInt>, IEquatable<StackInt>
     {
@@ -37,6 +38,7 @@ namespace Autarkysoft.Bitcoin
 
 
 
+        // Don't rename (reflection used in tests).
         private readonly uint value;
 
 
@@ -76,7 +78,13 @@ namespace Autarkysoft.Bitcoin
         /// <returns>True if reading was successful, false if otherwise.</returns>
         public static bool TryRead(FastStreamReader stream, out StackInt result, out string error)
         {
-            if (stream is null || !stream.TryReadByte(out byte firstByte))
+            if (stream is null)
+            {
+                result = 0;
+                error = "Stream can not be null.";
+                return false;
+            }
+            if (!stream.TryReadByte(out byte firstByte))
             {
                 result = 0;
                 error = Err.EndOfStream;
@@ -191,35 +199,37 @@ namespace Autarkysoft.Bitcoin
         public static explicit operator int(StackInt val) => (int)val.value;
 
 
-        public static bool operator >(StackInt left, StackInt right) => left.CompareTo(right) > 0;
-        public static bool operator >=(StackInt left, StackInt right)
-        {
-            return left.CompareTo(right) >= 0;
-        }
-        public static bool operator <(StackInt left, StackInt right)
-        {
-            return left.CompareTo(right) < 0;
-        }
-        public static bool operator <=(StackInt left, StackInt right)
-        {
-            return left.CompareTo(right) <= 0;
-        }
-        public static bool operator ==(StackInt left, StackInt right)
-        {
-            return left.CompareTo(right) == 0;
-        }
-        public static bool operator !=(StackInt left, StackInt right)
-        {
-            return left.CompareTo(right) != 0;
-        }
+        public static bool operator >(StackInt left, StackInt right) => left.value > right.value;
+        public static bool operator >(StackInt left, int right) => right < 0 || left.value > (ulong)right;
+        public static bool operator >(int left, StackInt right) => left > 0 && (ulong)left > right.value;
+
+        public static bool operator >=(StackInt left, StackInt right) => left.value >= right.value;
+        public static bool operator >=(StackInt left, int right) => right < 0 || left.value >= (ulong)right;
+        public static bool operator >=(int left, StackInt right) => left > 0 && (ulong)left >= right.value;
+
+        public static bool operator <(StackInt left, StackInt right) => left.value < right.value;
+        public static bool operator <(StackInt left, int right) => right > 0 && left.value < (ulong)right;
+        public static bool operator <(int left, StackInt right) => left < 0 || (ulong)left < right.value;
+
+        public static bool operator <=(StackInt left, StackInt right) => left.value <= right.value;
+        public static bool operator <=(StackInt left, int right) => right > 0 && left.value <= (ulong)right;
+        public static bool operator <=(int left, StackInt right) => left < 0 || (ulong)left <= right.value;
+
+        public static bool operator ==(StackInt left, StackInt right) => left.value == right.value;
+        public static bool operator ==(StackInt left, int right) => right > 0 && left.value == (ulong)right;
+        public static bool operator ==(int left, StackInt right) => left > 0 && (ulong)left == right.value;
+
+        public static bool operator !=(StackInt left, StackInt right) => left.value != right.value;
+        public static bool operator !=(StackInt left, int right) => right < 0 || left.value != (ulong)right;
+        public static bool operator !=(int left, StackInt right) => left < 0 || (ulong)left != right.value;
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 
         #region Interfaces and overrides
 
         /// <summary>
-        /// Compares the value of a given <see cref="StackInt"/> with the value of this instance and 
-        /// And returns -1 if smaller, 0 if equal and 1 if bigger.
+        /// Compares the value of a given <see cref="StackInt"/> with the value of this instance 
+        /// and returns -1 if smaller, 0 if equal and 1 if bigger.
         /// </summary>
         /// <param name="other">Other <see cref="StackInt"/> to compare to this instance.</param>
         /// <returns>-1 if smaller, 0 if equal and 1 if bigger.</returns>
@@ -229,7 +239,8 @@ namespace Autarkysoft.Bitcoin
         }
 
         /// <summary>
-        /// Checks if the given object is of type <see cref="StackInt"/> and then compares its value with the value of this instance.
+        /// Checks if the given object is of type <see cref="StackInt"/> and then compares its value with 
+        /// the value of this instance.
         /// Returns -1 if smaller, 0 if equal and 1 if bigger.
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -258,7 +269,6 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// Checks if the given object is of type <see cref="StackInt"/> and if its value is equal to the value of this instance.
         /// </summary>
-        /// <exception cref="ArgumentException"/>
         /// <param name="obj">The object to compare to this instance.</param>
         /// <returns>
         /// true if value is an instance of <see cref="StackInt"/> 
@@ -266,10 +276,18 @@ namespace Autarkysoft.Bitcoin
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is StackInt))
-                throw new ArgumentException($"Object must be of type {nameof(StackInt)}");
-
-            return Equals((StackInt)obj);
+            if (obj is null)
+            {
+                return false;
+            }
+            else if (obj is StackInt si)
+            {
+                return Equals(si);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>

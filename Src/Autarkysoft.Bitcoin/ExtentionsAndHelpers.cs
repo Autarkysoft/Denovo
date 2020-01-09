@@ -13,7 +13,8 @@ namespace Autarkysoft.Bitcoin
     public static class ByteArrayExtension
     {
         /// <summary>
-        /// Creates a copy (clone) of the given byte array, will return null if the source was null instead of throwing an exception.
+        /// Creates a copy (clone) of the given byte array, 
+        /// will return null if the source was null instead of throwing an exception.
         /// </summary>
         /// <param name="ba">Byte array to clone</param>
         /// <returns>Copy (clone) of the given byte array</returns>
