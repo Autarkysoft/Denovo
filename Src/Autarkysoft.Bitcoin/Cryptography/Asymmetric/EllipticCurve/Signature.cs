@@ -151,6 +151,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
 
 
+        public byte[] ToByteArray()
+        {
+            FastStream stream = new FastStream();
+            WriteToStream(stream);
+            return stream.ToByteArray();
+        }
+
+
         public void WriteToStream(FastStream stream)
         {
             byte[] rBa = R.ToByteArray(isBigEndian: true);

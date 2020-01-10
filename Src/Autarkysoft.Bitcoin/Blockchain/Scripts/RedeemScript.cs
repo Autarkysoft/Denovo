@@ -1,6 +1,11 @@
-﻿using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Hashing;
+﻿// Autarkysoft.Bitcoin
+// Copyright (c) 2020 Autarkysoft
+// Distributed under the MIT software license, see the accompanying
+// file LICENCE or http://www.opensource.org/licenses/mit-license.php.
+
+using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
@@ -16,7 +21,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         public RedeemScript() : base(10000)
         {
-            IsWitness = false;
             ScriptType = ScriptType.ScriptRedeem;
             witHashFunc = new Sha256(false);
         }
@@ -116,7 +120,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </param>
         public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed = true)
         {
-            byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(true)); // Always use compressed
+            byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(useCompressed));
             OperationList = new IOperation[]
             {
                 new PushDataOp(OP._0),
