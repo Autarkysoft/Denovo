@@ -6,9 +6,9 @@
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// Defines methods that signature scripts use. Inherits from <see cref="IScript"/>.
+    /// Defines methods that witness scripts (witness stack items) use. Inherits from <see cref="IScript"/>.
     /// </summary>
-    public interface ISignatureScript : IScript
+    public interface IWitnessScript : IScript
     {
     }
 }

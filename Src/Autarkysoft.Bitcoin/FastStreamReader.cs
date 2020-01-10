@@ -22,6 +22,8 @@ namespace Autarkysoft.Bitcoin
 
 
 
+        public int GetCurrentIndex() => position;
+
         private bool Check(int length)
         {
             return data.Length - position >= length;
@@ -40,6 +42,20 @@ namespace Autarkysoft.Bitcoin
             else
             {
                 result = null;
+                return false;
+            }
+        }
+
+        public bool TryPeekByte(out byte b)
+        {
+            if (Check(sizeof(byte)))
+            {
+                b = data[position];
+                return true;
+            }
+            else
+            {
+                b = 0;
                 return false;
             }
         }

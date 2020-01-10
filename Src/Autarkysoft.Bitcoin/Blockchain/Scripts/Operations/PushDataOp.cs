@@ -44,7 +44,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="script">
-        /// Script to use (will be converted to byte array using the <see cref="IScript.ToByteArray"/> method)
+        /// Script to use (will be converted to byte array using the <see cref="IScript.ToByteArray()"/> method)
         /// </param>
         public PushDataOp(IScript script)
         {

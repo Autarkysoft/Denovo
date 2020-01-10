@@ -9,6 +9,21 @@ namespace Autarkysoft.Bitcoin
 {
     public class FastStream
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="FastStream"/> with the default capacity.
+        /// </summary>
+        public FastStream()
+        {
+            buffer = new byte[Capacity];
+            position = 0;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="FastStream"/> with the given capacity.
+        /// </summary>
+        /// <param name="size">
+        /// Size of the buffer to use, small sizes are changed to default <see cref="Capacity"/> value
+        /// </param>
         public FastStream(int size)
         {
             buffer = new byte[size < Capacity ? Capacity : size];
@@ -24,6 +39,12 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Returns the total size of the stream when converted to byte array.
+        /// </summary>
+        /// <returns></returns>
+        public int GetSize() => position;
+
+        /// <summary>
         /// Returns the byte array buffer of this instance.
         /// </summary>
         /// <returns>An array of bytes</returns>
@@ -34,13 +55,6 @@ namespace Autarkysoft.Bitcoin
             return result;
         }
 
-
-        public void Write(byte[] data)
-        {
-            CheckAndResize(data.Length);
-            Buffer.BlockCopy(data, 0, buffer, position, data.Length);
-            position += data.Length;
-        }
 
         private void CheckAndResize(int extraSize)
         {
@@ -124,5 +138,19 @@ namespace Autarkysoft.Bitcoin
 
             position += sizeof(ulong);
         }
+
+        public void Write(byte[] data)
+        {
+            CheckAndResize(data.Length);
+            Buffer.BlockCopy(data, 0, buffer, position, data.Length);
+            position += data.Length;
+        }
+
+        public void Write(FastStream stream)
+        {
+            CheckAndResize(stream.GetSize());
+            Write(stream.ToByteArray());
+        }
+        
     }
 }

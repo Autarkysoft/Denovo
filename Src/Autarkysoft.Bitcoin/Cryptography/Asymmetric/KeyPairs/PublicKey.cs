@@ -10,5 +10,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         {
             throw new NotImplementedException();
         }
+
+        internal byte[] ToByteArray(bool useCompressed)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

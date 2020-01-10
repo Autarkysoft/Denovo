@@ -6,9 +6,8 @@
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// Defined script types by 
-    /// <see cref="PubkeyScript"/>, <see cref="SignatureScript"/>, <see cref="RedeemScript"/>, <see cref="WitnessScript"/> 
-    /// classes
+    /// Defined script types by <see cref="IPubkeyScript"/>s, <see cref="ISignatureScript"/>s, 
+    /// <see cref="IRedeemScript"/>s and <see cref="IWitnessScript"/>s instances.
     /// </summary>
     public enum ScriptType
     {
@@ -17,31 +16,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         Unknown,
         /// <summary>
-        /// Public key script used in <see cref="PubkeyScript"/>
+        /// Public key script used in <see cref="IPubkeyScript"/>
         /// </summary>
         ScriptPub,
         /// <summary>
-        /// Signature script used in <see cref="SignatureScript"/>
+        /// Signature script used in <see cref="ISignatureScript"/>
         /// </summary>
         ScriptSig,
         /// <summary>
-        /// Redeem script used in <see cref="RedeemScript"/>
+        /// Redeem script used in <see cref="IRedeemScript"/>
         /// </summary>
         ScriptRedeem,
         /// <summary>
-        /// Witness script used in <see cref="WitnessScript"/>
+        /// Witness script used in <see cref="IWitnessScript"/>
         /// </summary>
         ScriptWitness,
     }
 
 
     /// <summary>
-    /// Defined script types in <see cref="PubkeyScript"/>
+    /// Defined script types in <see cref="IPubkeyScript"/>s
     /// </summary>
     public enum PubkeyScriptType
     {
         /// <summary>
-        /// An empty <see cref="PubkeyScript"/> instance
+        /// An empty <see cref="IPubkeyScript"/> instance
         /// </summary>
         Empty,
         /// <summary>
@@ -49,47 +48,47 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         Unknown,
         /// <summary>
-        /// "Pay to public key" public script
+        /// "Pay to public key" public script type
         /// </summary>
         P2PK,
         /// <summary>
-        /// "Pay to public key hash" public script
+        /// "Pay to public key hash" public script type
         /// </summary>
         P2PKH,
         /// <summary>
-        /// "Pay to script hash" public script
+        /// "Pay to script hash" public script type
         /// </summary>
         P2SH,
         /// <summary>
-        /// "Pay to multi-sig" public script
+        /// "Pay to multi-sig" public script type
         /// </summary>
         P2MS,
         /// <summary>
-        /// <see cref="OP.CheckLocktimeVerify"/> public script
+        /// <see cref="OP.CheckLocktimeVerify"/> public script type
         /// </summary>
         CheckLocktimeVerify,
         /// <summary>
-        /// <see cref="OP.RETURN"/> public script
+        /// <see cref="OP.RETURN"/> public script type
         /// </summary>
         RETURN,
         /// <summary>
-        /// "Pay to witness public key hash" public script
+        /// "Pay to witness public key hash" public script type
         /// </summary>
         P2WPKH,
         /// <summary>
-        /// "Pay to witness script hash" public script
+        /// "Pay to witness script hash" public script type
         /// </summary>
         P2WSH
     }
 
 
     /// <summary>
-    /// Defined script types in <see cref="RedeemScript"/>
+    /// Defined script types in <see cref="IRedeemScript"/>s
     /// </summary>
     public enum RedeemScriptType
     {
         /// <summary>
-        /// An empty <see cref="RedeemScript"/> instance
+        /// An empty <see cref="IRedeemScript"/> instance
         /// </summary>
         Empty,
         /// <summary>
