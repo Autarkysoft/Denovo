@@ -24,6 +24,13 @@ namespace Autarkysoft.Bitcoin
 
         public int GetCurrentIndex() => position;
 
+        public byte[] GetReadBytes(int startIndex)
+        {
+            byte[] result = new byte[position - startIndex];
+            Buffer.BlockCopy(data, startIndex, result, 0, position - startIndex);
+            return result;
+        }
+
         private bool Check(int length)
         {
             return data.Length - position >= length;
@@ -74,6 +81,23 @@ namespace Autarkysoft.Bitcoin
                 return false;
             }
         }
+
+
+        public bool TryReadInt32(out int val)
+        {
+            if (Check(sizeof(int)))
+            {
+                val = data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24);
+                position += sizeof(int);
+                return true;
+            }
+            else
+            {
+                val = 0;
+                return false;
+            }
+        }
+
 
         public bool TryReadUInt16(out ushort val)
         {
