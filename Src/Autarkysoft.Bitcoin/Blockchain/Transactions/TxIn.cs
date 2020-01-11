@@ -4,19 +4,96 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
-    public class TxIn
+    /// <summary>
+    /// The input of transactions containing outpoint, <see cref="ISignatureScript"/> and sequence.
+    /// Inherits from <see cref="IDeserializable"/>.
+    /// </summary>
+    public class TxIn : IDeserializable
     {
-        public byte[] TxHash { get; set; }
-        public uint Index { get; set; }
-        public ISignatureScript SigScript { get; set; }
-        // TODO: read this about sequence and probably create a new variable type for it:
+        /// <summary>
+        /// Initializes a new and empty instance of <see cref="TxIn"/>.
+        /// </summary>
+        public TxIn()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new and empty instance of <see cref="TxIn"/> using the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="hash">The outpoint's transaction hash</param>
+        /// <param name="index">The outpoint's index</param>
+        /// <param name="sigScript">Signature script</param>
+        /// <param name="sequence">Sequence</param>
+        public TxIn(byte[] hash, uint index, ISignatureScript sigScript, uint sequence)
+        {
+            TxHash = hash;
+            Index = index;
+            SigScript = sigScript;
+            Sequence = sequence;
+        }
+
+
+
+        private byte[] _txHash;
+        /// <summary>
+        /// The transaction hash of the input used in this instance (Outpoint.Hash).
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public byte[] TxHash
+        {
+            get => _txHash;
+            set
+            {
+                if (value is null)
+                    throw new ArgumentNullException(nameof(TxHash), "Transaction hash can not be null.");
+                if (value.Length != 32)
+                    throw new ArgumentOutOfRangeException(nameof(TxHash), "Transaction hash has to be 32 bytes long.");
+
+                _txHash = value;
+            }
+        }
+
+        private uint _index;
+        /// <summary>
+        /// The output index of the input used in this instance (Outpoint.Index).
+        /// </summary>
+        public uint Index
+        {
+            get => _index;
+            set => _index = value;
+        }
+
+        private ISignatureScript _sigScr = new SignatureScript();
+        /// <summary>
+        /// The input's signature script
+        /// </summary>
+        public ISignatureScript SigScript
+        {
+            get => _sigScr;
+            set { if (!(value is null)) _sigScr = value; }
+        }
+
+        // TODO: take a look at BIP68 and maybe implement a new "Sequence" struct
         // https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-        public uint Sequence { get; set; }
+        private uint _sequence;
+        /// <summary>
+        /// Input's sequence
+        /// </summary>
+        public uint Sequence
+        {
+            get => _sequence;
+            set => _sequence = value;
+        }
 
 
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             stream.Write(TxHash);
@@ -25,5 +102,68 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             stream.Write(Sequence);
         }
 
+        /// <summary>
+        /// Converts this instance into its byte array representation using the given <see cref="Script"/>.
+        /// Used for signing where <see cref="SignatureScript"/> needs to be changed for each input.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="stream">Stream to use.</param>
+        /// <param name="scr">Script to use</param>
+        /// <param name="changeSequenceToZero">
+        /// Sequences are set to 0 for both <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.None"/>
+        /// and <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.Single"/>.
+        /// </param>
+        public void Serialize(FastStream stream, IScript scr, bool changeSequenceToZero = false)
+        {
+            stream.Write(TxHash);
+            stream.Write(Index);
+            scr.Serialize(stream);
+
+            if (changeSequenceToZero)
+            {
+                stream.Write(new byte[4]);
+            }
+            else
+            {
+                stream.Write(Sequence);
+            }
+        }
+
+
+        /// <inheritdoc/>
+        public bool TryDeserialize(FastStreamReader stream, out string error)
+        {
+            if (stream is null)
+            {
+                error = "Stream can not be null.";
+                return false;
+            }
+
+            if (!stream.TryReadByteArray(32, out _txHash))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+            if (!stream.TryReadUInt32(out _index))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+            if (!SigScript.TryDeserialize(stream, out error))
+            {
+                return false;
+            }
+
+            if (!stream.TryReadUInt32(out _sequence))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
     }
 }
