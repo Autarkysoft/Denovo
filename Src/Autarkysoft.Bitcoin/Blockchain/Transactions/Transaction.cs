@@ -15,9 +15,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
     /// <summary>
     /// Bitcoin transaction!
-    /// Implements <see cref="ITransaction"/> and <see cref="IDeserializable"/>.
+    /// Implements <see cref="ITransaction"/>.
     /// </summary>
-    public class Transaction : ITransaction, IDeserializable
+    public class Transaction : ITransaction
     {
         /// <summary>
         /// Initializes a new empty instance of <see cref="Transaction"/>.

@@ -9,9 +9,9 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
     /// <summary>
-    /// Defines methods that a transaction class implements.
+    /// Defines methods that a transaction class implements. Inherits from <see cref="IDeserializable"/>.
     /// </summary>
-    public interface ITransaction
+    public interface ITransaction: IDeserializable
     {
         /// <summary>
         /// Transaction version. Currently only versions 1 and 2 are defined.
