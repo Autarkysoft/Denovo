@@ -23,7 +23,7 @@ namespace Autarkysoft.Bitcoin
         public Target(int val)
         {
             if (val < 0)
-                throw new ArgumentOutOfRangeException(nameof(val), "Target value can not be negative!");
+                throw new ArgumentOutOfRangeException(nameof(val), "Target value can not be negative.");
             CheckFirstByte((uint)val);
 
             value = (uint)val;
@@ -69,7 +69,7 @@ namespace Autarkysoft.Bitcoin
             }
             if (firstByte < 3)
             {
-                throw new ArgumentOutOfRangeException("First byte can not be smaller than 3.");
+                throw new ArgumentOutOfRangeException("First byte of target can not be smaller than 3.");
             }
         }
 
@@ -78,7 +78,7 @@ namespace Autarkysoft.Bitcoin
         /// Reads the <see cref="Target"/> value from the given <see cref="FastStreamReader"/>. 
         /// Return value indicates success.
         /// </summary>
-        /// <param name="stream">Stream containing the <see cref="StackInt"/></param>
+        /// <param name="stream">Stream containing the <see cref="Target"/></param>
         /// <param name="result">The result</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
