@@ -17,6 +17,7 @@ namespace Autarkysoft.Bitcoin
 
 
 
+        // Don't rename either one of the following 2 fields (reflection used in tests).
         private readonly byte[] data;
         private int position;
 
