@@ -39,7 +39,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         public static IEnumerable<object[]> GetReadCases()
         {
             yield return new object[] { new byte[] { 0xff, 0xff, 0x00, 0x1d }, 0x1d00ffffU };
-            yield return new object[] { new byte[] { 0xff, 0xff, 0x00, 0x1d }, 0x1d00ffffU };
+            yield return new object[] { new byte[] { 0xff, 0xff, 0x00, 0x1d, 0x00, 0xff }, 0x1d00ffffU };
             yield return new object[] { new byte[] { 0xcb, 0x04, 0x04, 0x1b }, 0x1b0404cbU };
             yield return new object[] { new byte[] { 0x9b, 0x0d, 0x1f, 0x17 }, 387911067U }; // 0x171f0d9b from block #586540
         }
