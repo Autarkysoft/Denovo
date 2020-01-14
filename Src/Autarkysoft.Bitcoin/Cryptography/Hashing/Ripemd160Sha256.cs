@@ -181,20 +181,25 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 
-        #region IDisposable Support
         private bool disposedValue = false;
 
+        /// <summary>
+        /// Releases the resources used by the <see cref="Ripemd160Sha256"/> class.
+        /// </summary>
+        /// <param name="disposing">
+        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    if (rip != null)
+                    if (!(rip is null))
                         rip.Dispose();
                     rip = null;
 
-                    if (sha != null)
+                    if (!(sha is null))
                         sha.Dispose();
                     sha = null;
                 }
@@ -211,6 +216,5 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         {
             Dispose(true);
         }
-        #endregion
     }
 }

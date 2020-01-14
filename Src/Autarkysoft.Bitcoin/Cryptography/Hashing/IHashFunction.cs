@@ -7,6 +7,10 @@ using System;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
+    /// <summary>
+    /// Defines methods and properties that hash functions implement.
+    /// Inherits from <see cref="IDisposable"/>.
+    /// </summary>
     public interface IHashFunction : IDisposable
     {
         /// <summary>

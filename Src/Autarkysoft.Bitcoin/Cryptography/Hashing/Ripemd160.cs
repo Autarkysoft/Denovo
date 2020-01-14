@@ -8,6 +8,10 @@ using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
+    /// <summary>
+    /// Implementation of RIPEMD160.
+    /// Implements <see cref="IHashFunction"/>.
+    /// </summary>
     public class Ripemd160 : IHashFunction
     {
         /// <summary>
@@ -75,8 +79,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <returns>The computed hash</returns>
         public byte[] ComputeHash(byte[] buffer, int offset, int count)
         {
-            //return ComputeHash(buffer.SubArray(offset, count));
-            throw new NotImplementedException();
+            return ComputeHash(buffer.SubArray(offset, count));
         }
 
         internal unsafe byte[] GetBytes()
@@ -724,20 +727,25 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue = false;
 
+        /// <summary>
+        /// Releases the resources used by the <see cref="Ripemd160"/> class.
+        /// </summary>
+        /// <param name="disposing">
+        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    if (block != null)
+                    if (!(block is null))
                         Array.Clear(block, 0, block.Length);
                     block = null;
 
-                    if (hashState != null)
+                    if (!(hashState is null))
                         Array.Clear(hashState, 0, hashState.Length);
                     hashState = null;
                 }
@@ -753,7 +761,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         {
             Dispose(true);
         }
-        #endregion
 
 
 
