@@ -81,16 +81,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue = false;
 
+        /// <summary>
+        /// Releases the resources used by the <see cref="Sha1"/> class.
+        /// </summary>
+        /// <param name="disposing">
+        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    if (hash != null)
+                    if (!(hash is null))
                         hash.Dispose();
                     hash = null;
                 }
@@ -106,6 +111,5 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         {
             Dispose(true);
         }
-        #endregion
     }
 }
