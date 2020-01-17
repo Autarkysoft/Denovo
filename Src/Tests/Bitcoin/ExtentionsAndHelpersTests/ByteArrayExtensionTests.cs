@@ -171,6 +171,32 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         }
 
 
+        [Theory]
+        [InlineData(new byte[] { }, "")]
+        [InlineData(new byte[] { 0 }, "00")]
+        [InlineData(new byte[] { 0, 0 }, "0000")]
+        [InlineData(new byte[] { 16, 42, 255 }, "102aff")]
+        [InlineData(new byte[] { 0, 0, 2 }, "000002")]
+        public void ToBase16Test(byte[] ba, string expected)
+        {
+            string actual = ba.ToBase16();
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ToBase16_ExceptionTest()
+        {
+            Assert.Throws<ArgumentNullException>(() => nullBytes.ToBase16());
+        }
+
+        [Fact]
+        public void ToBase64Test()
+        {
+            Assert.Equal("", emptyBytes.ToBase64());
+            Assert.Throws<ArgumentNullException>(() => nullBytes.ToBase64());
+        }
+
+
         public static IEnumerable<object[]> GetBigInts()
         {
             yield return new object[] { "00", BigInteger.Zero, BigInteger.Zero };
@@ -226,5 +252,44 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
             Assert.Throws<ArgumentNullException>(() => nullBytes.ToBigInt(false, false));
         }
 
+
+        [Theory]
+        [InlineData(new byte[] { 10 }, new byte[] { 10 })]
+        [InlineData(new byte[] { 10, 0 }, new byte[] { 10 })]
+        [InlineData(new byte[] { 10, 0, 0 }, new byte[] { 10 })]
+        [InlineData(new byte[] { 0, 10 }, new byte[] { 0, 10 })]
+        [InlineData(new byte[] { 10, 20, 30 }, new byte[] { 10, 20, 30 })]
+        [InlineData(new byte[] { 10, 20, 30, 0 }, new byte[] { 10, 20, 30 })]
+        [InlineData(new byte[] { 10, 20, 30, 0, 0 }, new byte[] { 10, 20, 30 })]
+        [InlineData(new byte[] { 0, 10, 20, 0, 0, 0 }, new byte[] { 0, 10, 20 })]
+        [InlineData(new byte[] { 0, 0, 0, 0, 0 }, new byte[] { })]
+        public void TrimEndTest(byte[] ba, byte[] expected)
+        {
+            byte[] actual = ba.TrimEnd();
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(new byte[] { 10 }, new byte[] { 10 })]
+        [InlineData(new byte[] { 0, 10 }, new byte[] { 10 })]
+        [InlineData(new byte[] { 0, 0, 10 }, new byte[] { 10 })]
+        [InlineData(new byte[] { 10, 0 }, new byte[] { 10, 0 })]
+        [InlineData(new byte[] { 10, 20, 30 }, new byte[] { 10, 20, 30 })]
+        [InlineData(new byte[] { 0, 10, 20, 30 }, new byte[] { 10, 20, 30 })]
+        [InlineData(new byte[] { 0, 0, 10, 20, 30 }, new byte[] { 10, 20, 30 })]
+        [InlineData(new byte[] { 0, 0, 10, 20, 0 }, new byte[] { 10, 20, 0 })]
+        [InlineData(new byte[] { 0, 0, 0, 0, 0 }, new byte[] { })]
+        public void TrimStartTest(byte[] ba, byte[] expected)
+        {
+            byte[] actual = ba.TrimStart();
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void Trim_ExceptionTest()
+        {
+            Assert.Throws<ArgumentNullException>(() => nullBytes.TrimStart());
+            Assert.Throws<ArgumentNullException>(() => nullBytes.TrimEnd());
+        }
     }
 }

@@ -3,11 +3,88 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.Numerics;
 
 namespace Autarkysoft.Bitcoin
 {
+    /// <summary>
+    /// <see cref="BigInteger"/> extensions.
+    /// </summary>
+    public static class BigIntegerExtension
+    {
+        /// <summary>
+        /// Calculates integer modulo n and always returns a positive result between 0 and n-1.
+        /// </summary>
+        /// <exception cref="ArithmeticException"/>
+        /// <exception cref="DivideByZeroException"/>
+        /// <param name="big">BigInteger value to use</param>
+        /// <param name="n">A positive BigInteger used as divisor (must be bigger than 0).</param>
+        /// <returns>Result of mod in [0, n-1] range</returns>
+        public static BigInteger Mod(this BigInteger big, BigInteger n)
+        {
+            if (n == 0)
+                throw new DivideByZeroException("Can't divide by zero!");
+            if (n < 0)
+                throw new ArithmeticException("Divisor can not be negative");
+
+
+            BigInteger reminder = big % n;
+            return reminder.Sign >= 0 ? reminder : reminder + n;
+        }
+
+
+        /// <summary>
+        /// Finds modular multiplicative inverse of the integer a such that ax ≡ 1 (mod m) 
+        /// using Extended Euclidean algorithm. If gcd(a,m) != 1 an <see cref="ArithmeticException"/> will be thrown.
+        /// </summary>
+        /// <exception cref="DivideByZeroException"/>
+        /// <exception cref="ArithmeticException"/>
+        /// <param name="a">The integer a in ax ≡ 1 (mod m)</param>
+        /// <param name="m">The modulus m in ax ≡ 1 (mod m)</param>
+        /// <returns>Modular multiplicative inverse result</returns>
+        public static BigInteger ModInverse(this BigInteger a, BigInteger m)
+        {
+            if (a == 0)
+                throw new DivideByZeroException("a can't be 0!");
+
+            if (a == 1) return 1;
+            if (a < 0) a = a.Mod(m);
+
+            BigInteger s = 0;
+            BigInteger oldS = 1;
+            BigInteger r = m;
+            BigInteger oldR = a % m;
+
+            while (r != 0)
+            {
+                BigInteger quotient = oldR / r;
+
+                BigInteger prov = r;
+                r = oldR - quotient * prov;
+                oldR = prov;
+
+                prov = s;
+                s = oldS - quotient * prov;
+                oldS = prov;
+            }
+
+            // The resulting oldR is the Greatest Common Divisor of (a,m) and it needs to be 1.
+            if (oldR != 1)
+            {
+                throw new ArithmeticException($"Modular multiplicative inverse doesn't exist because greatest common divisor " +
+                    $"of {nameof(a)} and {nameof(m)} is not 1.");
+            }
+
+            return oldS.Mod(m);
+        }
+    }
+
+
+
+
+
     /// <summary>
     /// byte[] extensions.
     /// </summary>
@@ -47,7 +124,7 @@ namespace Autarkysoft.Bitcoin
 
 
             byte[] result = new byte[arr.Length + 1];
-            result[result.Length - 1] = newItem;
+            result[^1] = newItem;
             Buffer.BlockCopy(arr, 0, result, 0, arr.Length);
             return result;
         }
@@ -167,6 +244,30 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Converts the given byte array to base-16 (Hexadecimal) encoded string.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="ba">The array of bytes to convert.</param>
+        /// <returns>Base-16 (Hexadecimal) encoded string.</returns>
+        public static string ToBase16(this byte[] ba)
+        {
+            return Base16.Encode(ba);
+        }
+
+
+        /// <summary>
+        /// Converts a byte array to base-64 encoded string.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="ba">The array of bytes to convert.</param>
+        /// <returns>Base-64 encoded string.</returns>
+        public static string ToBase64(this byte[] ba)
+        {
+            return Convert.ToBase64String(ba);
+        }
+
+
+        /// <summary>
         /// Converts the given arbitrary length bytes to a its equivalant <see cref="BigInteger"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
@@ -201,6 +302,94 @@ namespace Autarkysoft.Bitcoin
             }
 
             return new BigInteger(bytesToUse);
+        }
+
+
+        /// <summary>
+        /// Removes zeros from the end of the given byte array.
+        /// <para/>NOTE: If there is no zeros to trim, the same byte array will be return (careful about changing the reference)
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="ba">Byte array to trim.</param>
+        /// <returns>Trimmed bytes.</returns>
+        public static byte[] TrimEnd(this byte[] ba)
+        {
+            if (ba == null)
+                throw new ArgumentNullException(nameof(ba), "Byte array can not be null!");
+
+
+            int index = ba.Length - 1;
+            int count = 0;
+            while (index >= 0 && ba[index] == 0)
+            {
+                index--;
+                count++;
+            }
+            return (count == 0) ? ba : (count == ba.Length) ? new byte[0] : ba.SubArray(0, ba.Length - count);
+        }
+
+        /// <summary>
+        /// Removes zeros from the beginning of the given byte array.
+        /// <para/>NOTE: If there is no zeros to trim, the same byte array will be return (careful about changing the reference)
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="ba">Byte array to trim.</param>
+        /// <returns>Trimmed bytes.</returns>
+        public static byte[] TrimStart(this byte[] ba)
+        {
+            if (ba == null)
+                throw new ArgumentNullException(nameof(ba), "Byte array can not be null!");
+
+
+            int index = 0;// index acts both as "index" and "count"
+            while (index != ba.Length && ba[index] == 0)
+            {
+                index++;
+            }
+            return (index == 0) ? ba : (index == ba.Length) ? new byte[0] : ba.SubArray(index);
+        }
+    }
+
+
+
+
+
+    /// <summary>
+    /// All integer extensions for int, long, uint, ulong,...
+    /// </summary>
+    public static class IntegerExtension
+    {
+        /// <summary>
+        /// Converts the given 32-bit signed integer to an array of bytes with a desired endianness.
+        /// </summary>
+        /// <param name="i">The 32-bit signed integer to convert.</param>
+        /// <param name="bigEndian">Endianness of the returned byte array.</param>
+        /// <returns>An array of bytes.</returns>
+        public static byte[] ToByteArray(this int i, bool bigEndian)
+        {
+            unchecked
+            {
+                if (bigEndian)
+                {
+                    return new byte[]
+                    {
+                        (byte)(i >> 24),
+                        (byte)(i >> 16),
+                        (byte)(i >> 8),
+                        (byte)i
+                    };
+                }
+                else
+                {
+                    return new byte[]
+                    {
+                        (byte)i,
+                        (byte)(i >> 8),
+                        (byte)(i >> 16),
+                        (byte)(i >> 24)
+                    };
+                }
+            }
         }
     }
 }
