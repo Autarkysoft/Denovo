@@ -9,5 +9,6 @@ namespace Tests.Bitcoin
     {
         public const string EndOfStream = "Reached end of stream.";
         public const string OpNotEnoughItems = "Not enough items left in the stack.";
+        public const string BadRNG = "The provided RNG is broken.";
     }
 }
