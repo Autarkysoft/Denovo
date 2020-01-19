@@ -1,4 +1,9 @@
-﻿using Autarkysoft.Bitcoin.Cryptography.Arithmetic;
+﻿// Autarkysoft.Bitcoin
+// Copyright (c) 2020 Autarkysoft
+// Distributed under the MIT software license, see the accompanying
+// file LICENCE or http://www.opensource.org/licenses/mit-license.php.
+
+using Autarkysoft.Bitcoin.Cryptography.Arithmetic;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
@@ -97,7 +102,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 else if (firstByte == 3 && y.IsEven)
                 {
                     y = PointNegChecked(new EllipticCurvePoint(x, y)).Y;
-
                 }
                 return true;
             }
@@ -517,6 +521,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             return e;
         }
 
+
+        // TODO: fill in XX below with the number assigned to Schnorr signature BIP (there isn't any today: 2020-01-18)
+
         /// <summary>
         /// Creates a signature using ECSDSA based on BIP-XX.
         /// Return value indicates success.
@@ -535,7 +542,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             // https://github.com/sipa/bips/blob/86eea8adb424f0f37b32e98046de2823c085f875/bip-schnorr.mediawiki
             // TODO: this method always returns true, if that is the case with any k value then retire Try* method altogether
 
-            ////PublicKey pubk = new PublicKey(new PrivateKey(key, new Bitcoin()), new Bitcoin());
             BigInteger seckey = key.ToBigInt(true, true);
             EllipticCurvePoint pubkPoint = MultiplyChecked(seckey, curve.G);
             if (!IsSquare(pubkPoint.Y))
@@ -543,7 +549,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 seckey = curve.N - seckey;
             }
 
-            // TODO: BIP-Schnorr derives k with a tagged hash here, we are using RFC-6979
+            // TODO: BIP-Schnorr derives k with a tagged hash, here we are using RFC-6979
 
             EllipticCurvePoint R = MultiplyChecked(k, curve.G);
 
