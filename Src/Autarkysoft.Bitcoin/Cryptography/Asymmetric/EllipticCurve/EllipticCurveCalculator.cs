@@ -415,7 +415,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             BigInteger u1 = e * invMod % curve.N;
             BigInteger u2 = sig.R * invMod % curve.N;
 
-            EllipticCurvePoint Rxy = Add(MultiplyChecked(u1, curve.G), MultiplyChecked(u2, pubPoint));
+            EllipticCurvePoint Rxy = AddChecked(MultiplyChecked(u1, curve.G), MultiplyChecked(u2, pubPoint));
             if (Rxy.X == 0 && Rxy.Y == 0)
             {
                 return false;
@@ -472,10 +472,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 {
                     // Q = r^−1(sR − eG).
                     EllipticCurvePoint Q =
-                        Multiply(sig.R.ModInverse(curve.N),
-                                 AddChecked(MultiplyChecked(sig.S, R),
-                                            PointNegChecked(MultiplyChecked(e, curve.G)))
-                                );
+                        MultiplyChecked(sig.R.ModInverse(curve.N),
+                                        AddChecked(MultiplyChecked(sig.S, R),
+                                                   PointNegChecked(MultiplyChecked(e, curve.G)))
+                                       );
 
                     if (curve.IsOnCurve(Q))
                     {
