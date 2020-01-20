@@ -1,0 +1,62 @@
+﻿[
+  {
+    "TestName": "Test #1 - Minimum private key value",
+    "PrvHex": "0000000000000000000000000000000000000000000000000000000000000001",
+    "P2PKH": "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73uCoiYwA",
+    "P2WPKH": "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73uLXsPxX",
+    "P2WPKH_P2SH": "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73uPE7rjR",
+    "P2WPKH_Electrum": "L5oLkpV3aqBjhki6LmvChTCq73v9gyymzzMpBbhDLjDpLCfkwaDM",
+    "P2WPKH_P2SH_Electrum": "LENyKyqwkz6sgGirtrK6VdJKMV7oXQFWARywk43JqCyXcXx1uyaB",
+    "P2SH_Electrum": "Lg7s3TveHSrHbpmAZ5Vmt9an6nim2f4gekrLRR5bJeEfTXVDHAET",
+    "P2WSH_Electrum": "LphVcdHYTbmRaLmw79tfgKgGMDvQs5LQpCUTysRgo7zNjrey7vjF",
+    "P2WSH_P2SH_Electrum": "LyH8BneSdkgZYrnhfEHZUVmkbf84hVc8ye6bYKmnHbk62BtmDWZn"
+  },
+  {
+    "TestName": "Test #2 - Maximum private key value",
+    "PrvHex": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140",
+    "P2PKH": "L5oLkpV3aqBjhki6LmvChTCV6odsp4SXM6FfU2Gppt5kFNFgnKok",
+    "P2WPKH": "L5oLkpV3aqBjhki6LmvChTCV6odsp4SXM6FfU2Gppt5kFNSGye4j",
+    "P2WPKH_P2SH": "L5oLkpV3aqBjhki6LmvChTCV6odsp4SXM6FfU2Gppt5kFNZVaTPA",
+    "P2WPKH_Electrum": "LENyKyqwkz6sgGirtrK6VdHyMEqXeUiFWXso2UcvKMqTXfp4RDLE",
+    "P2WPKH_P2SH_Electrum": "LNxbu9Cqw921enjdSvhzHoPTbg3BUtyyfyVvavy1oqbAozzjwAne",
+    "P2SH_Electrum": "LphVcdHYTbmRaLmw79tfgKfvLye8z9oAAJNKGJ1JHGrJezdoGjkr",
+    "P2WSH_Electrum": "LyH8BneSdkgZYrnhfEHZUVmQbQqnpa4tKjzSpkMPmkc1wKonKmSQ",
+    "P2WSH_P2SH_Electrum": "M7rkkx1LoubhXNoUDJgTGfrtqr3SezLcVBcaPChVGEMjDf1eZ86n"
+  },
+  {
+    "TestName": "Test #3 - https://en.bitcoin.it/wiki/Wallet_import_format",
+    "PrvHex": "0c28fca386c7a227600b2fe50b7cae11ec86d3bf1fbe471be89827e19d72aa1d",
+    "P2PKH": "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYx2CqY6c",
+    "P2WPKH": "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYxCGTuAe",
+    "P2WPKH_P2SH": "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYxGoTEdc",
+    "P2WPKH_Electrum": "L6Cyjtdfq1TimFfgG9qBEHQF2FmaL96H5ceTrip74S4eqFapbcDJ",
+    "P2WPKH_P2SH_Electrum": "LEncK3za1ANrjmgSpEE52TVjGgyEAZN1F4GbRBACYupN7ao1BVeh",
+    "P2SH_Electrum": "LgXW2Y5GXd8GfKikUTQkQynC1zaBfpBBjP8z6YCV2M5VxaMBQ5C1",
+    "P2WSH_Electrum": "Lq78bhSAhn3QdqjX2XoeD9sgGRmqWESutpm7ezYaWpqDEuYfi2Sc",
+    "P2WSH_P2SH_Electrum": "LygmAro4svxYcMkHacCY1KyAWryVLeie4GPFDStg1JavXEn8H9X5"
+  },
+  {
+    "TestName": "Test #4 - https://en.bitcoin.it/wiki/Private_key",
+    "PrvHex": "e9873d79c6d87dc0fb6a5778633389f4453213303da61f20bd67fc233aa33262",
+    "P2PKH": "L53fCHmQhbNp1B4JipfBtfeHZH7cAibzG9oK19XfiFzxHhq6DF1k",
+    "P2WPKH": "L53fCHmQhbNp1B4JipfBtfeHZH7cAibzG9oK19XfiFzxHhvnQPEx",
+    "P2WPKH_P2SH": "L53fCHmQhbNp1B4JipfBtfeHZH7cAibzG9oK19XfiFzxHi3jgr2J",
+    "P2WPKH_Electrum": "LDdHmT8JskHwyh55Gu45gqjmoiKG18siRbRSZbsmCjkfa1RAUvsQ",
+    "P2WPKH_P2SH_Electrum": "LNCvLcVD3uD5xD5qpySyV1qG49WuqZ9Sb33a84DrhDWNrLcPJnba",
+    "P2SH_Electrum": "Lowp46ZuaMxVsm89VCdesY7ioT7sLoxd5MuxoRG9AemWhL8TPqcb",
+    "P2WSH_Electrum": "LxXSdFvokWsdrH8v3H2YfiDD3tKXBEEMEoY6MscEf8XDyfQnDrda",
+    "P2WSH_P2SH_Electrum": "M775CRHhvfnmpo9gbMRSTtJhJKXB1eW5QFADvKxL9cGwFzci2fyo"
+  },
+  {
+    "TestName": "Test #5 - https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses",
+    "PrvHex": "18e14a7b6a307f426a94f8114701e7c8e774e7f9a47e2c2035db29a206321725",
+    "P2PKH": "Kx45GeUBSMPReYQwgXiKhG9FzNXrnCeutJp4yjTd5kKxCkepavgW",
+    "P2WPKH": "Kx45GeUBSMPReYQwgXiKhG9FzNXrnCeutJp4yjTd5kKxCkn1JyNX",
+    "P2WPKH_P2SH": "Kx45GeUBSMPReYQwgXiKhG9FzNXrnCeutJp4yjTd5kKxCkpQ68Jf",
+    "P2WPKH_Electrum": "L6dhqoq5cWJZd4RiEc7DVSEkEojWccve3kSCYBoiaE5fV46SZZUq",
+    "P2WPKH_P2SH_Electrum": "LFDLQyBynfDhbaSUngW7HcLEVEwAT3CNDC4L6e9p4hqNmPJqXrWr",
+    "P2SH_Electrum": "LgxE8TGgK7y7X8UnSugng8chEYY7xJ1YhWvin1C6Y96WcNx6FQT1",
+    "P2WSH_Electrum": "LqXrhcdaVGtFVeVYzz5gUJiBUyjmniHGrxYrLTYC2crDti9CJGuV",
+    "P2WSH_P2SH_Electrum": "Lz7VGmzUfRoPUAWKZ4UaGUofjQwRd8Z12QAytutHX6bwB3LiEnQf"
+  }
+]
