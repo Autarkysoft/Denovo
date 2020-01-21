@@ -77,7 +77,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         public ISignatureScript SigScript
         {
             get => _sigScr;
-            set { if (!(value is null)) _sigScr = value; }
+            set => _sigScr = (value is null) ? new SignatureScript() : value;
         }
 
         // TODO: take a look at BIP68 and maybe implement a new "Sequence" struct

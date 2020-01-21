@@ -44,7 +44,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <summary>
         /// The amount, in satoshi, to send in this output.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         public ulong Amount
         {
             get => _amount;
@@ -63,7 +63,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         public IPubkeyScript PubScript
         {
             get => _pubScr;
-            set { if (!(value is null)) _pubScr = value; }
+            set => _pubScr = (value is null) ? new PubkeyScript() : value;
         }
 
         /// <inheritdoc/>
@@ -79,7 +79,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// with <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.Single"/> type.
         /// <para/> Amount=-1 and script=empty => [8 byte -1] [0x00]
         /// </summary>
-        /// <param name="stream"></param>
+        /// <param name="stream">Stream to use</param>
         public void SerializeSigHashSingle(FastStream stream)
         {
             // TODO: hardcode the following 5 bytes to do a 1 time write. (after writing tests)
@@ -104,7 +104,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
             if (_amount > Constants.TotalSupply)
             {
-                error = "Amount is higher than total bitcoin supply.";
+                error = "Amount is bigger than total bitcoin supply.";
                 return false;
             }
 
