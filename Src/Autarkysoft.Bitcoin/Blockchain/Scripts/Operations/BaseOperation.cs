@@ -182,10 +182,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if ((data[^1] & 0b1000_0000) != 0)
             {
                 isNeg = true;
-                data[^1] &= 0b0111_1111;
+                result = (long)(data[^1] & 0b0111_1111) << ((data.Length - 1) * 8);
+            }
+            else
+            {
+                result = (long)data[^1] << ((data.Length - 1) * 8);
             }
 
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < data.Length - 1; i++)
             {
                 result |= (long)data[i] << (i * 8);
             }
