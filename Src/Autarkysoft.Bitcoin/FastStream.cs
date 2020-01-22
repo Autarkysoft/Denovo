@@ -146,11 +146,28 @@ namespace Autarkysoft.Bitcoin
             position += data.Length;
         }
 
+        public void Write(byte[] data, int totalSize)
+        {
+            CheckAndResize(totalSize);
+            Buffer.BlockCopy(data, 0, buffer, position, data.Length);
+            position += totalSize;
+        }
+
         public void Write(FastStream stream)
         {
             CheckAndResize(stream.GetSize());
             Write(stream.ToByteArray());
         }
-        
+
+
+        public void WriteBigEndian(ushort val)
+        {
+            CheckAndResize(sizeof(ushort));
+
+            buffer[position + 1] = (byte)val;
+            buffer[position] = (byte)(val >> 8);
+
+            position += sizeof(ushort);
+        }
     }
 }

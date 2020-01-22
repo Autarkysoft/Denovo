@@ -25,6 +25,8 @@ namespace Autarkysoft.Bitcoin
 
         public int GetCurrentIndex() => position;
 
+        public int GetRemainingBytesCount() => data.Length - position;
+
         public byte[] GetReadBytes(int startIndex)
         {
             byte[] result = new byte[position - startIndex];
@@ -90,6 +92,30 @@ namespace Autarkysoft.Bitcoin
             {
                 val = data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24);
                 position += sizeof(int);
+                return true;
+            }
+            else
+            {
+                val = 0;
+                return false;
+            }
+        }
+
+
+        public bool TryReadInt64(out long val)
+        {
+            if (Check(sizeof(long)))
+            {
+                val = data[position]
+                    | ((long)data[position + 1] << 8)
+                    | ((long)data[position + 2] << 16)
+                    | ((long)data[position + 3] << 24)
+                    | ((long)data[position + 4] << 32)
+                    | ((long)data[position + 5] << 40)
+                    | ((long)data[position + 6] << 48)
+                    | ((long)data[position + 7] << 56);
+
+                position += sizeof(long);
                 return true;
             }
             else
