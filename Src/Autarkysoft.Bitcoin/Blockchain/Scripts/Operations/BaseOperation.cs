@@ -95,7 +95,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             byte[] data = new byte[sizeof(long) + 1];
             int i = 0;
-            while (val >= 0)
+            while (val > 0)
             {
                 data[i++] = (byte)val;
                 val >>= 8;
@@ -113,7 +113,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     data[i++] = 0b1000_0000;
                 }
             }
-            else if ((data[^1] & 0b1000_0000) != 0) // && isPositive
+            else if ((data[i - 1] & 0b1000_0000) != 0) // && isPositive
             {
                 // An additional 0 is needed if the highest bit is set.
                 i++;
