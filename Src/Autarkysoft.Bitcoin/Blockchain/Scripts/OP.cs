@@ -238,7 +238,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         PICK = 0x79,
         /// <summary>
         /// The item n back in the stack is "moved" to the top.
-        /// <para/> Example: xn x(n-1) ... x2 x1 x0 -> x(n-1) ... x2 x1 x0 xn
+        /// <para/> Example: xn x(n-1) ... x2 x1 x0 n -> x(n-1) ... x2 x1 x0 xn
         /// </summary>
         ROLL = 0x7a,
         /// <summary>

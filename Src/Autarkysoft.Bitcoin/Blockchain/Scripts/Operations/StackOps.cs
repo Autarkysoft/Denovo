@@ -464,7 +464,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if operation was successful, false if otherwise</returns>
         public override bool Run(IOpData opData, out string error)
         {
-            if (opData.ItemCount < 2) // At least 2 items is needed. 1 telling us the index and the other to copy
+            // At least 2 items is needed. 1 telling us the index and the other is the item to copy
+            if (opData.ItemCount < 2)
             {
                 error = Err.OpNotEnoughItems;
                 return false;
@@ -492,7 +493,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // 'n' is index so it can't be equal to ItemCount
             if (opData.ItemCount <= n)
             {
-                error = Err.EndOfStream;
+                error = Err.OpNotEnoughItems;
                 return false;
             }
 
@@ -521,8 +522,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if operation was successful, false if otherwise</returns>
         public override bool Run(IOpData opData, out string error)
         {
-            // Initial test:
-            // At least 2 items is needed. 1 telling us the index and the other to move
+            // At least 2 items is needed. 1 telling us the index and the other is the item to move
             if (opData.ItemCount < 2)
             {
                 error = Err.OpNotEnoughItems;
@@ -552,7 +552,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // 'n' is index so it can't be equal to ItemCount
             if (opData.ItemCount <= n)
             {
-                error = Err.EndOfStream;
+                error = Err.OpNotEnoughItems;
                 return false;
             }
 
