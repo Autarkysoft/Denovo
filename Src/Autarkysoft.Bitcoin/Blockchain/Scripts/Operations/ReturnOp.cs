@@ -17,6 +17,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         public ReturnOp()
         {
+            data = new byte[1] { (byte)OP.RETURN };
         }
 
         /// <summary>
@@ -36,7 +37,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             else if (usePushOp)
             {
                 StackInt size = new StackInt(ba.Length);
-                FastStream stream = new FastStream(data.Length + 2);
+                FastStream stream = new FastStream(ba.Length + 2);
                 stream.Write((byte)OP.RETURN);
                 size.WriteToStream(stream);
                 stream.Write(ba);
@@ -69,7 +70,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if (usePushOp)
             {
                 StackInt size = new StackInt(temp.Length);
-                FastStream stream = new FastStream(data.Length + 2);
+                FastStream stream = new FastStream(temp.Length + 2);
                 stream.Write((byte)OP.RETURN);
                 size.WriteToStream(stream);
                 stream.Write(temp);
@@ -88,6 +89,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.RETURN;
 
+        // Don't rename (reflection used in tests)
         private byte[] data;
 
 
@@ -106,7 +108,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if reading was successful, false if otherwise.</returns>
         public bool TryRead(FastStreamReader stream, int length, out string error)
         {
-            if (stream is null || !stream.TryReadByte(out byte firstByte))
+            if (stream is null)
+            {
+                error = "Stream can not be null.";
+                return false;
+            }
+
+            // We need the first byte of "data" to be 0x6a so we only peek at that byte.
+            if (!stream.TryPeekByte(out byte firstByte))
             {
                 error = Err.EndOfStream;
                 return false;
@@ -114,6 +123,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if (firstByte != (byte)OP.RETURN)
             {
                 error = "Stream doesn't start with appropriate (OP_Return) byte.";
+                return false;
+            }
+            if (length < 1)
+            {
+                error = "OP_RETURN script length must be at least 1 byte.";
                 return false;
             }
 
@@ -135,12 +149,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="stream">Stream to use</param>
         public void WriteToStream(FastStream stream)
         {
-            stream.Write((byte)OP.RETURN);
-            if (!(data is null) && data.Length != 0)
-            {
-                stream.Write(data);
-            }
+            // data is never null or empty, at least it has a single byte = 0x6a
+            stream.Write(data);
         }
-
     }
 }
