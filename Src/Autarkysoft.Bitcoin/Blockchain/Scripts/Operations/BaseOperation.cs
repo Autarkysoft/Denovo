@@ -92,6 +92,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             bool isNeg = val < 0;
+            if (isNeg)
+            {
+                val = -val;
+            }
 
             byte[] data = new byte[sizeof(long) + 1];
             int i = 0;
