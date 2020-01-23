@@ -1,0 +1,38 @@
+﻿// Autarkysoft Tests
+// Copyright (c) 2020 Autarkysoft
+// Distributed under the MIT software license, see the accompanying
+// file LICENCE or http://www.opensource.org/licenses/mit-license.php.
+
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using Xunit;
+
+namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
+{
+    public class ToAltStackOpTests
+    {
+        [Fact]
+        public void RunTest()
+        {
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.AltPush)
+            {
+                _itemCount = 1,
+                popData = new byte[][] { OpTestCaseHelper.b1 },
+                altPushData = new byte[][] { OpTestCaseHelper.b1 },
+            };
+
+            OpTestCaseHelper.RunTest<ToAltStackOp>(data, OP.ToAltStack);
+        }
+
+        [Fact]
+        public void RunErrorTest()
+        {
+            MockOpData data = new MockOpData(FuncCallName.Pop)
+            {
+                _itemCount = 0,
+            };
+
+            OpTestCaseHelper.RunFailTest<ToAltStackOp>(data, Err.OpNotEnoughItems);
+        }
+    }
+}
