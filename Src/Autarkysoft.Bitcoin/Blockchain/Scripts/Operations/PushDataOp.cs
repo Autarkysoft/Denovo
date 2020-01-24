@@ -97,6 +97,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// (Some push OP codes don't have a name)
         /// </summary>
         public override OP OpValue => _opVal;
+        // Don't rename (reflection used by tests)
         internal byte[] data;
 
 
@@ -190,22 +191,29 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if reading was successful, false if otherwise.</returns>
         public bool TryRead(FastStreamReader stream, out string error, bool isWitness = false)
         {
-            if (stream is null || !stream.TryReadByte(out byte firstByte))
+            if (stream is null)
+            {
+                error = "Stream can not be null.";
+                return false;
+            }
+
+            // Since the first byte could be an OP_num or it could be the length we only peek at it
+            if (!stream.TryPeekByte(out byte firstByte))
             {
                 error = Err.EndOfStream;
                 return false;
             }
 
-
             // TODO: set a bool for isStrict so that we can reject non-strict encoded lengths
+            // TODO: write more tests for SegWit and how witnesses deal with OP_numbers (allowed?)
 
             _opVal = (OP)firstByte;
             if (firstByte == (byte)OP._0 || firstByte == (byte)OP.Negative1 ||
                 firstByte >= (byte)OP._1 && firstByte <= (byte)OP._16)
             {
+                // Move the index forward
+                _ = stream.TryReadByte(out _);
                 data = null;
-                error = null;
-                return true; // This has to return here since we set the data at the bottom after if block ends
             }
             else if (isWitness)
             {
@@ -329,6 +337,5 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return hash;
             }
         }
-
     }
 }

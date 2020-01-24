@@ -60,7 +60,9 @@ namespace Autarkysoft.Bitcoin
         {
             if (position + extraSize > buffer.Length)
             {
-                byte[] temp = new byte[buffer.Length + Capacity];
+                byte[] temp = extraSize < Capacity ? 
+                            (new byte[buffer.Length + Capacity]) : 
+                            (new byte[buffer.Length + extraSize + Capacity]);
                 Buffer.BlockCopy(buffer, 0, temp, 0, buffer.Length);
                 buffer = temp;
             }
