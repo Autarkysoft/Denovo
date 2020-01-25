@@ -5,7 +5,9 @@
 
 using Newtonsoft.Json;
 using System;
+using System.Globalization;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using Xunit;
 
@@ -139,6 +141,14 @@ namespace Tests
                 ca[i * 2 + 1] = (char)(87 + b + (((b - 10) >> 31) & -39));
             }
             return new string(ca);
+        }
+
+
+        internal static BigInteger HexToBigInt(string hex, bool positive = true)
+        {
+            return positive ?
+                BigInteger.Parse($"00{hex}", NumberStyles.HexNumber) :
+                BigInteger.Parse(hex, NumberStyles.HexNumber);
         }
 
 

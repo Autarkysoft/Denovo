@@ -525,9 +525,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         // TODO: fill in XX below with the number assigned to Schnorr signature BIP (there isn't any today: 2020-01-18)
 
         /// <summary>
-        /// Creates a signature using ECSDSA based on BIP-XX.
+        /// Creates a signature using ECSDSA based on BIP-340.
         /// Return value indicates success.
         /// </summary>
+        /// <remarks>
+        /// https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
+        /// </remarks>
         /// <param name="hash">Hash(m) to use for signing</param>
         /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
         /// <param name="k">
@@ -538,9 +541,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>True if successful, otherwise false.</returns>
         public bool TrySignSchnorr(byte[] hash, byte[] key, BigInteger k, out Signature sig)
         {
-            // For now based on "temp" BIP until the final one is released and is added as a part of consensus rules
-            // https://github.com/sipa/bips/blob/86eea8adb424f0f37b32e98046de2823c085f875/bip-schnorr.mediawiki
-            // TODO: this method always returns true, if that is the case with any k value then retire Try* method altogether
+            // TODO: change TrySig methods accessibility to private
+
+            // If k is generated using RFC-6979 then it is always >0 and <N and Try* may not be needed
 
             BigInteger seckey = key.ToBigInt(true, true);
             EllipticCurvePoint pubkPoint = MultiplyChecked(seckey, curve.G);
@@ -549,7 +552,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 seckey = curve.N - seckey;
             }
 
-            // TODO: BIP-Schnorr derives k with a tagged hash, here we are using RFC-6979
+            // TODO: BIP-340 derives k with a tagged hash, here we are using RFC-6979
 
             EllipticCurvePoint R = MultiplyChecked(k, curve.G);
 
@@ -567,7 +570,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
 
         /// <summary>
-        /// Creates a signature using ECSDSA based on BIP-XX.
+        /// Creates a signature using ECSDSA based on BIP-340.
         /// </summary>
         /// <param name="hash">Hash(m) to use for signing</param>
         /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
@@ -594,7 +597,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
 
         /// <summary>
-        /// Verifies if the given signature is a valid ECSDSA signature based on BIP-XX.
+        /// Verifies if the given signature is a valid ECSDSA signature based on BIP-340.
         /// </summary>
         /// <param name="hash">Hash(m) used in signing</param>
         /// <param name="sig">Signature</param>
@@ -615,7 +618,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
 
         /// <summary>
-        /// Verifies if the given signature is a valid ECSDSA signature based on BIP-XX.
+        /// Verifies if the given signature is a valid ECSDSA signature based on BIP-340.
         /// </summary>
         /// <param name="hash">Hash(m) used in signing</param>
         /// <param name="sig">Signature</param>
@@ -623,7 +626,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>True if the signature was valid, otherwise false.</returns>
         public bool VerifySchnorr(byte[] hash, Signature sig, PublicKey pubK)
         {
-            return Verify(hash, sig, pubK.ToPoint());
+            return VerifySchnorr(hash, sig, pubK.ToPoint());
         }
     }
 }
