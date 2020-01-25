@@ -89,8 +89,8 @@ namespace Tests
 
 
         /// <summary>
-        /// This is used internally by unit tests so checks are skipped.
-        /// Use <see cref="CryptoCurrency.Net.Encoders.Base16.ToByteArray(string)"/> for complete functionality.
+        /// This is used internally by unit tests and some checks are skipped.
+        /// Use <see cref="Autarkysoft.Bitcoin.Encoders.Base16.Decode(string)"/> for complete functionality.
         /// </summary>
         /// <param name="hex">Hex to convert.</param>
         /// <returns></returns>
@@ -124,8 +124,8 @@ namespace Tests
         }
 
         /// <summary>
-        /// This is used internally by unit tests so checks are skipped.
-        /// Use <see cref="CryptoCurrency.Net.Extensions.ByteArrayExtension.ToBase16(byte[])"/> for complete functionality.
+        /// This is used internally by unit tests and some checks are skipped.
+        /// Use <see cref="Autarkysoft.Bitcoin.ByteArrayExtension.ToBase16(byte[])"/> for complete functionality.
         /// </summary>
         /// <param name="ba">Bytes to convert.</param>
         /// <returns></returns>
