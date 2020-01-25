@@ -10,8 +10,18 @@ using System.Text;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 {
+    /// <summary>
+    /// P2P network messages used in communication between bitcoin nodes.
+    /// Implements <see cref="IDeserializable"/>.
+    /// </summary>
     public class Message : IDeserializable
     {
+        /// <summary>
+        /// Initializes an empty instance of <see cref="Message"/> and sets network magic based on the given
+        /// <see cref="NetworkType"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <param name="netType">Network type</param>
         public Message(NetworkType netType)
         {
             networkMagic = netType switch
@@ -22,6 +32,20 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 _ => throw new ArgumentException("Invalid network type.")
             };
         }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Message"/> with the given <see cref="IMessagePayload"/> 
+        /// and sets network magic based on the given <see cref="NetworkType"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="payload">Message payload</param>
+        /// <param name="netType">Network type</param>
+        public Message(IMessagePayload payload, NetworkType netType) : this(netType)
+        {
+            Payload = payload;
+        }
+
 
 
         private readonly byte[] networkMagic;
@@ -37,23 +61,47 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         private readonly Sha256 hash = new Sha256(true);
 
         private byte[] _magic;
+        /// <summary>
+        /// Network magi bytes (must be 4 bytes). Use the constructor to set this based on <see cref="NetworkType"/>.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         public byte[] Magic
         {
             get => _magic;
-            set => _magic = value;
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException(nameof(Magic), "Magic bytes can not be null.");
+                if (value.Length != 4)
+                    throw new ArgumentOutOfRangeException(nameof(Magic), "Magic bytes must be 4 bytes.");
+
+                _magic = value;
+            }
         }
 
-        private uint payloadSize;
+        internal uint payloadSize;
         private byte[] checkSum;
 
         private IMessagePayload _payload;
+        /// <summary>
+        /// Message payload
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
         public IMessagePayload Payload
         {
             get => _payload;
-            set => _payload = value;
+            set
+            {
+                if (value is null)
+                    throw new ArgumentNullException(nameof(Payload), "Payload can not be null.");
+
+                _payload = value;
+            }
         }
 
 
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             byte[] commandName = Encoding.ASCII.GetBytes(Payload.PayloadType.ToString().ToLower());
@@ -116,6 +164,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         }
 
 
+        /// <summary>
+        /// Only deserializs header from the given stream. Return value indicates success.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
+        /// <returns>True if reading was successful, false if otherwise.</returns>
         public bool TryDeserializeHeader(FastStreamReader stream, out string error)
         {
             if (stream is null)
@@ -176,6 +230,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             return true;
         }
 
+        /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out string error)
         {
             if (!TryDeserializeHeader(stream, out error))
