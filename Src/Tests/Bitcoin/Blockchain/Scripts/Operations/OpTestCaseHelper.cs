@@ -47,6 +47,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public static byte[] num8 = { 8 };
         public static byte[] num16 = { 16 };
         public static byte[] num17 = { 17 };
+        public static byte[] maxInt = { 255, 255, 255, 127 }; // int.MaxValue in little endian order
+        public static byte[] maxIntPlus1 = { 0, 0, 0, 0x80, 0 }; // int.MaxValue + 1
+        public static byte[] maxIntPlus2 = { 1, 0, 0, 0x80, 0 }; // int.MaxValue + 2
+        public static byte[] maxNegInt = { 255, 255, 255, 255 }; // -int.MaxValue in little endian order
 
         public static byte[] TrueBytes = { 1 }; // OP_TRUE = 0x51
         public static byte[] FalseBytes = { };
