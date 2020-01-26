@@ -12,7 +12,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// and inherits from <see cref="BaseOperation"/> class.
     /// Derived classes must set the <see cref="Hash"/> property.
     /// </summary>
-    public abstract class CryptoOp : BaseOperation
+    public abstract class CryptoOpBase : BaseOperation
     {
         /// <summary>
         /// Hash function to use in Run() methods.
@@ -29,7 +29,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.EndOfStream;
+                error = Err.OpNotEnoughItems;
                 return false;
             }
 
@@ -45,7 +45,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to perform RIPEMD-160 hash on top stack item.
     /// </summary>
-    public class RipeMd160Op : CryptoOp
+    public class RipeMd160Op : CryptoOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public sealed override OP OpValue => OP.RIPEMD160;
@@ -57,7 +57,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to perform SHA-1 hash on top stack item.
     /// </summary>
-    public class Sha1Op : CryptoOp
+    public class Sha1Op : CryptoOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public sealed override OP OpValue => OP.SHA1;
@@ -69,7 +69,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to perform SHA-256 hash on top stack item.
     /// </summary>
-    public class Sha256Op : CryptoOp
+    public class Sha256Op : CryptoOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public sealed override OP OpValue => OP.SHA256;
@@ -81,7 +81,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to perform SHA-256 then RIPEMD-160 hash on top stack item.
     /// </summary>
-    public class Hash160Op : CryptoOp
+    public class Hash160Op : CryptoOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public sealed override OP OpValue => OP.HASH160;
@@ -93,7 +93,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to perform SHA-256 hash twice on top stack item.
     /// </summary>
-    public class Hash256Op : CryptoOp
+    public class Hash256Op : CryptoOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public sealed override OP OpValue => OP.HASH256;
