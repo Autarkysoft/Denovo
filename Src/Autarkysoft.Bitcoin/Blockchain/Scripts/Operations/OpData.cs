@@ -14,47 +14,73 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// to be used with <see cref="IOperation"/>s as their data provider.
     /// <para/>All the functions in this class skip checks (eg. checking ItemCount before popping an item). 
     /// Caller must perform checks.
+    /// <para/>All indexes are zero based whether it is normal index from beginning or index from end:
+    /// Item at the end (length-1) is at index 0.
     /// </summary>
     public class OpData : IOpData
     {
-        public OpData()
+        /// <summary>
+        /// Initializes a new instance of <see cref="OpData"/> with default capacity
+        /// </summary>
+        public OpData() : this(DefaultCapacity)
         {
-            holder = new byte[DefaultCapacity][];
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="OpData"/> with the given capacity.
+        /// </summary>
+        /// <param name="cap">Capacity</param>
+        public OpData(int cap)
+        {
+            if (cap < DefaultCapacity)
+            {
+                cap = DefaultCapacity;
+            }
+            holder = new byte[cap][];
 
+            Calc = new EllipticCurveCalculator();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="OpData"/> with the given data array.
+        /// </summary>
+        /// <param name="dataToPush">An array of byte arrays to put in the stack</param>
         public OpData(byte[][] dataToPush)
         {
             if (dataToPush == null || dataToPush.Length == 0)
             {
                 holder = new byte[DefaultCapacity][];
             }
-            else if (dataToPush.Length < DefaultCapacity)
-            {
-                holder = new byte[DefaultCapacity][];
-                Array.Copy(dataToPush, holder, dataToPush.Length);
-                ItemCount = dataToPush.Length;
-            }
             else
             {
-                holder = dataToPush;
+                int len = (dataToPush.Length < DefaultCapacity) ? DefaultCapacity : dataToPush.Length + DefaultCapacity;
+                holder = new byte[len][];
                 ItemCount = dataToPush.Length;
+                Array.Copy(dataToPush, holder, dataToPush.Length);
             }
+
+            Calc = new EllipticCurveCalculator();
         }
 
 
 
         private const int DefaultCapacity = 10;
+        // Don't rename (used by test through reflection).
         private byte[][] holder;
 
+        // TODO: complete the code for signing part + tests
         private readonly ITransaction Tx;
         private readonly ITransaction PrvTx;
         private readonly int TxInIndex;
         private readonly int TxOutIndex;
+
+
+
         /// <inheritdoc/>
         public EllipticCurveCalculator Calc { get; private set; }
-        
 
+
+        /// <inheritdoc cref="ITransaction.GetBytesToSign(ITransaction, int, SigHashType)"/>
         public byte[] GetBytesToSign(SigHashType sht)
         {
             return Tx.GetBytesToSign(PrvTx, TxInIndex, sht);
@@ -66,20 +92,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
 
-        /// <summary>
-        /// Returns the item at the top of the stack without removing it.
-        /// </summary>
-        /// <returns>The byte array at the top of the stack</returns>
+        /// <inheritdoc/>
         public byte[] Peek()
         {
             return holder[ItemCount - 1];
         }
 
-        /// <summary>
-        /// Returns multiple items from the top of the stack without removing them.
-        /// </summary>
-        /// <param name="count">Number of items to return</param>
-        /// <returns>An array of byte arrays from the top of the stack</returns>
+        /// <inheritdoc/>
         public byte[][] Peek(int count)
         {
             byte[][] res = new byte[count][];
@@ -88,22 +107,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return res;
         }
 
-        /// <summary>
-        ///  Returns the item at a specific index starting from the top of the stack without removing it.
-        /// <para/>NOTE: Index starts from zero meaning the item at the end (length-1) is index 0, the item before end is 1 and so on.
-        /// </summary>
-        /// <param name="index">Index of item from end to return (starting from 0)</param>
-        /// <returns>The byte array at the specified intex</returns>
+        /// <inheritdoc/>
         public byte[] PeekAtIndex(int index)
         {
             return holder[ItemCount - 1 - index];
         }
 
 
-        /// <summary>
-        /// Removes and returns the item at the top of the stack.
-        /// </summary>
-        /// <returns>The removed byte array at the top of the stack</returns>
+        /// <inheritdoc/>
         public byte[] Pop()
         {
             byte[] res = holder[--ItemCount];
@@ -111,11 +122,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return res;
         }
 
-        /// <summary>
-        /// Removes multiple items from the top of the stack and returns all of them without changing the order ([1234] -> [34]).
-        /// </summary>
-        /// <param name="count">Number of items to remove and return</param>
-        /// <returns>An array of byte arrays removed from the top of the stack</returns>
+        /// <inheritdoc/>
         public byte[][] Pop(int count)
         {
             byte[][] res = new byte[count][];
@@ -128,12 +135,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return res;
         }
 
-        /// <summary>
-        /// Removes and returns the item at the specified index (will shift the items in its place).
-        /// <para/>NOTE: Index starts from zero meaning the item at the end (length-1) is index 0, the item before end is 1 and so on.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns>The byte array removed from the specified intex</returns>
+        /// <inheritdoc/>
         public byte[] PopAtIndex(int index)
         {
             int realIndex = ItemCount - 1 - index;
@@ -150,10 +152,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
-        /// <summary>
-        /// Pushes (or inserts) an item at the top of the stack.
-        /// </summary>
-        /// <param name="data">Byte array to push onto the stack</param>
+        /// <inheritdoc/>
         public void Push(byte[] data)
         {
             if (ItemCount == holder.Length)
@@ -168,16 +167,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             holder[ItemCount++] = data;
         }
 
-        /// <summary>
-        /// Pushes (or inserts) multiple items at the top of the stack in the same order.
-        /// </summary>
-        /// <param name="data">Arrays of byte array to push</param>
+        /// <inheritdoc/>
         public void Push(byte[][] data)
         {
             if (ItemCount + data.Length > holder.Length)
             {
-                int extraCap = (Math.DivRem(data.Length, DefaultCapacity, out int rem) + ((rem != 0) ? 1 : 0)) * DefaultCapacity;
-                byte[][] holder2 = new byte[holder.Length + extraCap][];
+                byte[][] holder2 = new byte[ItemCount + data.Length + DefaultCapacity][];
                 Array.Copy(holder, 0, holder2, 0, ItemCount);
                 holder = holder2;
             }
@@ -186,12 +181,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             ItemCount += data.Length;
         }
 
-        /// <summary>
-        /// Inserts an item at the specified index (from the top) of the stack.
-        /// <para/>NOTE: Index starts from zero meaning the item at the end (length-1) is index 0, the item before end is 1 and so on.
-        /// </summary>
-        /// <param name="data">Byte array to insert in the stack</param>
-        /// <param name="index">Index at which to insert the <paramref name="data"/></param>
+        /// <inheritdoc/>
         public void Insert(byte[] data, int index)
         {
             // only call if index < itemcount
@@ -212,19 +202,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             ItemCount++;
         }
 
-        /// <summary>
-        /// Inserts multiple items at the specified index (from the top) of the stack.
-        /// <para/>NOTE: Index starts from zero meaning the item at the end (length-1) is index 0, the item before end is 1 and so on.
-        /// </summary>
-        /// <param name="data">Array of Byte arrays to insert in the stack</param>
-        /// <param name="index">Index at which to insert the <paramref name="data"/></param>
+        /// <inheritdoc/>
         public void Insert(byte[][] data, int index)
         {
             int realIndex = ItemCount - index;
             if (ItemCount + data.Length > holder.Length)
             {
-                int extraCap = (Math.DivRem(data.Length, DefaultCapacity, out int rem) + ((rem != 0) ? 1 : 0)) * DefaultCapacity;
-                byte[][] holder2 = new byte[holder.Length + extraCap][];
+                byte[][] holder2 = new byte[ItemCount + data.Length + DefaultCapacity][];
 
                 Array.Copy(holder, 0, holder2, 0, realIndex);
                 Array.Copy(data, 0, holder2, realIndex, data.Length);
@@ -243,18 +227,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
 
-
+        // Don't rename (used by test through reflection).
         private byte[][] altHolder;
 
-        /// <summary>
-        /// Returns number of available items in the "alt-stack"
-        /// </summary>
+        /// <inheritdoc/>
         public int AltItemCount { get; private set; }
 
-        /// <summary>
-        /// Removes and returns the item at the top of the "alt-stack".
-        /// </summary>
-        /// <returns>The removed byte array at the top of the "alt-stack"</returns>
+        /// <inheritdoc/>
         public byte[] AltPop()
         {
             byte[] res = altHolder[--AltItemCount];
@@ -262,10 +241,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return res;
         }
 
-        /// <summary>
-        /// Pushes (or inserts) an item at the top of the "alt-stack".
-        /// </summary>
-        /// <param name="data">Byte array to push onto the "alt-stack"</param>
+        /// <inheritdoc/>
         public void AltPush(byte[] data)
         {
             if (altHolder == null)
@@ -284,22 +260,5 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             altHolder[AltItemCount++] = data;
         }
-
-
-
-
-
-
-        /// <summary>
-        /// Returns the private data holder field (for testing)!
-        /// </summary>
-        /// <returns><see cref="holder"/></returns>
-        public byte[][] ToArray()
-        {
-            // TODO: since this has not other usage except for testing 
-            //       maybe reveal the private field to unit test project so that we don't need to call this?
-            return holder;
-        }
-
     }
 }
