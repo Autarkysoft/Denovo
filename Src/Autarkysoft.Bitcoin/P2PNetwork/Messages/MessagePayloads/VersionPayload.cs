@@ -57,7 +57,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <summary>
-        /// User agent as defined by <see cref="BIP0014"/> (Can be empty).
+        /// User agent as defined by <see cref="ImprovementProposals.BIP0014"/> (Can be empty).
         /// </summary>
         public string UserAgent { get; set; }
 
