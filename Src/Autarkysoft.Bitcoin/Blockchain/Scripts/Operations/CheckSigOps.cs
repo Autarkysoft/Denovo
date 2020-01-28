@@ -36,8 +36,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            if (!PublicKey.TryRead(pubBa, out PublicKey pubK, out error))
+            if (!PublicKey.TryRead(pubBa, out PublicKey pubK))
             {
+                error = "Invalid public key format.";
                 return false;
             }
 
