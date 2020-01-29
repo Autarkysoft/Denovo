@@ -60,8 +60,8 @@ namespace Autarkysoft.Bitcoin
         {
             if (position + extraSize > buffer.Length)
             {
-                byte[] temp = extraSize < Capacity ? 
-                            (new byte[buffer.Length + Capacity]) : 
+                byte[] temp = extraSize < Capacity ?
+                            (new byte[buffer.Length + Capacity]) :
                             (new byte[buffer.Length + extraSize + Capacity]);
                 Buffer.BlockCopy(buffer, 0, temp, 0, buffer.Length);
                 buffer = temp;
@@ -170,6 +170,18 @@ namespace Autarkysoft.Bitcoin
             buffer[position] = (byte)(val >> 8);
 
             position += sizeof(ushort);
+        }
+
+        public void WriteBigEndian(uint val)
+        {
+            CheckAndResize(sizeof(uint));
+
+            buffer[position + 3] = (byte)val;
+            buffer[position + 2] = (byte)(val >> 8);
+            buffer[position + 1] = (byte)(val >> 16);
+            buffer[position] = (byte)(val >> 24);
+
+            position += sizeof(uint);
         }
     }
 }
