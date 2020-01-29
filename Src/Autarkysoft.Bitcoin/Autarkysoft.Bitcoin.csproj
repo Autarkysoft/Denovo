@@ -24,5 +24,27 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="ImprovementProposals\BIP0039WordLists\ChineseSimplified.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\ChineseTraditional.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\English.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\French.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\Italian.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\Japanese.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\Korean.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\Spanish.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\ChineseSimplified.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\ChineseTraditional.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\English.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\French.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Italian.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Japanese.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Korean.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Spanish.txt" />
+  </ItemGroup>
   
 </Project>
