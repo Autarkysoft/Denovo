@@ -13,6 +13,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestData\BIP0032TestData.json" />
+    <None Remove="TestData\BIP0039JapTestData.json" />
+    <None Remove="TestData\BIP0039TestData.json" />
     <None Remove="TestData\BIP0178TestData.json" />
     <None Remove="TestData\HashTestData.json" />
     <None Remove="TestData\HmacShaNistTestData.json" />
@@ -23,6 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="TestData\BIP0032TestData.json" />
+    <EmbeddedResource Include="TestData\BIP0039JapTestData.json" />
+    <EmbeddedResource Include="TestData\BIP0039TestData.json" />
     <EmbeddedResource Include="TestData\BIP0178TestData.json" />
     <EmbeddedResource Include="TestData\HashTestData.json" />
     <EmbeddedResource Include="TestData\HmacShaNistTestData.json" />

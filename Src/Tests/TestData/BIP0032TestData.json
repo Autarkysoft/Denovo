@@ -1,0 +1,174 @@
+﻿[
+  {
+    "TestName": "Test vector 1",
+    "Entropy": "000102030405060708090a0b0c0d0e0f",
+    "Chains": [
+      {
+        "Path": "m",
+        "Xprv": "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi",
+        "Xpub": "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8",
+        "Prv0": "Kyqg1PJsc5QzLC8rv5BwC156aXBiZZuEyt6FqRQRTXBjTX96bNkW",
+        "Prv5": "Kwgki55RK3KHBQgJwYQ2rqMXchze2bTvuS11qa1A2GWkneb189B9",
+        "Prv10": "L4NDfBxD8Z1JbaKwjGx2K4iFiDTffSSVfn3ngu6kidQn4rHxScf1",
+        "Pub10": "036b7194665a4a2c149025c1c1753f948dd826fab3578fa3d2a6f0848d445bf8e9",
+        "Pub22": "02aea5761e61dee1400786174f730d4b4d5876f0d49ee97836ce7291d97bd35122",
+        "Pub34": "02c904d346eb6e286a8cdfaecdb939bac73b41d5f2d58076946528672a63eaa107"
+      },
+      {
+        "Path": "m/0H",
+        "Xprv": "xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7",
+        "Xpub": "xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw",
+        "Prv0": "KyczCqnEp32q2od5wySn2PKJeFtv7c7Roodmu4ZUdajzqYuxePtg",
+        "Prv5": "KzKk1F2gcxeGjLnacCHJs7opcvDPm3VU742V7CWz1HwBfuC4uMeo",
+        "Prv10": "L27FdNjetMsQsg8pVTEPspJjMygKhenTj4ekwituFD1HUA9GV2Hb",
+        "Pub10": "0266384dd2cd0c96123b477675d8479fe33e472b99cf5a1a6eb7cd65c9c26c051f",
+        "Pub22": "02c363aef8db45e5b3986611875e6d9d7424c5599502f9bf2bff9da9a4a1c63d78",
+        "Pub34": "03a70ae9d2338d297ebcd527136426824b59b14798eb00ad837861e04ea907bbe8"
+      },
+      {
+        "Path": "m/0H/1",
+        "Xprv": "xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs",
+        "Xpub": "xpub6ASuArnXKPbfEwhqN6e3mwBcDTgzisQN1wXN9BJcM47sSikHjJf3UFHKkNAWbWMiGj7Wf5uMash7SyYq527Hqck2AxYysAA7xmALppuCkwQ",
+        "Prv0": "L1RiRwf3i7f1wG4E1xSh3wjhzfzH7BAzyLzZjdvuEHKYiaMrcDif",
+        "Prv5": "KzY16QQPEbgpyod1kyh5rgYpyuAE5x1DbSrFxe6SZAzJDt3858Ei",
+        "Prv10": "KwoAR46dQDaTtnL6sa3LNhnbpV9Vr8hCZaHdKD8gp4Z1AfcX9Gx3",
+        "Pub10": "02c46e2f5daeb4f4b08633adce80c7b4326507a49f40746b5d5b12e80ef9c93580",
+        "Pub22": "02192386ded70cc2ebed40bddeca91ab3a3dd65d5c785164251ba4a907f38082f1",
+        "Pub34": "0320ad4b3371ca72c1b7fc22b80292c6153652b2a93a3ac49565ed2f97775a998b"
+      },
+      {
+        "Path": "m/0H/1/2H",
+        "Xprv": "xprv9z4pot5VBttmtdRTWfWQmoH1taj2axGVzFqSb8C9xaxKymcFzXBDptWmT7FwuEzG3ryjH4ktypQSAewRiNMjANTtpgP4mLTj34bhnZX7UiM",
+        "Xpub": "xpub6D4BDPcP2GT577Vvch3R8wDkScZWzQzMMUm3PWbmWvVJrZwQY4VUNgqFJPMM3No2dFDFGTsxxpG5uJh7n7epu4trkrX7x7DogT5Uv6fcLW5",
+        "Prv0": "KwwNVCinakQqjarP7eAK1FsJxheGoW1wyxGKPX6MavwsbhVd4W3H",
+        "Prv5": "KzDzZRfyhEQ1KYBwpCpUemK57XKxswGsuMeHr5znV2XQH3NjiSKW",
+        "Prv10": "L2NbpQs8Ac9o48K5QE3cfPQGrrpjCPiNEDxcw43wmvSWKwvKwRqf",
+        "Pub10": "03089ab31907917315a1e4b5dad13043d8964774723a7dbbe3ba5ffa65defc7c7e",
+        "Pub22": "03519d7645d3cdd915caceedb68c9d04b3862fc97dec39425504fecb15fe85e6e2",
+        "Pub34": "0229c54a82de61a75421d17dbf47e7af3bfc8fb81e941934192067ae05be176d80"
+      },
+      {
+        "Path": "m/0H/1/2H/2",
+        "Xprv": "xprvA2JDeKCSNNZky6uBCviVfJSKyQ1mDYahRjijr5idH2WwLsEd4Hsb2Tyh8RfQMuPh7f7RtyzTtdrbdqqsunu5Mm3wDvUAKRHSC34sJ7in334",
+        "Xpub": "xpub6FHa3pjLCk84BayeJxFW2SP4XRrFd1JYnxeLeU8EqN3vDfZmbqBqaGJAyiLjTAwm6ZLRQUMv1ZACTj37sR62cfN7fe5JnJ7dh8zL4fiyLHV",
+        "Prv0": "L1dWtr2mXmcMHy6tZkEUFFoeCam7u24hPpxj3ZkMcLCGNj8uUQCj",
+        "Prv5": "L1C6PZmEWxauKRcH5mFuj9vWCpmQpRkeL3ExXk878pwZdrGPs52C",
+        "Prv10": "KxM21XBpfZbQmtgNLhAUFW3HMpWyN8BUoMRkSeknuXBJ7xBreB4R",
+        "Pub10": "03863556b66b94af179a0de479d3de8fab1ed202efe6397ef016ebb9e48ffb0cc7",
+        "Pub22": "021c56978020d248f1766c35201248b1411eba29586402734646772b80044904f8",
+        "Pub34": "033d406bbbda63af439cb8b0c8680a23babb66ac8307be09ca02f870223ea1403e"
+      },
+      {
+        "Path": "m/0H/1/2H/2/1000000000",
+        "Xprv": "xprvA41z7zogVVwxVSgdKUHDy1SKmdb533PjDz7J6N6mV6uS3ze1ai8FHa8kmHScGpWmj4WggLyQjgPie1rFSruoUihUZREPSL39UNdE3BBDu76",
+        "Xpub": "xpub6H1LXWLaKsWFhvm6RVpEL9P4KfRZSW7abD2ttkWP3SSQvnyA8FSVqNTEcYFgJS2UaFcxupHiYkro49S8yGasTvXEYBVPamhGW6cFJodrTHy",
+        "Prv0": "L2MwyLaZiSPU1PxeZjJ3spFdGNaNRAyvTzgJsNiHXnStCegbj3fY",
+        "Prv5": "KxXkdLGWo7EDzauEfhnEjfcgy5SDhnwDsftaDJxd6x1DBTzdS2Mf",
+        "Prv10": "KyMhfX9TNQRgNriH52WQhCawFbCeKJirjxVr8vywJ1joMR5ZUoCn",
+        "Pub10": "03c5d47c9beb6d4cbf0b1158151872992a1bcf6dfda74bee7f47254f20389c5fc7",
+        "Pub22": "03ac36c77ce2dceaa14bcae3c0dff6ca5d40027e6b3e2635542a0092cfd4e53241",
+        "Pub34": "03df67c47390b42af74dc617a6e1814b6dd0edf382ef99ff0096d2aa2a8f849663"
+      }
+    ]
+  },
+  {
+    "TestName": "Test vector 2",
+    "Entropy": "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
+    "Chains": [
+      {
+        "Path": "m",
+        "Xprv": "xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U",
+        "Xpub": "xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB",
+        "Prv0": "L2ysLrR6KMSAtx7uPqmYpoTeiRzydXBattRXjXz5GDFPrdfPzKbj",
+        "Prv5": "L19pjEmwXn8Lag8cGZ3zNAkznUPXot9tgDadpeVpBXPzmNySmzVi",
+        "Prv10": "L2YPbtDYZcY3WCZG3qvpWdpjJx9ayHM3yRoNTWegYUWu3QdymM7e",
+        "Pub10": "029a32e63c0c686f0c3879187e5169224b3ec9b8612012d6a16169a62bacf43fd3",
+        "Pub22": "03adf0a1551ed6ed3a39e7b58988ccf5d5c2be586c644f9eefb0568855a950ff7a",
+        "Pub34": "031231704483f90b7856391fe43c730a7a1da2870f6522934b6d0c2d6b3e2655c2"
+      },
+      {
+        "Path": "m/0",
+        "Xprv": "xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt",
+        "Xpub": "xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH",
+        "Prv0": "KymDmDt8TcXMBWqrot6TzZLScmH5s1HjZXrqJjUBp76ihwV49TQJ",
+        "Prv5": "KxibCpumCs31TAEVU7jr6yUrugoF4AZ8QawYTqTYfwg2reGuBW5J",
+        "Prv10": "L5L3GCiGqgKo5pgSBS2WtbDnBr351TAjAk6dr4nigJw3b4R5M9Vj",
+        "Pub10": "025253a8d05ccd252f168a1c5bd2f1a44c2087387be7805ac31f21a9b9660e21e5",
+        "Pub22": "030e0a0ecb74ea0559f6ea324c69f501558e86b4602f262882e0346fedefd3aa7f",
+        "Pub34": "039cbe98fb5e11fe1df14ae3299543b8fde2929cef732285c087295d91b54e16cb"
+      },
+      {
+        "Path": "m/0/2147483647H",
+        "Xprv": "xprv9wSp6B7kry3Vj9m1zSnLvN3xH8RdsPP1Mh7fAaR7aRLcQMKTR2vidYEeEg2mUCTAwCd6vnxVrcjfy2kRgVsFawNzmjuHc2YmYRmagcEPdU9",
+        "Xpub": "xpub6ASAVgeehLbnwdqV6UKMHVzgqAG8Gr6riv3Fxxpj8ksbH9ebxaEyBLZ85ySDhKiLDBrQSARLq1uNRts8RuJiHjaDMBU4Zn9h8LZNnBC5y4a",
+        "Prv0": "KzTvrFAr1WWHWEnCcfeGVxUuTGjsq9VPAEoJWh3ewo4bvSNnC2i1",
+        "Prv5": "L3XvHu7ctvhpVN4cGzDak1tR33g6P1KXmkkRqcxbVNfDDznqX52X",
+        "Prv10": "L4BiWWoJa4ip35hnWSEYd3JSxf9oUi7TbeWbQa2TLoZhm9UiFLg7",
+        "Pub10": "038199bb921ca8eee268f75f661742ac7911ec946be24b9d62f4c36a4d963e8cea",
+        "Pub22": "03eedf21102f2cf0b86cc719125987a303cf5518966b9dfaf6beec40cfa40f4750",
+        "Pub34": "0367a8d438a3c84925dc0ab8645eb2611be8d4c87bdf208a38a7eec8730b51490b"
+      },
+      {
+        "Path": "m/0/2147483647H/1",
+        "Xprv": "xprv9zFnWC6h2cLgpmSA46vutJzBcfJ8yaJGg8cX1e5StJh45BBciYTRXSd25UEPVuesF9yog62tGAQtHjXajPPdbRCHuWS6T8XA2ECKADdw4Ef",
+        "Xpub": "xpub6DF8uhdarytz3FWdA8TvFSvvAh8dP3283MY7p2V4SeE2wyWmG5mg5EwVvmdMVCQcoNJxGoWaU9DCWh89LojfZ537wTfunKau47EL2dhHKon",
+        "Prv0": "L2NJ21jKuikWLELE1dq9iNyszruqdHWpRtpc3krfYVTzr6e7wiw5",
+        "Prv5": "Kz2AiagF8UMJL87LJaCYmVbpezP9eHpeXrXdgvps42iPn3wZNFEE",
+        "Prv10": "L3CPoUJkBPFjRLBb1p96ssvwZKnYYNHFmo6JYe19rWTsSQyRqmZ8",
+        "Pub10": "029ccfe36f3dd64c2cfeca929f2bbba41011db9ddf19868cf7fa2cd5e610b6d233",
+        "Pub22": "0373a4b380b066854f3f97fbf3118bc3284a71493c1fc16d6336c4545a4514d8da",
+        "Pub34": "02e7e42a5b132d2756468ab2b5784ec6494a708614ddc4fbea9ffcc419cc101911"
+      },
+      {
+        "Path": "m/0/2147483647H/1/2147483646H",
+        "Xprv": "xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc",
+        "Xpub": "xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL",
+        "Prv0": "L4s1fVtAny5Zfcm65fjjkfNoMiQjwF7oGAgx9DuU9rWfWhUVrDJ7",
+        "Prv5": "L2vGGomyTzWHnBXFgDKzxaiDEpnn4JeseynqJ6JN23dzDAWQ4rvm",
+        "Prv10": "L2Kur77gmfHF6d4gZk57A3Eu3SigFDf5Ko61YEQ5a3gDVnFLDeqy",
+        "Pub10": "03f916ffb142a9e6c2ba31ff101cafdc98158ba085b72d1766eba3373113247de6",
+        "Pub22": "02b7c785339ec2c70c79782d6fca7d5ee2bd63e936fb307bb87e7016c55812b81e",
+        "Pub34": "039112d8fc3eb079c30c5723dd96aa2d10c0be4dc3b08661d40a9ea6537b519456"
+      },
+      {
+        "Path": "m/0/2147483647H/1/2147483646H/2",
+        "Xprv": "xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j",
+        "Xpub": "xpub6FnCn6nSzZAw5Tw7cgR9bi15UV96gLZhjDstkXXxvCLsUXBGXPdSnLFbdpq8p9HmGsApME5hQTZ3emM2rnY5agb9rXpVGyy3bdW6EEgAtqt",
+        "Prv0": "KykTkGbQtZ8m3VTQGs8heyJXDpFH9MZMLPoQnsMZWZvZGgViVs1Q",
+        "Prv5": "L2Cms6xyU83S9i5HTVzRKtuv9hbELR7GXCQ1mst6JjzdrBwFD6ZD",
+        "Prv10": "KzAqWdGhqNyNWRyN2ECMGqLCjgqH6KwE1VjaRgRTVsFwwYoDjwxM",
+        "Pub10": "03e4b879e5f9808647adf11d6e9d3820ad7d6249fa31db571e0c239fda1a5887ce",
+        "Pub22": "03948b433d35532f0d8de6f15068731d465301640636c36852e5d6d98aaceffa1b",
+        "Pub34": "02566f8acf028e860d5fc0f1ecd09484abc8b3c7830e11e70f06b524c38ff8a08c"
+      }
+    ]
+  },
+  {
+    "TestName": "Test vector 3",
+    "Entropy": "4b381541583be4423346c643850da4b320e46a87ae3d2a4e6da11eba819cd4acba45d239319ac14f863b8d5ab5a0d0c64d2e8a1e7d1457df2e5a3c51c73235be",
+    "Chains": [
+      {
+        "Path": "m",
+        "Xprv": "xprv9s21ZrQH143K25QhxbucbDDuQ4naNntJRi4KUfWT7xo4EKsHt2QJDu7KXp1A3u7Bi1j8ph3EGsZ9Xvz9dGuVrtHHs7pXeTzjuxBrCmmhgC6",
+        "Xpub": "xpub661MyMwAqRbcEZVB4dScxMAdx6d4nFc9nvyvH3v4gJL378CSRZiYmhRoP7mBy6gSPSCYk6SzXPTf3ND1cZAceL7SfJ1Z3GC8vBgp2epUt13",
+        "Prv0": "Ky234iNLmp856HzCQe7zoySWKFvCAapzABMpQaHr6jvjVumxgLm3",
+        "Prv5": "L3PGBeE74XSN9EDJB8Qp8fBPs4PdqaabpFADHh4hAP5is4SCsPsM",
+        "Prv10": "L1UPzuBZSAHXUz6BfegbTGm7AwRTfo1oBGoNQeeMKJX4ssFPbQgj",
+        "Pub10": "038cca1dff556c08e25c69c2a9ef1af97ac3578e7316ba42bd6d9a13fdd7b70b27",
+        "Pub22": "03aba0880946d8caa32ce9cc20fb0eab7e9d72daf684cb9df8654033d430a72135",
+        "Pub34": "0381e12f21f13501d2b2fcc5b737546b1d0183e08f2751e6d775fa467d9c8a42fa"
+      },
+      {
+        "Path": "m/0H",
+        "Xprv": "xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L",
+        "Xpub": "xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y",
+        "Prv0": "KwquZu8DHkYqGMGbkLVufibRJRn3At6V6q6gjPuhafbGYdwJseye",
+        "Prv5": "L4vyerzfvKY3fehd5vZAY17BsjFGKCK9hmefEASn7zBxWXiLuLrD",
+        "Prv10": "Kxc2HYQVnueRz7JvRBkUKwocgVy2Ab5GP3ZfLNih77a824C1dVsL",
+        "Pub10": "022e716980ac82fa8499f47a99e357ddf72f68d758f82037605beca10387993647",
+        "Pub22": "02af076c937d91c16ab0e4fc062c3903ecd84d85154f8c030cd912d1b1082b2cad",
+        "Pub34": "02813e13723ac52c8570bd148d2cd5f294350accd1f43fa029c85cf835233dca9e"
+      }
+    ]
+  }
+]
