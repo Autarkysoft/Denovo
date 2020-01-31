@@ -75,8 +75,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <returns>The computed hash</returns>
         public byte[] ComputeHash(byte[] buffer, int offset, int count)
         {
-            //return ComputeHash(buffer.SubArray(offset, count));
-            throw new NotImplementedException();
+            return ComputeHash(buffer.SubArray(offset, count));
         }
 
 
