@@ -325,7 +325,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
         private void SetBip32(string passPhrase)
         {
-            // TODO: check out what UTF-8 NFKD means
             byte[] password = Encoding.UTF8.GetBytes(ToMnemonic());
             byte[] salt = Encoding.UTF8.GetBytes($"mnemonic{passPhrase?.Normalize(NormalizationForm.FormKD)}");
 
