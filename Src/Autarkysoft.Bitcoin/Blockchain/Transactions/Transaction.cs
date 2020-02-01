@@ -281,7 +281,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             FastStream stream = new FastStream();
 
             bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
-            sht ^= SigHashType.AnyoneCanPay;
+            if (anyone)
+            {
+                sht ^= SigHashType.AnyoneCanPay;
+            }
 
             if (sht == SigHashType.Single)
             {
@@ -596,7 +599,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     error = Err.EndOfStream;
                     return false;
                 }
-                if (marker != 0)
+                if (marker != 1)
                 {
                     error = "The SegWit marker has to be 0x0001";
                     return false;
