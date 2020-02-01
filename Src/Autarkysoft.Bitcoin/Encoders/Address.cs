@@ -4,15 +4,179 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 
 namespace Autarkysoft.Bitcoin.Encoders
 {
+    /// <summary>
+    /// Provides methods to check and create bitcoin addresses from public keys.
+    /// </summary>
     public class Address
     {
-        internal bool VerifyType(string address, PubkeyScriptType scrType, out byte[] hash)
+        private const byte P2pkhVerMainNet = 0;
+        private const byte P2pkhVerTestNet = 111;
+        private const byte P2pkhVerRegTest = 0;
+
+        private const byte P2shVerMainNet = 5;
+        private const byte P2shVerTestNet = 196;
+        private const byte P2shVerRegTest = 5;
+
+        private const string HrpMainNet = "bc";
+        private const string HrpTestNet = "tb";
+        private const string HrpRegTest = "bcrt";
+
+        private readonly Base58 b58Encoder = new Base58();
+        private readonly Bech32 b32Encoder = new Bech32();
+
+
+
+        /// <summary>
+        /// Return the pay to public key hash address from the given <see cref="PublicKey"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="pubk">Public key to use</param>
+        /// <param name="useCompressed">
+        /// [Default value = true]
+        /// Indicates wheter to use compressed or compressed public key to generate the address
+        /// </param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public string GetP2pkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
-            throw new NotImplementedException();
+            if (pubk is null)
+                throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
+
+            byte ver = netType switch
+            {
+                NetworkType.MainNet => P2pkhVerMainNet,
+                NetworkType.TestNet => P2pkhVerTestNet,
+                NetworkType.RegTest => P2pkhVerRegTest,
+                _ => throw new ArgumentException("Given network type is not defined.")
+            };
+
+            using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
+            byte[] data = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed)).AppendToBeginning(ver);
+
+            return b58Encoder.EncodeWithCheckSum(data);
+        }
+
+
+        /// <summary>
+        /// Return the pay to witness public key hash address from the given <see cref="PublicKey"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="pubk">Public key to use</param>
+        /// <param name="witVer">Witness version to use</param>
+        /// <param name="useCompressed">
+        /// [Default value = true]
+        /// Indicates wheter to use compressed or compressed public key to generate the address
+        /// <para/> Note: using uncompressed public keys makes the output non-standard and can lead to money loss.
+        /// </param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public string GetP2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
+        {
+            if (pubk is null)
+                throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
+
+            string hrp = netType switch
+            {
+                NetworkType.MainNet => HrpMainNet,
+                NetworkType.TestNet => HrpTestNet,
+                NetworkType.RegTest => HrpRegTest,
+                _ => throw new ArgumentException($"Given network type is not defined."),
+            };
+
+            using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
+            byte[] hash160 = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed));
+
+            return b32Encoder.Encode(hash160, witVer, hrp);
+        }
+
+
+        /// <summary>
+        /// Checks if the given address string is of the given <see cref="PubkeyScriptType"/> type and returns the
+        /// decoded hash from the address.
+        /// </summary>
+        /// <param name="address">Address to check</param>
+        /// <param name="scrType">The public key script type to check against</param>
+        /// <param name="hash">The hash used in creation of this address</param>
+        /// <returns>True if the address is the same script type, otherwise false</returns>
+        public bool VerifyType(string address, PubkeyScriptType scrType, out byte[] hash)
+        {
+            hash = null;
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return false;
+            }
+            switch (scrType)
+            {
+                case PubkeyScriptType.P2PKH:
+                    if (!b58Encoder.IsValid(address))
+                    {
+                        return false;
+                    }
+                    byte[] decoded = b58Encoder.DecodeWithCheckSum(address);
+                    if (decoded[0] != P2pkhVerMainNet &&
+                        decoded[0] != P2pkhVerTestNet &&
+                        decoded[0] != P2pkhVerRegTest &&
+                        decoded.Length != 21)
+                    {
+                        return false;
+                    }
+                    hash = decoded.SubArray(1);
+                    return true;
+
+                case PubkeyScriptType.P2SH:
+                    if (!b58Encoder.IsValid(address))
+                    {
+                        return false;
+                    }
+                    decoded = b58Encoder.DecodeWithCheckSum(address);
+                    if (decoded[0] != P2shVerMainNet &&
+                        decoded[0] != P2shVerTestNet &&
+                        decoded[0] != P2shVerRegTest &&
+                        decoded.Length != 21)
+                    {
+                        return false;
+                    }
+                    hash = decoded.SubArray(1);
+                    return true;
+
+                case PubkeyScriptType.P2WPKH:
+                    if (!b32Encoder.IsValid(address))
+                    {
+                        return false;
+                    }
+                    decoded = b32Encoder.Decode(address, out byte witVer, out string hrp);
+                    if (witVer != 0 && decoded.Length != 20 &&
+                        hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest)
+                    {
+                        return false;
+                    }
+                    hash = decoded;
+                    return true;
+
+                case PubkeyScriptType.P2WSH:
+                    if (!b32Encoder.IsValid(address))
+                    {
+                        return false;
+                    }
+                    decoded = b32Encoder.Decode(address, out witVer, out hrp);
+                    if (witVer != 0 && decoded.Length != 32 &&
+                        hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest)
+                    {
+                        return false;
+                    }
+                    hash = decoded;
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }
