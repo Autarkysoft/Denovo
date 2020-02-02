@@ -165,12 +165,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             byte[] sBa = S.ToByteArray(isBigEndian: true);
 
             stream.Write(SequenceTag);
-            stream.Write(rBa.Length + sBa.Length + 4);
+            stream.Write((byte)(rBa.Length + sBa.Length + 4));
             stream.Write(IntegerTag);
-            stream.Write(rBa.Length);
+            stream.Write((byte)rBa.Length);
             stream.Write(rBa);
             stream.Write(IntegerTag);
-            stream.Write(sBa.Length);
+            stream.Write((byte)sBa.Length);
             stream.Write(sBa);
             stream.Write((byte)SigHash);
         }
