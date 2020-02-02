@@ -381,11 +381,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             }
             else
             {
-                int count = 0;
-                byte[] extraEntropy;
+                uint count = 1;
+                byte[] extraEntropy = new byte[32];
                 do
                 {
-                    extraEntropy = count.ToByteArray(false);
+                    extraEntropy[0] = (byte)count;
+                    extraEntropy[1] = (byte)(count >> 8);
+                    extraEntropy[2] = (byte)(count >> 16);
+                    extraEntropy[3] = (byte)(count >> 24);
                     count++;
                 } while (!TrySign(hash, key, kGen.GetK(hash, key, extraEntropy), true, true, out sig));
                 return sig;
