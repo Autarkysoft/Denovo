@@ -7,6 +7,10 @@ using System;
 
 namespace Autarkysoft.Bitcoin
 {
+    // TODO: this is not yet fast, needs more optimization using span or maybe unsafe. needs benchmarking too.
+    /// <summary>
+    /// A custom stream mainly used in <see cref="IDeserializable"/> objects.
+    /// </summary>
     public class FastStream
     {
         /// <summary>
@@ -33,6 +37,7 @@ namespace Autarkysoft.Bitcoin
 
 
         private const int Capacity = 100;
+        // Don't rename (used in test with reflection)
         private byte[] buffer;
         private int position;
 
@@ -41,7 +46,7 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// Returns the total size of the stream when converted to byte array.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Stream size</returns>
         public int GetSize() => position;
 
         /// <summary>
@@ -58,28 +63,38 @@ namespace Autarkysoft.Bitcoin
 
         private void CheckAndResize(int extraSize)
         {
-            if (position + extraSize > buffer.Length)
+            int finalPos = position + extraSize;
+            if (finalPos > buffer.Length)
             {
-                byte[] temp = extraSize < Capacity ?
-                            (new byte[buffer.Length + Capacity]) :
-                            (new byte[buffer.Length + extraSize + Capacity]);
+                int bytesToAdd = finalPos - buffer.Length;
+                byte[] temp = bytesToAdd < Capacity ?
+                              (new byte[buffer.Length + Capacity]) :
+                              (new byte[buffer.Length + bytesToAdd + Capacity]);
                 Buffer.BlockCopy(buffer, 0, temp, 0, buffer.Length);
                 buffer = temp;
             }
         }
 
-        public void Write(int i)
+        /// <summary>
+        /// Writes byte array representation of the given <see cref="int"/> to stream in little-endian order.
+        /// </summary>
+        /// <param name="val">32-bit signed integer</param>
+        public void Write(int val)
         {
             CheckAndResize(sizeof(int));
 
-            buffer[position] = (byte)i;
-            buffer[position + 1] = (byte)(i >> 8);
-            buffer[position + 2] = (byte)(i >> 16);
-            buffer[position + 3] = (byte)(i >> 24);
+            buffer[position] = (byte)val;
+            buffer[position + 1] = (byte)(val >> 8);
+            buffer[position + 2] = (byte)(val >> 16);
+            buffer[position + 3] = (byte)(val >> 24);
 
             position += sizeof(int);
         }
 
+        /// <summary>
+        /// Writes byte array representation of the given <see cref="long"/> to stream in little-endian order.
+        /// </summary>
+        /// <param name="val">64-bit signed integer</param>
         public void Write(long val)
         {
             CheckAndResize(sizeof(long));
@@ -87,15 +102,19 @@ namespace Autarkysoft.Bitcoin
             buffer[position] = (byte)val;
             buffer[position + 1] = (byte)(val >> 8);
             buffer[position + 2] = (byte)(val >> 16);
-            buffer[position + 4] = (byte)(val >> 24);
-            buffer[position + 5] = (byte)(val >> 32);
-            buffer[position + 6] = (byte)(val >> 40);
-            buffer[position + 7] = (byte)(val >> 48);
-            buffer[position + 8] = (byte)(val >> 56);
+            buffer[position + 3] = (byte)(val >> 24);
+            buffer[position + 4] = (byte)(val >> 32);
+            buffer[position + 5] = (byte)(val >> 40);
+            buffer[position + 6] = (byte)(val >> 48);
+            buffer[position + 7] = (byte)(val >> 56);
 
             position += sizeof(long);
         }
 
+        /// <summary>
+        /// Writes the given <see cref="byte"/> to stream.
+        /// </summary>
+        /// <param name="b">8-bit unsigned integer</param>
         public void Write(byte b)
         {
             CheckAndResize(sizeof(byte));
@@ -103,6 +122,10 @@ namespace Autarkysoft.Bitcoin
             position++;
         }
 
+        /// <summary>
+        /// Writes byte array representation of the given <see cref="ushort"/> to stream in little-endian order.
+        /// </summary>
+        /// <param name="val">16-bit usigned integer</param>
         public void Write(ushort val)
         {
             CheckAndResize(sizeof(ushort));
@@ -113,6 +136,10 @@ namespace Autarkysoft.Bitcoin
             position += sizeof(ushort);
         }
 
+        /// <summary>
+        /// Writes byte array representation of the given <see cref="uint"/> to stream in little-endian order.
+        /// </summary>
+        /// <param name="val">32-bit usigned integer</param>
         public void Write(uint val)
         {
             CheckAndResize(sizeof(uint));
@@ -125,6 +152,10 @@ namespace Autarkysoft.Bitcoin
             position += sizeof(uint);
         }
 
+        /// <summary>
+        /// Writes byte array representation of the given <see cref="ulong"/> to stream in little-endian order.
+        /// </summary>
+        /// <param name="val">64-bit usigned integer</param>
         public void Write(ulong val)
         {
             CheckAndResize(sizeof(ulong));
@@ -141,6 +172,10 @@ namespace Autarkysoft.Bitcoin
             position += sizeof(ulong);
         }
 
+        /// <summary>
+        /// Writes the given byte array to stream.
+        /// </summary>
+        /// <param name="data">The data to write</param>
         public void Write(byte[] data)
         {
             CheckAndResize(data.Length);
@@ -148,13 +183,24 @@ namespace Autarkysoft.Bitcoin
             position += data.Length;
         }
 
-        public void Write(byte[] data, int totalSize)
+        /// <summary>
+        /// Writes the given byte array to stream with zero pads to reach the specified length (<paramref name="sizeWithPad"/>).
+        /// <para/> eg. Write 1 byte=X with <paramref name="sizeWithPad"/>=1 => writes X
+        /// <para/> eg. Write 1 byte=X with <paramref name="sizeWithPad"/>=2 => writes X0
+        /// </summary>
+        /// <param name="data">The data to write</param>
+        /// <param name="sizeWithPad">The desired final length of the given data with padding (must be &#62;= data.Length)</param>
+        public void Write(byte[] data, int sizeWithPad)
         {
-            CheckAndResize(totalSize);
+            CheckAndResize(sizeWithPad);
             Buffer.BlockCopy(data, 0, buffer, position, data.Length);
-            position += totalSize;
+            position += sizeWithPad;
         }
 
+        /// <summary>
+        /// Writes data from the given stream to this stream.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
         public void Write(FastStream stream)
         {
             CheckAndResize(stream.GetSize());
@@ -162,6 +208,10 @@ namespace Autarkysoft.Bitcoin
         }
 
 
+        /// <summary>
+        /// Writes byte array representation of the given <see cref="ushort"/> to stream in big-endian order.
+        /// </summary>
+        /// <param name="val">16-bit usigned integer</param>
         public void WriteBigEndian(ushort val)
         {
             CheckAndResize(sizeof(ushort));
@@ -172,6 +222,10 @@ namespace Autarkysoft.Bitcoin
             position += sizeof(ushort);
         }
 
+        /// <summary>
+        /// Writes byte array representation of the given <see cref="uint"/> to stream in big-endian order.
+        /// </summary>
+        /// <param name="val">32-bit usigned integer</param>
         public void WriteBigEndian(uint val)
         {
             CheckAndResize(sizeof(uint));
