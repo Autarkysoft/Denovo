@@ -82,9 +82,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="stream">Stream to use</param>
         public void SerializeSigHashSingle(FastStream stream)
         {
-            // TODO: hardcode the following 5 bytes to do a 1 time write. (after writing tests)
-            stream.Write(-1L);
-            stream.Write((byte)0);
+            stream.Write(new byte[9] { 255, 255, 255, 255, 255, 255, 255, 255, 0 });
         }
 
 
@@ -116,6 +114,5 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             error = null;
             return true;
         }
-
     }
 }
