@@ -525,8 +525,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
 
 
-        // TODO: fill in XX below with the number assigned to Schnorr signature BIP (there isn't any today: 2020-01-18)
-
         /// <summary>
         /// Creates a signature using ECSDSA based on BIP-340.
         /// Return value indicates success.
