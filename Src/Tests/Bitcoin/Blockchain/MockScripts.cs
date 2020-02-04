@@ -147,4 +147,13 @@ namespace Tests.Bitcoin.Blockchain
 
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
     }
+
+
+    public class MockDeserializableSigScript : MockDeserializableScript, ISignatureScript
+    {
+        public MockDeserializableSigScript(int streamIndex, int bytesToRead, string errorToReturn = null)
+            : base(streamIndex, bytesToRead, errorToReturn)
+        {
+        }
+    }
 }
