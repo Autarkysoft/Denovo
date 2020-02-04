@@ -50,7 +50,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
         private readonly Sha256 hashFunc = new Sha256(true);
         private readonly Ripemd160Sha256 addrHashFunc = new Ripemd160Sha256();
-        private byte[] txBytes;
 
         private int _version;
         /// <inheritdoc/>
@@ -63,7 +62,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 if (value < 0)
                     throw new ArgumentOutOfRangeException(nameof(Version), "Version can not be negative.");
 
-                txBytes = null;
                 _version = value;
             }
         }
@@ -79,7 +77,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 if (value == null || value.Length == 0)
                     throw new ArgumentNullException(nameof(TxInList), "List of transaction inputs can not be null or empty.");
 
-                txBytes = null;
                 _tins = value;
             }
         }
@@ -95,7 +92,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 if (value == null || value.Length == 0)
                     throw new ArgumentNullException(nameof(TxOutList), "List of transaction outputs can not be null or empty.");
 
-                txBytes = null;
                 _tout = value;
             }
         }
@@ -105,11 +101,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         public IWitnessScript[] WitnessList
         {
             get => _witList;
-            set
-            {
-                txBytes = null;
-                _witList = value;
-            }
+            set => _witList = value;
         }
 
         private LockTime _lockTime;
@@ -117,11 +109,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         public LockTime LockTime
         {
             get => _lockTime;
-            set
-            {
-                txBytes = null;
-                _lockTime = value;
-            }
+            set => _lockTime = value;
         }
 
 
@@ -182,47 +170,40 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
-            if (txBytes is null)
+            stream.Write(Version);
+
+            bool hashWitness = !(WitnessList is null) && WitnessList.Length != 0;
+            if (hashWitness)
             {
-                stream.Write(Version);
-
-                bool hashWitness = !(WitnessList is null) && WitnessList.Length != 0;
-                if (hashWitness)
-                {
-                    // Add SegWit marker
-                    stream.Write(new byte[2] { 0x00, 0x01 });
-                }
-
-                CompactInt tinCount = new CompactInt(TxInList.Length);
-                tinCount.WriteToStream(stream);
-
-                foreach (var tin in TxInList)
-                {
-                    tin.Serialize(stream);
-                }
-
-                CompactInt toutCount = new CompactInt(TxOutList.Length);
-                toutCount.WriteToStream(stream);
-
-                foreach (var tout in TxOutList)
-                {
-                    tout.Serialize(stream);
-                }
-
-                if (hashWitness)
-                {
-                    foreach (var wit in WitnessList)
-                    {
-                        wit.Serialize(stream);
-                    }
-                }
-
-                LockTime.WriteToStream(stream);
+                // Add SegWit marker
+                stream.Write(new byte[2] { 0x00, 0x01 });
             }
-            else
+
+            CompactInt tinCount = new CompactInt(TxInList.Length);
+            tinCount.WriteToStream(stream);
+
+            foreach (var tin in TxInList)
             {
-                stream.Write(txBytes);
+                tin.Serialize(stream);
             }
+
+            CompactInt toutCount = new CompactInt(TxOutList.Length);
+            toutCount.WriteToStream(stream);
+
+            foreach (var tout in TxOutList)
+            {
+                tout.Serialize(stream);
+            }
+
+            if (hashWitness)
+            {
+                foreach (var wit in WitnessList)
+                {
+                    wit.Serialize(stream);
+                }
+            }
+
+            LockTime.WriteToStream(stream);
         }
 
         /// <summary>
@@ -231,16 +212,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <returns>An array of bytes.</returns>
         public byte[] Serialize()
         {
-            if (txBytes is null)
-            {
-                FastStream stream = new FastStream();
-                Serialize(stream);
-                return stream.ToByteArray();
-            }
-            else
-            {
-                return txBytes;
-            }
+            FastStream stream = new FastStream();
+            Serialize(stream);
+            return stream.ToByteArray();
         }
 
 
@@ -534,7 +508,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (prevTx.TxOutList[TxInList[index].Index].PubScript.GetPublicScriptType() != PubkeyScriptType.P2SH)
                 throw new ArgumentException();
 
-
             RedeemScriptType scrType = redeem.GetRedeemScriptType();
 
             switch (scrType)
@@ -672,8 +645,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             {
                 return false;
             }
-
-            txBytes = stream.GetReadBytes(start);
 
             error = null;
             return true;
