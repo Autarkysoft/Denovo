@@ -48,6 +48,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
 
+        private const int MaxTxSize = 4_000_000;
         private readonly Sha256 hashFunc = new Sha256(true);
         private readonly Ripemd160Sha256 addrHashFunc = new Ripemd160Sha256();
 
@@ -96,13 +97,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
         }
 
-        IWitnessScript[] _witList = new WitnessScript[1];
         /// <inheritdoc/>
-        public IWitnessScript[] WitnessList
-        {
-            get => _witList;
-            set => _witList = value;
-        }
+        public IWitnessScript[] WitnessList { get; set; }
 
         private LockTime _lockTime;
         /// <inheritdoc/>
@@ -113,39 +109,36 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
 
+        /// <summary>
+        /// Total transaction size in bytes
+        /// </summary>
+        public int TotalSize => ToByteArray().Length;
 
+        /// <summary>
+        /// Transaction size without witness
+        /// </summary>
+        public int BaseSize => ToByteArrayWithoutWitness().Length;
 
+        /// <summary>
+        /// Transaction weight (ie. 3x <see cref="BaseSize"/> + <see cref="TotalSize"/>)
+        /// </summary>
+        public int Weight => (BaseSize * 3) + TotalSize;
 
-        public int GetTotalSize()
-        {
-            return Serialize().Length;
-        }
-        public int GetBaseSize()
-        {
-            return SerializeWithoutWitness().Length;
-        }
-        public int GetWeight()
-        {
-            return (GetBaseSize() * 3) + GetTotalSize();
-        }
-        public int GetVirtualSize()
-        {
-            return GetWeight() / 4;
-        }
+        /// <summary>
+        /// Virtual transaction size (ie. 1/4 * <see cref="Weight"/>)
+        /// </summary>
+        public int VirtualSize => Weight / 4;
 
 
         /// <inheritdoc/>
         public byte[] GetTransactionHash()
         {
             // Tx hash is always stripping witness
-            byte[] bytesToHash = SerializeWithoutWitness();
+            byte[] bytesToHash = ToByteArrayWithoutWitness();
             return hashFunc.ComputeHash(bytesToHash);
         }
 
-        /// <summary>
-        /// Returns transaction ID of this instance encoded using base-16 encoding.
-        /// </summary>
-        /// <returns>Base-16 encoded transaction ID</returns>
+        /// <inheritdoc/>
         public string GetTransactionId()
         {
             // TODO: verify if transaction is signed then give TX ID. an unsigned tx doesn't have a TX ID.
@@ -154,14 +147,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             return Base16.Encode(hashRes);
         }
 
-        /// <summary>
-        /// Returns witness transaction ID of this instance encoded using base-16 encoding.
-        /// </summary>
-        /// <returns>Base-16 encoded transaction ID</returns>
+        /// <inheritdoc/>
         public string GetWitnessTransactionId()
         {
             // TODO: same as above (verify if signed)
-            byte[] hashRes = hashFunc.ComputeHash(Serialize());
+            byte[] hashRes = hashFunc.ComputeHash(ToByteArray());
             Array.Reverse(hashRes);
             return Base16.Encode(hashRes);
         }
@@ -172,8 +162,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         {
             stream.Write(Version);
 
-            bool hashWitness = !(WitnessList is null) && WitnessList.Length != 0;
-            if (hashWitness)
+            bool hasWitness = !(WitnessList is null) && WitnessList.Length != 0;
+            if (hasWitness)
             {
                 // Add SegWit marker
                 stream.Write(new byte[2] { 0x00, 0x01 });
@@ -195,7 +185,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 tout.Serialize(stream);
             }
 
-            if (hashWitness)
+            if (hasWitness)
             {
                 foreach (var wit in WitnessList)
                 {
@@ -209,15 +199,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <summary>
         /// Converts this instance into its byte array representation.
         /// </summary>
-        /// <returns>An array of bytes.</returns>
-        public byte[] Serialize()
+        /// <returns>An array of bytes</returns>
+        public byte[] ToByteArray()
         {
             FastStream stream = new FastStream();
             Serialize(stream);
             return stream.ToByteArray();
         }
 
-
+        /// <summary>
+        /// Converts this transaction to its byte array representation skipping witness flag and any witnesses that may be
+        /// present and writes the result to the given stream.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
         public void SerializeWithoutWitness(FastStream stream)
         {
             stream.Write(Version);
@@ -241,7 +235,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             LockTime.WriteToStream(stream);
         }
 
-        public byte[] SerializeWithoutWitness()
+        /// <summary>
+        /// Converts this instance into its byte array representation while skipping witnesses.
+        /// </summary>
+        /// <returns>An array of bytes</returns>
+        public byte[] ToByteArrayWithoutWitness()
         {
             FastStream stream = new FastStream();
             SerializeWithoutWitness(stream);
@@ -249,7 +247,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
 
-        public byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht)
+        /// <summary>
+        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
+        /// used in signing operations. Return result is the hash result.
+        /// </summary>
+        /// <param name="scr">
+        /// The locking script (<see cref="PubkeyScript"/> or <see cref="RedeemScript"/>) to be used in serialization.
+        /// </param>
+        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="sht">Signature hash type</param>
+        /// <returns>32 byte hash</returns>
+        private byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht)
         {
             // TODO: change this into Sha256 itself with stream methods inside
             FastStream stream = new FastStream();
@@ -297,9 +305,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 }
             }
 
-#pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
+            // The switch expression does not handle all possible values of its input type (it is not exhaustive).
+#pragma warning disable CS8509 
             CompactInt toutCount = sht switch
-#pragma warning restore CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
+#pragma warning restore CS8509
             {
                 SigHashType.All => new CompactInt((ulong)TxOutList.Length),
                 SigHashType.None => new CompactInt(),
@@ -337,7 +346,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
 
-        // TODO: checking amounts to be valid should be done by the caller of GetBytesToSign
+        /// <exception cref="ArgumentException"/>
         private void CheckSht(SigHashType sht)
         {
             if ((sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay)
@@ -441,18 +450,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
 
-        public void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int index)
+        /// <inheritdoc/>
+        public void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex)
         {
-            PubkeyScriptType scrType = prevTx.TxOutList[TxInList[index].Index].PubScript.GetPublicScriptType();
+            PubkeyScriptType scrType = prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType();
             switch (scrType)
             {
                 // TODO: add methods to interface to void casting
                 case PubkeyScriptType.P2PK:
-                    ((SignatureScript)TxInList[index].SigScript).SetToP2PK(sig);
+                    ((SignatureScript)TxInList[inputIndex].SigScript).SetToP2PK(sig);
                     break;
 
                 case PubkeyScriptType.P2PKH:
-                    byte[] expHash160 = ((PushDataOp)prevTx.TxOutList[TxInList[index].Index].PubScript.OperationList[2]).data;
+                    byte[] expHash160 = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[2]).data;
                     byte[] actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
                     bool compressed = true;
                     if (!((ReadOnlySpan<byte>)actualHash160).SequenceEqual(expHash160))
@@ -468,21 +478,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         }
                     }
 
-                    ((SignatureScript)TxInList[index].SigScript).SetToP2PKH(sig, pubKey, compressed);
+                    ((SignatureScript)TxInList[inputIndex].SigScript).SetToP2PKH(sig, pubKey, compressed);
                     break;
 
                 case PubkeyScriptType.P2SH:
                     throw new Exception("Not defined!");
 
                 case PubkeyScriptType.P2WPKH:
-                    byte[] expHash160_2 = ((PushDataOp)prevTx.TxOutList[TxInList[index].Index].PubScript.OperationList[1]).data;
+                    byte[] expHash160_2 = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
                     byte[] actualHash160_2 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true)); // pubkey is always compressed
                     if (!((ReadOnlySpan<byte>)actualHash160_2).SequenceEqual(expHash160_2))
                     {
                         throw new ArgumentException("Public key is invalid.");
                     }
                     // P2WPKH SignatureScript is always empty
-                    TxInList[index].SigScript = new SignatureScript();
+                    TxInList[inputIndex].SigScript = new SignatureScript();
 
                     // only initialize witness list once
                     if (WitnessList == null || WitnessList.Length == 0)
@@ -494,7 +504,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         }
                     }
 
-                    ((WitnessScript)WitnessList[index]).SetToP2WPKH(sig, pubKey);
+                    ((WitnessScript)WitnessList[inputIndex]).SetToP2WPKH(sig, pubKey);
 
                     break;
 
@@ -503,6 +513,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
         }
 
+        /// <inheritdoc/>
         public void WriteScriptSig(Signature sig, PublicKey pubKey, RedeemScript redeem, ITransaction prevTx, int index)
         {
             if (prevTx.TxOutList[TxInList[index].Index].PubScript.GetPublicScriptType() != PubkeyScriptType.P2SH)
@@ -643,6 +654,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             if (!LockTime.TryRead(stream, out _lockTime, out error))
             {
+                return false;
+            }
+
+            int end = stream.GetCurrentIndex();
+
+            if (end - start > MaxTxSize)
+            {
+                error = "Transaction length is too big.";
                 return false;
             }
 

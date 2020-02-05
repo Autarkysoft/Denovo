@@ -318,7 +318,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             // such as correct txout being spent.
             Signature sig = calc.Sign(tx.GetBytesToSign(txToSpend, index, sht), keyBytes);
             sig.SigHash = sht;
-            //tx.WriteScriptSig(sig, pubKey, txToSpend, index);
+            tx.WriteScriptSig(sig, ToPublicKey(), txToSpend, index);
         }
 
 

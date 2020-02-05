@@ -5,13 +5,14 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
     /// <summary>
     /// Defines methods that a transaction class implements. Inherits from <see cref="IDeserializable"/>.
     /// </summary>
-    public interface ITransaction: IDeserializable
+    public interface ITransaction : IDeserializable
     {
         /// <summary>
         /// Transaction version. Currently only versions 1 and 2 are defined.
@@ -48,6 +49,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         byte[] GetTransactionHash();
 
         /// <summary>
+        /// Returns transaction ID of this instance encoded using base-16 encoding.
+        /// </summary>
+        /// <returns>Base-16 encoded transaction ID</returns>
+        string GetTransactionId();
+
+        /// <summary>
+        /// Returns witness transaction ID of this instance encoded using base-16 encoding.
+        /// </summary>
+        /// <returns>Base-16 encoded transaction ID</returns>
+        string GetWitnessTransactionId();
+
+        /// <summary>
         /// Returns the hash result that needs to be signed with the private key.
         /// </summary>
         /// <remarks>
@@ -69,5 +82,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="redeemScript">Redeem script</param>
         /// <returns>Byte array to use for signin</returns>
         byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeemScript);
+
+        /// <summary>
+        /// Sets the <see cref="SignatureScript"/> of the <see cref="TxIn"/> at the given <paramref name="inputIndex"/> 
+        /// to the given <see cref="Signature"/>.
+        /// </summary>
+        /// <param name="sig">Signature</param>
+        /// <param name="pubKey">Public key</param>
+        /// <param name="prevTx">The transaction being spent</param>
+        /// <param name="inputIndex">Index of the input in <see cref="TxInList"/> that was signed</param>
+        void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex);
     }
 }
