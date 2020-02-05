@@ -23,6 +23,7 @@
     <None Remove="TestData\Ripemd160ProgressiveTestData.json" />
     <None Remove="TestData\Sha256NistTestData.json" />
     <None Remove="TestData\Sha512NistTestData.json" />
+    <None Remove="TestData\SignedTxTestData.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +37,7 @@
     <EmbeddedResource Include="TestData\Ripemd160ProgressiveTestData.json" />
     <EmbeddedResource Include="TestData\Sha256NistTestData.json" />
     <EmbeddedResource Include="TestData\Sha512NistTestData.json" />
+    <EmbeddedResource Include="TestData\SignedTxTestData.json" />
   </ItemGroup>
 
   <ItemGroup>
