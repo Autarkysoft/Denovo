@@ -224,6 +224,109 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             }
         }
 
+
+        /// <summary>
+        /// Computes double SHA-256 hash of a 64 byte[] block inside <paramref name="src"/> and writes the result 
+        /// to the given <paramref name="dst"/>. Useful for computing merkle roots.
+        /// </summary>
+        /// <param name="src">Pointer to start of a byte array with at least 64 items as the source</param>
+        /// <param name="dst">Pointer to start of a byte array with at least 32 items for result</param>
+        /// <param name="hPt">Hash state pointer</param>
+        /// <param name="wPt">Working vector pointer</param>
+        internal unsafe void Compress64Double(byte* src, byte* dst, uint* hPt, uint* wPt)
+        {
+            // TODO: maybe turn byte* to uint* to directly act as the working vector to skip extra byte to uint conversions
+
+            // There are 3 block compressions here: 1st 64 byte data, 2nd 64 byte padding and 3rd second hash
+            // Round 1, block 1
+            Init(hPt);
+            int dIndex = 0;
+            for (int i = 0; i < 16; i++, dIndex += 4)
+            {
+                wPt[i] = (uint)((src[dIndex] << 24) | (src[dIndex + 1] << 16) | (src[dIndex + 2] << 8) | src[dIndex + 3]);
+            }
+            CompressBlock(hPt, wPt);
+
+            // Round 1, block 2
+            wPt[0] = 2147483648;
+            wPt[1] = 0;
+            wPt[2] = 0;
+            wPt[3] = 0;
+            wPt[4] = 0;
+            wPt[5] = 0;
+            wPt[6] = 0;
+            wPt[7] = 0;
+            wPt[8] = 0;
+            wPt[9] = 0;
+            wPt[10] = 0;
+            wPt[11] = 0;
+            wPt[12] = 0;
+            wPt[13] = 0;
+            wPt[14] = 0;
+            wPt[15] = 512;
+            wPt[16] = 2147483648;
+            wPt[17] = 20971520;
+            wPt[18] = 2117632;
+            wPt[19] = 20616;
+            wPt[20] = 570427392;
+            wPt[21] = 575995924;
+            wPt[22] = 84449090;
+            wPt[23] = 2684354592;
+            wPt[24] = 1518862336;
+            wPt[25] = 6067200;
+            wPt[26] = 1496221;
+            wPt[27] = 4202700544;
+            wPt[28] = 3543279056;
+            wPt[29] = 291985753;
+            wPt[30] = 4142317530;
+            wPt[31] = 3003913545;
+            wPt[32] = 145928272;
+            wPt[33] = 2642168871;
+            wPt[34] = 216179603;
+            wPt[35] = 2296832490;
+            wPt[36] = 2771075893;
+            wPt[37] = 1738633033;
+            wPt[38] = 3610378607;
+            wPt[39] = 1324035729;
+            wPt[40] = 1572820453;
+            wPt[41] = 2397971253;
+            wPt[42] = 3803995842;
+            wPt[43] = 2822718356;
+            wPt[44] = 1168996599;
+            wPt[45] = 921948365;
+            wPt[46] = 3650881000;
+            wPt[47] = 2958106055;
+            wPt[48] = 1773959876;
+            wPt[49] = 3172022107;
+            wPt[50] = 3820646885;
+            wPt[51] = 991993842;
+            wPt[52] = 419360279;
+            wPt[53] = 3797604839;
+            wPt[54] = 322392134;
+            wPt[55] = 85264541;
+            wPt[56] = 1326255876;
+            wPt[57] = 640108622;
+            wPt[58] = 822159570;
+            wPt[59] = 3328750644;
+            wPt[60] = 1107837388;
+            wPt[61] = 1657999800;
+            wPt[62] = 3852183409;
+            wPt[63] = 2242356356;
+            CompressBlock(hPt, wPt);
+
+            // Round 2, block 3
+            DoSecondHash(hPt, wPt);
+
+            // Write result
+            for (int i = 0, j = 0; i < 32; i += 4, j++)
+            {
+                dst[i] = (byte)(hPt[j] >> 24);
+                dst[i + 1] = (byte)(hPt[j] >> 16);
+                dst[i + 2] = (byte)(hPt[j] >> 8);
+                dst[i + 3] = (byte)hPt[j];
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal virtual unsafe void DoSecondHash(uint* hPt, uint* wPt)
         {
