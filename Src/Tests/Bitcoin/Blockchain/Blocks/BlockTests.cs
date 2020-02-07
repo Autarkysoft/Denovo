@@ -1,0 +1,143 @@
+﻿// Autarkysoft Tests
+// Copyright (c) 2020 Autarkysoft
+// Distributed under the MIT software license, see the accompanying
+// file LICENCE or http://www.opensource.org/licenses/mit-license.php.
+
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using System.Collections.Generic;
+using Xunit;
+
+namespace Tests.Bitcoin.Blockchain.Blocks
+{
+    public class BlockTests
+    {
+        public static IEnumerable<object[]> GetMerkleCases()
+        {
+            yield return new object[]
+            {
+                 new ITransaction[1] // block #1
+                 {
+                     // MockTx reverses the tx id (hex) to return the correct hash
+                     new MockTx("0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098")
+                 },
+                 // Merkle root copied from block explorers is in reverse order and needs to be corrected
+                 Helper.HexToBytes("0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[2] // block #170
+                {
+                    new MockTx("b1fea52486ce0c62bb442b530a3f0132b826c74e473d1f2c220bfa78111c5082"),
+                    new MockTx("f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16")
+                },
+                Helper.HexToBytes("7dac2c5666815c17a3b36427de37bb9d2e2c5ccec3f8633eb91a4205cb4c10ff", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[3] // block #586  3(->4) => 2 => 1
+                {
+                    new MockTx("d45724bacd1480b0c94d363ebf59f844fb54e60cdfda0cd38ef67154e9d0bc43"),
+                    new MockTx("4d6edbeb62735d45ff1565385a8b0045f066055c9425e21540ea7a8060f08bf2"),
+                    new MockTx("6bf363548b08aa8761e278be802a2d84b8e40daefe8150f9af7dd7b65a0de49f")
+                },
+                Helper.HexToBytes("197b3d968ce463aa5da7d8eeba8af35eba80ded4e4fe6808e6cc0dd1c069594d", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[4] // block #546  4 => 2 => 1
+                {
+                    new MockTx("e980fe9f792d014e73b95203dc1335c5f9ce19ac537a419e6df5b47aecb93b70"),
+                    new MockTx("28204cad1d7fc1d199e8ef4fa22f182de6258a3eaafe1bbe56ebdcacd3069a5f"),
+                    new MockTx("6b0f8a73a56c04b519f1883e8aafda643ba61a30bd1439969df21bea5f4e27e2"),
+                    new MockTx("3c1d7e82342158e4109df2e0b6348b6e84e403d8b4046d7007663ace63cddb23")
+                },
+                Helper.HexToBytes("e10a7f8442ea6cc6803a2b83713765c0b1199924110205f601f90fef125e7dfe", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[5] // block #26816  5(->6) => 3(->4) => 2 => 1
+                {
+                    new MockTx("0ef1e30857aaae86e317c993bb14f2e73bfbe7a86292f63b320550a2b3d10b0f"),
+                    new MockTx("c6dbae4c8ca97a746030b390441cdfc750218a20b07d29b56f07b157cdc0bbd3"),
+                    new MockTx("b34d15d7b7e6c2a4333fe13f354de1d715b7d8d00ec86b4cf0f8d24bfa71a2e1"),
+                    new MockTx("a40d0843b9868a26792e952851a082442eace99f2c384f0ed6ca991612fd2f60"),
+                    new MockTx("0b8f2d77c16afaa08435d71cd31467e62011cc39fe1d1318959bc74f1ad5b064"),
+                },
+                Helper.HexToBytes("4ca93df2e469f6b5eadf3cb41fda4959563a791e4a20fc65fe29272d73a01bbd", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[6] // block #2812  6 => 3(->4) => 2 => 1
+                {
+                    new MockTx("73c145f4a4ad7375a6fd0c2aa2de5ff2776033151f1a077bfa2ae893b0f4fa7b"),
+                    new MockTx("00e45be5b605fdb2106afa4cef5992ee6d4e3724de5dc8b13e729a3fc3ad4b94"),
+                    new MockTx("74c1a6dd6e88f73035143f8fc7420b5c395d28300a70bb35b943f7f2eddc656d"),
+                    new MockTx("131f68261e28a80c3300b048c4c51f3ca4745653ba7ad6b20cc9188322818f25"),
+                    new MockTx("a64be218809b61ac67ddc7f6c7f9fbebfe420cf75fe0318ebc727f060df48b37"),
+                    new MockTx("8f5db6d157f79f2649719d5c3ff12eb5502edf098dbfb69d6ce58363e6ff293f"),
+                },
+                Helper.HexToBytes("289a86c44c4698fd8f181929dc2dd3c25820c959eab28980b27bb3cf8fcacb65", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[7] // block #49820  7(->8) => 4 => 2 => 1
+                {
+                    new MockTx("d52ef09a696544f062bf8ea68d8ffb3b3aa6aaf5c7017271334b05509f5c624b"),
+                    new MockTx("380e2b238302f6e91779b5f2dd1173fa6142e67f605155a3264cf3612396a63c"),
+                    new MockTx("49d7e47db44fa3fd650e411bcc0fe197fcbecb2c44e0414909d1598f491dd15e"),
+                    new MockTx("995580f9f29a2c015cb2e4e3b9477011ea187c5952eb7f9d9a41b5d6ae4e0667"),
+                    new MockTx("c059911a80d2b52780920e22faf11bad30ba1fff808cce6bc750a71d135109dc"),
+                    new MockTx("026e5a5d362cb4ea40c73e38d7512bce9742b13ab9dd78b4654607f1723e62e1"),
+                    new MockTx("447c8d3c215deedbdb4c1f95fa5c44d71fb5f7c82ed9b7550a9a021b86c463e6"),
+                },
+                Helper.HexToBytes("c986ddbf9bef586077a95ac9a92446e92769502c555f1e21bba536d4734ca4a8", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[8] // block #53066  8 => 4 => 2 => 1
+                {
+                    new MockTx("e0598db6abb41bf57ee0019c23520121565d2217eb9ae91d2114199fec5ac41d"),
+                    new MockTx("1001d10ddf64509c1548125ca3120f32355e8af588fe6724aa5dc033e699a617"),
+                    new MockTx("3cd17728f2e9152cc908976701a28e910838a86fe5b745af74bd5b373aff6e1d"),
+                    new MockTx("7d8514357058d8b1a08d51bbca54329b7dbafc5c2e792f99c38e67297fda2c28"),
+                    new MockTx("32a83b09394f17131074360c6628147bfb3eaf0f57000bc416da7bce140c74dd"),
+                    new MockTx("4e3a183b09d35e5adeed6d12c880b46486db3f25869c939269770268a7bd5298"),
+                    new MockTx("8fb3751403381c11979f8b0d9fac7b121ad49561c6a07645e58da7d5ab5bf8f8"),
+                    new MockTx("c429d280b4f74e016c358d8bb3a909889ee23b058c26767f14384d9ff8d9b8f4"),
+                },
+                Helper.HexToBytes("271eafea9cfeb730c6fae8c39da387b37967646d26224a10878e04f3f6212fbe", true)
+            };
+            yield return new object[]
+            {
+                new ITransaction[11] // block #57286  11(->12) => 6 => 3(->4) => 2 => 1
+                {
+                    new MockTx("e17e4987fb4565e496c4751d44f52aca00eed2387379669f039bf04ae174048b"),
+                    new MockTx("03a5497d96f8f39cdac8761e7bfa21049816378c6bdf331921c607093ec8474b"),
+                    new MockTx("2c43eebedbd5529b4c9496f08d31d5d22aa7b061aa5efa6d45f1d8efe611150d"),
+                    new MockTx("3d2a352ca353760d2d8fc2b10e9944789f1ea0ea2a8ca340fe7a426c1f5008cb"),
+                    new MockTx("4a225d19c0bf7ed70433a8c9acfb239e160414e1ed0c6733c051111f624dd78b"),
+                    new MockTx("6227326e6c5035ad1bc5c61c78c27223bfe5694c797bd974cf296e509162777f"),
+                    new MockTx("9bf4cc2687cb85712e964f23bc48b8a90ede1b1a985e35ee7601af137631c3a2"),
+                    new MockTx("b0c940c008ff0ee11c1babea4d92da387b563fdbb2b15a5f693567b44575dc36"),
+                    new MockTx("b6eee3a4f98271224e205fcf56a76fc55bfffcabe1b0121348cbc038601338e2"),
+                    new MockTx("b7d9686a8310881505e6853d13c4ae31dd52c925e729d3b4975120436e6ca56e"),
+                    new MockTx("f651523681ff86796635cb0671bf01a5f35c41b1804d3f6cce903257bb41768e"),
+                },
+                Helper.HexToBytes("23d97ad1b6e828398aff13122e312883c47986e8c8a9d1f4042876fa2e9e1fe4", true)
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetMerkleCases))]
+        public void ComputeMerkleRootTest(ITransaction[] txs, byte[] expected)
+        {
+            Block block = new Block()
+            {
+                TransactionList = txs
+            };
+
+            byte[] actual = block.ComputeMerkleRoot();
+            Assert.Equal(expected, actual);
+        }
+    }
+}
