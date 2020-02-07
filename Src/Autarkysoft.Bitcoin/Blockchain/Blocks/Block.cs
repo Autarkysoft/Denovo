@@ -193,9 +193,67 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// Returns merkle root of this block using the list of transactions.
         /// </summary>
         /// <returns>Merkle root</returns>
-        public byte[] GetMerkleRoot()
+        public unsafe byte[] ComputeMerkleRoot()
         {
-            throw new NotImplementedException();
+            if (TransactionList.Length == 1)
+            {
+                // Only has Coinbase transaction
+                return TransactionList[0].GetTransactionHash();
+            }
+            else
+            {
+                // To compute merkle root all transaction hashes are placed inside a big buffer, buffer is padded
+                // by repeating the last hash if needed to be divisible into groups of 2.
+                // Then hash of each group is computed and copied into the same buffer from the start.
+                // The process ends when there is only 1 hash remaining.
+                using Sha256 sha = new Sha256();
+                bool needDup = TransactionList.Length % 2 != 0;
+                byte[] buffer = new byte[(needDup ? TransactionList.Length + 1 : TransactionList.Length) * 32];
+                int hashCount = buffer.Length / 32;
+                int offset = 0;
+                foreach (var tx in TransactionList)
+                {
+                    Buffer.BlockCopy(tx.GetTransactionHash(), 0, buffer, offset, 32);
+                    offset += 32;
+                }
+                if (needDup)
+                {
+                    Buffer.BlockCopy(TransactionList[^1].GetTransactionHash(), 0, buffer, offset, 32);
+                }
+
+                fixed (uint* hPt = &sha.hashState[0], wPt = &sha.w[0])
+                fixed (byte* bufPt = &buffer[0])
+                {
+                    while (hashCount > 1)
+                    {
+                        byte* src = bufPt;
+                        byte* dst = bufPt;
+                        for (int i = 0; i < hashCount / 2; i++)
+                        {
+                            // Since each "data" being hashed is fixed 64 byte, an optimized SHA256 method is called
+                            // to compute SHA256(SHA256(64-byte-data))
+                            sha.Compress64Double(src, dst, hPt, wPt);
+                            src += 64;
+                            dst += 32;
+                        }
+                        hashCount /= 2;
+                        if (hashCount == 1)
+                        {
+                            break;
+                        }
+                        needDup = hashCount % 2 != 0;
+                        if (needDup)
+                        {
+                            Buffer.MemoryCopy(dst - 32, dst, buffer.Length, 32);
+                            hashCount++;
+                        }
+                    }
+                }
+
+                byte[] result = new byte[32];
+                Buffer.BlockCopy(buffer, 0, result, 0, 32);
+                return result;
+            }
         }
 
 
@@ -337,6 +395,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                     return false;
                 }
                 TransactionList[i] = temp;
+            }
+
+            ReadOnlySpan<byte> actualMerkle = ComputeMerkleRoot();
+            if (!actualMerkle.SequenceEqual(MerkleRootHash))
+            {
+                error = "Invalid merkle root.";
+                return false;
             }
 
             error = null;
