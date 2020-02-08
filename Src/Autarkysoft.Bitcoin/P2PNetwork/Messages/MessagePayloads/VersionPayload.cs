@@ -3,17 +3,59 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Encoders;
+using Autarkysoft.Bitcoin.ImprovementProposals;
 using System;
 using System.Text;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
+    /// <summary>
+    /// Payload used to provide information about the node. It is used at the start in handshake process.
+    /// </summary>
     public class VersionPayload : PayloadBase
     {
+        /// <summary>
+        /// Initializes an empty instance of <see cref="VersionPayload"/>.
+        /// </summary>
+        public VersionPayload()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="VersionPayload"/> with the given parameters and sets the rest to
+        /// default values.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="protoVer">Protocol version</param>
+        /// <param name="servs">Services supported by this node</param>
+        /// <param name="height">Highest block height that this node has</param>
+        /// <param name="relay">
+        /// Indicates whether <see cref="PayloadType.Inv"/> or <see cref="PayloadType.Tx"/> messages should be sent
+        /// to this node
+        /// </param>
+        public VersionPayload(int protoVer, NodeServiceFlags servs, int height, bool relay)
+        {
+            Version = protoVer;
+            Services = servs;
+            Timestamp = UnixTimeStamp.GetEpochNow();
+            ReceivingNodeNetworkAddress = new NetworkAddress();
+            TransmittingNodeNetworkAddress = new NetworkAddress()
+            {
+                NodeServices = Services
+            };
+            UserAgent = new BIP0014("Bitcoin.Net", new Version(0, 0, 0)).ToString();
+            StartHeight = height;
+            Relay = relay;
+        }
+
+
+
         private int _ver;
         /// <summary>
         /// Protocol version
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         public int Version
         {
             get => _ver;
@@ -56,19 +98,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             set => _nonce = value;
         }
 
+        private string _ua = string.Empty;
         /// <summary>
         /// User agent as defined by <see cref="ImprovementProposals.BIP0014"/> (Can be empty).
         /// </summary>
-        public string UserAgent { get; set; }
+        public string UserAgent
+        {
+            get => _ua;
+            set => _ua = (value is null) ? string.Empty : value;
+        }
 
         private int _sHeight;
         /// <summary>
-        /// The height of the transmitting node's best block chain.
+        /// The height of the transmitting node's best blockchain.
         /// </summary>
         public int StartHeight
         {
             get => _sHeight;
-            set => _sHeight = value;
+            set => _sHeight = (value < 0) ? 0 : value;
         }
 
         /// <summary>

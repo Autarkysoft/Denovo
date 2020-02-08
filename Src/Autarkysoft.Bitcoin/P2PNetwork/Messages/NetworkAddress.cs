@@ -33,6 +33,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
         private IPAddress _ip = IPAddress.Parse("127.0.0.1");
         /// <summary>
+        /// [Default value = 127.0.0.1]
         /// Node's IP address
         /// </summary>
         public IPAddress NodeIP
