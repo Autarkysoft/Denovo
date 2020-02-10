@@ -4,15 +4,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
         x:Class="Denovo.Views.MainWindow"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        Height="400" Width="600"
         Title="MainWindow">
 
   <Design.DataContext>
     <vm:MainWindowViewModel/>
   </Design.DataContext>
-  
-  <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-    <TextBlock Text="{Binding Risk}"/>
-    <TextBlock Text="{Binding Message}" Margin="20"/>
-  </StackPanel>
+
+  <Grid ColumnDefinitions="2*,1*">
+    <StackPanel Margin="5" Spacing="5">
+      <StackPanel Orientation="Horizontal" Spacing="5">
+        <TextBlock Text="IP:"/>
+        <TextBox Text="{Binding IpAddress}" Width="200"/>
+      </StackPanel>
+      <Button Content="Connect" Command="{Binding Connect}" Width="100" HorizontalAlignment="Left"/>
+
+      <TextBlock Text="{Binding Result}" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <StackPanel Orientation="Vertical" Spacing="5" Grid.Column="1">
+      <TextBlock Text="Warning" FontSize="16" FontWeight="Bold" Foreground="Red" HorizontalAlignment="Center"/>
+      <TextBlock Text="{Binding Risk}" TextWrapping="Wrap"/>
+    </StackPanel>
+  </Grid>
 </Window>
