@@ -5,6 +5,10 @@
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
+    /// <summary>
+    /// An empty message payload acknowledging that a <see cref="PayloadType.Version"/> message was accepted.
+    /// <para/> Sent: in response to <see cref="PayloadType.Version"/>
+    /// </summary>
     public class VerackPayload : EmptyPayloadBase
     {
         /// <inheritdoc/>

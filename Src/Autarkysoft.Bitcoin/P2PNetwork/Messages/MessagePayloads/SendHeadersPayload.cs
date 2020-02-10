@@ -5,6 +5,10 @@
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
+    /// <summary>
+    /// An empty message payload telling the other node to send block headers when sending new blocks
+    /// <para/> Sent: unsolicited
+    /// </summary>
     public class SendHeadersPayload : EmptyPayloadBase
     {
         /// <inheritdoc/>
