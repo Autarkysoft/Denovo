@@ -65,7 +65,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             Message msg = new Message(NetworkType.MainNet);
             if (msg.TryDeserializeHeader(stream, out _))
             {
-                if (msg.payloadSize + HeaderLength >= len)
+                if (msg.payloadSize + HeaderLength <= len)
                 {
                     if (msg.Payload.TryDeserialize(stream, out _))
                     {
@@ -189,7 +189,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             Message ver = new Message(NetworkType.MainNet)
             {
-                Payload = new VersionPayload()
+                Payload = new VersionPayload(70015, NodeServiceFlags.All, 0, false)
             };
 
             FastStream stream = new FastStream();
@@ -202,6 +202,5 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             SetSendBuffer(srEventArgs);
         }
-
     }
 }

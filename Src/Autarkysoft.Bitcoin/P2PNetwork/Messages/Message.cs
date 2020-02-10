@@ -24,7 +24,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <param name="netType">Network type</param>
         public Message(NetworkType netType)
         {
-            networkMagic = netType switch
+            Magic = netType switch
             {
                 NetworkType.MainNet => new byte[] { 0xf9, 0xbe, 0xb4, 0xd9 },
                 NetworkType.TestNet => new byte[] { 0x0b, 0x11, 0x09, 0x07 },
@@ -47,8 +47,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         }
 
 
-
-        private readonly byte[] networkMagic;
 
         /// <summary>
         /// 4 magic + 12 command + 4 payloadSize + 4 checksum + 0 empty payload
@@ -178,18 +176,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
-            if (!stream.TryReadByteArray(4, out _magic))
+            if (!stream.TryReadByteArray(4, out byte[] actualMagic))
             {
                 error = Err.EndOfStream;
                 return false;
             }
 
-            if (!((Span<byte>)Magic).SequenceEqual(networkMagic))
+            // Magic is set in constructor based on network type and should be checked here (instead of setting it)
+            if (!((Span<byte>)actualMagic).SequenceEqual(Magic))
             {
-                error = "Invalid network magic.";
+                error = "Invalid message magic.";
                 return false;
             }
-
+            
             if (!stream.TryReadByteArray(CommandNameSize, out byte[] cmd))
             {
                 error = Err.EndOfStream;
