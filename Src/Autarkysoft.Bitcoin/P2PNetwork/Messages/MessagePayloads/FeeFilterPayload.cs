@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
+
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     /// <summary>
@@ -41,9 +43,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             set => _feeRate = value;
         }
 
-        /// <inheritdoc/>
-        public override PayloadType PayloadType =>  PayloadType.FeeFilter;
+        /// <summary>
+        /// Returns fee rate in satoshis per byte (rounds up)
+        /// </summary>
+        public ulong FeeRatePerByte => (ulong)MathF.Ceiling((float)FeeRate / 1000);
 
+        /// <inheritdoc/>
+        public override PayloadType PayloadType => PayloadType.FeeFilter;
 
 
         /// <inheritdoc/>
@@ -68,7 +74,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
 
             error = null;
-            return false;
+            return true;
         }
     }
 }
