@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Net;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 {
@@ -13,7 +14,27 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
     /// </summary>
     public class NetworkAddressWithTime : NetworkAddress
     {
-        internal new const int Size = NetworkAddress.Size + 4;
+        /// <summary>
+        /// Initializes an empty instance of <see cref="NetworkAddress"/>.
+        /// </summary>
+        public NetworkAddressWithTime() : base()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="NetworkAddress"/> using the given parameters.
+        /// </summary>
+        /// <param name="servs">Services that this node supports</param>
+        /// <param name="ip">IP address of this node</param>
+        /// <param name="port">Port (use <see cref="Constants"/> for default values)</param>
+        /// <param name="time">
+        /// Unix timestamp (Now if advertising own address, otherwise the same time received from the other node)
+        /// </param>
+        public NetworkAddressWithTime(NodeServiceFlags servs, IPAddress ip, ushort port, uint time) : base(servs, ip, port)
+        {
+            Time = time;
+        }
+
 
         private uint _time;
         /// <summary>
@@ -32,19 +53,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <summary>
         /// Sets the time value to current epoch time UTC.
         /// </summary>
-        public void SetTimeToNow()
-        {
-            Time = (uint)UnixTimeStamp.GetEpochUtcNow();
-        }
+        public void SetTimeToNow() => Time = (uint)UnixTimeStamp.GetEpochUtcNow();
 
         /// <summary>
         /// Returns <see cref="DateTime"/> representation of <see cref="Time"/>.
         /// </summary>
         /// <returns>DateTime</returns>
-        public DateTime GetDateTime()
-        {
-            return UnixTimeStamp.EpochToTime(Time);
-        }
+        public DateTime GetDateTime() => UnixTimeStamp.EpochToTime(Time);
 
 
         /// <inheritdoc/>
@@ -53,7 +68,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             stream.Write(Time);
             base.Serialize(stream);
         }
-
 
         /// <inheritdoc/>
         public override bool TryDeserialize(FastStreamReader stream, out string error)

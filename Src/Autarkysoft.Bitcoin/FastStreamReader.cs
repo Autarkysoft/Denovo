@@ -141,6 +141,21 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        public bool TryReadUInt16BigEndian(out ushort val)
+        {
+            if (Check(sizeof(ushort)))
+            {
+                val = (ushort)(data[position + 1] | (data[position] << 8));
+                position += sizeof(ushort);
+                return true;
+            }
+            else
+            {
+                val = 0;
+                return false;
+            }
+        }
+
         public bool TryReadUInt32(out uint val)
         {
             if (Check(sizeof(uint)))

@@ -33,5 +33,17 @@ namespace Autarkysoft.Bitcoin
         /// The constend string that concatinated to the beginning of a message before signing it.
         /// </summary>
         public const string MsgSignConst = "Bitcoin Signed Message:\n";
+        /// <summary>
+        /// Default main network port
+        /// </summary>
+        public const ushort MainNetPort = 8333;
+        /// <summary>
+        /// Default test network port
+        /// </summary>
+        public const ushort TestNetPort = 18333;
+        /// <summary>
+        /// Default regtest network port
+        /// </summary>
+        public const ushort RegTestPort = 18444;
     }
 }

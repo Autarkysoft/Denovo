@@ -14,35 +14,44 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
     /// </summary>
     public class NetworkAddress : IDeserializable
     {
-        private NodeServiceFlags _servs;
+        /// <summary>
+        /// Initializes an empty instance of <see cref="NetworkAddress"/>.
+        /// </summary>
+        public NetworkAddress()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="NetworkAddress"/> using the given parameters.
+        /// </summary>
+        /// <param name="servs">Services that this node supports</param>
+        /// <param name="ip">IP address of this node</param>
+        /// <param name="port">Port (use <see cref="Constants"/> for default values)</param>
+        public NetworkAddress(NodeServiceFlags servs, IPAddress ip, ushort port)
+        {
+            NodeServices = servs;
+            NodeIP = ip;
+            NodePort = port;
+        }
+
+
         /// <summary>
         /// The services that this node supports
         /// </summary>
-        /// <exception cref="ArgumentException"/>
-        public NodeServiceFlags NodeServices
-        {
-            get => _servs;
-            set
-            {
-                if ((value & NodeServiceFlags.All) != value)
-                    throw new ArgumentException("Invalid services flags");
+        public NodeServiceFlags NodeServices { get; set; }
 
-                _servs = value;
-            }
-        }
-
-        private IPAddress _ip = IPAddress.Parse("127.0.0.1");
+        private IPAddress _ip = IPAddress.Loopback;
         /// <summary>
-        /// [Default value = 127.0.0.1]
+        /// [Default value =  Loopback IP (127.0.0.1)]
         /// Node's IP address
         /// </summary>
         public IPAddress NodeIP
         {
             get => _ip;
-            set => _ip = (value is null) ? IPAddress.Parse("127.0.0.1") : value;
+            set => _ip = (value is null) ? IPAddress.Loopback : value;
         }
 
-        private ushort _port = 8333;
+        private ushort _port = Constants.MainNetPort;
         /// <summary>
         /// [Default value = MainNetPort (8333)] 
         /// Node's port
@@ -52,11 +61,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             get => _port;
             set => _port = value;
         }
-
-        /// <summary>
-        /// 8 + 16 + 2
-        /// </summary>
-        protected const int Size = 26;
 
 
         /// <inheritdoc/>
@@ -77,19 +81,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
-            if (!stream.TryReadUInt64(out ulong serices))
+            if (!stream.TryReadUInt64(out ulong servs))
             {
                 error = Err.EndOfStream;
                 return false;
             }
 
-            _servs = (NodeServiceFlags)serices;
-
-            if ((_servs & NodeServiceFlags.All) != _servs)
-            {
-                error = "Invalid services flags";
-                return false;
-            }
+            // For the sake of forward compatibility, service flag is not strict (undefined enums are also accepted)
+            // the caller can decide which bits they understand or support.
+            NodeServices = (NodeServiceFlags)servs;
 
             if (!stream.TryReadByteArray(16, out byte[] ipBytes))
             {
@@ -97,22 +97,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
-            try
-            {
-                NodeIP = new IPAddress(ipBytes);
-            }
-            catch (Exception)
-            {
-                error = "Bytes contain an invalid IP address";
-                return false;
-            }
+            // IPAddress constructor throws 2 exceptions: 
+            //    1. ArgumentNullException -> if the byte[] is null
+            //    2. ArgumentException -> if byte[].Length != 4 && != 16
+            // As a result there is no need for try/catch block
+            // https://github.com/microsoft/referencesource/blob/17b97365645da62cf8a49444d979f94a59bbb155/System/net/System/Net/IPAddress.cs#L114-L135
+            NodeIP = new IPAddress(ipBytes);
 
             if (NodeIP.IsIPv4MappedToIPv6)
             {
                 NodeIP = NodeIP.MapToIPv4();
             }
 
-            if (!stream.TryReadUInt16(out _port))
+            if (!stream.TryReadUInt16BigEndian(out _port))
             {
                 error = Err.EndOfStream;
                 return false;
