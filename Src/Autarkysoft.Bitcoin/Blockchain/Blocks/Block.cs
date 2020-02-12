@@ -21,9 +21,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
     /// <summary>
     /// The main component of the blockchain that contains transactions and shapes up the chain by referencing
     /// the previous block and is secured using cryptography in form of the proof of work algorithm.
-    /// Implements <see cref="IDeserializable"/>.
+    /// Implements <see cref="IBlock"/>.
     /// </summary>
-    public class Block : IDeserializable
+    public class Block : IBlock
     {
         /// <summary>
         /// Initializes a new empty instance of <see cref="Block"/>.
@@ -61,9 +61,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         private readonly Sha256 hashFunc = new Sha256(true);
 
         private int _version;
-        /// <summary>
-        /// Block version. It must be a positive number.
-        /// </summary>
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         public int Version
         {
             get => _version;
@@ -77,9 +76,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         private byte[] _prvBlkHash = new byte[32];
-        /// <summary>
-        /// Hash of the previous block header
-        /// </summary>
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         public byte[] PreviousBlockHeaderHash
         {
             get => _prvBlkHash;
@@ -98,9 +97,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         private byte[] _merkle = new byte[32];
-        /// <summary>
-        /// Hash of the merkle root
-        /// </summary>
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         public byte[] MerkleRootHash
         {
             get => _merkle;
@@ -116,9 +115,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         private uint _time;
-        /// <summary>
-        /// Block time
-        /// </summary>
+        /// <inheritdoc/>
         public uint BlockTime
         {
             get => _time;
@@ -126,9 +123,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         private Target _nBits;
-        /// <summary>
-        /// Target of this block, used for defining difficulty
-        /// </summary>
+        /// <inheritdoc/>
         public Target NBits
         {
             get => _nBits;
@@ -136,9 +131,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         private uint _nonce;
-        /// <summary>
-        /// Nonce
-        /// </summary>
+        /// <inheritdoc/>
         public uint Nonce
         {
             get => _nonce;
@@ -146,9 +139,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         private ITransaction[] _txs = new ITransaction[0];
-        /// <summary>
-        /// List of transactions in this block
-        /// </summary>
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException"/>
         public ITransaction[] TransactionList
         {
             get => _txs;
@@ -163,24 +155,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
 
-        /// <summary>
-        /// Returns hash of this block using the defined <see cref="IHashFunction"/>.
-        /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <returns>Block hash</returns>
+        /// <inheritdoc/>
         public byte[] GetBlockHash()
         {
             byte[] bytesToHash = SerializeHeader();
             return hashFunc.ComputeHash(bytesToHash);
         }
 
-        /// <summary>
-        /// Returns hash of this block as a base-16 encoded string.
-        /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <returns>Base-16 encoded block hash</returns>
+        /// <inheritdoc/>
         public string GetBlockID()
         {
             byte[] hashRes = GetBlockHash();
@@ -189,10 +171,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
 
-        /// <summary>
-        /// Returns merkle root of this block using the list of transactions.
-        /// </summary>
-        /// <returns>Merkle root</returns>
+        /// <inheritdoc/>
         public unsafe byte[] ComputeMerkleRoot()
         {
             if (TransactionList.Length == 1)
@@ -257,9 +236,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
 
-        /// <summary>
-        /// Converts this block's header into its byte array representation and writes the result to the given stream.
-        /// </summary>
+        /// <inheritdoc/>
         public void SerializeHeader(FastStream stream)
         {
             stream.Write(Version);
@@ -307,12 +284,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
 
-        /// <summary>
-        /// Deserializes the given byte array from the given stream. The return value indicates success.
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
-        /// <returns>True if deserialization was successful, false if otherwise</returns>
+        /// <inheritdoc/>
         public bool TryDeserializeHeader(FastStreamReader stream, out string error)
         {
             if (stream is null)
