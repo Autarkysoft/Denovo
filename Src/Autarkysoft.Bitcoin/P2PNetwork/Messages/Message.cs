@@ -129,7 +129,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             Payload = plt switch
             {
                 PayloadType.Addr => new AddrPayload(),
-                PayloadType.Alert => new AlertPayload(),
                 PayloadType.Block => new BlockPayload(),
                 PayloadType.BlockTxn => new BlockTxnPayload(),
                 PayloadType.CmpctBlock => new CmpctBlockPayload(),
