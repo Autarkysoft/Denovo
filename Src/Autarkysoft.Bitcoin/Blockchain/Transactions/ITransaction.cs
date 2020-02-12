@@ -32,12 +32,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <summary>
         /// List of transaction witnesses. It can be null if transaction has no witness.
         /// </summary>
-        public IWitnessScript[] WitnessList { get; set; }
+        IWitnessScript[] WitnessList { get; set; }
 
         /// <summary>
         /// Transaction LockTime
         /// </summary>
-        public LockTime LockTime { get; set; }
+        LockTime LockTime { get; set; }
 
         /// <summary>
         /// Returns hash of this instance using the defined hash function.
