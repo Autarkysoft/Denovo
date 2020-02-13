@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
-using System;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
@@ -24,30 +23,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <summary>
         /// Initializes a new instance of <see cref="BlockPayload"/> with the given <see cref="Block"/>.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="block">The block to send</param>
-        public BlockPayload(Block block)
+        public BlockPayload(IBlock block)
         {
             BlockData = block;
         }
 
 
-
-        private Block _block;
+        private IBlock _block = new Block();
         /// <summary>
-        /// The block data
+        /// The block to send
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        public Block BlockData
+        public IBlock BlockData
         {
             get => _block;
-            set
-            {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(BlockData), "Block can not be null.");
-
-                _block = value;
-            }
+            set => _block = (value is null) ? new Block() : value;
         }
 
         /// <inheritdoc/>
@@ -60,11 +50,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             BlockData.Serialize(stream);
         }
 
-
         /// <inheritdoc/>
         public override bool TryDeserialize(FastStreamReader stream, out string error)
         {
-            BlockData = new Block();
             return BlockData.TryDeserialize(stream, out error);
         }
     }
