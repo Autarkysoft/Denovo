@@ -109,6 +109,5 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             error = null;
             return true;
         }
-
     }
 }
