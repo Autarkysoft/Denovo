@@ -8,41 +8,46 @@ using System.Text;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
+    // TODO: reject messages are deprecated in core 0.18.0 may need to make this obsolete here too
+
+    /// <summary>
+    /// A message payload sent in reply to any message that is invalid.
+    /// <para/> Sent: in response to any message
+    /// </summary>
     public class RejectPayload : PayloadBase
     {
         private PayloadType _rejMsgType;
-
-        public PayloadType RejectedMessage 
-        { 
+        /// <summary>
+        /// The type of the received message that is being rejected
+        /// </summary>
+        public PayloadType RejectedMessage
+        {
             get => _rejMsgType;
-            set => _rejMsgType = value; 
+            set => _rejMsgType = value;
         }
 
+        /// <summary>
+        /// One byte indicating the reason for rejection
+        /// </summary>
         public RejectCode Code { get; set; }
-        
-        private byte[] _reason; 
-        
+
+        private byte[] _reason;
+        /// <summary>
+        /// An additional string explaining the reason for rejection
+        /// </summary>
         public string Reason
         {
-            get => Encoding.UTF8.GetString(_reason);
-            set
-            {
-                if (string.IsNullOrEmpty(value))
-                    throw new ArgumentNullException(nameof(Reason), "Reason can not be null or empty.");
-
-                _reason = Encoding.UTF8.GetBytes(value);
-            }
+            get => Encoding.ASCII.GetString(_reason);
+            set => _reason = string.IsNullOrEmpty(value) ? new byte[0] : Encoding.UTF8.GetBytes(value);
         }
 
-        
+        /// <summary>
+        /// An additioanl optional data
+        /// </summary>
         public byte[] ExtraData { get; set; }
 
 
-        /// <summary>
-        /// 1 + 2 (min message type) + 1 (code) + 0 + 0 + 0
-        /// </summary>
-        public const int MinSize = 3;
-
+        /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.Reject;
 
 
@@ -65,7 +70,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
         }
 
-
         /// <inheritdoc/>
         public override bool TryDeserialize(FastStreamReader stream, out string error)
         {
@@ -74,7 +78,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 error = "Stream can not be null.";
                 return false;
             }
-
 
             if (!CompactInt.TryRead(stream, out CompactInt msgLen, out error))
             {
@@ -126,6 +129,5 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             error = null;
             return true;
         }
-
     }
 }
