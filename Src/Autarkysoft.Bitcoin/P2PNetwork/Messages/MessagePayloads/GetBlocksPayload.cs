@@ -8,8 +8,8 @@ using System;
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     /// <summary>
-    /// A message payload containing the request for .
-    /// <para/> Sent: unsolicited or in response to <see cref="PayloadType.GetAddr"/>
+    /// A message payload containing the request for block header hashes.
+    /// <para/> Sent: unsolicited
     /// </summary>
     public class GetBlocksPayload : PayloadBase
     {
@@ -20,9 +20,26 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="GetBlocksPayload"/> using the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="ver">Protocol version</param>
+        /// <param name="headerHashes">List of header hashes</param>
+        /// <param name="stopHash">Stop hash</param>
+        public GetBlocksPayload(int ver, byte[][] headerHashes, byte[] stopHash)
+        {
+            Version = ver;
+            Hashes = headerHashes;
+            StopHash = stopHash;
+        }
 
 
-        private const int MaximumHashes = 500;
+        /// <summary>
+        /// Maximum number of hashes allowed in the hash list
+        /// </summary>
+        protected virtual int MaximumHashes => 500;
 
         private int _ver;
         /// <summary>
@@ -55,7 +72,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 if (value == null)
                     throw new ArgumentNullException(nameof(Hashes), "Hash list can not be null.");
                 if (value.Length > MaximumHashes)
-                    throw new ArgumentOutOfRangeException(nameof(Hashes), $"Only a maximum of {MaximumHashes} are allowed.");
+                    throw new ArgumentOutOfRangeException(nameof(Hashes), $"Only a maximum of {MaximumHashes} hashes are allowed.");
 
                 _hashes = value;
             }
@@ -85,6 +102,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.GetBlocks;
 
+        // TODO: add a method here to take IBlockchain (the database manager) and set header hashes itself using that
 
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)
@@ -133,10 +151,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             Hashes = new byte[(byte)len][];
             for (int i = 0; i < (int)len; i++)
             {
-                stream.TryReadByteArray(32, out Hashes[i]);
+                if (!stream.TryReadByteArray(32, out Hashes[i]))
+                {
+                    error = Err.EndOfStream;
+                    return false;
+                }
             }
 
-            stream.TryReadByteArray(32, out _stopHash);
+            if (!stream.TryReadByteArray(32, out _stopHash))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
 
             error = null;
             return true;
