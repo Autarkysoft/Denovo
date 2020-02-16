@@ -3,17 +3,60 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
+
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
+    /// <summary>
+    /// A message payload containing one or more <see cref="Inventory"/> objects.
+    /// <para/> Sent: unsolicited
+    /// </summary>
     public class InvPayload : PayloadBase
     {
+        /// <summary>
+        /// Initializes an empty instance of <see cref="InvPayload"/>.
+        /// </summary>
+        public InvPayload()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="InvPayload"/> using the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="items">An array of inventory objects</param>
+        public InvPayload(Inventory[] items)
+        {
+            InventoryList = items;
+        }
+
+
         private const int MaxInvCount = 50_000;
 
-        public Inventory[] InventoryList { get; set; }
+        private Inventory[] _invList;
+        /// <summary>
+        /// An array of <see cref="Inventory"/> objects
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public Inventory[] InventoryList
+        {
+            get => _invList;
+            set
+            {
+                if (value == null || value.Length == 0)
+                    throw new ArgumentNullException(nameof(InventoryList), "Hash can not be null.");
+                if (value.Length > MaxInvCount)
+                    throw new ArgumentOutOfRangeException(nameof(InventoryList), "Hash must be 32 bytes.");
+
+                _invList = value;
+            }
+        }
+
 
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.Inv;
-
 
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)
@@ -60,6 +103,5 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             error = null;
             return true;
         }
-
     }
 }
