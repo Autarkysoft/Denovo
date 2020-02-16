@@ -39,19 +39,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         FilterAdd,
         /// <summary>
-        /// 
+        /// Asks other node to remove previously set bool filter
         /// </summary>
         FilterClear,
         /// <summary>
-        /// 
+        /// Asks other node to set a bloom filter
         /// </summary>
         FilterLoad,
         /// <summary>
-        /// 
+        /// Asks other node to send a list of known peers in a <see cref="Addr"/> message
         /// </summary>
         GetAddr,
         /// <summary>
-        /// 
+        /// Asks other node to send a list of block header hashes
         /// </summary>
         GetBlocks,
         /// <summary>
@@ -59,23 +59,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         GetBlockTxn,
         /// <summary>
-        /// 
+        /// Asks for one or more data (<see cref="Inventory"/>) objects
         /// </summary>
         GetData,
         /// <summary>
-        /// 
+        /// Asks other node to send block headers starting from a particular block
         /// </summary>
         GetHeaders,
         /// <summary>
-        /// 
+        /// Sends a list of block headers
         /// </summary>
         Headers,
         /// <summary>
-        /// 
+        /// Sends one or more <see cref="Inventory"/> objects
         /// </summary>
         Inv,
         /// <summary>
-        /// 
+        /// Asks other node to send all transaction hashes in its memory pool (the response can be different
+        /// based on previously set bloom filter)
         /// </summary>
         MemPool,
         /// <summary>
@@ -83,19 +84,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         MerkleBlock,
         /// <summary>
-        /// 
+        /// Tells the other node that its requested "data" was not found.
         /// </summary>
         NotFound,
         /// <summary>
-        /// 
+        /// Confirms the connection is still alive
         /// </summary>
         Ping,
         /// <summary>
-        /// 
+        /// Confirms the connection is still alive
         /// </summary>
         Pong,
         /// <summary>
-        /// 
+        /// Indicates that the previous received message was rejected
         /// </summary>
         Reject,
         /// <summary>
@@ -103,19 +104,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         SendCmpct,
         /// <summary>
-        /// 
+        /// Asks other node to only send block headers when sending new blocks
         /// </summary>
         SendHeaders,
         /// <summary>
-        /// 
+        /// Sends a single transaction
         /// </summary>
         Tx,
         /// <summary>
-        /// 
+        /// The one time reply sent as acknowledgement of receiving a <see cref="Version"/> message
         /// </summary>
         Verack,
         /// <summary>
-        /// 
+        /// Provides information about the node during handshake process
         /// </summary>
         Version
     }
