@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
@@ -240,5 +241,99 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             Assert.Equal(0, first[2]);
         }
 
+
+        // All the data for Tagged Hashes are computed using System.Random and hashes using
+        // System.Security.Cryptography.SHA256 in .Net Framework 4.7.2
+
+        [Fact]
+        public void ComputeTaggedHash_BIPSchnorrDeriveTest()
+        {
+            using Sha256 sha = new Sha256();
+            byte[] key = Helper.HexToBytes("16bfd223d68adb5539edffd08e5e1b5cba9e0ce581612118bc82111cef727975");
+            byte[] data = Helper.HexToBytes("fac9cdf2f2b82e7d6ab47656ea4a294ab886553e6fdb08b49eb9665479be65c7");
+
+            byte[] actual = sha.ComputeTaggedHash("BIPSchnorrDerive", key, data);
+            byte[] expected = Helper.HexToBytes("3d9d5b3d1a791dbe1f61e6e4f457f90606417b6ec305b558160f4eaf71c819d9");
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeTaggedHash_BIPSchnorrTest()
+        {
+            using Sha256 sha = new Sha256();
+            byte[] r = Helper.HexToBytes("c044e32bbe7a7973ed85e6645f648c60a8c3ea5d1989de40aa4b5eb2d6d4f1c1");
+            byte[] pub = Helper.HexToBytes("13f714f34a70147d5b2daecb30855b198d17b9e6e20c9f3766a281721bc69d19");
+            byte[] data = Helper.HexToBytes("9324506850981637af6d01ebdb120f24ef4525be1a0ade0757dd8da7efa16195");
+
+            byte[] actual = sha.ComputeTaggedHash("BIPSchnorr", r, pub, data);
+            byte[] expected = Helper.HexToBytes("3c63b7031c037368fb3f74de36f1a37cdf9f55051a0725f0a5f76a4550e4354e");
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeTaggedHash_GeneralTest()
+        {
+            using Sha256 sha = new Sha256();
+            byte[] b1 = Helper.HexToBytes("7e12d002b106336a5ef75ec1871a9494c32fd0338dc8faa1cff751d51b42eb63");
+            byte[] b2 = Helper.HexToBytes("bbbf2917e06ab87045b814fd21b38273ada86fca8adb4eb5182f32bab45d4e1c");
+            byte[] b3 = Helper.HexToBytes("0bfb05c8f17db4587660eed4b4fc7f1c75de2873d220d8df7074feb037febce7");
+            byte[] b4 = Helper.HexToBytes("6af7f125adb9822ff417532aed7a001baf1544d535db4aeb2225577d7e032078");
+
+            byte[] actual = sha.ComputeTaggedHash("Foo", b1, b2, b3, b4);
+            byte[] expected = Helper.HexToBytes("70da727b9fd90b4ed4449fa870dfb3e52962ef3f8a783611022eae2edce7c0ce");
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeTaggedHash_NullExceptionTest()
+        {
+            using Sha256 sha = new Sha256();
+
+            Exception ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash(null, new byte[32]));
+            Assert.Contains("Tag can not be null.", ex.Message);
+
+            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo"));
+            Assert.Contains("The extra data can not be null or empty.", ex.Message);
+
+            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", null));
+            Assert.Contains("The extra data can not be null or empty.", ex.Message);
+
+            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", new byte[0][]));
+            Assert.Contains("The extra data can not be null or empty.", ex.Message);
+        }
+
+        public static IEnumerable<object[]> GetTaggedHashErrorCases()
+        {
+            yield return new object[]
+            {
+                "Foo",
+                new byte[][] { new byte[32], new byte[31] },
+                "Each additional data must be 32 bytes."
+            };
+            yield return new object[]
+            {
+                "BIPSchnorr",
+                new byte[][] { new byte[32], new byte[32] },
+                "BIPSchnorr tag needs 3 data inputs."
+            };
+            yield return new object[]
+            {
+                "BIPSchnorrDerive",
+                new byte[][] { new byte[32], new byte[32], new byte[32] },
+                "BIPSchnorrDerive tag needs 2 data inputs."
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetTaggedHashErrorCases))]
+        public void ComputeTaggedHash_OutOfRangeExceptionTest(string tag, byte[][] data, string expError)
+        {
+            using Sha256 sha = new Sha256();
+
+            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => sha.ComputeTaggedHash(tag, data));
+            Assert.Contains(expError, ex.Message);
+        }
     }
 }

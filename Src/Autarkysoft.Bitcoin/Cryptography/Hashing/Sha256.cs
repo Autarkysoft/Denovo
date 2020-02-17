@@ -4,7 +4,9 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
@@ -25,7 +27,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
 
-
+        // TODO: retire IsDouble from both here and interface
         /// <summary>
         /// Indicates whether the hash function should be performed twice on message.
         /// For example Double SHA256 that bitcoin uses.
@@ -91,6 +93,205 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
         /// <summary>
+        /// Computes "Tagged Hash" specified by BIP-340 to be used in Schnorr signatures.
+        /// <para/> If tage is "BIPSchnorr" => 3x arrays are expected each 32 bytes (r + pubkey + message)
+        /// <para/> If tage is "BIPSchnorrDerive" => 2x arrays are expected each 32 bytes (key + message)
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="tag">The tag used in computation</param>
+        /// <param name="data">A list of 32-byte long arrays</param>
+        /// <returns>The computed hash</returns>
+        public byte[] ComputeTaggedHash(string tag, params byte[][] data)
+        {
+            if (tag is null)
+                throw new ArgumentNullException(nameof(tag), "Tag can not be null."); // It can be empty!
+            if (data == null || data.Length == 0)
+                throw new ArgumentNullException(nameof(data), "The extra data can not be null or empty.");
+            if (data.Any(item => item.Length != 32))
+                throw new ArgumentOutOfRangeException(nameof(data), "Each additional data must be 32 bytes.");
+
+
+            if (tag == "BIPSchnorr")
+            {
+                if (data.Length != 3)
+                    throw new ArgumentOutOfRangeException(nameof(data), "BIPSchnorr tag needs 3 data inputs.");
+
+                return ComputeTaggedHash_BIPSchnorr(data[0], data[1], data[2]);
+            }
+            else if (tag == "BIPSchnorrDerive")
+            {
+                if (data.Length != 2)
+                    throw new ArgumentOutOfRangeException(nameof(data), "BIPSchnorrDerive tag needs 2 data inputs.");
+
+                return ComputeTaggedHash_BIPSchnorrDerive(data[0], data[1]);
+            }
+
+            byte[] tagHash = ComputeHash(Encoding.UTF8.GetBytes(tag));
+            byte[] toHash = new byte[tagHash.Length + tagHash.Length + (data.Length * 32)];
+            Buffer.BlockCopy(tagHash, 0, toHash, 0, 32);
+            Buffer.BlockCopy(tagHash, 0, toHash, 32, 32);
+            int offset = 64;
+            foreach (var ba in data)
+            {
+                Buffer.BlockCopy(ba, 0, toHash, offset, 32);
+                offset += 32;
+            }
+            return ComputeHash(toHash);
+        }
+
+        internal unsafe byte[] ComputeTaggedHash_BIPSchnorrDerive(byte[] kba, byte[] data)
+        {
+            // Total data length to be hashed is 128 ([32+32] + 32 + 32)
+            fixed (byte* kPt = &kba[0], dPt = data)
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                // The first 64 bytes (1 block) is equal to SHA256("BIPSchnorrDerive") | SHA256("BIPSchnorrDerive")
+                // This can be pre-computed and change the HashState's initial value
+                hPt[0] = 0x1cd78ec3U;
+                hPt[1] = 0xc4425f87U;
+                hPt[2] = 0xb4f1a9f1U;
+                hPt[3] = 0xa16abd8dU;
+                hPt[4] = 0x5a6dea72U;
+                hPt[5] = 0xd28469e3U;
+                hPt[6] = 0x17119b2eU;
+                hPt[7] = 0x7bd19a16U;
+
+                // The second block (64 to 128) is kBa | data
+                for (int i = 0, j = 0; i < 8; i++, j += 4)
+                {
+                    wPt[i] = (uint)((kPt[j] << 24) | (kPt[j + 1] << 16) | (kPt[j + 2] << 8) | kPt[j + 3]);
+                }
+                for (int i = 8, j = 0; i < 16; i++, j += 4)
+                {
+                    wPt[i] = (uint)((dPt[j] << 24) | (dPt[j + 1] << 16) | (dPt[j + 2] << 8) | dPt[j + 3]);
+                }
+
+                CompressBlock(hPt, wPt);
+
+                // The third block (128 to 192) is pad
+                wPt[0] = 0b10000000_00000000_00000000_00000000U;
+                wPt[1] = 0;
+                wPt[2] = 0;
+                wPt[3] = 0;
+                wPt[4] = 0;
+                wPt[5] = 0;
+                wPt[6] = 0;
+                wPt[7] = 0;
+                wPt[8] = 0;
+                wPt[9] = 0;
+                wPt[10] = 0;
+                wPt[11] = 0;
+                wPt[12] = 0;
+                wPt[13] = 0;
+                wPt[14] = 0;
+                wPt[15] = 1024; // len = 128*8
+                wPt[16] = 0x80000000U;
+                wPt[17] = 0x02800001U;
+                wPt[18] = 0x00205000U;
+                wPt[19] = 0x00000110U;
+                wPt[20] = 0x22000800U;
+                wPt[21] = 0x00aa0000U;
+                wPt[22] = 0x05089942U;
+                wPt[23] = 0xc0002ac0U;
+                wPt[24] = 0x62080004U;
+                wPt[25] = 0x1028c80aU;
+                wPt[26] = 0x001a4055U;
+                wPt[27] = 0x9f004823U;
+                wPt[28] = 0x68ca269eU;
+                wPt[29] = 0x323b15b4U;
+                wPt[30] = 0x1886f73dU;
+                wPt[31] = 0x5b6835a3U;
+                wPt[32] = 0x37fd1798U;
+                wPt[33] = 0x3311a7d2U;
+                wPt[34] = 0xe8977a87U;
+                wPt[35] = 0x55edccc1U;
+                wPt[36] = 0x26785e65U;
+                wPt[37] = 0x1c1a75cdU;
+                wPt[38] = 0x1898add6U;
+                wPt[39] = 0x70d975edU;
+                wPt[40] = 0xfc995de5U;
+                wPt[41] = 0xc72d9f47U;
+                wPt[42] = 0x225062f2U;
+                wPt[43] = 0xfa62c148U;
+                wPt[44] = 0x6d6275f8U;
+                wPt[45] = 0x4876537fU;
+                wPt[46] = 0x3e6bd0afU;
+                wPt[47] = 0xaf3a394cU;
+                wPt[48] = 0x5d69345cU;
+                wPt[49] = 0x7d685338U;
+                wPt[50] = 0x9ad3729dU;
+                wPt[51] = 0xc04f60b4U;
+                wPt[52] = 0x4af2ba27U;
+                wPt[53] = 0x3b5ad539U;
+                wPt[54] = 0x5b9a980bU;
+                wPt[55] = 0x818b7cddU;
+                wPt[56] = 0x89cdea52U;
+                wPt[57] = 0x2c88481eU;
+                wPt[58] = 0x69cbcd7eU;
+                wPt[59] = 0xd265fe42U;
+                wPt[60] = 0xab09cb34U;
+                wPt[61] = 0x9288f7b9U;
+                wPt[62] = 0x9fb768b8U;
+                wPt[63] = 0x9c18607fU;
+
+                CompressBlock_WithWSet(hPt, wPt);
+
+                return GetBytes(hPt);
+            }
+        }
+
+        internal unsafe byte[] ComputeTaggedHash_BIPSchnorr(byte[] rba, byte[] pba, byte[] data)
+        {
+            // Total data length to be hashed is 160 ([32+32] + 32 + 32 + 32)
+            fixed (byte* rPt = &rba[0], pPt = &pba[0], dPt = data)
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                // The first 64 bytes (1 block) is equal to SHA256("BIPSchnorr") | SHA256("BIPSchnorr")
+                // This can be pre-computed and change the HashState's initial value
+                hPt[0] = 0x048d9a59U;
+                hPt[1] = 0xfe39fb05U;
+                hPt[2] = 0x28479648U;
+                hPt[3] = 0xe4a660f9U;
+                hPt[4] = 0x814b9e66U;
+                hPt[5] = 0x0469e801U;
+                hPt[6] = 0x83909280U;
+                hPt[7] = 0xb329e454U;
+
+                // The second block (64 to 128) is rBa | pBa
+                for (int i = 0, j = 0; i < 8; i++, j += 4)
+                {
+                    wPt[i] = (uint)((rPt[j] << 24) | (rPt[j + 1] << 16) | (rPt[j + 2] << 8) | rPt[j + 3]);
+                }
+                for (int i = 8, j = 0; i < 16; i++, j += 4)
+                {
+                    wPt[i] = (uint)((pba[j] << 24) | (pba[j + 1] << 16) | (pba[j + 2] << 8) | pba[j + 3]);
+                }
+
+                CompressBlock(hPt, wPt);
+
+                // The third block (128 to 192) is data | pad
+                for (int i = 0, j = 0; i < 8; i++, j += 4)
+                {
+                    wPt[i] = (uint)((dPt[j] << 24) | (dPt[j + 1] << 16) | (dPt[j + 2] << 8) | dPt[j + 3]);
+                }
+                wPt[8] = 0b10000000_00000000_00000000_00000000U;
+                wPt[9] = 0;
+                wPt[10] = 0;
+                wPt[11] = 0;
+                wPt[12] = 0;
+                wPt[13] = 0;
+                wPt[14] = 0;
+                wPt[15] = 1280; // len = 160*8
+
+                CompressBlock(hPt, wPt);
+
+                return GetBytes(hPt);
+            }
+        }
+
+
+        /// <summary>
         /// Computes the hash value for the specified region of the specified byte array.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
@@ -118,14 +319,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal virtual unsafe void Init(uint* hPt)
         {
-            hPt[0] = 0x6a09e667;
-            hPt[1] = 0xbb67ae85;
-            hPt[2] = 0x3c6ef372;
-            hPt[3] = 0xa54ff53a;
-            hPt[4] = 0x510e527f;
-            hPt[5] = 0x9b05688c;
-            hPt[6] = 0x1f83d9ab;
-            hPt[7] = 0x5be0cd19;
+            hPt[0] = 0x6a09e667U;
+            hPt[1] = 0xbb67ae85U;
+            hPt[2] = 0x3c6ef372U;
+            hPt[3] = 0xa54ff53aU;
+            hPt[4] = 0x510e527fU;
+            hPt[5] = 0x9b05688cU;
+            hPt[6] = 0x1f83d9abU;
+            hPt[7] = 0x5be0cd19U;
         }
 
 
@@ -312,7 +513,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             wPt[61] = 1657999800;
             wPt[62] = 3852183409;
             wPt[63] = 2242356356;
-            CompressBlock(hPt, wPt);
+            CompressBlock_WithWSet(hPt, wPt);
 
             // Round 2, block 3
             DoSecondHash(hPt, wPt);
@@ -433,6 +634,75 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             hPt[7] += h;
         }
 
+        // TODO: move every computation to this method instead
+        internal unsafe void CompressBlock_WithWSet(uint* hPt, uint* wPt)
+        {
+            uint a = hPt[0];
+            uint b = hPt[1];
+            uint c = hPt[2];
+            uint d = hPt[3];
+            uint e = hPt[4];
+            uint f = hPt[5];
+            uint g = hPt[6];
+            uint h = hPt[7];
+
+            uint temp, aa, bb, cc, dd, ee, ff, hh, gg;
+
+            fixed (uint* kPt = &Ks[0])
+            {
+                for (int j = 0; j < 64;)
+                {
+                    temp = h + BSIG1(e) + CH(e, f, g) + kPt[j] + wPt[j];
+                    ee = d + temp;
+                    aa = temp + BSIG0(a) + MAJ(a, b, c);
+                    j++;
+
+                    temp = g + BSIG1(ee) + CH(ee, e, f) + kPt[j] + wPt[j];
+                    ff = c + temp;
+                    bb = temp + BSIG0(aa) + MAJ(aa, a, b);
+                    j++;
+
+                    temp = f + BSIG1(ff) + CH(ff, ee, e) + kPt[j] + wPt[j];
+                    gg = b + temp;
+                    cc = temp + BSIG0(bb) + MAJ(bb, aa, a);
+                    j++;
+
+                    temp = e + BSIG1(gg) + CH(gg, ff, ee) + kPt[j] + wPt[j];
+                    hh = a + temp;
+                    dd = temp + BSIG0(cc) + MAJ(cc, bb, aa);
+                    j++;
+
+                    temp = ee + BSIG1(hh) + CH(hh, gg, ff) + kPt[j] + wPt[j];
+                    h = aa + temp;
+                    d = temp + BSIG0(dd) + MAJ(dd, cc, bb);
+                    j++;
+
+                    temp = ff + BSIG1(h) + CH(h, hh, gg) + kPt[j] + wPt[j];
+                    g = bb + temp;
+                    c = temp + BSIG0(d) + MAJ(d, dd, cc);
+                    j++;
+
+                    temp = gg + BSIG1(g) + CH(g, h, hh) + kPt[j] + wPt[j];
+                    f = cc + temp;
+                    b = temp + BSIG0(c) + MAJ(c, d, dd);
+                    j++;
+
+                    temp = hh + BSIG1(f) + CH(f, g, h) + kPt[j] + wPt[j];
+                    e = dd + temp;
+                    a = temp + BSIG0(b) + MAJ(b, c, d);
+                    j++;
+                }
+            }
+
+            hPt[0] += a;
+            hPt[1] += b;
+            hPt[2] += c;
+            hPt[3] += d;
+            hPt[4] += e;
+            hPt[5] += f;
+            hPt[6] += g;
+            hPt[7] += h;
+        }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
