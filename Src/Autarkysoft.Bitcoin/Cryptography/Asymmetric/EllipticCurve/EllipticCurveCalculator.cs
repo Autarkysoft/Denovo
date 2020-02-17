@@ -9,7 +9,7 @@ using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 {
@@ -497,11 +497,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             return results.Length != 0;
         }
 
-
-        private bool IsSquare(BigInteger y)
-        {
-            return BigInteger.ModPow(y, (curve.P - 1) / 2, curve.P) == 1;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsSquare(BigInteger y) => BigInteger.ModPow(y, (curve.P - 1) / 2, curve.P) == 1;
 
         private BigInteger ComputeSchnorrE(byte[] rba, EllipticCurvePoint P, byte[] hash)
         {
@@ -510,50 +507,62 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             // msg = R.X | P.X | hash
             // return sha256(tagHash | tagHash | msg)
             using Sha256 sha = new Sha256();
-            byte[] tagHash = sha.ComputeHash(Encoding.UTF8.GetBytes("BIPSchnorr"));
-            byte[] toHash = new byte[tagHash.Length + tagHash.Length + 32 + 32 + hash.Length];
-            Buffer.BlockCopy(tagHash, 0, toHash, 0, 32);
-            Buffer.BlockCopy(tagHash, 0, toHash, 32, 32);
-            Buffer.BlockCopy(rba, 0, toHash, 64 + 32 - rba.Length, 32);
             byte[] pba = P.X.ToByteArray(true, true);
-            Buffer.BlockCopy(pba, 0, toHash, 96 + 32 - rba.Length, 32);
-            Buffer.BlockCopy(hash, 0, toHash, 128, 32);
-
-            BigInteger e = sha.ComputeHash(toHash).ToBigInt(true, true) % curve.N;
-
+            // TODO: change all these BigIntegers to ModUint256 type so that it doesn't need length checks,...!
+            byte[] pubBa = new byte[32];
+            Buffer.BlockCopy(pba, 0, pubBa, 32 - pba.Length, pba.Length);
+            BigInteger e = sha.ComputeTaggedHash_BIPSchnorr(rba, pubBa, hash).ToBigInt(true, true) % curve.N;
             return e;
         }
 
 
+        // TODO: change Sign*() methods accessibility to internal or add additinal checks (eg. input.legnth == 32)
+
         /// <summary>
         /// Creates a signature using ECSDSA based on BIP-340.
-        /// Return value indicates success.
         /// </summary>
-        /// <remarks>
-        /// https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
-        /// </remarks>
         /// <param name="hash">Hash(m) to use for signing</param>
         /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
-        /// <param name="k">
-        /// The ephemeral elliptic curve key used for signing
-        /// (k should be smaller than <see cref="IECurveFp.N"/>, it is always smaller if <see cref="Rfc6979"/> is used).
-        /// </param>
-        /// <param name="sig">Signature (null if process fails)</param>
-        /// <returns>True if successful, otherwise false.</returns>
-        public bool TrySignSchnorr(byte[] hash, byte[] key, BigInteger k, out Signature sig)
+        /// <returns>Signature</returns>
+        public Signature SignSchnorr(byte[] hash, byte[] key)
         {
-            // TODO: change TrySig methods accessibility to private
-
-            // If k is generated using RFC-6979 then it is always >0 and <N and Try* may not be needed
-
             BigInteger seckey = key.ToBigInt(true, true);
             EllipticCurvePoint pubkPoint = MultiplyChecked(seckey, curve.G);
             if (!IsSquare(pubkPoint.Y))
             {
                 seckey = curve.N - seckey;
+                // The internal ComputeTaggedHash_*() methods assume inputs are 32 byte so it needs to be padded here
+                // both hash and key are already 32 byte since the caller is PrivateKey.Sign() method
+                byte[] temp = new byte[32];
+                byte[] secBa = seckey.ToByteArray(true, true);
+                Buffer.BlockCopy(secBa, 0, temp, 32 - secBa.Length, secBa.Length);
+                key = temp;
             }
 
-            // TODO: BIP-340 derives k with a tagged hash, here we are using RFC-6979
+            using Sha256 sha = new Sha256();
+            byte[] kBa = sha.ComputeTaggedHash_BIPSchnorrDerive(key, hash);
+            BigInteger k = kBa.ToBigInt(true, true) % curve.N;
+
+            if (k == 0)
+            {
+                // This branch will only happen if k was 0 or N (reduced to 0) which is nearly impossible!
+                uint count = 1;
+                byte[] extraEntropy = new byte[32];
+                do
+                {
+                    // TODO: investigate what is the appropriate approach in this special case.
+
+                    // A very similar approach to Sign() method is used here with the extra entropy but
+                    // instead of RFC-6979 TaggedHash is used with a different "tag" and 3x 32-byte inputs
+                    extraEntropy[0] = (byte)count;
+                    extraEntropy[1] = (byte)(count >> 8);
+                    extraEntropy[2] = (byte)(count >> 16);
+                    extraEntropy[3] = (byte)(count >> 24);
+                    count++;
+                    kBa = sha.ComputeTaggedHash("BIPSchnorrDeriveExtraEntropy", key, hash, extraEntropy);
+                    k = kBa.ToBigInt(true, true) % curve.N;
+                } while (k == 0);
+            }
 
             EllipticCurvePoint R = MultiplyChecked(k, curve.G);
 
@@ -565,35 +574,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             BigInteger e = ComputeSchnorrE(R.X.ToByteArray(true, true), pubkPoint, hash);
             BigInteger s = (k + (e * seckey)) % curve.N;
 
-            sig = new Signature(R.X, s);
-            return true;
-        }
-
-
-        /// <summary>
-        /// Creates a signature using ECSDSA based on BIP-340.
-        /// </summary>
-        /// <param name="hash">Hash(m) to use for signing</param>
-        /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
-        /// <returns>Signature</returns>
-        public Signature SignSchnorr(byte[] hash, byte[] key)
-        {
-            using Rfc6979 kGen = new Rfc6979();
-            if (TrySignSchnorr(hash, key, kGen.GetK(hash, key, null), out Signature sig))
-            {
-                return sig;
-            }
-            else
-            {
-                int count = 0;
-                byte[] extraEntropy;
-                do
-                {
-                    extraEntropy = count.ToByteArray(false);
-                    count++;
-                } while (!TrySignSchnorr(hash, key, kGen.GetK(hash, key, extraEntropy), out sig));
-                return sig;
-            }
+            return new Signature(R.X, s);
         }
 
 
