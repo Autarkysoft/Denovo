@@ -31,7 +31,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="blockHash">The SHA-256 block hash</param>
         /// <param name="transactionList">The list of transactions</param>
-        public BlockTxnPayload(byte[] blockHash, Transaction[] transactionList)
+        public BlockTxnPayload(byte[] blockHash, ITransaction[] transactionList)
         {
             BlockHash = blockHash;
             Transactions = transactionList;
@@ -58,12 +58,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
         }
 
-        private Transaction[] _txs;
+        private ITransaction[] _txs;
         /// <summary>
         /// The list of transactions to send
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        public Transaction[] Transactions
+        public ITransaction[] Transactions
         {
             get => _txs;
             set

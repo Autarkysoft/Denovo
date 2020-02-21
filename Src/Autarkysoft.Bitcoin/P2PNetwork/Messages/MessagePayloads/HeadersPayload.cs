@@ -9,7 +9,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     public class HeadersPayload : PayloadBase
     {
-        public Block[] Headers { get; set; }
+        public IBlock[] Headers { get; set; }
 
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.Headers;
@@ -24,10 +24,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             foreach (var hd in Headers)
             {
                 hd.SerializeHeader(stream);
+                // Block serialization of header doesn't add tx count since there is no need for it.
+                // However, in a header payload (for unknown reason) one extra byte indicating zero tx count
+                // is added to each block header.
                 stream.Write((byte)0);
             }
         }
-
 
         /// <inheritdoc/>
         public override bool TryDeserialize(FastStreamReader stream, out string error)
