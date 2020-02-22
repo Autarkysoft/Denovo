@@ -45,5 +45,21 @@ namespace Autarkysoft.Bitcoin
         /// Default regtest network port
         /// </summary>
         public const ushort RegTestPort = 18444;
+        /// <summary>
+        /// 4 byte "magic" value used in P2P message headers for main-net
+        /// </summary>
+        public const string MainNetMagic = "f9beb4d9";
+        /// <summary>
+        /// 4 byte "magic" value used in P2P message headers for test-net
+        /// </summary>
+        public const string TestNetMagic = "0b110907";
+        /// <summary>
+        /// 4 byte "magic" value used in P2P message headers for reg-test (same value as main-net)
+        /// </summary>
+        public const string RegTestMagic = "f9beb4d9";
+        /// <summary>
+        /// The latest P2P protocol version supported by this library
+        /// </summary>
+        public const int P2PProtocolVersion = 70015;
     }
 }

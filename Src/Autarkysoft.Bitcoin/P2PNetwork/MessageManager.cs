@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
@@ -10,10 +11,33 @@ using System.Net.Sockets;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
-    class MessageManager
+    /// <summary>
+    /// Defines a P2P message manager used for handling send/receive P2P messages for nodes.
+    /// </summary>
+    public class MessageManager
     {
-        public MessageManager(int bufferLength)
+        /// <summary>
+        /// Initializes a new instance of <see cref="MessageManager"/> using the given parameters.
+        /// </summary>
+        /// <param name="bufferLength">Size of the buffer used for each <see cref="SocketAsyncEventArgs"/> object</param>
+        /// <param name="versionMessage">Version message (used for initiating handshake)</param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        public MessageManager(int bufferLength, Message versionMessage, NetworkType netType = NetworkType.MainNet)
         {
+            if (bufferLength <= 0)
+                throw new ArgumentOutOfRangeException(nameof(bufferLength), "Buffer length can not be negative or zero.");
+
+            magicBytes = netType switch
+            {
+                NetworkType.MainNet => Base16.Decode(Constants.MainNetMagic),
+                NetworkType.TestNet => Base16.Decode(Constants.TestNetMagic),
+                NetworkType.RegTest => Base16.Decode(Constants.RegTestMagic),
+                _ => throw new ArgumentException("Network type is not defined.", nameof(netType))
+            };
+            this.netType = netType;
+
+            verMsg = versionMessage;
+
             buffLen = bufferLength;
             Init();
         }
@@ -21,186 +45,217 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         private const int HeaderLength = 24;
-        private readonly byte[] MagicBa = new byte[] { 0xf9, 0xbe, 0xb4, 0xd9 };
+
         private readonly int buffLen;
-        private byte[] dataToSend;
+        private readonly NetworkType netType;
+        private readonly byte[] magicBytes;
+        private readonly Message verMsg;
+
+        private byte[] _sendData;
+        /// <summary>
+        /// Gets or sets the data to be sent
+        /// </summary>
+        public byte[] DataToSend
+        {
+            get => _sendData;
+            set
+            {
+                remainSend = value == null ? 0 : value.Length;
+                sendOffset = 0;
+                _sendData = value;
+            }
+        }
         private int sendOffset, remainSend;
 
-        public bool HasReply { get; private set; }
+
+        /// <summary>
+        /// Indicates whether the previous message was fully received
+        /// </summary>
         public bool IsReceiveCompleted { get; private set; }
-        public bool IsSendCompleted { get; private set; }
-        public bool IsHandShaking { get; private set; }
+        /// <summary>
+        /// Indicates whether there is any data to send
+        /// </summary>
+        public bool HasDataToSend => remainSend > 0;
+        /// <summary>
+        /// Indicates whether the handshake process between two nodes is already performed and succeeded
+        /// </summary>
+        public bool IsHandShakeComplete { get; private set; }
 
-
+        private byte[] tempHolder;
 
         internal void Init()
         {
-            dataToSend = null;
+            DataToSend = null;
             sendOffset = 0;
             remainSend = 0;
+
+            IsHandShakeComplete = false;
             IsReceiveCompleted = true;
-            IsSendCompleted = true;
-            HasReply = false;
         }
+
+        /// <summary>
+        /// Sets <see cref="SocketAsyncEventArgs"/>'s buffer for a send operation 
+        /// (caller must check <see cref="HasDataToSend"/> before calling this)
+        /// </summary>
+        /// <param name="sendEventArgs">Socket arg to use</param>
+        public void SetSendBuffer(SocketAsyncEventArgs sendEventArgs)
+        {
+            if (remainSend >= buffLen)
+            {
+                Buffer.BlockCopy(DataToSend, sendOffset, sendEventArgs.Buffer, 0, buffLen);
+                sendEventArgs.SetBuffer(0, buffLen);
+
+                sendOffset += buffLen;
+                remainSend -= buffLen;
+            }
+            else if (remainSend < buffLen)
+            {
+                Buffer.BlockCopy(DataToSend, sendOffset, sendEventArgs.Buffer, 0, remainSend);
+                sendEventArgs.SetBuffer(0, remainSend);
+
+                sendOffset += remainSend;
+                remainSend = 0;
+            }
+        }
+
+        /// <summary>
+        /// Starts the handshake process (called must check <see cref="IsHandShakeComplete"/> before calling this).
+        /// </summary>
+        /// <param name="srEventArgs">Socket arg to use</param>
+        public void StartHandShake(SocketAsyncEventArgs srEventArgs)
+        {
+            FastStream stream = new FastStream();
+            verMsg.Serialize(stream);
+            DataToSend = stream.ToByteArray();
+            IsHandShakeComplete = true;
+
+            SetSendBuffer(srEventArgs);
+        }
+
 
         private bool TryGetReply(Message msg, out Message reply)
         {
             reply = msg.Payload.PayloadType switch
             {
-                PayloadType.Ping => new Message(new PongPayload(), NetworkType.MainNet),
-                PayloadType.Version => new Message(new VerackPayload(), NetworkType.MainNet),
+                PayloadType.Ping => new Message(new PongPayload(((PingPayload)msg.Payload).Nonce), netType),
+                PayloadType.Version => new Message(new VerackPayload(), netType),
                 _ => null,
             };
             return !(reply is null);
         }
 
-        private byte[] tempHolder;
-        bool isInTheMiddleOfReceivingMessage;
-        internal bool IsSendFinished;
 
-        // Data length is at least HeaderSize bytes (=24)
-        private void ProcessData(byte[] data, int len)
+        private void SetRejectMessage(PayloadType plt, string error)
         {
-            FastStreamReader stream = new FastStreamReader(data.SubArray(0, len));
-            Message msg = new Message(NetworkType.MainNet);
-            if (msg.TryDeserializeHeader(stream, out _))
+            RejectPayload pl = new RejectPayload()
             {
-                if (msg.payloadSize + HeaderLength <= len)
+                Code = RejectCode.FailedToDecodeMessage,
+                RejectedMessage = plt,
+                Reason = error
+            };
+            Message rej = new Message(pl, netType);
+            FastStream toSendStream = new FastStream();
+            rej.Serialize(toSendStream);
+            DataToSend = toSendStream.ToByteArray();
+            IsReceiveCompleted = true;
+        }
+        private void ProcessData(FastStreamReader stream)
+        {
+            Message msg = new Message(netType);
+            if (msg.TryDeserializeHeader(stream, out string error))
+            {
+                if (msg.payloadSize >= stream.GetRemainingBytesCount())
                 {
-                    if (msg.Payload.TryDeserialize(stream, out _))
+                    if (msg.Payload.TryDeserialize(stream, out error))
                     {
                         if (TryGetReply(msg, out Message reply))
                         {
-                            HasReply = true;
                             FastStream str = new FastStream();
                             reply.Serialize(str);
-                            dataToSend = str.ToByteArray();
-                            remainSend = dataToSend.Length;
-                            sendOffset = 0;
-                            IsSendCompleted = false;
-                            IsHandShaking = true;
+                            DataToSend = str.ToByteArray();
                         }
 
                         // TODO: handle received message here. eg. write received block to disk,...
 
-                        // handle remaining data
-                        int offset = stream.GetCurrentIndex();
-                        if (len - offset >= HeaderLength)
+                        // Handle remaining data
+                        if (stream.GetRemainingBytesCount() > 0)
                         {
-                            ProcessData(data.SubArray(offset, len - offset), len - offset);
+                            IsReceiveCompleted = false;
+                            stream.TryReadByteArray(stream.GetRemainingBytesCount(), out tempHolder);
                         }
                         else
                         {
-                            if (data[offset] == MagicBa[0])
-                            {
-                                isInTheMiddleOfReceivingMessage = true;
-                                tempHolder = new byte[len - offset];
-                                Buffer.BlockCopy(data, offset, tempHolder, 0, len - offset);
-                            }
+                            IsReceiveCompleted = true;
+                            tempHolder = null;
                         }
                     }
                     else
                     {
+                        IsReceiveCompleted = true;
                         tempHolder = null;
-                        isInTheMiddleOfReceivingMessage = false;
-                        // TODO: set a new reject message to be sent
+                        SetRejectMessage(msg.Payload.PayloadType, error);
                     }
                 }
                 else
                 {
-                    isInTheMiddleOfReceivingMessage = true;
-                    tempHolder = new byte[len];
-                    Buffer.BlockCopy(data, 0, tempHolder, 0, len);
+                    byte[] temp = new byte[HeaderLength + stream.GetRemainingBytesCount()];
+                    Buffer.BlockCopy(msg.SerializeHeader(), 0, temp, 0, HeaderLength);
+                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out byte[] rem);
+                    Buffer.BlockCopy(rem, 0, temp, HeaderLength, rem.Length);
+                    tempHolder = temp;
+                    IsReceiveCompleted = false;
                 }
             }
             else
             {
-                // TODO: set a new reject message to be sent for invalid message header
+                SetRejectMessage(msg.Payload.PayloadType, error);
             }
         }
 
 
-
-        internal void ReadBytes(SocketAsyncEventArgs recEventArgs)
+        public void ReadBytes(byte[] buffer, int len)
         {
-            if (recEventArgs.BytesTransferred != 0)
+            if (len != 0)
             {
-                if (isInTheMiddleOfReceivingMessage)
+                if (IsReceiveCompleted)
                 {
-                    byte[] temp = new byte[tempHolder.Length + recEventArgs.BytesTransferred];
-                    Buffer.BlockCopy(tempHolder, 0, temp, 0, tempHolder.Length);
-                    Buffer.BlockCopy(recEventArgs.Buffer, 0, temp, tempHolder.Length, recEventArgs.BytesTransferred);
-                    tempHolder = temp;
-
-                    if (tempHolder.Length >= HeaderLength)
+                    // Try to find magic inside the received buffer
+                    FastStreamReader stream = new FastStreamReader(buffer);
+                    int index = 0;
+                    while (index < len - 4 && !stream.CompareBytes(magicBytes))
                     {
-                        ProcessData(tempHolder, tempHolder.Length);
+                        _ = stream.TryReadByte(out _);
+                    }
+
+                    if (len - index >= HeaderLength)
+                    {
+                        ProcessData(stream);
+                    }
+                    else if (len - index != 0)
+                    {
+                        stream.TryReadByteArray(len - index, out tempHolder);
+                        IsReceiveCompleted = false;
                     }
                 }
                 else
                 {
-                    // look for magic, check if header size is met => read header, else set middleofreceiving to true and get out
-                    if (recEventArgs.BytesTransferred >= HeaderLength)
+                    byte[] temp = new byte[tempHolder.Length + len];
+                    Buffer.BlockCopy(tempHolder, 0, temp, 0, tempHolder.Length);
+                    Buffer.BlockCopy(buffer, 0, temp, tempHolder.Length, len);
+                    tempHolder = temp;
+
+                    if (tempHolder.Length >= HeaderLength)
                     {
-                        ProcessData(recEventArgs.Buffer, recEventArgs.BytesTransferred);
-                    }
-                    else
-                    {
-                        isInTheMiddleOfReceivingMessage = true;
-                        tempHolder = new byte[recEventArgs.BytesTransferred];
-                        Buffer.BlockCopy(recEventArgs.Buffer, 0, tempHolder, 0, recEventArgs.BytesTransferred);
+                        FastStreamReader stream = new FastStreamReader(tempHolder);
+                        ProcessData(stream);
                     }
                 }
             }
         }
 
-        internal void SetSendBuffer(SocketAsyncEventArgs sendEventArgs)
+        public void ReadBytes(SocketAsyncEventArgs recEventArgs)
         {
-            if (remainSend > buffLen)
-            {
-                Buffer.BlockCopy(dataToSend, sendOffset, sendEventArgs.Buffer, 0, buffLen);
-                sendEventArgs.SetBuffer(0, buffLen);
-
-                IsSendFinished = false;
-                remainSend -= buffLen;
-                sendOffset += buffLen;
-            }
-            else if (remainSend == buffLen)
-            {
-                Buffer.BlockCopy(dataToSend, sendOffset, sendEventArgs.Buffer, 0, buffLen);
-                sendEventArgs.SetBuffer(0, buffLen);
-
-                IsSendFinished = true;
-                remainSend = 0;
-                sendOffset += buffLen;
-            }
-            else if (remainSend < buffLen)
-            {
-                Buffer.BlockCopy(dataToSend, sendOffset, sendEventArgs.Buffer, 0, remainSend);
-                sendEventArgs.SetBuffer(0, remainSend);
-
-                IsSendFinished = true;
-                remainSend = 0;
-                sendOffset += remainSend;
-            }
-        }
-
-        internal void StartHandShake(SocketAsyncEventArgs srEventArgs)
-        {
-            Message ver = new Message(NetworkType.MainNet)
-            {
-                Payload = new VersionPayload(70015, NodeServiceFlags.All, 0, false)
-            };
-
-            FastStream stream = new FastStream();
-            ver.Serialize(stream);
-            dataToSend = stream.ToByteArray();
-            remainSend = dataToSend.Length;
-            sendOffset = 0;
-            IsSendCompleted = false;
-            IsHandShaking = true;
-
-            SetSendBuffer(srEventArgs);
+            ReadBytes(recEventArgs.Buffer, recEventArgs.BytesTransferred);
         }
     }
 }

@@ -117,6 +117,22 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             stream.Write(plBa);
         }
 
+        public void SerializeHeader(FastStream stream)
+        {
+            byte[] commandName = Encoding.ASCII.GetBytes(Payload.PayloadType.ToString().ToLower());
+
+            stream.Write(Magic);
+            stream.Write(commandName, CommandNameSize);
+            stream.Write(payloadSize);
+            stream.Write(checkSum);
+        }
+
+        public byte[] SerializeHeader()
+        {
+            FastStream stream = new FastStream(MinSize);
+            SerializeHeader(stream);
+            return stream.ToByteArray();
+        }
 
         private byte[] CalculateChecksum(byte[] data)
         {

@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using System;
 using System.Net;
@@ -12,7 +13,12 @@ namespace Denovo.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private readonly Node node = new Node();
+        internal class MockBlockChain : IBlockchain
+        {
+            public int Height => 0;
+        }
+
+        private readonly Node node = new Node(new MockBlockChain());
 
 
         private string _ip;

@@ -3,6 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -16,9 +19,23 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public class Node
     {
         /// <summary>
-        /// Initializes a new instance of <see cref="Node"/>.
+        /// Initializes a new instance of <see cref="Node"/> for <see cref="NetworkType.MainNet"/> using the default parameters.
         /// </summary>
-        public Node()
+        /// <param name="blockchain">The blockchain (database) manager</param>
+        public Node(IBlockchain blockchain) :
+            this(Constants.P2PProtocolVersion, NodeServiceFlags.All, blockchain, true, NetworkType.MainNet)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Node"/> using the given parameters.
+        /// </summary>
+        /// <param name="protocolVersion">P2P protocol version</param>
+        /// <param name="servs">Services that this node wants to support</param>
+        /// <param name="blockchain">The blockchain (database) manager</param>
+        /// <param name="relay">True if the node wants to relay new transactions and blocks to other peers</param>
+        /// <param name="netType">Network type</param>
+        public Node(int protocolVersion, NodeServiceFlags servs, IBlockchain blockchain, bool relay, NetworkType netType)
         {
             // TODO: the following values are for testing, they should be set by the caller
             // they need more checks for correct and optimal values
@@ -30,6 +47,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             int bytesPerSaea = buffLen;
             int sendReceiveSaeaCount = 10;
             int totalBytes = bytesPerSaea * sendReceiveSaeaCount;
+
+            Message verMsg = new Message(netType)
+            {
+                Payload = new VersionPayload(protocolVersion, servs, blockchain.Height, relay)
+            };
 
 
             maxConnectionEnforcer = new Semaphore(MaxConnections, MaxConnections);
@@ -55,7 +77,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                 buffMan.SetBuffer(sArg);
                 sArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-                sArg.UserToken = new MessageManager(bytesPerSaea);
+                sArg.UserToken = new MessageManager(bytesPerSaea, verMsg, netType);
 
                 sendReceivePool.Push(sArg);
             }
@@ -217,12 +239,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 MessageManager msgMan = recEventArgs.UserToken as MessageManager;
                 msgMan.ReadBytes(recEventArgs);
 
-                if (msgMan.HasReply)
+                if (msgMan.HasDataToSend)
                 {
-                    SocketAsyncEventArgs sendEventArgs = sendReceivePool.Pop();
-                    sendEventArgs.AcceptSocket = recEventArgs.AcceptSocket;
-                    msgMan.SetSendBuffer(sendEventArgs);
-                    StartSend(sendEventArgs);
+                    msgMan.SetSendBuffer(recEventArgs);
+                    StartSend(recEventArgs);
                 }
                 else
                 {
@@ -249,7 +269,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             if (sendEventArgs.SocketError == SocketError.Success)
             {
                 MessageManager msgMan = sendEventArgs.UserToken as MessageManager;
-                if (!msgMan.IsSendFinished)
+                if (msgMan.HasDataToSend)
                 {
                     msgMan.SetSendBuffer(sendEventArgs);
                     StartSend(sendEventArgs);

@@ -40,6 +40,18 @@ namespace Autarkysoft.Bitcoin
         }
 
 
+        public bool CompareBytes(byte[] other)
+        {
+            if (Check(other.Length))
+            {
+                return ((ReadOnlySpan<byte>)data).Slice(position, other.Length).SequenceEqual(other);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public bool TryReadByteArray(int len, out byte[] result)
         {
             if (Check(len))
