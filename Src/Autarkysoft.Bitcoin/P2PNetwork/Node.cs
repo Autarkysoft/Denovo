@@ -234,7 +234,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void ProcessReceive(SocketAsyncEventArgs recEventArgs)
         {
-            if (recEventArgs.SocketError == SocketError.Success)
+            // Zero bytes transferred means remote end has closed the connection. It needs to be closed here too.
+            if (recEventArgs.SocketError == SocketError.Success && recEventArgs.BytesTransferred > 0)
             {
                 MessageManager msgMan = recEventArgs.UserToken as MessageManager;
                 msgMan.ReadBytes(recEventArgs);
