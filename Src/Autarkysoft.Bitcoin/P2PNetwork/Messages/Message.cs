@@ -228,6 +228,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
+            if (Payload is EmptyPayloadBase)
+            {
+                if (payloadSize != 0)
+                {
+                    error = "Payload size for empty payload types must be zero.";
+                    return false;
+                }
+            }
+            else if (payloadSize == 0)
+            {
+                error = "Payload size for none empty payload types can not be zero.";
+                return false;
+            }
+
+
             if (payloadSize > MaxPayloadSize)
             {
                 error = $"Payload size is bigger than allowed size ({MaxPayloadSize}).";
