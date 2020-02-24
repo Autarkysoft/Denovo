@@ -173,12 +173,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 error = Err.EndOfStream;
                 return false;
             }
+            // For the sake of forward compatibility, service flag is not strict (undefined enums are also accepted)
+            // the caller can decide which bits they understand or support.
             Services = (NodeServiceFlags)serv;
-            if ((Services & NodeServiceFlags.All) != Services)
-            {
-                error = "Invalid services flags.";
-                return false;
-            }
 
             if (!stream.TryReadInt64(out _time))
             {
