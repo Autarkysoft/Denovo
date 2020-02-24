@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -75,7 +76,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Indicates whether there is any data to send
         /// </summary>
-        public bool HasDataToSend => remainSend > 0;
+        public bool HasDataToSend => remainSend > 0 || toSendQueue.Count > 0;
         /// <summary>
         /// Indicates whether the handshake process between two nodes is already performed and succeeded
         /// </summary>
@@ -83,12 +84,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private byte[] tempHolder;
 
+        private readonly Queue<Message> toSendQueue = new Queue<Message>();
+
+
         internal void Init()
         {
             DataToSend = null;
-            sendOffset = 0;
-            remainSend = 0;
-
+            toSendQueue.Clear();
             IsHandShakeComplete = false;
             IsReceiveCompleted = true;
         }
@@ -100,6 +102,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="sendEventArgs">Socket arg to use</param>
         public void SetSendBuffer(SocketAsyncEventArgs sendEventArgs)
         {
+            if (remainSend == 0)
+            {
+                Message msg = toSendQueue.Dequeue();
+                FastStream stream = new FastStream((int)msg.payloadSize + HeaderLength);
+                msg.Serialize(stream);
+                DataToSend = stream.ToByteArray();
+            }
+
             if (remainSend >= buffLen)
             {
                 Buffer.BlockCopy(DataToSend, sendOffset, sendEventArgs.Buffer, 0, buffLen);
@@ -124,12 +134,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="srEventArgs">Socket arg to use</param>
         public void StartHandShake(SocketAsyncEventArgs srEventArgs)
         {
-            FastStream stream = new FastStream();
-            verMsg.Serialize(stream);
-            DataToSend = stream.ToByteArray();
-            IsHandShakeComplete = true;
-
+            toSendQueue.Enqueue(verMsg);
             SetSendBuffer(srEventArgs);
+            IsHandShakeComplete = true;
         }
 
 
@@ -150,29 +157,27 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             RejectPayload pl = new RejectPayload()
             {
                 Code = RejectCode.FailedToDecodeMessage,
-                RejectedMessage = plt,
+                RejectedMessage = 0,
                 Reason = error
             };
             Message rej = new Message(pl, netType);
-            FastStream toSendStream = new FastStream();
-            rej.Serialize(toSendStream);
-            DataToSend = toSendStream.ToByteArray();
+            toSendQueue.Enqueue(rej);
             IsReceiveCompleted = true;
         }
+
         private void ProcessData(FastStreamReader stream)
         {
             Message msg = new Message(netType);
             if (msg.TryDeserializeHeader(stream, out string error))
             {
-                if (msg.payloadSize >= stream.GetRemainingBytesCount())
+                if (stream.GetRemainingBytesCount() >= msg.payloadSize)
                 {
                     if (msg.Payload.TryDeserialize(stream, out error))
                     {
+                        // TODO: deseraializing this way doesn't validate the checksum
                         if (TryGetReply(msg, out Message reply))
                         {
-                            FastStream str = new FastStream();
-                            reply.Serialize(str);
-                            DataToSend = str.ToByteArray();
+                            toSendQueue.Enqueue(reply);
                         }
 
                         // TODO: handle received message here. eg. write received block to disk,...
@@ -208,7 +213,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
             else
             {
-                SetRejectMessage(msg.Payload.PayloadType, error);
+                SetRejectMessage(msg.Payload?.PayloadType ?? 0, error);
             }
         }
 
@@ -220,7 +225,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 if (IsReceiveCompleted)
                 {
                     // Try to find magic inside the received buffer
-                    FastStreamReader stream = new FastStreamReader(buffer);
+                    FastStreamReader stream = new FastStreamReader(buffer, 0, len);
                     int index = 0;
                     while (index < len - 4 && !stream.CompareBytes(magicBytes))
                     {

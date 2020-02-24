@@ -15,6 +15,12 @@ namespace Autarkysoft.Bitcoin
             position = 0;
         }
 
+        public FastStreamReader(byte[] ba, int start, int count)
+        {
+            data = ba.SubArray(start, count);
+            position = 0;
+        }
+
 
 
         // Don't rename either one of the following 2 fields (reflection used in tests).

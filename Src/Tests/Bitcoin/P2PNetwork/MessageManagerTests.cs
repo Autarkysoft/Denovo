@@ -155,5 +155,20 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.False(man.HasDataToSend);
             Assert.True(man.IsReceiveCompleted);
         }
+
+        [Fact]
+        public void ReadBytesTest()
+        {
+            MessageManager man = new MessageManager(30, null, NetworkType.MainNet);
+            string hex = "f9beb4d976657273696f6e0000000000650000005f1a69d2" +
+                "721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d" +
+                "010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e" +
+                "392e332fcf05050001";
+            byte[] msgBa = Helper.HexToBytes(hex);
+
+            Assert.False(man.HasDataToSend);
+            man.ReadBytes(msgBa, msgBa.Length);
+            Assert.True(man.HasDataToSend);
+        }
     }
 }
