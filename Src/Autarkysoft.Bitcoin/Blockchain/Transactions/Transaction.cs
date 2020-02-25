@@ -380,7 +380,44 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
             else if (scrType == PubkeyScriptType.P2WPKH)
             {
-                throw new NotImplementedException(); // TODO: implement this!
+                // Outpoints are 32 byte tx hash + 4 byte index
+                FastStream prvOutStream = new FastStream(TxInList.Length * 36);
+                // Sequences are 4 bytes each
+                FastStream seqStream = new FastStream(TxInList.Length * 4);
+                foreach (var tin in TxInList)
+                {
+                    prvOutStream.Write(tin.TxHash);
+                    prvOutStream.Write(tin.Index);
+
+                    seqStream.Write(tin.Sequence);
+                }
+                byte[] hashPrevouts = hashFunc.ComputeHash(prvOutStream.ToByteArray());
+                byte[] hashSequence = hashFunc.ComputeHash(seqStream.ToByteArray());
+
+                // 33 is the approximate size of most TxOuts
+                FastStream outputStream = new FastStream(TxOutList.Length * 33);
+                foreach (var tout in TxOutList)
+                {
+                    tout.Serialize(outputStream);
+                }
+                byte[] hashOutputs = hashFunc.ComputeHash(outputStream.ToByteArray());
+
+                FastStream finalStream = new FastStream(182);
+                finalStream.Write(Version);
+                finalStream.Write(hashPrevouts);
+                finalStream.Write(hashSequence);
+                finalStream.Write(TxInList[inputIndex].TxHash);
+                finalStream.Write(TxInList[inputIndex].Index);
+                // the prevOutScript is a P2WPKH (0014<hash160>) which should be turned into 1976a914<hash160>88ac and placed here
+                ((PubkeyScript)prvTx.TxOutList[TxInList[inputIndex].Index].PubScript).ConvertP2WPKH_to_P2PKH().Serialize(finalStream);
+                finalStream.Write(prvTx.TxOutList[TxInList[inputIndex].Index].Amount);
+                finalStream.Write(TxInList[inputIndex].Sequence);
+                finalStream.Write(hashOutputs);
+                LockTime.WriteToStream(finalStream);
+                finalStream.Write((uint)sht);
+
+                byte[] hashPreimage = hashFunc.ComputeHash(finalStream.ToByteArray());
+                return hashPreimage;
             }
             else if (scrType == PubkeyScriptType.CheckLocktimeVerify)
             {
