@@ -345,6 +345,107 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             return hash;
         }
 
+        /// <summary>
+        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
+        /// used in signing operations for SegWit transactions. Return result is the hash result.
+        /// </summary>
+        /// <param name="scr">
+        /// The locking script (<see cref="PubkeyScript"/> or <see cref="RedeemScript"/>) to be used in serialization.
+        /// </param>
+        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="amount">The amount in satoshi that is being spent</param>
+        /// <param name="sht">Signature hash type</param>
+        /// <returns>32 byte hash</returns>
+        private byte[] SerializeForSigningSegWit(IScript scr, int inputIndex, ulong amount, SigHashType sht)
+        {
+            bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
+            if (anyone)
+            {
+                sht ^= SigHashType.AnyoneCanPay;
+            }
+
+            byte[] hashPrevouts;
+            if (anyone)
+            {
+                hashPrevouts = new byte[32];
+            }
+            else
+            {
+                // Outpoints are 32 byte tx hash + 4 byte index
+                FastStream prvOutStream = new FastStream(TxInList.Length * 36);
+                foreach (var tin in TxInList)
+                {
+                    prvOutStream.Write(tin.TxHash);
+                    prvOutStream.Write(tin.Index);
+                }
+
+                hashPrevouts = hashFunc.ComputeHash(prvOutStream.ToByteArray());
+            }
+
+            byte[] hashSequence;
+            if (!anyone && sht == SigHashType.All)
+            {
+                // Sequences are 4 bytes each
+                FastStream seqStream = new FastStream(TxInList.Length * 4);
+                foreach (var tin in TxInList)
+                {
+                    seqStream.Write(tin.Sequence);
+                }
+
+                hashSequence = hashFunc.ComputeHash(seqStream.ToByteArray());
+            }
+            else
+            {
+                hashSequence = new byte[32];
+            }
+
+            byte[] hashOutputs;
+            if (sht == SigHashType.All)
+            {
+                // 33 is the approximate size of most TxOuts
+                FastStream outputStream = new FastStream(TxOutList.Length * 33);
+                foreach (var tout in TxOutList)
+                {
+                    tout.Serialize(outputStream);
+                }
+
+                hashOutputs = hashFunc.ComputeHash(outputStream.ToByteArray());
+            }
+            else if (sht == SigHashType.Single && inputIndex < TxOutList.Length)
+            {
+                FastStream outputStream = new FastStream(33);
+                TxOutList[inputIndex].Serialize(outputStream);
+
+                hashOutputs = hashFunc.ComputeHash(outputStream.ToByteArray());
+            }
+            else
+            {
+                hashOutputs = new byte[32];
+            }
+
+            if (anyone)
+            {
+                sht |= SigHashType.AnyoneCanPay;
+            }
+
+            FastStream finalStream = new FastStream(182);
+            finalStream.Write(Version);
+            finalStream.Write(hashPrevouts);
+            finalStream.Write(hashSequence);
+            finalStream.Write(TxInList[inputIndex].TxHash);
+            finalStream.Write(TxInList[inputIndex].Index);
+            // the prevOutScript is a P2WPKH (0014<hash160>) which should be turned into 1976a914<hash160>88ac and placed here
+            ((PubkeyScript)scr).ConvertP2WPKH_to_P2PKH().Serialize(finalStream);
+            finalStream.Write(amount);
+            finalStream.Write(TxInList[inputIndex].Sequence);
+            finalStream.Write(hashOutputs);
+            LockTime.WriteToStream(finalStream);
+            finalStream.Write((uint)sht);
+
+            byte[] hashPreimage = hashFunc.ComputeHash(finalStream.ToByteArray());
+            return hashPreimage;
+        }
+
 
         /// <exception cref="ArgumentException"/>
         private void CheckSht(SigHashType sht)
@@ -380,44 +481,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
             else if (scrType == PubkeyScriptType.P2WPKH)
             {
-                // Outpoints are 32 byte tx hash + 4 byte index
-                FastStream prvOutStream = new FastStream(TxInList.Length * 36);
-                // Sequences are 4 bytes each
-                FastStream seqStream = new FastStream(TxInList.Length * 4);
-                foreach (var tin in TxInList)
-                {
-                    prvOutStream.Write(tin.TxHash);
-                    prvOutStream.Write(tin.Index);
-
-                    seqStream.Write(tin.Sequence);
-                }
-                byte[] hashPrevouts = hashFunc.ComputeHash(prvOutStream.ToByteArray());
-                byte[] hashSequence = hashFunc.ComputeHash(seqStream.ToByteArray());
-
-                // 33 is the approximate size of most TxOuts
-                FastStream outputStream = new FastStream(TxOutList.Length * 33);
-                foreach (var tout in TxOutList)
-                {
-                    tout.Serialize(outputStream);
-                }
-                byte[] hashOutputs = hashFunc.ComputeHash(outputStream.ToByteArray());
-
-                FastStream finalStream = new FastStream(182);
-                finalStream.Write(Version);
-                finalStream.Write(hashPrevouts);
-                finalStream.Write(hashSequence);
-                finalStream.Write(TxInList[inputIndex].TxHash);
-                finalStream.Write(TxInList[inputIndex].Index);
-                // the prevOutScript is a P2WPKH (0014<hash160>) which should be turned into 1976a914<hash160>88ac and placed here
-                ((PubkeyScript)prvTx.TxOutList[TxInList[inputIndex].Index].PubScript).ConvertP2WPKH_to_P2PKH().Serialize(finalStream);
-                finalStream.Write(prvTx.TxOutList[TxInList[inputIndex].Index].Amount);
-                finalStream.Write(TxInList[inputIndex].Sequence);
-                finalStream.Write(hashOutputs);
-                LockTime.WriteToStream(finalStream);
-                finalStream.Write((uint)sht);
-
-                byte[] hashPreimage = hashFunc.ComputeHash(finalStream.ToByteArray());
-                return hashPreimage;
+                return SerializeForSigningSegWit(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript, inputIndex,
+                    prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
             }
             else if (scrType == PubkeyScriptType.CheckLocktimeVerify)
             {
