@@ -46,16 +46,21 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockSerializableScript : MockScriptBase
     {
-        public MockSerializableScript(byte[] serializedResult)
+        public MockSerializableScript(byte[] serializedResult, byte streamFirstByte)
         {
+            serBa = new byte[serializedResult.Length + 1];
+            Buffer.BlockCopy(serializedResult, 0, serBa, 1, serializedResult.Length);
+            serBa[0] = streamFirstByte;
+
             ba = serializedResult;
         }
 
+        private readonly byte[] serBa;
         private readonly byte[] ba;
 
         public override void Serialize(FastStream stream)
         {
-            stream.Write(ba);
+            stream.Write(serBa);
         }
 
         public override void ToByteArray(FastStream stream)
@@ -72,12 +77,14 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockSerializablePubScript : MockSerializableScript, IPubkeyScript
     {
-        public MockSerializablePubScript(PubkeyScriptType typeResult, byte[] serializedResult) : base(serializedResult)
+        public MockSerializablePubScript(PubkeyScriptType typeResult, byte[] serializedResult, byte streamFirstByte)
+            : base(serializedResult, streamFirstByte)
         {
             typeToReturn = typeResult;
         }
 
-        public MockSerializablePubScript(byte[] serializedResult) : this(PubkeyScriptType.Unknown, serializedResult)
+        public MockSerializablePubScript(byte[] serializedResult, byte streamFirstByte)
+            : this(PubkeyScriptType.Unknown, serializedResult, streamFirstByte)
         {
         }
 
@@ -89,7 +96,7 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockSerializableSigScript : MockSerializableScript, ISignatureScript
     {
-        public MockSerializableSigScript(byte[] serializedResult) : base(serializedResult)
+        public MockSerializableSigScript(byte[] serializedResult, byte streamFirstByte) : base(serializedResult, streamFirstByte)
         {
         }
     }

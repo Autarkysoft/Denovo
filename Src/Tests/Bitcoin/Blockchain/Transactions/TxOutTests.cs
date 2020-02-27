@@ -29,16 +29,17 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void SerializeTest()
         {
-            var scr = new MockSerializablePubScript(Helper.GetBytes(5));
+            var scr = new MockSerializablePubScript(Helper.GetBytes(5), 5);
             TxOut tx = new TxOut(12_633_113_1334_7895, scr);
             FastStream stream = new FastStream();
             tx.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
             // 8 bytes amount + 1 byte empty script
-            byte[] expected = new byte[8 + 5];
+            byte[] expected = new byte[8 + 5 + 1];
             Buffer.BlockCopy(Helper.HexToBytes("37a51296f97c04"), 0, expected, 0, 7);
-            Buffer.BlockCopy(Helper.GetBytes(5), 0, expected, 8, 5);
+            expected[8] = 5;
+            Buffer.BlockCopy(Helper.GetBytes(5), 0, expected, 9, 5);
 
             Assert.Equal(expected, actual);
         }

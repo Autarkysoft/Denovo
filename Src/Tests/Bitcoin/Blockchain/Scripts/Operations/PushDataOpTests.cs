@@ -56,7 +56,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public void Constructor_FromScriptTest()
         {
             byte[] data = { 1, 2, 3 };
-            MockSerializableScript scr = new MockSerializableScript(data);
+            MockSerializableScript scr = new MockSerializableScript(data, 255);
             PushDataOp op = new PushDataOp(scr);
 
             Helper.ComparePrivateField(op, "data", data);

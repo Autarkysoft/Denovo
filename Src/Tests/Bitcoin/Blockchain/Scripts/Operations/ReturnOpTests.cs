@@ -47,7 +47,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Constructor_ScriptWithSizeTest()
         {
-            var scr = new MockSerializableScript(new byte[] { 100, 200 });
+            var scr = new MockSerializableScript(new byte[] { 100, 200 }, 255);
             ReturnOp op = new ReturnOp(scr, true);
             byte[] expected = new byte[] { 0x6a, 2, 100, 200 };
 
@@ -57,7 +57,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Constructor_ScriptNoSizeTest()
         {
-            var scr = new MockSerializableScript(new byte[] { 100, 200 });
+            var scr = new MockSerializableScript(new byte[] { 100, 200 }, 255);
             ReturnOp op = new ReturnOp(scr, false);
             byte[] expected = new byte[] { 0x6a, 100, 200 };
 

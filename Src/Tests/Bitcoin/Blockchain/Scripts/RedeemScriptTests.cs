@@ -322,7 +322,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void SetToP2SH_P2WSHTest()
         {
             RedeemScript scr = new RedeemScript();
-            MockSerializableScript mockScr = new MockSerializableScript(new byte[] { 1, 2, 3 });
+            MockSerializableScript mockScr = new MockSerializableScript(new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2SH_P2WSH(mockScr);
 
             IOperation[] expected = new IOperation[]
