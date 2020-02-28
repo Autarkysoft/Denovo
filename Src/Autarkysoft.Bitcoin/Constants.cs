@@ -30,7 +30,16 @@ namespace Autarkysoft.Bitcoin
         /// </remarks>
         public const int RngRetryCount = 5;
         /// <summary>
-        /// The constend string that concatinated to the beginning of a message before signing it.
+        /// Maximum allowed length of the scripts in bytes
+        /// </summary>
+        public const int MaxScriptLength = 10_000;
+        /// <summary>
+        /// Maximum allowed length of items to be pushed to the stack 
+        /// (the redeem scripts used in P2SH are also limited by this length)
+        /// </summary>
+        public const int MaxScriptItemLength = 520;
+        /// <summary>
+        /// The constant string that is attached to the beginning of a message before it is signed
         /// </summary>
         public const string MsgSignConst = "Bitcoin Signed Message:\n";
         /// <summary>

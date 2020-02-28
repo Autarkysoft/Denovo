@@ -33,6 +33,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 throw new ArgumentNullException(nameof(ba), "Byte array can not be null.");
             if (HasNumOp(ba))
                 throw new ArgumentException("Short form of data exists with OP codes which should be used instead.");
+            if (ba.Length > Constants.MaxScriptItemLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ba),
+                    $"Data to be pushed to the stack can not be bigger than {Constants.MaxScriptItemLength} bytes.");
+            }
 
             data = ba.CloneByteArray();
             StackInt size = new StackInt(ba.Length);
@@ -52,6 +57,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
 
             data = script.ToByteArray();
+            if (data.Length > Constants.MaxScriptItemLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(script),
+                    $"Script byte size to be pushed to the stack can not be bigger than {Constants.MaxScriptItemLength} bytes.");
+            }
             StackInt size = new StackInt(data.Length);
             _opVal = size.GetOpCode();
         }
@@ -128,8 +138,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 opData.Push(data);
             }
 
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
 
 
@@ -183,7 +192,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <summary>
-        /// Reads the push data from the given byte array starting from the specified offset. The return value indicates success.
+        /// Reads the push data from the given stream. The return value indicates success.
         /// </summary>
         /// <param name="stream">Stream to use</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
@@ -222,10 +231,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     return false;
                 }
 
-                // TODO: change this with maximum allowed push data size
-                if (size > int.MaxValue)
+                if (size > Constants.MaxScriptItemLength)
                 {
-                    error = "Push data size is too big.";
+                    error = $"Push data size is bigger than allowed {Constants.MaxScriptItemLength} length.";
                     return false;
                 }
 
@@ -242,9 +250,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     return false;
                 }
 
-                if (size > int.MaxValue)
+                if (size > Constants.MaxScriptItemLength)
                 {
-                    error = "Push data size is too big.";
+                    error = $"Push data size is bigger than allowed {Constants.MaxScriptItemLength} length.";
                     return false;
                 }
 

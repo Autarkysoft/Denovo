@@ -51,6 +51,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Throws<ArgumentException>(() => new PushDataOp(data));
         }
 
+        [Fact]
+        public void Constructor_FromBytes_OutOfRangeExceptionTest()
+        {
+            byte[] data = new byte[Constants.MaxScriptItemLength + 1];
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PushDataOp(data));
+        }
+
 
         [Fact]
         public void Constructor_FromScriptTest()
@@ -64,10 +71,18 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
         [Fact]
-        public void Constructor_FromScript_ExceptionTest()
+        public void Constructor_FromScript_NullExceptionTest()
         {
             IScript scr = null;
             Assert.Throws<ArgumentNullException>(() => new PushDataOp(scr));
+        }
+
+        [Fact]
+        public void Constructor_FromScript_OutOfRangeExceptionTest()
+        {
+            byte[] data = new byte[Constants.MaxScriptItemLength + 1];
+            MockSerializableScript scr = new MockSerializableScript(data, 255);
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PushDataOp(scr));
         }
 
 
@@ -166,6 +181,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             MockOpData opData = new MockOpData(FuncCallName.Push)
             {
+                _itemCount = 0,
+                _altItemCount = 0,
                 pushData = new byte[][] { expectedData }
             };
 
@@ -174,6 +191,23 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             // The mock data is already checking the call type and the data that was pushed to be correct.
             Assert.True(b);
             Assert.Null(error);
+        }
+
+        [Fact]
+        public void Run_ItemCountOverflowTest()
+        {
+            PushDataOp op = new PushDataOp(OpTestCaseHelper.b1);
+            MockOpData opData = new MockOpData(FuncCallName.Push)
+            {
+                _itemCount = 1001,
+                _altItemCount = 0,
+                pushData = new byte[][] { OpTestCaseHelper.b1 }
+            };
+
+            bool b = op.Run(opData, out string error);
+
+            Assert.False(b);
+            Assert.Equal(Err.OpStackItemOverflow, error);
         }
 
 
@@ -289,27 +323,68 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             }
         }
 
+        public static IEnumerable<object[]> GetReadFailCases()
+        {
+            byte[] bigBytesWit = new byte[524];
+            // CompctInt(521)
+            bigBytesWit[0] = 0xfd;
+            bigBytesWit[1] = 0x09;
+            bigBytesWit[2] = 0x02;
+
+            byte[] bigBytes = new byte[524];
+            // StackInt(521)
+            bigBytes[0] = 0x4d;
+            bigBytes[1] = 0x09;
+            bigBytes[2] = 0x02;
+
+            yield return new object[] { null, false, "Stream can not be null." };
+            yield return new object[] { new FastStreamReader(new byte[0]), false, Err.EndOfStream };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[] { 253 }),
+                true,
+                "First byte 253 needs to be followed by at least 2 byte."
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[] { 76 }),
+                false,
+                "OP_PushData1 needs to be followed by at least one byte."
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(bigBytesWit),
+                true,
+                $"Push data size is bigger than allowed {Constants.MaxScriptItemLength} length."
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(bigBytes),
+                false,
+                $"Push data size is bigger than allowed {Constants.MaxScriptItemLength} length."
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[] { 20, 1 }),
+                true,
+                Err.EndOfStream
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[] { 20, 1 }),
+                false,
+                Err.EndOfStream
+            };
+        }
         [Theory]
-        [InlineData(new byte[0], Err.EndOfStream)]
-        public void TryRead_FailTest(byte[] ba, string expErr)
+        [MemberData(nameof(GetReadFailCases))]
+        public void TryRead_FailTest(FastStreamReader stream, bool isWit, string expErr)
         {
             PushDataOp op = new PushDataOp();
-            FastStreamReader stream = new FastStreamReader(ba);
-            bool b = op.TryRead(stream, out string error, false);
+            bool b = op.TryRead(stream, out string error, isWit);
 
             Assert.False(b);
             Assert.Equal(expErr, error);
-        }
-
-        [Fact]
-        public void TryRead_FailNullStreamTest()
-        {
-            PushDataOp op = new PushDataOp();
-            FastStreamReader stream = null;
-            bool b = op.TryRead(stream, out string error, true);
-
-            Assert.False(b);
-            Assert.Equal("Stream can not be null.", error);
         }
 
 
