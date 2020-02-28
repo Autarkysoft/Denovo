@@ -30,10 +30,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            byte[] item1 = opData.Pop();
-            byte[] item2 = opData.Pop();
+            ReadOnlySpan<byte> item1 = opData.Pop();
+            ReadOnlySpan<byte> item2 = opData.Pop();
 
-            if (((ReadOnlySpan<byte>)item1).SequenceEqual(item2))
+            if (item1.SequenceEqual(item2))
             {
                 opData.Push(new byte[] { 1 });
             }
@@ -71,10 +71,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            byte[] item1 = opData.Pop();
-            byte[] item2 = opData.Pop();
+            ReadOnlySpan<byte> item1 = opData.Pop();
+            ReadOnlySpan<byte> item2 = opData.Pop();
 
-            if (((ReadOnlySpan<byte>)item1).SequenceEqual(item2))
+            if (item1.SequenceEqual(item2))
             {
                 error = null;
                 return true;
@@ -86,5 +86,4 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
         }
     }
-
 }
