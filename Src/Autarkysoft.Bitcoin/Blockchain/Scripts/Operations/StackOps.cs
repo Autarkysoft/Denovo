@@ -122,9 +122,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(opData.Peek(2));
-
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 
@@ -153,9 +151,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(opData.Peek(3));
-
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 
@@ -187,9 +183,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] data2 = opData.PeekAtIndex(2);
 
             opData.Push(new byte[2][] { data1, data2 });
-
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 
@@ -289,8 +283,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 opData.Push(data);
             }
 
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 
@@ -313,9 +306,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public override bool Run(IOpData opData, out string error)
         {
             opData.Push(IntToByteArray(opData.ItemCount));
-
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 
@@ -376,9 +367,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(opData.Peek());
-
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 
@@ -441,8 +430,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] data = opData.PeekAtIndex(1);
             opData.Push(data);
 
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 
@@ -479,7 +467,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            if (!TryConvertToLong(data, out long n, true)) // TODO: set isStrict field base don BIP62
+            if (!TryConvertToLong(data, out long n, true)) // TODO: set isStrict field based on BIP62
             {
                 error = "Invalid number format.";
                 return false;
@@ -655,8 +643,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] data = opData.Peek();
             opData.Insert(data, 2);
 
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 

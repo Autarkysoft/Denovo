@@ -30,8 +30,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] temp = opData.Peek();
             opData.Push(IntToByteArray(temp.Length));
 
-            error = null;
-            return true;
+            return CheckItemCount(opData, out error);
         }
     }
 }

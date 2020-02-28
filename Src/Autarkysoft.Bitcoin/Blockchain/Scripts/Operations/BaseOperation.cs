@@ -32,6 +32,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <summary>
+        /// Checks if the total number of items in the stack (and alt stack) is below the allowed limit.
+        /// </summary>
+        /// <param name="opData">Data to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if total number of items in the stack is below the limit, false if otherwise</returns>
+        protected bool CheckItemCount(IOpData opData, out string error)
+        {
+            // Note that there is no need to perform this check after all of the operations.
+            // It is only needed when the OP _only_ adds items or adds more items than it removes.
+            // Example: DupOp -> Adds 1 new item, CheckSigOp -> removes 2 then add 1, ArithmeticOps -> remove 1/2/3 then add 1
+
+            if (opData.ItemCount + opData.AltItemCount <= 1000)
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = Err.OpStackItemOverflow;
+                return false;
+            }
+        }
+
+
+        /// <summary>
         /// Determines whether a given byte array could be encoded with minimal number of bytes
         /// using a number OP code.
         /// </summary>

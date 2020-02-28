@@ -17,6 +17,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
             MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Push)
             {
                 _itemCount = 1,
+                _altItemCount = 0,
                 peekData = new byte[][] { OpTestCaseHelper.b1 }, // b1 is not zero so it should be duplicated
                 pushData = new byte[][] { OpTestCaseHelper.b1 },
             };
@@ -30,6 +31,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
             MockOpData data = new MockOpData(FuncCallName.Peek)
             {
                 _itemCount = 1,
+                _altItemCount = 0,
                 peekData = new byte[][] { OpTestCaseHelper.num0 }, // num0 is zero so no duplication occurs
             };
 
@@ -45,6 +47,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
             };
 
             OpTestCaseHelper.RunFailTest<IfDupOp>(data, Err.OpNotEnoughItems);
+        }
+
+        [Fact]
+        public void Run_ItemCountOverflowTest()
+        {
+            MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Push)
+            {
+                _itemCount = 1001,
+                _altItemCount = 0,
+                peekData = new byte[][] { OpTestCaseHelper.b1 }, // b1 is not zero so it should be duplicated
+                pushData = new byte[][] { OpTestCaseHelper.b1 },
+            };
+
+            OpTestCaseHelper.RunFailTest<IfDupOp>(data, Err.OpStackItemOverflow);
         }
     }
 }

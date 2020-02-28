@@ -18,6 +18,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
             MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Insert)
             {
                 _itemCount = 2,
+                _altItemCount = 0,
                 peekData = new byte[][] { OpTestCaseHelper.b1, OpTestCaseHelper.b2 },
                 insertData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.b2 } }
             };
@@ -34,6 +35,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
             };
 
             OpTestCaseHelper.RunFailTest<TUCKOp>(data, Err.OpNotEnoughItems);
+        }
+
+        [Fact]
+        public void Run_ItemCountOverflowTest()
+        {
+            MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Insert)
+            {
+                _itemCount = 1001,
+                _altItemCount = 0,
+                peekData = new byte[][] { OpTestCaseHelper.b1, OpTestCaseHelper.b2 },
+                insertData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.b2 } }
+            };
+
+            OpTestCaseHelper.RunFailTest<TUCKOp>(data, Err.OpStackItemOverflow);
         }
     }
 }

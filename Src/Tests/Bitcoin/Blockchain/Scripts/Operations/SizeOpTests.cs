@@ -17,6 +17,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Push)
             {
                 _itemCount = 1,
+                _altItemCount = 0,
                 peekData = new byte[][] { OpTestCaseHelper.b1 },
                 pushData = new byte[][] { OpTestCaseHelper.num3 },
             };
@@ -34,6 +35,34 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             };
 
             OpTestCaseHelper.RunFailTest<SizeOp>(data, Err.OpNotEnoughItems);
+        }
+
+        [Fact]
+        public void Run_ItemCountOverflowTest()
+        {
+            MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Push)
+            {
+                _itemCount = 1001,
+                _altItemCount = 0,
+                peekData = new byte[][] { OpTestCaseHelper.b1 },
+                pushData = new byte[][] { OpTestCaseHelper.num3 },
+            };
+
+            OpTestCaseHelper.RunFailTest<SizeOp>(data, Err.OpStackItemOverflow);
+        }
+
+        [Fact]
+        public void Run_ItemCountOverflowTest2()
+        {
+            MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Push)
+            {
+                _itemCount = 501,
+                _altItemCount = 500,
+                peekData = new byte[][] { OpTestCaseHelper.b1 },
+                pushData = new byte[][] { OpTestCaseHelper.num3 },
+            };
+
+            OpTestCaseHelper.RunFailTest<SizeOp>(data, Err.OpStackItemOverflow);
         }
     }
 }
