@@ -3,6 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
@@ -10,5 +13,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     /// </summary>
     public interface IWitnessScript : IScript
     {
+        void SetToP2WPKH(Signature sig, PublicKey pubKey, bool compressed);
     }
 }

@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
         public EllipticCurveCalculator Calc => throw new System.NotImplementedException();
 
-        public byte[] GetBytesToSign(SigHashType sht)
+        public byte[] GetBytesToSign(SigHashType sht, IRedeemScript redeem)
         {
             throw new System.NotImplementedException();
         }

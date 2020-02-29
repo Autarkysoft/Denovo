@@ -17,7 +17,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     public interface IOpData
     {
         EllipticCurveCalculator Calc { get; }
-        byte[] GetBytesToSign(SigHashType sht);
+
+        /// <inheritdoc cref="ITransaction.GetBytesToSign(ITransaction, int, SigHashType, IRedeemScript)"/>
+        /// <param name="sht"><inheritdoc/></param>
+        /// <param name="redeem"><inheritdoc/></param>
+        byte[] GetBytesToSign(SigHashType sht, IRedeemScript redeem);
 
         /// <summary>
         /// Returns number of available items in the stack.

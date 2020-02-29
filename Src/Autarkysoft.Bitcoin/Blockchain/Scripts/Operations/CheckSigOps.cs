@@ -42,7 +42,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            byte[] toSign = opData.GetBytesToSign(sig.SigHash);
+            byte[] toSign = opData.GetBytesToSign(sig.SigHash, null);
 
             bool b = opData.Calc.Verify(toSign, sig, pubK);
 

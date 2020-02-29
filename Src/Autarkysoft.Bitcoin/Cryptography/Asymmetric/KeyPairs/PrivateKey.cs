@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
@@ -305,8 +306,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         /// <param name="tx">The transaction to sign</param>
         /// <param name="txToSpend">The previous tx that the transaction to sign is spending</param>
         /// <param name="index">Index of the input to sign</param>
-        /// <param name="sht">Signature hash type</param>
-        public void Sign(ITransaction tx, ITransaction txToSpend, int index, SigHashType sht = SigHashType.All)
+        /// <param name="sht">[Default value =<see cref="SigHashType.All"/>] Signature hash type</param>
+        /// <param name="redeem">[Default value = null] Redeem script required only for spending pay-to-script outputs</param>
+        public void Sign(ITransaction tx, ITransaction txToSpend, int index, SigHashType sht = SigHashType.All, IRedeemScript redeem = null)
         {
             CheckDisposed();
             if (tx == null)
@@ -316,9 +318,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
             // TODO: change ITransaction.Sign so that it takes public key and does the initial checks 
             // such as correct txout being spent.
-            Signature sig = calc.Sign(tx.GetBytesToSign(txToSpend, index, sht), keyBytes);
+            Signature sig = calc.Sign(tx.GetBytesToSign(txToSpend, index, sht, redeem), keyBytes);
             sig.SigHash = sht;
-            tx.WriteScriptSig(sig, ToPublicKey(), txToSpend, index);
+            tx.WriteScriptSig(sig, ToPublicKey(), txToSpend, index, redeem);
         }
 
 

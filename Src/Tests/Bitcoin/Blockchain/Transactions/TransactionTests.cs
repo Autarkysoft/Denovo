@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
@@ -124,7 +125,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
 
             for (int i = 0; i < indexes.Length; i++)
             {
-                byte[] actualBytes = tx.GetBytesToSign(prvTx, indexes[i], sht);
+                byte[] actualBytes = tx.GetBytesToSign(prvTx, indexes[i], sht, null);
                 Assert.Equal(Helper.HexToBytes(expBytes[i]), actualBytes);
             }
         }

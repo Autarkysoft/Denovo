@@ -63,25 +63,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <summary>
         /// Returns the hash result that needs to be signed with the private key.
         /// </summary>
-        /// <remarks>
-        /// For spending a pay-to-script output use 
-        /// <see cref="GetBytesToSign(ITransaction, int, SigHashType, IRedeemScript)"/> method.
-        /// </remarks>
         /// <param name="prvTx">The transaction being spent</param>
         /// <param name="inputIndex">Index of the input in <see cref="TxInList"/> to be signed</param>
         /// <param name="sht">Signature hash type</param>
+        /// <param name="redeem">Redeem script for spending pay-to-script outputs (can be null)</param>
         /// <returns>Byte array to use for signin</returns>
-        byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht);
-
-        /// <summary>
-        /// Returns the hash result that needs to be signed with the private key.
-        /// </summary>
-        /// <param name="prvTx">The transaction being spent</param>
-        /// <param name="inputIndex">Index of the input in <see cref="TxInList"/> to be signed</param>
-        /// <param name="sht">Signature hash type</param>
-        /// <param name="redeemScript">Redeem script</param>
-        /// <returns>Byte array to use for signin</returns>
-        byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeemScript);
+        byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeem);
 
         /// <summary>
         /// Sets the <see cref="SignatureScript"/> of the <see cref="TxIn"/> at the given <paramref name="inputIndex"/> 
@@ -91,6 +78,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="pubKey">Public key</param>
         /// <param name="prevTx">The transaction being spent</param>
         /// <param name="inputIndex">Index of the input in <see cref="TxInList"/> that was signed</param>
-        void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex);
+        /// <param name="redeem">Redeem script for spending pay-to-script outputs (can be null)</param>
+        void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem);
     }
 }

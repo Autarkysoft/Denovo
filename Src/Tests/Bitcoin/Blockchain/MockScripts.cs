@@ -6,6 +6,8 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System;
 using Xunit;
 
@@ -99,6 +101,15 @@ namespace Tests.Bitcoin.Blockchain
         public MockSerializableSigScript(byte[] serializedResult, byte streamFirstByte) : base(serializedResult, streamFirstByte)
         {
         }
+
+        public void SetToEmpty() => throw new NotImplementedException();
+        public void SetToMultiSig(Signature sig, PublicKey pub, IRedeemScript redeem) => throw new NotImplementedException();
+        public void SetToP2PK(Signature sig) => throw new NotImplementedException();
+        public void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public void SetToP2SH_P2WPKH(IRedeemScript redeem) => throw new NotImplementedException();
+        public void SetToP2SH_P2WPKH(PublicKey pubKey) => throw new NotImplementedException();
+        public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
+        public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
     }
 
 
@@ -162,5 +173,14 @@ namespace Tests.Bitcoin.Blockchain
             : base(streamIndex, bytesToRead, errorToReturn)
         {
         }
+
+        public void SetToEmpty() => throw new NotImplementedException();
+        public void SetToMultiSig(Signature sig, PublicKey pub, IRedeemScript redeem) => throw new NotImplementedException();
+        public void SetToP2PK(Signature sig) => throw new NotImplementedException();
+        public void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public void SetToP2SH_P2WPKH(IRedeemScript redeem) => throw new NotImplementedException();
+        public void SetToP2SH_P2WPKH(PublicKey pubKey) => throw new NotImplementedException();
+        public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
+        public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
     }
 }

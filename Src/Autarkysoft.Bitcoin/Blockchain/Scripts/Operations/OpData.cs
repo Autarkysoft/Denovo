@@ -80,10 +80,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public EllipticCurveCalculator Calc { get; private set; }
 
 
-        /// <inheritdoc cref="ITransaction.GetBytesToSign(ITransaction, int, SigHashType)"/>
-        public byte[] GetBytesToSign(SigHashType sht)
+        /// <inheritdoc/>
+        public byte[] GetBytesToSign(SigHashType sht, IRedeemScript redeem = null)
         {
-            return Tx.GetBytesToSign(PrvTx, TxInIndex, sht);
+            return Tx.GetBytesToSign(PrvTx, TxInIndex, sht, redeem);
         }
 
 

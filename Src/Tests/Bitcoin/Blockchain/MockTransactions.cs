@@ -44,7 +44,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             throw new NotImplementedException();
         }
-        public virtual void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex)
+        public virtual void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem)
         {
             throw new NotImplementedException();
         }

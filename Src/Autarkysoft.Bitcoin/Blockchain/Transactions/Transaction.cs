@@ -462,7 +462,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht)
+        public byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeem = null)
         {
             CheckSht(sht);
             if (prvTx is null)
@@ -479,10 +479,28 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             {
                 return SerializeForSigning(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript, inputIndex, sht);
             }
+            else if (scrType == PubkeyScriptType.P2SH)
+            {
+                if (redeem is null)
+                {
+                    throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
+                }
+
+                ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.ToByteArray());
+                byte[] actHash = ((PushDataOp)prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
+                if (!expHash.SequenceEqual(actHash))
+                    throw new ArgumentException("Wrong previous transaction or index.");
+
+                return SerializeForSigning(redeem, inputIndex, sht);
+            }
             else if (scrType == PubkeyScriptType.P2WPKH)
             {
                 return SerializeForSigningSegWit(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript, inputIndex,
                     prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
+            }
+            else if (scrType == PubkeyScriptType.P2WSH)
+            {
+                throw new NotImplementedException(); // TODO: implement this!
             }
             else if (scrType == PubkeyScriptType.CheckLocktimeVerify)
             {
@@ -493,9 +511,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             {
                 case PubkeyScriptType.Empty:
                     throw new ArgumentException($"Previous transaction's PubkeyScript at index {inputIndex} needs to be set first.");
-                case PubkeyScriptType.P2SH:
-                case PubkeyScriptType.P2WSH:
-                    throw new ArgumentException("Can not sign a pay-to-scripthash output without a RedeemScript, use the correct method.");
                 case PubkeyScriptType.RETURN:
                     throw new ArgumentException("Can not spend OP_RETURN outputs.");
                 case PubkeyScriptType.Unknown:
@@ -509,68 +524,33 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeemScript)
+        public void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem)
         {
-            CheckSht(sht);
-            if (prvTx is null)
-                throw new ArgumentNullException(nameof(prvTx), "Previous transaction (to spend) can not be null.");
-            if (redeemScript is null)
-                throw new ArgumentNullException(nameof(redeemScript), "Redeem script can not be null.");
-            if (inputIndex < 0)
-                throw new ArgumentException("Index can not be negative.");
-            if (redeemScript == null)
-                throw new ArgumentNullException(nameof(redeemScript), "Redeem script can not be null.");
-            if (!((ReadOnlySpan<byte>)TxInList[inputIndex].TxHash).SequenceEqual(prvTx.GetTransactionHash()))
-                throw new ArgumentException("Wrong previous transaction or index.");
-            if (prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType() != PubkeyScriptType.P2SH)
-                throw new ArgumentException("Invalid script type.");
+            if (sig is null)
+                throw new ArgumentNullException(nameof(sig), "Signature can not be null.");
+            if (pubKey is null)
+                throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
+            if (prevTx is null)
+                throw new ArgumentNullException(nameof(prevTx), "Previous transaction can not be null.");
+            if (inputIndex < 0 || inputIndex >= TxInList.Length)
+                throw new ArgumentOutOfRangeException(nameof(inputIndex), "Index can not be negative or bigger than input count.");
 
-
-            RedeemScriptType scrType = redeemScript.GetRedeemScriptType();
-
-            if (scrType == RedeemScriptType.MultiSig)
-            {
-                return SerializeForSigning(redeemScript, inputIndex, sht);
-            }
-            else if (scrType == RedeemScriptType.P2SH_P2WPKH)
-            {
-                throw new NotImplementedException(); // TODO: implement this!
-            }
-            else if (scrType == RedeemScriptType.CheckLocktimeVerify)
-            {
-                throw new NotImplementedException(); // TODO: implement this!
-            }
-
-            switch (scrType)
-            {
-                case RedeemScriptType.Empty:
-                    throw new ArgumentException($"Previous transaction's PubkeyScript at index {inputIndex} needs to be set first.");
-                case RedeemScriptType.Unknown:
-                default:
-                    throw new ArgumentException("Previous transaction's RedeemScript type is not defined.");
-            }
-        }
-
-
-        /// <inheritdoc/>
-        public void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex)
-        {
             PubkeyScriptType scrType = prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType();
             switch (scrType)
             {
-                // TODO: add methods to interface to void casting
                 case PubkeyScriptType.P2PK:
-                    ((SignatureScript)TxInList[inputIndex].SigScript).SetToP2PK(sig);
+                    TxInList[inputIndex].SigScript.SetToP2PK(sig);
                     break;
 
                 case PubkeyScriptType.P2PKH:
-                    byte[] expHash160 = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[2]).data;
-                    byte[] actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
+                    ReadOnlySpan<byte> expHash160 =
+                        ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[2]).data;
+                    ReadOnlySpan<byte> actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
                     bool compressed = true;
-                    if (!((ReadOnlySpan<byte>)actualHash160).SequenceEqual(expHash160))
+                    if (!actualHash160.SequenceEqual(expHash160))
                     {
                         actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(false));
-                        if (!((ReadOnlySpan<byte>)actualHash160).SequenceEqual(expHash160))
+                        if (!actualHash160.SequenceEqual(expHash160))
                         {
                             throw new ArgumentException("Public key is invalid.");
                         }
@@ -580,21 +560,51 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         }
                     }
 
-                    ((SignatureScript)TxInList[inputIndex].SigScript).SetToP2PKH(sig, pubKey, compressed);
+                    TxInList[inputIndex].SigScript.SetToP2PKH(sig, pubKey, compressed);
                     break;
 
                 case PubkeyScriptType.P2SH:
-                    throw new Exception("Not defined!");
+                    if (redeem is null)
+                    {
+                        throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
+                    }
+
+                    ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.ToByteArray());
+                    byte[] actHash = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
+                    if (!expHash.SequenceEqual(actHash))
+                    {
+                        throw new ArgumentException("Wrong previous transaction or index.");
+                    }
+
+                    TxInList[inputIndex].SigScript.SetToMultiSig(sig, pubKey, redeem);
+                    break;
+
+                case PubkeyScriptType.P2MS:
+                case PubkeyScriptType.CheckLocktimeVerify:
+                    throw new NotImplementedException();
+
+                case PubkeyScriptType.RETURN:
+                    throw new ArgumentException("Can not spend an OP_Return output.");
 
                 case PubkeyScriptType.P2WPKH:
-                    byte[] expHash160_2 = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
-                    byte[] actualHash160_2 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true)); // pubkey is always compressed
-                    if (!((ReadOnlySpan<byte>)actualHash160_2).SequenceEqual(expHash160_2))
+                    expHash160 = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
+                    actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
+                    compressed = true;
+                    if (!actualHash160.SequenceEqual(expHash160))
                     {
-                        throw new ArgumentException("Public key is invalid.");
+                        actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(false));
+                        if (!actualHash160.SequenceEqual(expHash160))
+                        {
+                            throw new ArgumentException("Public key is invalid.");
+                        }
+                        else
+                        {
+                            compressed = false;
+                        }
                     }
+
                     // P2WPKH SignatureScript is always empty
-                    TxInList[inputIndex].SigScript = new SignatureScript();
+                    TxInList[inputIndex].SigScript.SetToEmpty();
 
                     // only initialize witness list once
                     if (WitnessList == null || WitnessList.Length == 0)
@@ -606,9 +616,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         }
                     }
 
-                    ((WitnessScript)WitnessList[inputIndex]).SetToP2WPKH(sig, pubKey);
-
+                    WitnessList[inputIndex].SetToP2WPKH(sig, pubKey, compressed);
                     break;
+
+                case PubkeyScriptType.P2WSH:
+                    throw new NotImplementedException();
 
                 default:
                     throw new Exception("Not defined!");
@@ -625,12 +637,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             switch (scrType)
             {
-                case RedeemScriptType.Empty:
-                    break;
-                case RedeemScriptType.Unknown:
-                    break;
-                case RedeemScriptType.MultiSig:
-                    break;
                 case RedeemScriptType.CheckLocktimeVerify:
                     ((SignatureScript)TxInList[index].SigScript).SetToCheckLocktimeVerify(sig, redeem);
                     break;
@@ -641,8 +647,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 case RedeemScriptType.P2SH_P2WSH:
                     ((SignatureScript)TxInList[index].SigScript).SetToP2SH_P2WSH(redeem);
                     //((WitnessScript)WitnessList[index].WitnessItems).SetToP2WSH_MultiSig(sig, pubKey);
-                    break;
-                case RedeemScriptType.P2WSH:
                     break;
                 default:
                     break;
