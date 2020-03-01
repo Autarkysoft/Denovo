@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 
@@ -41,7 +42,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="sig">Signature to use</param>
         /// <param name="pub">Public key of the key used to create the signature</param>
         /// <param name="redeem">Redeem script</param>
-        void SetToMultiSig(Signature sig, PublicKey pub, IRedeemScript redeem);
+        /// <param name="tx"></param>
+        /// <param name="prevTx"></param>
+        /// <param name="inputIndex"></param>
+        void SetToMultiSig(Signature sig, PublicKey pub, IRedeemScript redeem, ITransaction tx, ITransaction prevTx, int inputIndex);
 
         /// <summary>
         /// Sets this instance to a P2SH-P2WPKH script using the given redeem script.

@@ -576,7 +576,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         throw new ArgumentException("Wrong previous transaction or index.");
                     }
 
-                    TxInList[inputIndex].SigScript.SetToMultiSig(sig, pubKey, redeem);
+                    TxInList[inputIndex].SigScript.SetToMultiSig(sig, pubKey, redeem, this, prevTx, inputIndex);
                     break;
 
                 case PubkeyScriptType.P2MS:
