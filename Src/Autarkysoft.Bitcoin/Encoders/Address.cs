@@ -123,7 +123,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                     byte[] decoded = b58Encoder.DecodeWithCheckSum(address);
                     if (decoded[0] != P2pkhVerMainNet &&
                         decoded[0] != P2pkhVerTestNet &&
-                        decoded[0] != P2pkhVerRegTest &&
+                        decoded[0] != P2pkhVerRegTest ||
                         decoded.Length != 21)
                     {
                         return false;
@@ -139,7 +139,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                     decoded = b58Encoder.DecodeWithCheckSum(address);
                     if (decoded[0] != P2shVerMainNet &&
                         decoded[0] != P2shVerTestNet &&
-                        decoded[0] != P2shVerRegTest &&
+                        decoded[0] != P2shVerRegTest ||
                         decoded.Length != 21)
                     {
                         return false;
