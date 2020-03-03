@@ -114,6 +114,25 @@ namespace Tests.Bitcoin.Blockchain
     }
 
 
+    public class MockSerializableRedeemScript : MockSerializableScript, IRedeemScript
+    {
+        public MockSerializableRedeemScript(RedeemScriptType typeResult, byte[] serializedResult, byte streamFirstByte)
+            : base(serializedResult, streamFirstByte)
+        {
+            typeToReturn = typeResult;
+        }
+
+        public MockSerializableRedeemScript(byte[] serializedResult, byte streamFirstByte)
+            : this(RedeemScriptType.Unknown, serializedResult, streamFirstByte)
+        {
+        }
+
+        private readonly RedeemScriptType typeToReturn;
+
+        public RedeemScriptType GetRedeemScriptType() => typeToReturn;
+    }
+
+
     public class MockDeserializableScript : MockScriptBase
     {
         /// <summary>
