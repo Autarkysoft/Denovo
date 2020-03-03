@@ -21,9 +21,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Initializes a new instance of <see cref="PubkeyScript"/>.
         /// </summary>
-        public PubkeyScript() : base(10000)
+        public PubkeyScript() : base(Constants.MaxScriptLength)
         {
-            // TODO: set min/max sizes and do checks in serialize,... functions.
             ScriptType = ScriptType.ScriptPub;
         }
 
@@ -40,10 +39,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
 
-        /// <summary>
-        /// Returns <see cref="PubkeyScriptType"/> type of this instance if it was defined.
-        /// </summary>
-        /// <returns>The <see cref="PubkeyScriptType"/></returns>
+        /// <inheritdoc/>
         public PubkeyScriptType GetPublicScriptType()
         {
             if (OperationList == null || OperationList.Length == 0)
@@ -55,8 +51,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 return PubkeyScriptType.RETURN;
             }
             else if (OperationList.Length == 2 &&
-                    OperationList[0] is PushDataOp push &&
-                    OperationList[1] is CheckSigOp)
+                     OperationList[0] is PushDataOp push &&
+                     OperationList[1] is CheckSigOp)
             {
                 if (push.data?.Length == CompPubKeyLength || push.data?.Length == UncompPubKeyLength)
                 {
@@ -64,38 +60,38 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 }
             }
             else if (OperationList.Length == 5 &&
-                    OperationList[0] is DUPOp &&
-                    OperationList[1] is Hash160Op &&
-                    OperationList[2] is PushDataOp push2 && push2.data?.Length == hashFunc.HashByteSize &&
-                    OperationList[3] is EqualVerifyOp &&
-                    OperationList[4] is CheckSigOp)
+                     OperationList[0] is DUPOp &&
+                     OperationList[1] is Hash160Op &&
+                     OperationList[2] is PushDataOp push2 && push2.data?.Length == hashFunc.HashByteSize &&
+                     OperationList[3] is EqualVerifyOp &&
+                     OperationList[4] is CheckSigOp)
             {
                 return PubkeyScriptType.P2PKH;
             }
             else if (OperationList.Length == 3 &&
-                    OperationList[0] is Hash160Op &&
-                    OperationList[1] is PushDataOp push3 && push3.data?.Length == hashFunc.HashByteSize &&
-                    OperationList[2] is EqualOp)
+                     OperationList[0] is Hash160Op &&
+                     OperationList[1] is PushDataOp push3 && push3.data?.Length == hashFunc.HashByteSize &&
+                     OperationList[2] is EqualOp)
             {
                 return PubkeyScriptType.P2SH;
             }
             else if (OperationList.Length == 2 &&
-                    OperationList[0] is PushDataOp && OperationList[0].OpValue == OP._0 &&
-                    OperationList[1] is PushDataOp push4 && push4.data?.Length == hashFunc.HashByteSize)
+                     OperationList[0] is PushDataOp && OperationList[0].OpValue == OP._0 &&
+                     OperationList[1] is PushDataOp push4 && push4.data?.Length == hashFunc.HashByteSize)
             {
                 return PubkeyScriptType.P2WPKH;
             }
             else if (OperationList.Length == 2 &&
-                    OperationList[0] is PushDataOp && OperationList[0].OpValue == OP._0 &&
-                    OperationList[1] is PushDataOp push5 && push5.data?.Length == witHashFunc.HashByteSize)
+                     OperationList[0] is PushDataOp && OperationList[0].OpValue == OP._0 &&
+                     OperationList[1] is PushDataOp push5 && push5.data?.Length == witHashFunc.HashByteSize)
             {
                 return PubkeyScriptType.P2WSH;
             }
             // OP_num n*<pubkey> OP_num OP_CheckMultiSig
             else if (OperationList.Length >= 4 &&
-                OperationList[0] is PushDataOp push6 &&
-                OperationList[^2] is PushDataOp push7 &&
-                OperationList[^1] is CheckMultiSigOp)
+                     OperationList[0] is PushDataOp push6 &&
+                     OperationList[^2] is PushDataOp push7 &&
+                     OperationList[^1] is CheckMultiSigOp)
             {
                 // TODO: check for values of PushData and count of pubkeys to be correct.
                 if (push6.TryGetNumber(out long m, out string _) && m <= MinMultiPubCount &&
@@ -110,7 +106,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
 
-
         /// <summary>
         /// Sets this script to a "pay to pubkey" script using the given <see cref="PublicKey"/>.
         /// </summary>
@@ -119,9 +114,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="useCompressed">Determines whether to use compressed or uncompressed <see cref="PublicKey"/> format</param>
         public void SetToP2PK(PublicKey pubKey, bool useCompressed)
         {
-            if (pubKey == null)
+            if (pubKey is null)
                 throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
-
 
             OperationList = new IOperation[]
             {
@@ -162,7 +156,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="useCompressed">Indicates whether to use compressed or uncompressed <see cref="PublicKey"/> format</param>
         public void SetToP2PKH(PublicKey pubKey, bool useCompressed)
         {
-            if (pubKey == null)
+            if (pubKey is null)
                 throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
 
             byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(useCompressed));
@@ -199,7 +193,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (hash.Length != hashFunc.HashByteSize)
                 throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {hashFunc.HashByteSize} bytes long.");
 
-
             OperationList = new IOperation[]
             {
                 new Hash160Op(),
@@ -231,7 +224,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="redeem">Redeem script to use</param>
         public void SetToP2SH(IRedeemScript redeem)
         {
-            if (redeem == null)
+            if (redeem is null)
                 throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null.");
 
             byte[] scrBytes = redeem.ToByteArray();
@@ -253,7 +246,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </param>
         public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed = true)
         {
-            if (pubKey == null)
+            if (pubKey is null)
                 throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
 
             RedeemScript redeemScrBuilder = new RedeemScript();
@@ -288,9 +281,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="redeem">The <see cref="RedeemScript"/> to use</param>
-        public void SetToP2SH_P2WSH(RedeemScript redeem)
+        public void SetToP2SH_P2WSH(IRedeemScript redeem)
         {
-            if (redeem == null)
+            if (redeem is null)
                 throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null.");
             // For SetToP2SH the IScript type doesn't matter. 
             // But it must be checked here to be explicit.
@@ -314,7 +307,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (hash.Length != hashFunc.HashByteSize)
                 throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {hashFunc.HashByteSize} bytes long.");
 
-
             OperationList = new IOperation[]
             {
                 // TODO: OP_0 is the version (?) and can be changed in future. 20 bytes hash size is also for version 0
@@ -335,7 +327,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </param>
         public void SetToP2WPKH(PublicKey pubKey, bool useCompressed = true)
         {
-            if (pubKey == null)
+            if (pubKey is null)
                 throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
 
             byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(useCompressed));
@@ -452,10 +444,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="data">Byte array to use</param>
         public void SetToReturn(byte[] data)
         {
-            if (data != null && data.Length > MaxOpReturnSize)
+            if (data == null)
+                throw new ArgumentNullException(nameof(data), "Data can not be null.");
+            if (data.Length > MaxOpReturnSize)
             {
                 throw new ArgumentOutOfRangeException(nameof(data),
-                    $"Data size is bigger than allowed OP_RETURN size (={MaxOpReturnSize}");
+                    $"Data length can not be bigger than allowed OP_RETURN size (={MaxOpReturnSize}");
             }
 
             OperationList = new IOperation[]
@@ -472,7 +466,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="scr">Script to use</param>
         public void SetToReturn(IScript scr)
         {
-            if (scr == null)
+            if (scr is null)
                 throw new ArgumentNullException(nameof(scr), "Script can not be null.");
 
             byte[] data = scr.ToByteArray();
