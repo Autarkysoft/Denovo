@@ -11,6 +11,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// Operations that push some data onto the stack. Covers number OPs from <see cref="OP._0"/> to <see cref="OP._16"/>, 
     /// push OPs from byte=0x01 to 0x4b and <see cref="OP.PushData1"/>, <see cref="OP.PushData2"/> and <see cref="OP.PushData4"/>.
     /// </summary>
+    /// <remarks>
+    /// Constructors of this class are stricter than consensus rules. For example, they will reject byte arrays that have 
+    /// OP_numbers (short form) and reject any byte array that is bigger than <see cref="Constants.MaxScriptItemLength"/>
+    /// even though it could be a valid <see cref="PushDataOp"/>. 
+    /// See https://bitcoin.stackexchange.com/a/93664/87716 and test cases for more information.
+    /// </remarks>
     public class PushDataOp : BaseOperation
     {
         /// <summary>
@@ -135,6 +141,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
+                if (data.Length > Constants.MaxScriptItemLength)
+                {
+                    error = $"Item to be pushed to the stack can not be bigger than {Constants.MaxScriptItemLength} bytes.";
+                    return false;   
+                }
                 opData.Push(data);
             }
 
@@ -250,11 +261,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     return false;
                 }
 
-                if (size > Constants.MaxScriptItemLength)
-                {
-                    error = $"Push data size is bigger than allowed {Constants.MaxScriptItemLength} length.";
-                    return false;
-                }
+                // Size check should only take place when "Running" the OP
 
                 if (!stream.TryReadByteArray((int)size, out data))
                 {
