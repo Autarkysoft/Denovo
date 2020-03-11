@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
@@ -36,6 +37,58 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             Assert.Empty(scr.OperationList);
             Assert.False(scr.IsWitness);
             Assert.Equal(ScriptType.ScriptPub, scr.ScriptType);
+        }
+
+        [Fact]
+        public void Serialize_CtorWithBytes_Test()
+        {
+            PubkeyScript scr = new PubkeyScript(new byte[] { 10, 20, 30 });
+            FastStream stream = new FastStream(4);
+            scr.Serialize(stream);
+
+            byte[] actual = stream.ToByteArray();
+            byte[] expected = new byte[] { 3, 10, 20, 30 };
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void Serialize_CtorWithOps_Test()
+        {
+            PubkeyScript scr = new PubkeyScript()
+            {
+                OperationList = new IOperation[]
+                {
+                    new DUPOp()
+                }
+            };
+            FastStream stream = new FastStream(2);
+            scr.Serialize(stream);
+
+            byte[] actual = stream.ToByteArray();
+            byte[] expected = new byte[] { 1, (byte)OP.DUP };
+
+            Assert.Equal(expected, actual);
+        }
+
+        // All cases could be found on testnet txid = c79220f88b08c8ef851fc0b2a90141e6394875188d0e09cbdc003271d93803f7
+        [Theory]
+        [InlineData(new byte[] { 0 })] // Empty PubkeyScript
+        [InlineData(new byte[] { 1, 55 })] // OP_5
+        [InlineData(new byte[] { 4, 3, 1, 2, 3 })] // push [1,2,3] with correct push OP
+        [InlineData(new byte[] { 5, 1, 2, 3, 4, 5 })] // [1,2,3,4,5] without the correct Push OP (push1byte(2)+push3byte(4,5,X))
+        [InlineData(new byte[] { 1, 0xfe })] // invalid OP code
+        [InlineData(new byte[] { 3, 0xba, 0xbb, 0xbc })] // 3 invalid OP codes
+        public void TryDeserializeTest(byte[] data)
+        {
+            PubkeyScript scr = new PubkeyScript();
+            bool b = scr.TryDeserialize(new FastStreamReader(data), out string error);
+            FastStream write = new FastStream(data.Length);
+            scr.Serialize(write);
+
+            Assert.True(b);
+            Assert.Null(error);
+            Assert.Equal(data, write.ToByteArray());
         }
 
 
@@ -413,6 +466,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             };
 
             Assert.Equal(expected, scr.OperationList);
+        }
+
+        [Fact]
+        public void SetToReturn_ExceptionTest()
+        {
+            PubkeyScript scr = new PubkeyScript();
+            byte[] nba = null;
+            IScript nscr = null;
+
+            Assert.Throws<ArgumentNullException>(() => scr.SetToReturn(nba));
+            Assert.Throws<ArgumentNullException>(() => scr.SetToReturn(nscr));
         }
     }
 }
