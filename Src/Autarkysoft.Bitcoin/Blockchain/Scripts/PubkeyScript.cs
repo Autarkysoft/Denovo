@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Collections.Generic;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -26,12 +27,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             ScriptType = ScriptType.ScriptPub;
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="PubkeyScript"/> using the given byte array as the script.
+        /// </summary>
+        /// <remarks>
+        /// Pubkey scripts are not evaluated in outputs until they are spent (become an input!) which means they can be
+        /// anything including an invalid script. See tests for more information.
+        /// </remarks>
+        /// <param name="data">Data to use</param>
+        public PubkeyScript(byte[] data) : base(Constants.MaxScriptLength)
+        {
+            scrData = data;
+        }
 
 
+
+        private byte[] scrData;
         private const int MinMultiPubCount = 0;
         private const int MaxMultiPubCount = 20;
-        // TODO: check what the consensus rule for this size is not the standard rule.
-        private const int MaxOpReturnSize = 80;
 
         private readonly Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
         private readonly Sha256 witHashFunc = new Sha256(false);
@@ -40,8 +53,58 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
         /// <inheritdoc/>
+        public override void Serialize(FastStream stream)
+        {
+            if (scrData == null)
+            {
+                base.Serialize(stream);
+            }
+            else
+            {
+                CompactInt len = new CompactInt(scrData.Length);
+                len.WriteToStream(stream);
+                stream.Write(scrData);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        {
+            if (!CompactInt.TryRead(stream, out CompactInt len, out error))
+            {
+                return false;
+            }
+
+            if (!stream.TryReadByteArray((int)len, out scrData))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
         public PubkeyScriptType GetPublicScriptType()
         {
+            if ((OperationList == null || OperationList.Length == 0) && scrData != null)
+            {
+                FastStreamReader stream = new FastStreamReader(scrData);
+                int offset = 0;
+                List<IOperation> opList = new List<IOperation>();
+                while (offset < scrData.Length)
+                {
+                    if (!TryRead(stream, opList, ref offset, out _))
+                    {
+                        break;
+                    }
+                }
+                if (offset == scrData.Length)
+                {
+                    OperationList = opList.ToArray();
+                }
+            }
+
             if (OperationList == null || OperationList.Length == 0)
             {
                 return PubkeyScriptType.Empty;
@@ -446,11 +509,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
-            if (data.Length > MaxOpReturnSize)
-            {
-                throw new ArgumentOutOfRangeException(nameof(data),
-                    $"Data length can not be bigger than allowed OP_RETURN size (={MaxOpReturnSize}");
-            }
 
             OperationList = new IOperation[]
             {

@@ -58,14 +58,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         public bool IsWitness { get; protected set; } = false;
         /// <inheritdoc/>
-        public virtual ScriptType ScriptType { get; set; }
+        public ScriptType ScriptType { get; set; }
         /// <inheritdoc/>
         public IOperation[] OperationList { get; set; } = new IOperation[0];
 
         
 
         /// <inheritdoc/>
-        public void Serialize(FastStream stream)
+        public virtual void Serialize(FastStream stream)
         {
             FastStream temp = new FastStream();
             ToByteArray(temp);
@@ -109,7 +109,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public virtual bool TryDeserialize(FastStreamReader stream, out string error)
         {
             if (stream is null)
             {
@@ -186,7 +186,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             return b >= 0 && b <= (byte)OP._16 && b != (byte)OP.Reserved;
         }
-        private bool TryRead(FastStreamReader stream, List<IOperation> opList, ref int offset, out string error)
+
+        /// <summary>
+        /// Reads a single <see cref="IOperation"/> from the given the given stream and adds the result to the given list.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="stream">Stream of bytes to use</param>
+        /// <param name="opList">The list to add the result to</param>
+        /// <param name="offset">This value will be incremented based on how many bytes were read</param>
+        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
+        /// <returns>True if reading was successful, false if otherwise.</returns>
+        protected bool TryRead(FastStreamReader stream, List<IOperation> opList, ref int offset, out string error)
         {
             if (!stream.TryPeekByte(out byte firstByte))
             {
