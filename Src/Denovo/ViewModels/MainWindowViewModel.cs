@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Denovo.Services;
 using System;
 using System.Net;
 using System.Reflection;
@@ -13,6 +14,16 @@ namespace Denovo.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
+        public MainWindowViewModel()
+        {
+            WinMan = new WindowManager();
+        }
+
+
+        public IWindowManager WinMan { get; set; }
+        public void Config() => WinMan.ShowDialog(new SettingsViewModel());
+
+
         internal class MockBlockChain : IBlockchain
         {
             public int Height => 0;
@@ -54,7 +65,6 @@ namespace Denovo.ViewModels
                 Result = $"An exception of type {ex.GetType()} was thrown:{Environment.NewLine}{ex.Message}" +
                     $"{Environment.NewLine}Stack trace:{Environment.NewLine}{ex.StackTrace}";
             }
-
         }
 
 

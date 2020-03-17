@@ -22,13 +22,25 @@
     </AvaloniaResource>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <AvaloniaResource Remove="Views\SettingsView.xaml" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Remove="Views\SettingsView.xaml" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="0.9.0" />
     <PackageReference Include="Avalonia.Desktop" Version="0.9.0" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Models\" />
     <Folder Include="Assets\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Views\SettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Autarkysoft.Bitcoin\Autarkysoft.Bitcoin.csproj" />
