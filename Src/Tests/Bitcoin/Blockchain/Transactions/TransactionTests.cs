@@ -32,12 +32,6 @@ namespace Tests.Bitcoin.Blockchain.Transactions
             Assert.Contains(expErr, ex.Message);
         }
 
-        [Fact]
-        public void Constructor_OutOfRangeExceptionTest()
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Transaction(-1, new TxIn[1], new TxOut[1], 0));
-        }
-
 
         public enum TxCaseType
         {
