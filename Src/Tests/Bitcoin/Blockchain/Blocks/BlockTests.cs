@@ -3,8 +3,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -12,6 +14,73 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 {
     public class BlockTests
     {
+        public static IEnumerable<object[]> GetCtorNullCases()
+        {
+            yield return new object[] { null, new byte[32], new ITransaction[1] };
+            yield return new object[] { new byte[32], null, new ITransaction[1] };
+            yield return new object[] { new byte[32], new byte[32], new ITransaction[0] };
+            yield return new object[] { new byte[32], new byte[32], null };
+        }
+        [Theory]
+        [MemberData(nameof(GetCtorNullCases))]
+        public void Constructor_NullExceptionTest(byte[] header, byte[] merkle, ITransaction[] txs)
+        {
+            Assert.Throws<ArgumentNullException>(() => new Block(1, header, merkle, 123, 0x1d00ffffU, 0, txs));
+        }
+
+        public static IEnumerable<object[]> GetCtorOutOfRangeCases()
+        {
+            yield return new object[] { new byte[31], new byte[32] };
+            yield return new object[] { new byte[32], new byte[33] };
+        }
+        [Theory]
+        [MemberData(nameof(GetCtorOutOfRangeCases))]
+        public void Constructor_OutOfRangeExceptionTest(byte[] header, byte[] merkle)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Block(1, header, merkle, 123, 0x1d00ffffU, 0, new ITransaction[1]));
+        }
+
+
+        private static Block GetSampleBlock()
+        {
+            return new Block()
+            {
+                Version = 0x3fffe000,
+                PreviousBlockHeaderHash = Helper.HexToBytes("97e4833c21eab4dfc5153eadc3b33701c8420ea1310000000000000000000000"),
+                MerkleRootHash = Helper.HexToBytes("afbdfb477c57f95a59a9e7f1d004568c505eb7e70fb73fb0d6bb1cca0fb1a7b7"),
+                BlockTime = 0x5e71b1c6,
+                NBits = 0x17110119,
+                Nonce = 0x2a436a69
+            };
+        }
+
+        private static string GetSampleBlockHex() => "0000000000000000000d558fdcdde616702d1f91d6c8567a89be99ff9869012d";
+        private static byte[] GetSampleBlockHash() => Helper.HexToBytes(GetSampleBlockHex(), true);
+        private static byte[] GetSampleBlockHeaderBytes() => Helper.HexToBytes("00e0ff3f97e4833c21eab4dfc5153eadc3b33701c8420ea1310000000000000000000000afbdfb477c57f95a59a9e7f1d004568c505eb7e70fb73fb0d6bb1cca0fb1a7b7c6b1715e19011117696a432a");
+
+        [Fact]
+        public void GetBlockHashTest()
+        {
+            Block blk = GetSampleBlock();
+
+            byte[] actual = blk.GetBlockHash();
+            byte[] expected = GetSampleBlockHash();
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void GetBlockIDTest()
+        {
+            Block blk = GetSampleBlock();
+
+            string actual = blk.GetBlockID();
+            string expected = GetSampleBlockHex();
+
+            Assert.Equal(expected, actual);
+        }
+
+
         public static IEnumerable<object[]> GetMerkleCases()
         {
             yield return new object[]
@@ -138,6 +207,67 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             byte[] actual = block.ComputeMerkleRoot();
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void SerializeHeaderTest()
+        {
+            Block blk = GetSampleBlock();
+
+            FastStream stream = new FastStream();
+            blk.SerializeHeader(stream);
+
+            byte[] expected = GetSampleBlockHeaderBytes();
+
+            Assert.Equal(expected, stream.ToByteArray());
+            Assert.Equal(expected, blk.SerializeHeader());
+        }
+
+        [Fact]
+        public void SerializeTest()
+        {
+            Block blk = GetSampleBlock();
+            blk.TransactionList = new ITransaction[]
+            {
+                new MockSerializableTx(new byte[] { 1, 2, 3 }),
+                new MockSerializableTx(new byte[] { 10, 20, 30 }),
+                new MockSerializableTx(new byte[] { 255, 255 })
+            };
+
+            FastStream stream = new FastStream();
+            blk.Serialize(stream);
+
+            byte[] expected = new byte[80 + 1 + (3 + 3 + 2)];
+            Buffer.BlockCopy(GetSampleBlockHeaderBytes(), 0, expected, 0, 80);
+            expected[80] = 3; // Tx count
+            expected[81] = 1;
+            expected[82] = 2;
+            expected[83] = 3;
+            expected[84] = 10;
+            expected[85] = 20;
+            expected[86] = 30;
+            expected[87] = 255;
+            expected[88] = 255;
+
+            Assert.Equal(expected, stream.ToByteArray());
+            Assert.Equal(expected, blk.Serialize());
+        }
+
+        [Fact]
+        public void TryDeserializeHeaderTest()
+        {
+            Block blk = new Block();
+            bool b = blk.TryDeserializeHeader(new FastStreamReader(GetSampleBlockHeaderBytes()), out string error);
+            Block expected = GetSampleBlock();
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Equal(expected.Version, blk.Version);
+            Assert.Equal(expected.PreviousBlockHeaderHash, blk.PreviousBlockHeaderHash);
+            Assert.Equal(expected.MerkleRootHash, blk.MerkleRootHash);
+            Assert.Equal(expected.BlockTime, blk.BlockTime);
+            Assert.Equal(expected.NBits, blk.NBits);
+            Assert.Equal(expected.Nonce, blk.Nonce);
         }
     }
 }
