@@ -30,7 +30,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// Initializes a new instance of <see cref="Transaction"/> using given parameters.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="ver">Version</param>
         /// <param name="txIns">List of inputs</param>
         /// <param name="txOuts">List of outputs</param>
@@ -54,17 +53,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
         private int _version;
         /// <inheritdoc/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
         public int Version
         {
             get => _version;
-            set
-            {
-                if (value < 0)
-                    throw new ArgumentOutOfRangeException(nameof(Version), "Version can not be negative.");
-
-                _version = value;
-            }
+            set => _version = value;
         }
 
         private TxIn[] _tins = new TxIn[1];

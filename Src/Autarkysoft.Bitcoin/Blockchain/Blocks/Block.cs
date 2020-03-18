@@ -62,17 +62,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
         private int _version;
         /// <inheritdoc/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
         public int Version
         {
             get => _version;
-            set
-            {
-                if (value < 0)
-                    throw new ArgumentOutOfRangeException(nameof(Version), "Version must be >= 0");
-
-                _version = value;
-            }
+            set => _version = value;
         }
 
         private byte[] _prvBlkHash = new byte[32];
