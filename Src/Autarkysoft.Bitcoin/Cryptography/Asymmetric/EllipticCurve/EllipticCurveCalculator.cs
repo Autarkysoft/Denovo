@@ -163,7 +163,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             }
             else
             {
-                return true;
+                return false;
             }
         }
 
