@@ -41,7 +41,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         }
 
 
-        private static Block GetSampleBlock()
+        // Block #622051
+        private static Block GetSampleBlockHeader()
         {
             return new Block()
             {
@@ -61,7 +62,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void GetBlockHashTest()
         {
-            Block blk = GetSampleBlock();
+            Block blk = GetSampleBlockHeader();
 
             byte[] actual = blk.GetBlockHash();
             byte[] expected = GetSampleBlockHash();
@@ -72,7 +73,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void GetBlockIDTest()
         {
-            Block blk = GetSampleBlock();
+            Block blk = GetSampleBlockHeader();
 
             string actual = blk.GetBlockID();
             string expected = GetSampleBlockHex();
@@ -212,7 +213,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void SerializeHeaderTest()
         {
-            Block blk = GetSampleBlock();
+            Block blk = GetSampleBlockHeader();
 
             FastStream stream = new FastStream();
             blk.SerializeHeader(stream);
@@ -226,7 +227,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void SerializeTest()
         {
-            Block blk = GetSampleBlock();
+            Block blk = GetSampleBlockHeader();
             blk.TransactionList = new ITransaction[]
             {
                 new MockSerializableTx(new byte[] { 1, 2, 3 }),
@@ -258,7 +259,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         {
             Block blk = new Block();
             bool b = blk.TryDeserializeHeader(new FastStreamReader(GetSampleBlockHeaderBytes()), out string error);
-            Block expected = GetSampleBlock();
+            Block expected = GetSampleBlockHeader();
 
             Assert.True(b, error);
             Assert.Null(error);
