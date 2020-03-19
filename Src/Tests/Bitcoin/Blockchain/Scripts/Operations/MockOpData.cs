@@ -3,9 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System.Collections.Generic;
 using Xunit;
 
@@ -26,13 +26,61 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         private readonly int totalFuncCall;
         private int currentCallIndex;
 
-        public EllipticCurveCalculator Calc => throw new System.NotImplementedException();
 
-        public byte[] GetBytesToSign(SigHashType sht, IRedeemScript redeem)
+        internal bool sigVerificationSuccess = true;
+
+        internal Signature expectedSig;
+        internal PublicKey expectedPubkey;
+        public bool Verify(Signature sig, PublicKey pubKey)
         {
-            throw new System.NotImplementedException();
+            if (expectedSig is null || expectedPubkey is null)
+            {
+                Assert.True(false, "Expected signature and/or public key must be set first.");
+            }
+
+            Assert.Equal(expectedSig.R, sig.R);
+            Assert.Equal(expectedSig.S, sig.S);
+            Assert.Equal(expectedSig.SigHash, sig.SigHash);
+            Assert.Equal(expectedPubkey.ToByteArray(true), pubKey.ToByteArray(true));
+
+            return sigVerificationSuccess;
         }
 
+        internal Signature[] expectedSigs;
+        internal PublicKey[] expectedPubkeys;
+
+        public bool Verify(Signature[] sigs, PublicKey[] pubKeys)
+        {
+            if (expectedSigs is null || expectedPubkeys is null)
+            {
+                Assert.True(false, "Expected signature list and/or public key list must be set first.");
+            }
+
+            Assert.Equal(expectedSigs.Length, sigs.Length);
+            Assert.Equal(expectedPubkeys.Length, pubKeys.Length);
+
+            for (int i = 0; i < sigs.Length; i++)
+            {
+                Assert.Equal(expectedSigs[i].R, sigs[i].R);
+                Assert.Equal(expectedSigs[i].S, sigs[i].S);
+                Assert.Equal(expectedSigs[i].SigHash, sigs[i].SigHash);
+            }
+
+            for (int i = 0; i < pubKeys.Length; i++)
+            {
+                Assert.Equal(expectedPubkeys[i].ToByteArray(true), pubKeys[i].ToByteArray(true));
+            }
+
+            return sigVerificationSuccess;
+        }
+
+        internal byte[] expectedMultiSigGarbage;
+        internal bool garbageCheckResult = true;
+        public bool CheckMultiSigGarbage(byte[] garbage)
+        {
+            Assert.Equal(expectedMultiSigGarbage, garbage);
+            return garbageCheckResult;
+        }
 
 
         private void CheckCall(FuncCallName funcName)

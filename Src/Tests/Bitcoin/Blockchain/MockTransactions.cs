@@ -36,18 +36,14 @@ namespace Tests.Bitcoin.Blockchain
         public virtual byte[] GetTransactionHash() => throw new NotImplementedException();
         public virtual string GetTransactionId() => throw new NotImplementedException();
         public virtual string GetWitnessTransactionId() => throw new NotImplementedException();
+        public byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht) => throw new NotImplementedException();
+        public byte[] SerializeForSigningSegWit(IScript scr, int inputIndex, ulong amount, SigHashType sht) => throw new NotImplementedException();
         public virtual byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
         public virtual byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeemScript)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
         public virtual void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
     }
 
 

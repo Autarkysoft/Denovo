@@ -61,6 +61,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         string GetWitnessTransactionId();
 
         /// <summary>
+        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
+        /// used in signing operations. Return result is the hash result.
+        /// </summary>
+        /// <param name="scr">
+        /// The locking script (<see cref="PubkeyScript"/> or <see cref="RedeemScript"/>) to be used in serialization.
+        /// </param>
+        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="sht">Signature hash type</param>
+        /// <returns>32 byte hash</returns>
+        byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht);
+
+        /// <summary>
+        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
+        /// used in signing operations for SegWit transactions. Return result is the hash result.
+        /// </summary>
+        /// <param name="scr">
+        /// The locking script (<see cref="PubkeyScript"/> or <see cref="RedeemScript"/>) to be used in serialization.
+        /// </param>
+        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="amount">The amount in satoshi that is being spent</param>
+        /// <param name="sht">Signature hash type</param>
+        /// <returns>32 byte hash</returns>
+        byte[] SerializeForSigningSegWit(IScript scr, int inputIndex, ulong amount, SigHashType sht);
+
+        /// <summary>
         /// Returns the hash result that needs to be signed with the private key.
         /// </summary>
         /// <param name="prvTx">The transaction being spent</param>

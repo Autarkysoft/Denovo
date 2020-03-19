@@ -5,7 +5,9 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System;
+using System.Collections.Generic;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -38,7 +40,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             holder = new byte[cap][];
 
-            Calc = new EllipticCurveCalculator();
+            calc = new EllipticCurveCalculator();
         }
 
         /// <summary>
@@ -59,7 +61,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 Array.Copy(dataToPush, holder, dataToPush.Length);
             }
 
-            Calc = new EllipticCurveCalculator();
+            calc = new EllipticCurveCalculator();
         }
 
 
@@ -71,21 +73,40 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         // TODO: complete the code for signing part + tests
         private readonly ITransaction Tx;
         private readonly ITransaction PrvTx;
+        private readonly IScript prevScript;
         private readonly int TxInIndex;
         private readonly int TxOutIndex;
+        private readonly bool isStrictMultiSigGarbage;
 
+        private readonly EllipticCurveCalculator calc;
 
 
         /// <inheritdoc/>
-        public EllipticCurveCalculator Calc { get; private set; }
-
-
-        /// <inheritdoc/>
-        public byte[] GetBytesToSign(SigHashType sht, IRedeemScript redeem = null)
+        public bool Verify(Signature sig, PublicKey pubKey)
         {
-            return Tx.GetBytesToSign(PrvTx, TxInIndex, sht, redeem);
+            byte[] dataToSign = Tx.SerializeForSigning(prevScript, TxInIndex, sig.SigHash);
+            return calc.Verify(dataToSign, sig, pubKey);
         }
 
+        /// <inheritdoc/>
+        public bool Verify(Signature[] sigs, PublicKey[] pubKeys)
+        {
+            Dictionary<SigHashType, byte[]> bytesToSign = new Dictionary<SigHashType, byte[]>(6);
+            foreach (var item in sigs)
+            {
+                if (!bytesToSign.ContainsKey(item.SigHash))
+                {
+                    bytesToSign.Add(item.SigHash, Tx.SerializeForSigning(prevScript, TxInIndex, item.SigHash));
+                }
+            }
+
+            // TODO: write the loop to check signatures versus pubkeys
+
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
+        public bool CheckMultiSigGarbage(byte[] garbage) => isStrictMultiSigGarbage ? garbage.Length == 0 : true;
 
         /// <inheritdoc/>
         public int ItemCount { get; private set; }

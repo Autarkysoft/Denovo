@@ -3,11 +3,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
+    // TODO: add a new method: Push(bool)
+
     /// <summary>
     /// Defines a last-in-first-out (LIFO) collection (similar to <see cref="System.Collections.Stack"/>)
     /// to be used with <see cref="IOperation"/>s as their data provider.
@@ -16,12 +18,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public interface IOpData
     {
-        EllipticCurveCalculator Calc { get; }
+        /// <summary>
+        /// Verifies correctness of the given signature with the given public key using
+        /// the transaction and scripts set in constructor.
+        /// </summary>
+        /// <param name="sig">Signature</param>
+        /// <param name="pubKey">Public key</param>
+        /// <returns>True if verification succeeds, otherwise false.</returns>
+        bool Verify(Signature sig, PublicKey pubKey);
 
-        /// <inheritdoc cref="ITransaction.GetBytesToSign(ITransaction, int, SigHashType, IRedeemScript)"/>
-        /// <param name="sht"><inheritdoc/></param>
-        /// <param name="redeem"><inheritdoc/></param>
-        byte[] GetBytesToSign(SigHashType sht, IRedeemScript redeem);
+        /// <summary>
+        /// Verifies multiple signatures versus multiple public keys (for <see cref="OP.CheckMultiSig"/> operations).
+        /// Assumes there are less signatures than public keys.
+        /// </summary>
+        /// <param name="sigs">Array of signatures</param>
+        /// <param name="pubKeys">Array of public keys</param>
+        /// <returns>True if all verifications succeed, otherwise false.</returns>
+        bool Verify(Signature[] sigs, PublicKey[] pubKeys);
+
+        /// <summary>
+        /// Checks to see if the extra (last) item that a <see cref="OP.CheckMultiSig"/> operation pops is valid
+        /// according to consensus rules.
+        /// </summary>
+        /// <param name="garbage">An arbitrary byte array</param>
+        /// <returns>True if the data was valid, otherwise false.</returns>
+        bool CheckMultiSigGarbage(byte[] garbage);
 
         /// <summary>
         /// Returns number of available items in the stack.

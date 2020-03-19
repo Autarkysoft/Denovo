@@ -239,19 +239,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
 
-        /// <summary>
-        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
-        /// used in signing operations. Return result is the hash result.
-        /// </summary>
-        /// <param name="scr">
-        /// The locking script (<see cref="PubkeyScript"/> or <see cref="RedeemScript"/>) to be used in serialization.
-        /// </param>
-        /// <param name="inputIndex">Index of the input being signed</param>
-        /// <param name="sht">Signature hash type</param>
-        /// <returns>32 byte hash</returns>
-        private byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht)
+        /// <inheritdoc/>
+        public byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht)
         {
-            // TODO: change this into Sha256 itself with stream methods inside
+            // TODO: change this into Sha256 itself with stream methods inside + benchmark
             FastStream stream = new FastStream();
 
             bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
@@ -337,18 +328,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             return hash;
         }
 
-        /// <summary>
-        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
-        /// used in signing operations for SegWit transactions. Return result is the hash result.
-        /// </summary>
-        /// <param name="scr">
-        /// The locking script (<see cref="PubkeyScript"/> or <see cref="RedeemScript"/>) to be used in serialization.
-        /// </param>
-        /// <param name="inputIndex">Index of the input being signed</param>
-        /// <param name="amount">The amount in satoshi that is being spent</param>
-        /// <param name="sht">Signature hash type</param>
-        /// <returns>32 byte hash</returns>
-        private byte[] SerializeForSigningSegWit(IScript scr, int inputIndex, ulong amount, SigHashType sht)
+        /// <inheritdoc/>
+        public byte[] SerializeForSigningSegWit(IScript scr, int inputIndex, ulong amount, SigHashType sht)
         {
             bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
             if (anyone)
