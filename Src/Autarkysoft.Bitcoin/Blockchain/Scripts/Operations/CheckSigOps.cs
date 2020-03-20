@@ -9,9 +9,48 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
     /// <summary>
+    /// Base (abstract) class for signle check signature operations.
+    /// Inherits from <see cref="BaseOperation"/>.
+    /// </summary>
+    public abstract class CheckSigOpBase : BaseOperation
+    {
+        /// <summary>
+        /// Removes top two stack items as public key and signature and calls <see cref="IOpData.Verify(Signature, PublicKey)"/>.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="opData">Stack to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if operation was successful, false if otherwise</returns>
+        public bool ExtractAndVerify(IOpData opData, out string error)
+        {
+            if (opData.ItemCount < 2)
+            {
+                error = Err.OpNotEnoughItems;
+                return false;
+            }
+
+            byte[][] values = opData.Pop(2);
+
+            if (!Signature.TryRead(values[0], out Signature sig, out error))
+            {
+                return false;
+            }
+
+            if (!PublicKey.TryRead(values[1], out PublicKey pubK))
+            {
+                error = "Invalid public key format.";
+                return false;
+            }
+
+            return opData.Verify(sig, pubK);
+        }
+    }
+
+
+    /// <summary>
     /// Operation to check the transaction signature.
     /// </summary>
-    public class CheckSigOp : BaseOperation
+    public class CheckSigOp : CheckSigOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CheckSig;
@@ -24,32 +63,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if operation was successful, false if otherwise</returns>
         public override bool Run(IOpData opData, out string error)
         {
-            if (opData.ItemCount < 2)
+            bool b = ExtractAndVerify(opData, out error);
+            if (error is null)
             {
-                error = Err.OpNotEnoughItems;
-                return false;
+                opData.Push(b ? new byte[] { 1 } : new byte[0]);
+                return true;
             }
-
-            byte[] pubBa = opData.Pop();
-            byte[] sigBa = opData.Pop();
-
-            if (!Signature.TryRead(sigBa, out Signature sig, out error))
+            else
             {
                 return false;
             }
-
-            if (!PublicKey.TryRead(pubBa, out PublicKey pubK))
-            {
-                error = "Invalid public key format.";
-                return false;
-            }
-
-            bool b = opData.Verify(sig, pubK);
-
-            opData.Push(b ? new byte[] { 1 } : new byte[0]);
-
-            error = null;
-            return true;
         }
     }
 
@@ -57,7 +80,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to check the transaction signature.
     /// </summary>
-    public class CheckSigVerifyOp : BaseOperation
+    public class CheckSigVerifyOp : CheckSigOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CheckSigVerify;
@@ -68,35 +91,43 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public override bool Run(IOpData opData, out string error)
         {
-            IOperation cs = new CheckSigOp();
-            IOperation ver = new VerifyOp();
-
-            if (!cs.Run(opData, out error))
+            bool b = ExtractAndVerify(opData, out error);
+            if (error is null)
+            {
+                if (b)
+                {
+                    return true;
+                }
+                else
+                {
+                    error = "Invalid signature.";
+                    return false;
+                }
+            }
+            else
             {
                 return false;
             }
-
-            return ver.Run(opData, out error);
         }
     }
 
 
-    /// <summary>
-    /// Operation to check multiple transaction signatures.
-    /// </summary>
-    public class CheckMultiSigOp : BaseOperation
-    {
-        /// <inheritdoc cref="IOperation.OpValue"/>
-        public override OP OpValue => OP.CheckMultiSig;
 
+    /// <summary>
+    /// Base (abstract) class for multiple check signature operations.
+    /// Inherits from <see cref="BaseOperation"/>.
+    /// </summary>
+    public abstract class CheckMultiSigOpBase : BaseOperation
+    {
         /// <summary>
-        /// Evaluation starts by popping top stack item in the following pattern: 
-        /// [garbage] [between 0 to m signatures] [OP_m between 0 to n] [n publickeys] [OP_n between 0 to ?]
+        /// Removes all needed items from the stack as public keys and signatures and calls 
+        /// <see cref="IOpData.Verify(Signature[], PublicKey[])"/>.
+        /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public bool ExtractAndVerify(IOpData opData, out string error)
         {
             // A multi-sig stack is (extra item, usually OP_0) + (m*sig) + (OP_m) + (n*pub) + (OP_n)
             // both m and n values are needed and the extra item is also mandatory. but since both m and n can be zero
@@ -149,20 +180,22 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             PublicKey[] pubs = new PublicKey[n];
             Signature[] sigs = new Signature[m];
+
+            // TODO: benchmark using PopMulti versus Pop
+            byte[][] allPubs = opData.Pop(pubs.Length);
             for (int i = 0; i < pubs.Length; i++)
             {
-                // TODO: benchmark using PopMulti versus this
-                byte[] temp = opData.Pop();
-                if (!PublicKey.TryRead(temp, out pubs[i]))
+                if (!PublicKey.TryRead(allPubs[allPubs.Length - 1 - i], out pubs[i]))
                 {
                     error = "Invalid public key.";
                     return false;
                 }
             }
+            // TODO: same benchmark as above needed
+            byte[][] allSigs = opData.Pop(sigs.Length);
             for (int i = 0; i < sigs.Length; i++)
             {
-                byte[] temp = opData.Pop();
-                if (!Signature.TryRead(temp, out sigs[i], out string err))
+                if (!Signature.TryRead(allSigs[allSigs.Length - 1 - i], out sigs[i], out string err))
                 {
                     error = $"Invalid signature {err}";
                     return false;
@@ -177,15 +210,37 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            bool b = opData.Verify(sigs, pubs);
-            if (b)
+            error = null;
+            return opData.Verify(sigs, pubs);
+        }
+    }
+
+
+    /// <summary>
+    /// Operation to check multiple transaction signatures.
+    /// </summary>
+    public class CheckMultiSigOp : CheckMultiSigOpBase
+    {
+        /// <inheritdoc cref="IOperation.OpValue"/>
+        public override OP OpValue => OP.CheckMultiSig;
+
+        /// <summary>
+        /// Evaluation starts by popping top stack item in the following pattern: 
+        /// [garbage] [between 0 to m signatures] [OP_m between 0 to n] [n publickeys] [OP_n between 0 to ?]
+        /// </summary>
+        /// <param name="opData">Stack to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if operation was successful, false if otherwise</returns>
+        public override bool Run(IOpData opData, out string error)
+        {
+            bool b = ExtractAndVerify(opData, out error);
+            if (error is null)
             {
-                error = null;
+                opData.Push(b ? new byte[] { 1 } : new byte[0]);
                 return true;
             }
             else
             {
-                error = "Invalid signature.";
                 return false;
             }
         }
@@ -195,7 +250,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to check multiple transaction signatures.
     /// </summary>
-    public class CheckMultiSigVerifyOp : BaseOperation
+    public class CheckMultiSigVerifyOp : CheckMultiSigOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CheckMultiSigVerify;
@@ -206,15 +261,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public override bool Run(IOpData opData, out string error)
         {
-            IOperation cms = new CheckMultiSigOp();
-            IOperation ver = new VerifyOp();
-
-            if (!cms.Run(opData, out error))
+            bool b = ExtractAndVerify(opData, out error);
+            if (error is null)
+            {
+                if (b)
+                {
+                    return true;
+                }
+                else
+                {
+                    error = "Invalid signature.";
+                    return false;
+                }
+            }
+            else
             {
                 return false;
             }
-
-            return ver.Run(opData, out error);
         }
     }
 }
