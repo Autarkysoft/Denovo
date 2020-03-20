@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Newtonsoft.Json;
 using System;
 using System.Globalization;
@@ -85,6 +86,30 @@ namespace Tests
         internal static string GetBytesHex(int size)
         {
             return BytesToHex(GetBytes(size));
+        }
+
+
+        /// <summary>
+        /// Returns a sample random public key
+        /// </summary>
+        /// <returns></returns>
+        internal static PublicKey GetPubkeySample()
+        {
+            PublicKey.TryRead(HexToBytes("04abde9fb49901a5b007a0ee79676f07759374f03be85357bda6178d3ee3a2d7add3704f41ca1a3884934cff6cf9c338ea9fdba790a4c615f4def68ef15fb310de"), out PublicKey result);
+            return result;
+        }
+
+
+        /// <summary>
+        /// Returns the byte array representation of the sample public key returned from <see cref="GetPubkeySample"/> method.
+        /// </summary>
+        /// <param name="compressed"></param>
+        /// <returns></returns>
+        internal static byte[] GetPubkeySampleBytes(bool compressed)
+        {
+            return compressed ?
+                HexToBytes("02abde9fb49901a5b007a0ee79676f07759374f03be85357bda6178d3ee3a2d7ad") :
+                HexToBytes("04abde9fb49901a5b007a0ee79676f07759374f03be85357bda6178d3ee3a2d7add3704f41ca1a3884934cff6cf9c338ea9fdba790a4c615f4def68ef15fb310de");
         }
 
 
