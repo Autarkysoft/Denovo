@@ -185,7 +185,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[][] allPubs = opData.Pop(pubs.Length);
             for (int i = 0; i < pubs.Length; i++)
             {
-                if (!PublicKey.TryRead(allPubs[allPubs.Length - 1 - i], out pubs[i]))
+                if (!PublicKey.TryRead(allPubs[i], out pubs[i]))
                 {
                     error = "Invalid public key.";
                     return false;
@@ -195,7 +195,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[][] allSigs = opData.Pop(sigs.Length);
             for (int i = 0; i < sigs.Length; i++)
             {
-                if (!Signature.TryRead(allSigs[allSigs.Length - 1 - i], out sigs[i], out string err))
+                if (!Signature.TryRead(allSigs[i], out sigs[i], out string err))
                 {
                     error = $"Invalid signature {err}";
                     return false;
