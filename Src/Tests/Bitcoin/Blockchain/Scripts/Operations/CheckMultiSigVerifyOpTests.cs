@@ -60,5 +60,46 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
             OpTestCaseHelper.RunTest<CheckMultiSigVerifyOp>(data, OP.CheckMultiSigVerify);
         }
+        
+        [Fact]
+        public void Run_WrongSigsTest()
+        {
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex,
+                                             FuncCallName.PopCount, FuncCallName.PopCount,
+                                             FuncCallName.Pop)
+            {
+                _itemCount = 8,
+                popData = new byte[][] { OpTestCaseHelper.b7, OpTestCaseHelper.num3 },
+                popIndexData = new Dictionary<int, byte[]> { { 3, OpTestCaseHelper.num2 } },
+                popCountData = new byte[][][]
+                {
+                    new byte[][]
+                    {
+                        Helper.GetPubkeySampleBytes(true), pub2Bytes, pub3Bytes
+                    },
+                    new byte[][]
+                    {
+                        sig1.ToByteArray(), sig2.ToByteArray(),
+                    }
+                },
+                expectedSigs = new Signature[] { sig1, sig2 },
+                expectedPubkeys = new PublicKey[] { Helper.GetPubkeySample(), GetPub2(), GetPub3() },
+                expectedMultiSigGarbage = OpTestCaseHelper.b7,
+                sigVerificationSuccess = false,
+            };
+
+            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, "Invalid signature.");
+        }
+
+        [Fact]
+        public void Run_ErrorTest()
+        {
+            MockOpData data = new MockOpData()
+            {
+                _itemCount = 1,
+            };
+
+            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, Err.OpNotEnoughItems);
+        }
     }
 }

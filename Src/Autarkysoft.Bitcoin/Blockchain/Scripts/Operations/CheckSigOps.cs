@@ -141,7 +141,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] nBa = opData.Pop();
             if (!TryConvertToLong(nBa, out long n, true, 1))
             {
-                error = "Invalid number (n) format";
+                error = "Invalid number (n) format.";
                 return false;
             }
             if (n < 0 || n > 20)
@@ -152,7 +152,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             // By knowing n we know the number of public keys and the "index" of m to be popped
             // eg. indes:item => n=3 => 3:m 2:pub1 1:pub2 0:pub3    n=2 => 2:m 1:pub1 0:pub2
-            if (opData.ItemCount < n + 1)
+            // The "remaining" ItemCount must also have the "garbage" item. Assuming m=0 there is no signatures so min count is:
+            //      n=0 : GM(N)   n=1 : GMP(N)    n=2 : GMPP(N)    n=3 : GMPPP(N)
+            if (opData.ItemCount < n + 2)
             {
                 error = Err.OpNotEnoughItems;
                 return false;
@@ -161,7 +163,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] mBa = opData.PopAtIndex((int)n);
             if (!TryConvertToLong(mBa, out long m, true, 1))
             {
-                error = "Invalid number (m) format";
+                error = "Invalid number (m) format.";
                 return false;
             }
             if (m < 0 || m > n)
@@ -176,6 +178,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 error = Err.OpNotEnoughItems;
                 return false;
+            }
+
+            if (n == 0)
+            {
+                if (opData.CheckMultiSigGarbage(opData.Pop()))
+                {
+                    error = null;
+                    return true;
+                }
+                else
+                {
+                    error = "The extra item should be OP_0.";
+                    return false;
+                }
             }
 
             PublicKey[] pubs = new PublicKey[n];
@@ -197,7 +213,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (!Signature.TryRead(allSigs[i], out sigs[i], out string err))
                 {
-                    error = $"Invalid signature {err}";
+                    error = $"Invalid signature ({err}).";
                     return false;
                 }
             }
@@ -206,7 +222,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] garbage = opData.Pop();
             if (!opData.CheckMultiSigGarbage(garbage))
             {
-                error = "The extra item must have been OP_0.";
+                error = "The extra item should be OP_0.";
                 return false;
             }
 

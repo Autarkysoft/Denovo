@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
-    internal class MockOpData : IOpData
+    public class MockOpData : IOpData
     {
         public MockOpData(params FuncCallName[] calls)
         {

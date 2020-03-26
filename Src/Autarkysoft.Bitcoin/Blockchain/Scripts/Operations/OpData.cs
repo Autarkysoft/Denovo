@@ -76,7 +76,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         private readonly IScript prevScript;
         private readonly int TxInIndex;
         private readonly int TxOutIndex;
-        private readonly bool isStrictMultiSigGarbage;
+
+        /// <summary>
+        /// [Default value = true]
+        /// If true it will enforce the extra item popped by <see cref="OP.CheckMultiSig"/> to be <see cref="OP._0"/>,
+        /// otherwise it can be anything.
+        /// </summary>
+        public bool IsStrictMultiSigGarbage { get; set; } = true;
 
         private readonly EllipticCurveCalculator calc;
 
@@ -106,7 +112,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public bool CheckMultiSigGarbage(byte[] garbage) => isStrictMultiSigGarbage ? garbage.Length == 0 : true;
+        public bool CheckMultiSigGarbage(byte[] garbage) => IsStrictMultiSigGarbage ? garbage.Length == 0 : true;
 
         /// <inheritdoc/>
         public int ItemCount { get; private set; }
