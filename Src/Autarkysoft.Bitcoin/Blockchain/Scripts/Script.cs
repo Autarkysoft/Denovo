@@ -84,7 +84,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 {
                     push.WriteToStream(stream, IsWitness);
                 }
-                else if (op is IfElseOp conditional)
+                else if (op is IfElseOpsBase conditional)
                 {
                     conditional.WriteToStream(stream);
                 }
@@ -259,7 +259,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                     // Special case of IFs:
                     case OP.IF:
-                        IFOp ifop = new IFOp();
+                        IFOp ifop = new IFOp(IsWitness);
 
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out byte nextB))
@@ -335,7 +335,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
                     case OP.NotIf:
-                        NotIfOp notifOp = new NotIfOp();
+                        NotIfOp notifOp = new NotIfOp(IsWitness);
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out nextB))
                         {

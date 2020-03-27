@@ -3,15 +3,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using System;
-
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
     /// <summary>
     /// Base (abstract) class for conditional operations (covering <see cref="OP.IF"/>, <see cref="OP.NotIf"/>, 
     /// <see cref="OP.ELSE"/> and <see cref="OP.EndIf"/> OPs).
     /// </summary>
-    public abstract class IfElseOp : BaseOperation
+    public abstract class IfElseOpsBase : BaseOperation
     {
         /// <summary>
         /// Each IF operation pops an item from the stack first and converts it to a boolean. 
@@ -28,6 +26,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// The "else" operations under the <see cref="OP.ELSE"/> op.
         /// </summary>
         protected internal IOperation[] elseOps;
+        /// <summary>
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// </summary>
+        protected internal bool isWitness;
 
 
         /// <summary>
@@ -40,18 +42,22 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         {
             if (opData.ItemCount < 1)
             {
-                error = "Invalid number of elements in stack.";
+                error = Err.OpNotEnoughItems;
                 return false;
             }
-
-            // TODO: check what this part is 
-            // https://github.com/bitcoin/bitcoin/blob/a822a0e4f6317f98cde6f0d5abe952b4e8992ac9/src/script/interpreter.cpp#L478-L483
-            // probably have to include it in wherver we run these operations. (check consensus related to witness,...)
 
             // Remove top stack item and convert it to bool
             // OP_IF: runs if True
             // OP_NOTIF: runs if false
-            if (IsNotZero(opData.Pop()) == runWithTrue)
+            byte[] topItem = opData.Pop();
+
+            if (isWitness && (topItem.Length > 1 || (topItem.Length == 1 && topItem[0] != 1)))
+            {
+                error = "True/False item popped by conditional OPs in a witness script must be strinct.";
+                return false;
+            }
+
+            if (IsNotZero(topItem) == runWithTrue)
             {
                 foreach (var op in mainOps)
                 {
@@ -93,7 +99,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 {
                     push.WriteToStream(stream);
                 }
-                else if (op is IfElseOp conditional)
+                else if (op is IfElseOpsBase conditional)
                 {
                     conditional.WriteToStream(stream);
                 }
@@ -104,7 +110,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             // Continue with OP_ELSE if it exists
-            if (elseOps != null && elseOps.Length != 0)
+            if (elseOps != null)
             {
                 stream.Write((byte)OP.ELSE);
                 foreach (var op in elseOps)
@@ -113,7 +119,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     {
                         push.WriteToStream(stream);
                     }
-                    else if (op is IfElseOp conditional)
+                    else if (op is IfElseOpsBase conditional)
                     {
                         conditional.WriteToStream(stream);
                     }
@@ -136,31 +142,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if the specified object is equal to the current object, flase if otherwise.</returns>
         public override bool Equals(object obj)
         {
-            if (obj is IfElseOp op)
+            if (obj is IfElseOpsBase other)
             {
-                if (op.OpValue == OpValue)
+                if (other.OpValue == OpValue)
                 {
-                    if (op.mainOps.Length == mainOps.Length)
+                    if (other.mainOps.Length == mainOps.Length)
                     {
                         for (int i = 0; i < mainOps.Length; i++)
                         {
-                            if (!op.mainOps[i].Equals(mainOps[i]))
+                            if (!other.mainOps[i].Equals(mainOps[i]))
                             {
                                 return false;
                             }
                         }
 
-                        if (op.elseOps == null && elseOps != null && elseOps.Length != 0 ||
-                            op.elseOps != null && elseOps == null && op.elseOps.Length != 0 ||
-                            op.elseOps != null && elseOps != null && op.elseOps.Length != elseOps.Length)
+                        if (other.elseOps == null && elseOps != null ||
+                            other.elseOps != null && elseOps == null ||
+                            other.elseOps != null && elseOps != null && other.elseOps.Length != elseOps.Length)
                         {
                             return false;
                         }
-                        if (op.elseOps != null && elseOps != null && op.elseOps.Length == elseOps.Length)
+                        if (other.elseOps != null && elseOps != null && other.elseOps.Length == elseOps.Length)
                         {
                             for (int i = 0; i < elseOps.Length; i++)
                             {
-                                if (!op.elseOps[i].Equals(elseOps[i]))
+                                if (!other.elseOps[i].Equals(elseOps[i]))
                                 {
                                     return false;
                                 }
@@ -189,6 +195,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             if (elseOps != null)
             {
+                result ^= 74;
                 foreach (var item in elseOps)
                 {
                     result ^= item.GetHashCode();
@@ -206,31 +213,33 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to run a set of operations (if expressions) if preceeded by True (anything except zero).
     /// </summary>
-    public class IFOp : IfElseOp
+    public class IFOp : IfElseOpsBase
     {
         /// <summary>
         /// Initializes a new instance of <see cref="IFOp"/> for internal use
         /// </summary>
-        internal IFOp()
+        /// <param name="isWit">
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// </param>
+        internal IFOp(bool isWit)
         {
             runWithTrue = true;
+            isWitness = isWit;
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="IFOp"/> with the given <see cref="IOperation"/> arrays.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="ifBlockOps">The main array of operations to run after <see cref="OP.IF"/></param>
-        /// <param name="elseBlockOps">
-        /// [Default value = null] The alternative set of operations to run if the previous expresions didn't run.
+        /// <param name="elseBlockOps">The alternative set of operations to run if the previous expresions didn't run.</param>
+        /// <param name="isWit">
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
         /// </param>
-        public IFOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps = null)
+        public IFOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps, bool isWit)
         {
-            if (ifBlockOps is null || ifBlockOps.Length == 0)
-                throw new ArgumentNullException(nameof(ifBlockOps), "The if block operations can not be null or empty.");
-
             runWithTrue = true;
-            mainOps = ifBlockOps;
+            isWitness = isWit;
+            mainOps = ifBlockOps ?? new IOperation[0];
             elseOps = elseBlockOps;
         }
 
@@ -242,31 +251,33 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Operation to run a set of operations (NotIf expressions) if preceeded by False (an empty array aka OP_0).
     /// </summary>
-    public class NotIfOp : IfElseOp
+    public class NotIfOp : IfElseOpsBase
     {
         /// <summary>
         /// Initializes a new instance of <see cref="NotIfOp"/> for internal use
         /// </summary>
-        internal NotIfOp()
+        /// <param name="isWit">
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// </param>
+        internal NotIfOp(bool isWit)
         {
             runWithTrue = false;
+            isWitness = isWit;
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="IFOp"/> with the given <see cref="IOperation"/> arrays.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="ifBlockOps">The main array of operations to run after <see cref="OP.IF"/></param>
-        /// <param name="elseBlockOps">
-        /// [Default value = null] The alternative set of operations to run if the previous expresions didn't run.
+        /// <param name="elseBlockOps">The alternative set of operations to run if the previous expresions didn't run.</param>
+        /// <param name="isWit">
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
         /// </param>
-        public NotIfOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps)
+        public NotIfOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps, bool isWit)
         {
-            if (ifBlockOps is null || ifBlockOps.Length == 0)
-                throw new ArgumentNullException(nameof(ifBlockOps), "The if block operations can not be null or empty.");
-
             runWithTrue = false;
-            mainOps = ifBlockOps;
+            isWitness = isWit;
+            mainOps = ifBlockOps ?? new IOperation[0];
             elseOps = elseBlockOps;
         }
 
