@@ -86,6 +86,18 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Checks if the given value (popped from stack and converted to integer)
+        /// is the same type as this instance (both <see cref="DateTime"/> or both block height).
+        /// </summary>
+        /// <param name="other">The value to compare to</param>
+        /// <returns>True of both values are block height or both <see cref="DateTime"/></returns>
+        public bool IsSameType(long other)
+        {
+            return (value < Threshold && other < Threshold) || (value >= Threshold && other >= Threshold);
+        }
+
+
+        /// <summary>
         /// Reads the <see cref="LockTime"/> value from the given <see cref="FastStreamReader"/>. 
         /// Return value indicates success.
         /// </summary>

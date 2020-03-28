@@ -60,6 +60,24 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
 
+        [Theory]
+        [InlineData(0, 0, true)]
+        [InlineData(0, 1, true)]
+        [InlineData(0, 499999999U, true)]
+        [InlineData(0, 500000000U, false)]
+        [InlineData(0, uint.MaxValue, false)]
+        [InlineData(500000000U, 500000000U, true)]
+        [InlineData(500000000U, 500000001U, true)]
+        [InlineData(500000000U, uint.MaxValue, true)]
+        [InlineData(uint.MaxValue, uint.MaxValue, true)]
+        public void IsSameTypeTest(uint ltVal, long value, bool expected)
+        {
+            LockTime lt = new LockTime(ltVal);
+            bool actual = lt.IsSameType(value);
+            Assert.Equal(expected, actual);
+        }
+
+
         public static IEnumerable<object[]> GetReadCases()
         {
             yield return new object[] { new byte[] { 0, 0, 0, 0 }, 0 };
