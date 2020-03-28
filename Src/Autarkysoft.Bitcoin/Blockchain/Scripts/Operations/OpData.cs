@@ -114,6 +114,47 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public bool CheckMultiSigGarbage(byte[] garbage) => IsStrictMultiSigGarbage ? garbage.Length == 0 : true;
 
+
+        /// <inheritdoc/>
+        public bool IsBip65Enabled { get; }
+
+        /// <inheritdoc/>
+        public bool CompareLocktimes(long other, out string error)
+        {
+            if (other < 0)
+            {
+                error = "Extracted locktime from script can not be negative.";
+                return false;
+            }
+
+            if (Tx.LockTime.IsSameType(other))
+            {
+                error = "Extracted locktime from script should be the same type as transaction's locktime.";
+                return false;
+            }
+
+            if (Tx.LockTime < other)
+            {
+                error = "Input is not spendable (locktime not reached).";
+                return false;
+            }
+
+            // TODO: This could be simplified but we need to first implement TransactionVerifier and BlockVerifier classes
+            // https://bitcoin.stackexchange.com/questions/40706/why-is-op-checklocktimeverify-disabled-by-maximum-sequence-number
+            foreach (var tin in Tx.TxInList)
+            {
+                if (tin.Sequence == uint.MaxValue)
+                {
+                    error = "Sequence should be less than maximum.";
+                    return false;
+                }
+            }
+
+            error = null;
+            return true;
+        }
+
+
         /// <inheritdoc/>
         public int ItemCount { get; private set; }
 

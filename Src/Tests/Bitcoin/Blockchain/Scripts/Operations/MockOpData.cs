@@ -83,6 +83,27 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        internal bool bip65;
+        public bool IsBip65Enabled => bip65;
+
+        internal long expectedLocktime;
+        internal bool locktimeVerificationSuccess;
+        public bool CompareLocktimes(long other, out string error)
+        {
+            Assert.Equal(expectedLocktime, other);
+            if (locktimeVerificationSuccess)
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = "Foo";
+                return false;
+            }
+        }
+
+
         private void CheckCall(FuncCallName funcName)
         {
             if (currentCallIndex + 1 > totalFuncCall)

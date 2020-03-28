@@ -8,7 +8,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <summary>
     /// Base (abstract) class for locktime operations. Inherits from <see cref="BaseOperation"/> class.
     /// </summary>
-    public abstract class LockTimeOp : BaseOperation
+    public abstract class LockTimeOpBase : BaseOperation
     {
         /// <summary>
         /// The locktime value converted from the top stack item (without popping it)
@@ -33,15 +33,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // For backward compatibility of the softfork, Run() Peeks at the top item of the stack instead of Poping it.
             byte[] data = opData.Peek();
 
-            // TODO: move this check to converter
-            // (for locktimes max length is 5 for others it is 4)
-            if (data.Length > 5)
-            {
-                error = "Data length for locktimes can not be bigger than 5.";
-                return false;
-            }
-
-            if (!TryConvertToLong(data, out lt, true))
+            if (!TryConvertToLong(data, out lt, true, 5))
             {
                 error = "Invalid number format.";
                 return false;
@@ -60,29 +52,42 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
 
-    public class CheckLocktimeVerifyOp : LockTimeOp
+    /// <summary>
+    /// Operation to check locktime of the transaction versus the value extracted from the script according to BIP-65.
+    /// </summary>
+    public class CheckLocktimeVerifyOp : LockTimeOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CheckLocktimeVerify;
 
+        /// <summary>
+        /// If BIP-65 is not enabled it will run as a <see cref="OP.NOP"/> (pre soft-fork) otherwise removes top stack item
+        /// and converts it to a locktime to compare with the transction's <see cref="LockTime"/>.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="opData">Data to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if operation was successful, false if otherwise</returns>
         public override bool Run(IOpData opData, out string error)
         {
+            if (!opData.IsBip65Enabled)
+            {
+                error = null;
+                return true;
+            }
+
             if (!TrySetLockTime(opData, out error))
             {
                 return false;
             }
 
-            // Compare to tx.locktime (we assume it is valid and skip this!)
-            // TODO: change this for this tool if transactions were set inside IOpdata one day...
-
-            error = null;
-            return true;
+            return opData.CompareLocktimes(lt, out error);
         }
     }
 
 
 
-    public class CheckSequenceVerifyOp : LockTimeOp
+    public class CheckSequenceVerifyOp : LockTimeOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CheckSequenceVerify;

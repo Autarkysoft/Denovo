@@ -45,6 +45,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         bool CheckMultiSigGarbage(byte[] garbage);
 
         /// <summary>
+        /// Returns if BIP-65 has been enabled <see cref="OP.CheckLocktimeVerify"/>
+        /// </summary>
+        bool IsBip65Enabled { get; }
+
+        /// <summary>
+        /// Compares locktime for a <see cref="OP.CheckLocktimeVerify"/> operation.
+        /// </summary>
+        /// <param name="other">The converted locktime value from the stack</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if the locktime is past and the transaction is spendable; otherwise false.</returns>
+        bool CompareLocktimes(long other, out string error);
+
+        /// <summary>
         /// Returns number of available items in the stack.
         /// </summary>
         int ItemCount { get; }
