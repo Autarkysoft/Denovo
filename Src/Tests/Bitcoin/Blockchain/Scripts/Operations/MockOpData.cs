@@ -103,6 +103,26 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             }
         }
 
+        internal bool bip112;
+        public bool IsBip112Enabled => bip112;
+
+        internal long expectedSequence;
+        internal bool SequenceVerificationSuccess;
+        public bool CompareSequences(long other, out string error)
+        {
+            Assert.Equal(expectedSequence, other);
+            if (SequenceVerificationSuccess)
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = "Foo";
+                return false;
+            }
+        }
+
 
         private void CheckCall(FuncCallName funcName)
         {

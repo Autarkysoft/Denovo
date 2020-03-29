@@ -119,6 +119,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public bool IsBip65Enabled { get; }
 
         /// <inheritdoc/>
+        public bool IsBip112Enabled { get; }
+
+        /// <inheritdoc/>
         public bool CompareLocktimes(long other, out string error)
         {
             if (other < 0)
@@ -148,6 +151,51 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     error = "Sequence should be less than maximum.";
                     return false;
                 }
+            }
+
+            error = null;
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public bool CompareSequences(long other, out string error)
+        {
+            if (other < 0)
+            {
+                error = "Extracted sequence from script can not be negative.";
+                return false;
+            }
+
+            if ((other & 0b10000000_00000000_00000000_00000000U) != 0)
+            {
+                error = null;
+                return true;
+            }
+
+            if (Tx.Version < 2)
+            {
+                error = "Transaction version must be bigger than 2.";
+                return false;
+            }
+
+            if ((Tx.TxInList[TxInIndex].Sequence & 0b10000000_00000000_00000000_00000000U) != 0)
+            {
+                error = "Input's sequence's highest bit should not be set.";
+                return false;
+            }
+
+            LockTime temp = new LockTime(Tx.TxInList[TxInIndex].Sequence & 0b00000000_01000000_11111111_11111111U);
+            if (!temp.IsSameType(other & 0b00000000_01000000_11111111_11111111U))
+            {
+                error = "Extracted sequence from script should be the same type as transaction's sequence as locktime.";
+                return false;
+            }
+
+
+            if (temp < other)
+            {
+                error = "Input is not spendable (locktime not reached).";
+                return false;
             }
 
             error = null;

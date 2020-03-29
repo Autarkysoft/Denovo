@@ -87,23 +87,37 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
 
+    /// <summary>
+    /// Operation to check locktime of the transaction versus the value extracted from the script according to BIP-112.
+    /// </summary>
     public class CheckSequenceVerifyOp : LockTimeOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CheckSequenceVerify;
 
+        /// <summary>
+        /// If BIP-112 is not enabled it will run as a <see cref="OP.NOP"/> (pre soft-fork) otherwise removes top stack item
+        /// and converts it to a locktime to compare with the transction's <see cref="LockTime"/>.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="opData">Data to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if operation was successful, false if otherwise</returns>
         public override bool Run(IOpData opData, out string error)
         {
+            if (!opData.IsBip112Enabled)
+            {
+                error = null;
+                return true;
+            }
+
+            // The value is not "locktime" but the process is the same so we use the same method.
             if (!TrySetLockTime(opData, out error))
             {
                 return false;
             }
 
-            // Compare to tx.locktime, as relative locktime (we assume it is valid and skip this!)
-            // TODO: change this for this tool if transactions were set inside IOpdata one day...
-
-            error = null;
-            return true;
+            return opData.CompareSequences(lt, out error);
         }
     }
 }
