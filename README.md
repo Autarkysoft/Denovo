@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/Autarkysoft/Denovo.svg?branch=master)](https://travis-ci.org/Autarkysoft/Denovo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Autarkysoft/Denovo/blob/master/License)
 
-<p align="center">**The Revolution Will Not Be Centralized**</p>
+<p align="center"><b>The Revolution Will Not Be Centralized</b></p>
 
 # Denovo
 Denovo is a stand alone bitcoin client written completely in C# and from scratch and with only one dependency for GUI. Using the latest 
@@ -33,7 +33,7 @@ for more information).
   * RFC-6979: Optimized. Also an extra entropy is added so that signer can grind to find low R values to a fixed length (<32).
 * Implementation of improvement proposals, consensus related BIPs are part of the library and optional bips (eg. BIP-32)
 are in separate classes. Currently:
-  * BIPs: 16, 65, 66, 141, 143, 144, 173
+  * BIPs: 16, 65, 66, 68, 112, 141, 143, 144, 173
   * BIP-14
   * BIP-21
   * BIP-32
