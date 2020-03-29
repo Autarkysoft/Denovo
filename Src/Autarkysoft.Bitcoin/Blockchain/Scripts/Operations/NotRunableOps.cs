@@ -24,7 +24,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>False (always failing)</returns>
         public sealed override bool Run(IOpData opData, out string error)
         {
-            error = $"Can not run an OP_{OpValue.ToString()} operation.";
+            error = $"Can not run an OP_{OpValue} operation.";
             return false;
         }
     }
@@ -36,7 +36,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class ReservedOp : NotRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.Reserved;
     }
 
@@ -45,7 +45,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class VEROp : NotRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.VER;
     }
 
@@ -54,7 +54,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class Reserved1Op : NotRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.Reserved1;
     }
 
@@ -63,7 +63,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class Reserved2Op : NotRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.Reserved2;
     }
 }

@@ -31,7 +31,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOPOp : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP;
     }
 
@@ -40,7 +40,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP1Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP1;
     }
 
@@ -49,7 +49,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP4Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP4;
     }
 
@@ -58,7 +58,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP5Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP5;
     }
 
@@ -67,7 +67,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP6Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP6;
     }
 
@@ -76,7 +76,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP7Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP7;
     }
 
@@ -85,7 +85,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP8Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP8;
     }
 
@@ -94,7 +94,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP9Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP9;
     }
 
@@ -103,7 +103,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class NOP10Op : SimpleRunableOps
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.NOP10;
     }
 
