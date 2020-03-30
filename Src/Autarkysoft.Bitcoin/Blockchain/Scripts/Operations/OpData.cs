@@ -77,6 +77,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         private readonly int TxInIndex;
         private readonly int TxOutIndex;
 
+
+        /// <inheritdoc/>
+        public int CodeSeparatorCount { get; set; }
+
         /// <summary>
         /// [Default value = true]
         /// If true it will enforce the extra item popped by <see cref="OP.CheckMultiSig"/> to be <see cref="OP._0"/>,

@@ -596,9 +596,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     case OP.HASH256:
                         opList.Add(new Hash256Op());
                         break;
-                    // TODO: Add following case
-                    //case OP.CodeSeparator:
-                    //    break;
+                    case OP.CodeSeparator:
+                        opList.Add(new CodeSeparatorOp());
+                        break;
                     case OP.CheckSig:
                         opList.Add(new CheckSigOp());
                         break;
