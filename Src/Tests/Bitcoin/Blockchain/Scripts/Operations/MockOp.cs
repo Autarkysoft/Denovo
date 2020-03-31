@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 
@@ -33,6 +34,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 error = errMsg;
                 return false;
             }
+        }
+
+        public void WriteToStream(FastStream stream)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void WriteToStreamForSigning(FastStream stream)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

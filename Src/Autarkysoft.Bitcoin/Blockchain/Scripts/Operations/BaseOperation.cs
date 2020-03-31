@@ -183,7 +183,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// [Default value = true] Enforces strict rules for shortest encoding (1 = {1} instead of {1,0,0})
         /// </param>
         /// <param name="maxDataLength">[Default value = 4] Maximum number of bytes allowed to exist in the data</param>
-        /// <returns></returns>
+        /// <returns>True if conversion was successful, false if otherwise</returns>
         protected bool TryConvertToLong(byte[] data, out long result, bool isStrict = true, int maxDataLength = 4)
         {
             result = 0;
@@ -263,27 +263,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        /// <inheritdoc/>
+        public virtual void WriteToStream(FastStream stream) => stream.Write((byte)OpValue);
+
+        /// <inheritdoc/>
+        public virtual void WriteToStreamForSigning(FastStream stream) => stream.Write((byte)OpValue);
+
+
         /// <summary>
         /// Determines whether the specified object is equal to the current object.
         /// </summary>
         /// <param name="obj">The object to compare with the current object.</param>
         /// <returns>True if the specified object is equal to the current object, flase if otherwise.</returns>
-        public override bool Equals(object obj)
-        {
-            if (obj is IOperation op)
-            {
-                return op.OpValue == OpValue;
-            }
-            return false;
-        }
+        public override bool Equals(object obj) => obj is IOperation op && op.OpValue == OpValue;
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code</returns>
-        public override int GetHashCode()
-        {
-            return OpValue.GetHashCode();
-        }
+        public override int GetHashCode() => HashCode.Combine(OpValue);
     }
 }

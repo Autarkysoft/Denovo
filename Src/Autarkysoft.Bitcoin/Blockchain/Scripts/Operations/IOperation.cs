@@ -26,5 +26,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
         bool Run(IOpData opData, out string error);
+
+        /// <summary>
+        /// Writes byte (array) representation of this instance to the given stream.
+        /// Used by <see cref="IDeserializable.Serialize(FastStream)"/> methods
+        /// (not to be confused with what <see cref="Run(IOpData, out string)"/> does).
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        void WriteToStream(FastStream stream);
+
+        /// <summary>
+        /// Writes byte (array) representation of this instance to the given stream for signing operations.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        void WriteToStreamForSigning(FastStream stream);
     }
 }

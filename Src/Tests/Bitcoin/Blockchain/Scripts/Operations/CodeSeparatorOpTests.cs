@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Xunit;
@@ -24,6 +25,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.True(b, error);
             Assert.Null(error);
             Assert.True(op.IsExecuted);
+        }
+
+        [Fact]
+        public void WriteToStreamForSigningTest()
+        {
+            CodeSeparatorOp op = new CodeSeparatorOp();
+            FastStream stream = new FastStream(5);
+
+            op.WriteToStreamForSigning(stream);
+
+            Assert.Equal(new byte[0], stream.ToByteArray());
         }
     }
 }

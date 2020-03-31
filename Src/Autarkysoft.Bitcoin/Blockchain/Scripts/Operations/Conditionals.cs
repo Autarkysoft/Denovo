@@ -84,12 +84,33 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <summary>
-        /// Writes this operation's data to the given stream.
-        /// Used by <see cref="IDeserializable.Serialize(FastStream)"/> methods 
-        /// (not to be confused with what <see cref="Run(IOpData, out string)"/> does).
+        /// Returns if there is any executed <see cref="OP.CodeSeparator"/> operations among the operation lists.
         /// </summary>
-        /// <param name="stream">Stream to use</param>
-        public void WriteToStream(FastStream stream)
+        /// <returns>True if there were any executed <see cref="OP.CodeSeparator"/>s, otherwise false.</returns>
+        public bool HasExecutedCodeSeparator()
+        {
+            foreach (var op in mainOps)
+            {
+                if (op is CodeSeparatorOp cs && cs.IsExecuted)
+                {
+                    return true;
+                }
+            }
+            if (elseOps != null)
+            {
+                foreach (var op in elseOps)
+                {
+                    if (op is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public override void WriteToStream(FastStream stream)
         {
             // Start with OP_IF or OP_NotIf
             stream.Write((byte)OpValue);
@@ -97,15 +118,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (op is PushDataOp push)
                 {
-                    push.WriteToStream(stream);
-                }
-                else if (op is IfElseOpsBase conditional)
-                {
-                    conditional.WriteToStream(stream);
+                    push.WriteToStream(stream, isWitness);
                 }
                 else
                 {
-                    stream.Write((byte)op.OpValue);
+                    op.WriteToStream(stream);
                 }
             }
 
@@ -119,19 +136,105 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     {
                         push.WriteToStream(stream);
                     }
-                    else if (op is IfElseOpsBase conditional)
-                    {
-                        conditional.WriteToStream(stream);
-                    }
                     else
                     {
-                        stream.Write((byte)op.OpValue);
+                        op.WriteToStream(stream);
                     }
                 }
             }
 
             // End with OP_EndIf
             stream.Write((byte)OP.EndIf);
+        }
+
+
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream)
+        {
+            int lastExecutedElseCSep = -1;
+            if (elseOps != null)
+            {
+                for (int i = elseOps.Length - 1; i >= 0; i--)
+                {
+                    if (elseOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        lastExecutedElseCSep = i;
+                        break;
+                    }
+                }
+            }
+
+            if (lastExecutedElseCSep >= 0)
+            {
+                WriteElse(stream, lastExecutedElseCSep);
+            }
+            else
+            {
+                int lastExecutedCSep = -1;
+                for (int i = mainOps.Length - 1; i >= 0; i--)
+                {
+                    if (mainOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        lastExecutedCSep = i;
+                        break;
+                    }
+                }
+
+                if (lastExecutedCSep >= 0)
+                {
+                    WriteMain(stream, lastExecutedCSep);
+                    if (elseOps != null)
+                    {
+                        stream.Write((byte)OP.ELSE);
+                        WriteElse(stream, 0);
+                    }
+                }
+                else
+                {
+                    // This branch is when there is either no OP_CodeSeparator or they weren't executed
+                    // (eg. the whole IF/ELSE be in unexecuted branch of another IF/ELSE)
+                    stream.Write((byte)OpValue);
+                    WriteMain(stream, 0);
+                    if (elseOps != null)
+                    {
+                        stream.Write((byte)OP.ELSE);
+                        WriteElse(stream, 0);
+                    }
+                }
+            }
+
+            // End with OP_EndIf
+            stream.Write((byte)OP.EndIf);
+        }
+
+        private void WriteMain(FastStream stream, int start)
+        {
+            for (int i = start; i < mainOps.Length; i++)
+            {
+                if (mainOps[i] is PushDataOp push)
+                {
+                    push.WriteToStreamForSigning(stream);
+                }
+                else
+                {
+                    mainOps[i].WriteToStreamForSigning(stream);
+                }
+            }
+        }
+
+        private void WriteElse(FastStream stream, int start)
+        {
+            for (int i = start; i < elseOps.Length; i++)
+            {
+                if (elseOps[i] is PushDataOp push)
+                {
+                    push.WriteToStreamForSigning(stream);
+                }
+                else
+                {
+                    elseOps[i].WriteToStreamForSigning(stream);
+                }
+            }
         }
 
 

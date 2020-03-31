@@ -141,15 +141,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return true;
         }
 
-        /// <summary>
-        /// Writes this operation's data to the given stream.
-        /// Used by <see cref="IDeserializable.Serialize(FastStream)"/> methods 
-        /// (not to be confused with what <see cref="IOperation.Run(IOpData, out string)"/> does).
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
-        public void WriteToStream(FastStream stream)
+        /// <inheritdoc/>
+        public override void WriteToStream(FastStream stream)
         {
             // data is never null or empty, at least it has a single byte = 0x6a
+            stream.Write(data);
+        }
+
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream)
+        {
             stream.Write(data);
         }
     }

@@ -32,5 +32,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             error = null;
             return true;
         }
+
+        /// <summary>
+        /// Writes nothing to stream since <see cref="OP.CodeSeparator"/>s are not included in scripts while signing.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        public override void WriteToStreamForSigning(FastStream stream)
+        {
+        }
     }
 }

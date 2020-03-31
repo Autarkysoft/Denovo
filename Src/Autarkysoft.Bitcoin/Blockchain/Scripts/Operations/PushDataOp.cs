@@ -144,7 +144,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 if (data.Length > Constants.MaxScriptItemLength)
                 {
                     error = $"Item to be pushed to the stack can not be bigger than {Constants.MaxScriptItemLength} bytes.";
-                    return false;   
+                    return false;
                 }
                 opData.Push(data);
             }
@@ -274,6 +274,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return true;
         }
 
+        // TODO: try moving the isWitness bool to constructor to simplify the following 2 methods and avoid bugs
+
+        /// <inheritdoc/>
+        public override void WriteToStream(FastStream stream)
+        {
+            WriteToStream(stream, false);
+        }
 
         /// <summary>
         /// Writes this operation's data to the given stream.
@@ -297,6 +304,25 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 CompactInt size = new CompactInt(data.Length);
                 size.WriteToStream(stream);
                 stream.Write(data);
+            }
+            else
+            {
+                StackInt size = new StackInt(data.Length);
+                size.WriteToStream(stream);
+                stream.Write(data);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream)
+        {
+            if (OpValue == OP._0 || OpValue == OP.Negative1)
+            {
+                stream.Write((byte)OpValue);
+            }
+            else if (OpValue >= OP._1 && OpValue <= OP._16)
+            {
+                stream.Write((byte)OpValue);
             }
             else
             {
