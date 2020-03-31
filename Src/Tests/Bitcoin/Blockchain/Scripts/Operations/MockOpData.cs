@@ -27,8 +27,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         private int currentCallIndex;
 
 
-        public int CodeSeparatorCount { get; set; }
-
         internal bool sigVerificationSuccess = true;
 
         internal Signature expectedSig;

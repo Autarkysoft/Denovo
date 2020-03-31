@@ -19,11 +19,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     public interface IOpData
     {
         /// <summary>
-        /// Number of <see cref="OP.CodeSeparator"/> operations that were executed.
-        /// </summary>
-        int CodeSeparatorCount { get; set; }
-
-        /// <summary>
         /// Verifies correctness of the given signature with the given public key using
         /// the transaction and scripts set in constructor.
         /// </summary>

@@ -14,12 +14,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void RunTest()
         {
-            MockOpData data = new MockOpData();
-            Assert.Equal(0, data.CodeSeparatorCount);
-            OpTestCaseHelper.RunTest<CodeSeparatorOp>(data, OP.CodeSeparator);
-            Assert.Equal(1, data.CodeSeparatorCount);
-            OpTestCaseHelper.RunTest<CodeSeparatorOp>(data, OP.CodeSeparator);
-            Assert.Equal(2, data.CodeSeparatorCount);
+            CodeSeparatorOp op = new CodeSeparatorOp();
+
+            Assert.False(op.IsExecuted);
+            Assert.Equal(OP.CodeSeparator, op.OpValue);
+
+            bool b = op.Run(new MockOpData(), out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.True(op.IsExecuted);
         }
     }
 }

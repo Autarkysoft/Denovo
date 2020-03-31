@@ -14,16 +14,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public override OP OpValue => OP.CodeSeparator;
 
         /// <summary>
+        /// Indicates whether this operation was executed or not.
+        /// </summary>
+        public bool IsExecuted = false;
+
+        /// <summary>
         /// Does nothing. 
-        /// Under the hood, it increments number of executed <see cref="OP.CodeSeparator"/>s so that CheckSig ops can know
-        /// how to serialize scripts for signing.
+        /// <para/> Under the hood, it changes the <see cref="IsExecuted"/> value to false which would affect how
+        /// the script containing this operation is going to be serialized for signing.
         /// </summary>
         /// <param name="opData">Data to use</param>
         /// <param name="error">Always null</param>
         /// <returns>Always true</returns>
         public override bool Run(IOpData opData, out string error)
         {
-            opData.CodeSeparatorCount++;
+            IsExecuted = true;
             error = null;
             return true;
         }
