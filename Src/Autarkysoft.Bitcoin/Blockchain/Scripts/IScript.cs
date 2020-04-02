@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -41,5 +42,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         /// <returns>An array of bytes</returns>
         byte[] ToByteArray();
+
+        /// <summary>
+        /// Converts this instance to its byte array representation in a specific way used for signing operations.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        /// <param name="sig">Signature bytes to remove</param>
+        void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig);
     }
 }

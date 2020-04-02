@@ -33,7 +33,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CodeSeparatorOp op = new CodeSeparatorOp();
             FastStream stream = new FastStream(5);
 
-            op.WriteToStreamForSigning(stream);
+            op.WriteToStreamForSigning(stream, new byte[] { 1, 2 });
 
             Assert.Equal(new byte[0], stream.ToByteArray());
         }

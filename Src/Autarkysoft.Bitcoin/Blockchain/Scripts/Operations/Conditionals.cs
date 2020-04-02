@@ -3,6 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
+using System.Runtime.CompilerServices;
+
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
     /// <summary>
@@ -149,7 +152,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <inheritdoc/>
-        public override void WriteToStreamForSigning(FastStream stream)
+        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
         {
             int lastExecutedElseCSep = -1;
             if (elseOps != null)
@@ -166,7 +169,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (lastExecutedElseCSep >= 0)
             {
-                WriteElse(stream, lastExecutedElseCSep);
+                WriteElse(stream, lastExecutedElseCSep, sig);
             }
             else
             {
@@ -182,11 +185,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
                 if (lastExecutedCSep >= 0)
                 {
-                    WriteMain(stream, lastExecutedCSep);
+                    WriteMain(stream, lastExecutedCSep, sig);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        WriteElse(stream, 0);
+                        WriteElse(stream, 0, sig);
                     }
                 }
                 else
@@ -194,11 +197,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     // This branch is when there is either no OP_CodeSeparator or they weren't executed
                     // (eg. the whole IF/ELSE be in unexecuted branch of another IF/ELSE)
                     stream.Write((byte)OpValue);
-                    WriteMain(stream, 0);
+                    WriteMain(stream, 0, sig);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        WriteElse(stream, 0);
+                        WriteElse(stream, 0, sig);
                     }
                 }
             }
@@ -207,33 +210,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             stream.Write((byte)OP.EndIf);
         }
 
-        private void WriteMain(FastStream stream, int start)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteMain(FastStream stream, int start, ReadOnlySpan<byte> sig)
         {
             for (int i = start; i < mainOps.Length; i++)
             {
-                if (mainOps[i] is PushDataOp push)
-                {
-                    push.WriteToStreamForSigning(stream);
-                }
-                else
-                {
-                    mainOps[i].WriteToStreamForSigning(stream);
-                }
+                mainOps[i].WriteToStreamForSigning(stream, sig);
             }
         }
 
-        private void WriteElse(FastStream stream, int start)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteElse(FastStream stream, int start, ReadOnlySpan<byte> sig)
         {
             for (int i = start; i < elseOps.Length; i++)
             {
-                if (elseOps[i] is PushDataOp push)
-                {
-                    push.WriteToStreamForSigning(stream);
-                }
-                else
-                {
-                    elseOps[i].WriteToStreamForSigning(stream);
-                }
+                elseOps[i].WriteToStreamForSigning(stream, sig);
             }
         }
 

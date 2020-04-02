@@ -142,16 +142,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public override void WriteToStream(FastStream stream)
-        {
-            // data is never null or empty, at least it has a single byte = 0x6a
-            stream.Write(data);
-        }
+        public override void WriteToStream(FastStream stream) => stream.Write(data); // "data" is at least 0x6a
 
         /// <inheritdoc/>
-        public override void WriteToStreamForSigning(FastStream stream)
-        {
-            stream.Write(data);
-        }
+        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig) => stream.Write(data);
     }
 }

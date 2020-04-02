@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
@@ -69,8 +70,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// </param>
         /// <param name="inputIndex">Index of the input being signed</param>
         /// <param name="sht">Signature hash type</param>
+        /// <param name="sig">Signature bytes to remove</param>
         /// <returns>32 byte hash</returns>
-        byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht);
+        byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig);
 
         /// <summary>
         /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>

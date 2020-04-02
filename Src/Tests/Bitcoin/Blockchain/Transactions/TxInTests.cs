@@ -56,10 +56,10 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void Serialize_WithScriptTest()
         {
-            var scr = new MockSerializableSigScript(new byte[1] { 255 }, 2);
+            var scr = new MockSerializableScript(new byte[2] { 2, 255 }, new byte[] { 10, 20, 30 });
             TxIn tx = new TxIn(Helper.GetBytes(32), 1, null, 953132143);
             FastStream stream = new FastStream();
-            tx.Serialize(stream, scr, false);
+            tx.Serialize(stream, scr, new byte[] { 10, 20, 30 }, false);
 
             byte[] actual = stream.ToByteArray();
             byte[] expected = new byte[32 + 4 + 2 + 4];
@@ -78,10 +78,10 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void Serialize_WithScript_SeqChangeTest()
         {
-            var scr = new MockSerializableSigScript(new byte[1] { 255 }, 3);
+            var scr = new MockSerializableScript(new byte[2] { 3, 255 }, new byte[] { 10, 20, 30 });
             TxIn tx = new TxIn(Helper.GetBytes(32), 2, null, 953132143);
             FastStream stream = new FastStream();
-            tx.Serialize(stream, scr, true);
+            tx.Serialize(stream, scr, new byte[] { 10, 20, 30 }, true);
 
             byte[] actual = stream.ToByteArray();
             byte[] expected = new byte[32 + 4 + 2 + 4];

@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 
 namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -41,7 +42,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             throw new System.NotImplementedException();
         }
 
-        public void WriteToStreamForSigning(FastStream stream)
+        public void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
         {
             throw new System.NotImplementedException();
         }

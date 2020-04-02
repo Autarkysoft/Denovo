@@ -24,25 +24,11 @@ namespace Tests.Bitcoin.Blockchain
             set => throw new NotImplementedException();
         }
 
-        public virtual void Serialize(FastStream stream)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual void ToByteArray(FastStream stream)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual byte[] ToByteArray()
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error)
-        {
-            throw new NotImplementedException();
-        }
+        public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
+        public virtual void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig) => throw new NotImplementedException();
+        public virtual void ToByteArray(FastStream stream) => throw new NotImplementedException();
+        public virtual byte[] ToByteArray() => throw new NotImplementedException();
+        public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
     }
 
 
@@ -58,32 +44,64 @@ namespace Tests.Bitcoin.Blockchain
             ba = serializedResult;
         }
 
+        public MockSerializableScript(byte[] serializedResultForSigning, byte[] expectedSignatureBytes)
+        {
+            serSignBa = serializedResultForSigning;
+            signatureBa = expectedSignatureBytes;
+        }
+
+
         private readonly byte[] serBa;
         private readonly byte[] ba;
+        private readonly byte[] serSignBa;
+        private readonly byte[] signatureBa;
+
 
         public override void Serialize(FastStream stream)
         {
+            if (serBa == null)
+            {
+                Assert.True(false, "Wrong method is called.");
+            }
             stream.Write(serBa);
         }
 
         public override void ToByteArray(FastStream stream)
         {
+            if (ba == null)
+            {
+                Assert.True(false, "Wrong method is called.");
+            }
             stream.Write(ba);
         }
 
         public override byte[] ToByteArray()
         {
+            if (ba == null)
+            {
+                Assert.True(false, "Wrong method is called.");
+            }
             return ba;
+        }
+
+        public override void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig)
+        {
+            if (serSignBa == null)
+            {
+                Assert.True(false, "Wrong method is called.");
+            }
+            Assert.True(sig.SequenceEqual(signatureBa));
+            stream.Write(serSignBa);
         }
     }
 
 
     public class MockSerializablePubScript : MockSerializableScript, IPubkeyScript
     {
-        public MockSerializablePubScript(PubkeyScriptType typeResult, byte[] serializedResult, byte streamFirstByte)
-            : base(serializedResult, streamFirstByte)
+        public MockSerializablePubScript(PubkeyScriptType typeRes, byte[] serRes, byte streamFirstByte)
+            : base(serRes, streamFirstByte)
         {
-            typeToReturn = typeResult;
+            typeToReturn = typeRes;
         }
 
         public MockSerializablePubScript(byte[] serializedResult, byte streamFirstByte)
@@ -99,7 +117,8 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockSerializableSigScript : MockSerializableScript, ISignatureScript
     {
-        public MockSerializableSigScript(byte[] serializedResult, byte streamFirstByte) : base(serializedResult, streamFirstByte)
+        public MockSerializableSigScript(byte[] serializedResult, byte streamFirstByte)
+            : base(serializedResult, streamFirstByte)
         {
         }
 
@@ -116,10 +135,10 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockSerializableRedeemScript : MockSerializableScript, IRedeemScript
     {
-        public MockSerializableRedeemScript(RedeemScriptType typeResult, byte[] serializedResult, byte streamFirstByte)
-            : base(serializedResult, streamFirstByte)
+        public MockSerializableRedeemScript(RedeemScriptType typeRes, byte[] serRes, byte streamFirstByte)
+            : base(serRes, streamFirstByte)
         {
-            typeToReturn = typeResult;
+            typeToReturn = typeRes;
         }
 
         public MockSerializableRedeemScript(byte[] serializedResult, byte streamFirstByte)

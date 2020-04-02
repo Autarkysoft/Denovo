@@ -3,6 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
+using System.Runtime.CompilerServices;
+
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
     /// <summary>
@@ -37,7 +40,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Writes nothing to stream since <see cref="OP.CodeSeparator"/>s are not included in scripts while signing.
         /// </summary>
         /// <param name="stream">Stream to use</param>
-        public override void WriteToStreamForSigning(FastStream stream)
+        /// <param name="sig"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
         {
         }
     }

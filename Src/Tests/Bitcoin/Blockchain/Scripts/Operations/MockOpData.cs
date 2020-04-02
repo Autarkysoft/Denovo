@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -31,9 +32,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
         internal Signature expectedSig;
         internal PublicKey expectedPubkey;
-        public bool Verify(Signature sig, PublicKey pubKey)
+        internal byte[] expectedSigBa;
+        public bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa)
         {
-            if (expectedSig is null || expectedPubkey is null)
+            if (expectedSig is null || expectedPubkey is null || expectedSigBa is null)
             {
                 Assert.True(false, "Expected signature and/or public key must be set first.");
             }
@@ -42,6 +44,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Equal(expectedSig.S, sig.S);
             Assert.Equal(expectedSig.SigHash, sig.SigHash);
             Assert.Equal(expectedPubkey.ToByteArray(true), pubKey.ToByteArray(true));
+            Assert.True(sigBa.SequenceEqual(expectedSigBa));
 
             return sigVerificationSuccess;
         }

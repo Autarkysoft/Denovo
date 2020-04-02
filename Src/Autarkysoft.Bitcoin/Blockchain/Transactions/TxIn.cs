@@ -109,15 +109,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <exception cref="ArgumentNullException"/>
         /// <param name="stream">Stream to use.</param>
         /// <param name="scr">Script to use</param>
+        /// <param name="sig">Signature bytes to remove</param>
         /// <param name="changeSequenceToZero">
         /// Sequences are set to 0 for both <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.None"/>
         /// and <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.Single"/>.
         /// </param>
-        public void Serialize(FastStream stream, IScript scr, bool changeSequenceToZero = false)
+        public void Serialize(FastStream stream, IScript scr, ReadOnlySpan<byte> sig, bool changeSequenceToZero = false)
         {
             stream.Write(TxHash);
             stream.Write(Index);
-            scr.Serialize(stream);
+            scr.SerializeForSigning(stream, sig);
 
             if (changeSequenceToZero)
             {

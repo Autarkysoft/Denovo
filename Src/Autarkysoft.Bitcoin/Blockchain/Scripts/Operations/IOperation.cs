@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
+
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
     /// <summary>
@@ -39,6 +41,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Writes byte (array) representation of this instance to the given stream for signing operations.
         /// </summary>
         /// <param name="stream">Stream to use</param>
-        void WriteToStreamForSigning(FastStream stream);
+        /// <param name="sig">Signature bytes to remove</param>
+        void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig);
     }
 }

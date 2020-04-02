@@ -314,7 +314,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public override void WriteToStreamForSigning(FastStream stream)
+        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
         {
             if (OpValue == OP._0 || OpValue == OP.Negative1)
             {
@@ -324,7 +324,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 stream.Write((byte)OpValue);
             }
-            else
+            else if (!sig.SequenceEqual(data))
             {
                 StackInt size = new StackInt(data.Length);
                 size.WriteToStream(stream);

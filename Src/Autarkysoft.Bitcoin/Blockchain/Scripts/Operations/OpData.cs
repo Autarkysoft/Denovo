@@ -89,9 +89,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <inheritdoc/>
-        public bool Verify(Signature sig, PublicKey pubKey)
+        public bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa)
         {
-            byte[] dataToSign = Tx.SerializeForSigning(prevScript, TxInIndex, sig.SigHash);
+            byte[] dataToSign = Tx.SerializeForSigning(prevScript, TxInIndex, sig.SigHash, sigBa);
             return calc.Verify(dataToSign, sig, pubKey);
         }
 
@@ -103,7 +103,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (!bytesToSign.ContainsKey(item.SigHash))
                 {
-                    bytesToSign.Add(item.SigHash, Tx.SerializeForSigning(prevScript, TxInIndex, item.SigHash));
+                    //bytesToSign.Add(item.SigHash, Tx.SerializeForSigning(prevScript, TxInIndex, item.SigHash));
                 }
             }
 

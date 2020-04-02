@@ -14,6 +14,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
     public class CheckSigOpTests
     {
         private static readonly Signature sig = new Signature(1, 2) { SigHash = SigHashType.All };
+        private static readonly byte[] sigBa = sig.ToByteArray();
 
         [Fact]
         public void Run_CorrectSigTest()
@@ -23,8 +24,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 _itemCount = 2,
                 expectedSig = sig,
                 expectedPubkey = Helper.GetPubkeySample(),
+                expectedSigBa = sigBa,
                 sigVerificationSuccess = true,
-                popCountData = new byte[][][] { new byte[][] { sig.ToByteArray(), Helper.GetPubkeySampleBytes(true) } },
+                popCountData = new byte[][][] { new byte[][] { sigBa, Helper.GetPubkeySampleBytes(true) } },
                 pushData = new byte[][] { OpTestCaseHelper.TrueBytes }
             };
 
@@ -39,8 +41,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 _itemCount = 2,
                 expectedSig = sig,
                 expectedPubkey = Helper.GetPubkeySample(),
+                expectedSigBa = sigBa,
                 sigVerificationSuccess = false,
-                popCountData = new byte[][][] { new byte[][] { sig.ToByteArray(), Helper.GetPubkeySampleBytes(true) } },
+                popCountData = new byte[][][] { new byte[][] { sigBa, Helper.GetPubkeySampleBytes(true) } },
                 pushData = new byte[][] { OpTestCaseHelper.FalseBytes }
             };
 

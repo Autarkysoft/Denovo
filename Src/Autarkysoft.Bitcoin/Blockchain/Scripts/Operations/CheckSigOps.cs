@@ -15,7 +15,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     public abstract class CheckSigOpBase : BaseOperation
     {
         /// <summary>
-        /// Removes top two stack items as public key and signature and calls <see cref="IOpData.Verify(Signature, PublicKey)"/>.
+        /// Removes top two stack items as public key and signature and calls 
+        /// <see cref="IOpData.Verify(Signature, PublicKey, System.ReadOnlySpan{byte})"/>.
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
@@ -42,7 +43,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            return opData.Verify(sig, pubK);
+            return opData.Verify(sig, pubK, values[0]);
         }
     }
 

@@ -240,7 +240,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         /// <inheritdoc/>
-        public byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht)
+        public byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig)
         {
             // TODO: change this into Sha256 itself with stream methods inside + benchmark
             FastStream stream = new FastStream();
@@ -268,7 +268,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             if (anyone)
             {
-                TxInList[inputIndex].Serialize(stream, scr, false);
+                TxInList[inputIndex].Serialize(stream, scr, sig,false);
             }
             else
             {
@@ -279,11 +279,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 {
                     if (i != inputIndex)
                     {
-                        TxInList[i].Serialize(stream, empty, changeSeq);
+                        TxInList[i].Serialize(stream, empty, sig, changeSeq);
                     }
                     else
                     {
-                        TxInList[i].Serialize(stream, scr, false);
+                        TxInList[i].Serialize(stream, scr, sig, false);
                     }
                 }
             }
@@ -450,7 +450,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             PubkeyScriptType scrType = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType();
             if (scrType == PubkeyScriptType.P2PKH || scrType == PubkeyScriptType.P2PK)
             {
-                return SerializeForSigning(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript, inputIndex, sht);
+                return SerializeForSigning(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript, inputIndex, sht, null);
             }
             else if (scrType == PubkeyScriptType.P2SH)
             {
@@ -464,7 +464,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 if (!expHash.SequenceEqual(actHash))
                     throw new ArgumentException("Wrong previous transaction or index.");
 
-                return SerializeForSigning(redeem, inputIndex, sht);
+                return SerializeForSigning(redeem, inputIndex, sht, null);
             }
             else if (scrType == PubkeyScriptType.P2WPKH)
             {

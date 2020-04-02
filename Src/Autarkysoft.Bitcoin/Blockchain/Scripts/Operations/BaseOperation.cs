@@ -267,7 +267,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public virtual void WriteToStream(FastStream stream) => stream.Write((byte)OpValue);
 
         /// <inheritdoc/>
-        public virtual void WriteToStreamForSigning(FastStream stream) => stream.Write((byte)OpValue);
+        public virtual void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig) => stream.Write((byte)OpValue);
 
 
         /// <summary>

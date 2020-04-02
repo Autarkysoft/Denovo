@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 using System.Collections.Generic;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
@@ -62,7 +63,37 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <inheritdoc/>
         public IOperation[] OperationList { get; set; } = new IOperation[0];
 
-        
+
+
+        /// <inheritdoc/>
+        public virtual void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig)
+        {
+            int start = 0;
+            for (int i = OperationList.Length - 1; i >= 0; i--)
+            {
+                if (OperationList[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                {
+                    start = i;
+                    break;
+                }
+                else if (OperationList[i] is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
+                {
+                    start = i;
+                    break;
+                }
+            }
+
+            FastStream temp = new FastStream();
+            for (int i = start; i < OperationList.Length; i++)
+            {
+                OperationList[i].WriteToStreamForSigning(temp, sig);
+            }
+
+            CompactInt lengthOrCount = new CompactInt(IsWitness ? OperationList.Length : temp.GetSize());
+
+            lengthOrCount.WriteToStream(stream);
+            stream.Write(temp);
+        }
 
         /// <inheritdoc/>
         public virtual void Serialize(FastStream stream)
@@ -84,17 +115,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 {
                     push.WriteToStream(stream, IsWitness);
                 }
-                else if (op is IfElseOpsBase conditional)
-                {
-                    conditional.WriteToStream(stream);
-                }
-                else if (op is ReturnOp retOp)
-                {
-                    retOp.WriteToStream(stream);
-                }
                 else
                 {
-                    stream.Write((byte)op.OpValue);
+                    op.WriteToStream(stream);
                 }
             }
         }

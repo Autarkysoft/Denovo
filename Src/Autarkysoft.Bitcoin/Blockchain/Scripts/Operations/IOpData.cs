@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -24,8 +25,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <param name="sig">Signature</param>
         /// <param name="pubKey">Public key</param>
+        /// <param name="sigBa">Signature bytes to remove</param>
         /// <returns>True if verification succeeds, otherwise false.</returns>
-        bool Verify(Signature sig, PublicKey pubKey);
+        bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa);
 
         /// <summary>
         /// Verifies multiple signatures versus multiple public keys (for <see cref="OP.CheckMultiSig"/> operations).
