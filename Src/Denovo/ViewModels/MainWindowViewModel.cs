@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Denovo.Services;
@@ -27,6 +28,8 @@ namespace Denovo.ViewModels
         internal class MockBlockChain : IBlockchain
         {
             public int Height => 0;
+            public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
+            public Target GetTarget(int height) => throw new NotImplementedException();
         }
 
         private readonly Node node = new Node(new MockBlockChain());

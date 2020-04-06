@@ -13,6 +13,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
     public interface IBlock : IDeserializable
     {
         /// <summary>
+        /// This block's height
+        /// </summary>
+        int Height { get; set; }
+
+        /// <summary>
         /// Block version
         /// </summary>
         int Version { get; set; }

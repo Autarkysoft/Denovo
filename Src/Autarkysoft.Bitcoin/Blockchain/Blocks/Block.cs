@@ -60,6 +60,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         private const int HeaderSize = 80;
         private readonly Sha256 hashFunc = new Sha256(true);
 
+        /// <inheritdoc/>
+        public int Height { get; set; } = -1;
+
         private int _version;
         /// <inheritdoc/>
         public int Version
