@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
@@ -15,5 +17,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         /// <returns><see cref="RedeemScriptType"/> enum</returns>
         RedeemScriptType GetRedeemScriptType();
+
+        /// <summary>
+        /// Returns the special type of this instance (types that require additional steps during transaction verification).
+        /// </summary>
+        /// <returns><see cref="RedeemScriptSpecialType"/> enum</returns>
+        RedeemScriptSpecialType GetSpecialType();
+
+        /// <inheritdoc cref="IScript.CountSigOps"/>
+        /// <param name="ops">List of operations</param>
+        int CountSigOps(IOperation[] ops);
     }
 }

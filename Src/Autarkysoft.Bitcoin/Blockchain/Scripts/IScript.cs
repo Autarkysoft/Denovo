@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -15,39 +14,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     public interface IScript : IDeserializable
     {
         /// <summary>
-        /// Returns whether the script instance is of witness type. It will affect (de)serialization methods.
+        /// This script's content as an array of bytes (can be null for empty scripts)
         /// </summary>
-        bool IsWitness { get; }
+        byte[] Data { get; set; }
 
         /// <summary>
-        /// Type of this script instance
+        /// Returns number of <see cref="OP.CheckSig"/>, <see cref="OP.CheckSigVerify"/>, <see cref="OP.CheckMultiSig"/>
+        /// and <see cref="OP.CheckMultiSigVerify"/> operations in this instance without a full script evaluation.
         /// </summary>
-        ScriptType ScriptType { get; }
+        /// <returns>Number of "SigOps"</returns>
+        int CountSigOps();
 
         /// <summary>
-        /// List of operations that the script contains.
+        /// Converts <see cref="Data"/> to an array of <see cref="IOperation"/>s (result can be an empty array). 
+        /// Return value indicates success.
         /// </summary>
-        IOperation[] OperationList { get; set; }
-
-        /// <summary>
-        /// Converts this instance into its byte array representation only containing <see cref="IOperation"/>s as bytes 
-        /// without the starting integer for length or count and writes the result to the given stream.
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
-        void ToByteArray(FastStream stream);
-
-        /// <summary>
-        /// Converts this instance into its byte array representation only containing <see cref="IOperation"/>s as bytes 
-        /// without the starting integer for length or count.
-        /// </summary>
-        /// <returns>An array of bytes</returns>
-        byte[] ToByteArray();
-
-        /// <summary>
-        /// Converts this instance to its byte array representation in a specific way used for signing operations.
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
-        /// <param name="sig">Signature bytes to remove</param>
-        void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig);
+        /// <param name="result">An array of <see cref="IOperation"/>s</param>
+        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
+        /// <returns>True if evaluation was successful, false if otherwise.</returns>
+        bool TryEvaluate(out IOperation[] result, out string error);
     }
 }

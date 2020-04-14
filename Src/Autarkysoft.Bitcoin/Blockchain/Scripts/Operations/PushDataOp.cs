@@ -62,7 +62,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if (script == null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
 
-            data = script.ToByteArray();
+            data = script.Data;
             if (data.Length > Constants.MaxScriptItemLength)
             {
                 throw new ArgumentOutOfRangeException(nameof(script),

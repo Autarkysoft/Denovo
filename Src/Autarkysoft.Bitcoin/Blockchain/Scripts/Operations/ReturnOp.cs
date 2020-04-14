@@ -65,7 +65,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if (scr == null)
                 throw new ArgumentNullException(nameof(scr), "Script can not be null.");
 
-            byte[] temp = scr.ToByteArray();
+            byte[] temp = scr.Data;
 
             if (usePushOp)
             {

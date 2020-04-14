@@ -14,45 +14,94 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     /// Implements <see cref="IWitnessScript"/> and inherits from <see cref="Script"/>.
     /// <para/> Witnesses are more like stack items rather than scripts.
     /// </summary>
-    public class WitnessScript : Script, IWitnessScript
+    public class WitnessScript : IWitnessScript
     {
-        public WitnessScript() : base(100)
+        public WitnessScript()
         {
-            IsWitness = true;
-            ScriptType = ScriptType.ScriptWitness;
         }
 
 
+        /// <inheritdoc/>
+        public PushDataOp[] Items { get; set; }
 
+
+        /// <inheritdoc/>
+        public void Serialize(FastStream stream)
+        {
+            if (Items == null || Items.Length == 0)
+            {
+                stream.Write((byte)0);
+            }
+            else
+            {
+                CompactInt count = new CompactInt(Items.Length);
+                count.WriteToStream(stream);
+                foreach (var item in Items)
+                {
+                    item.WriteToStream(stream, true);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public bool TryDeserialize(FastStreamReader stream, out string error)
+        {
+            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
+            {
+                return false;
+            }
+
+            // TODO: set a better value for comparison
+            if (count > int.MaxValue)
+            {
+                error = "Item count is too big.";
+                return false;
+            }
+            Items = new PushDataOp[(int)count];
+            for (int i = 0; i < Items.Length; i++)
+            {
+                PushDataOp temp = new PushDataOp();
+                if (!temp.TryRead(stream, out error, true))
+                {
+                    return false;
+                }
+                Items[i] = temp;
+            }
+
+            error = null;
+            return true;
+        }
+
+        /// <inheritdoc/>
         public void SetToP2WPKH(Signature sig, PublicKey pubKey, bool useCompressed = true)
         {
             byte[] sigBa = sig.ToByteArray();
             byte[] pubkBa = pubKey.ToByteArray(useCompressed);
 
-            OperationList = new IOperation[]
+            Items = new PushDataOp[]
             {
                 new PushDataOp(sigBa),
                 new PushDataOp(pubkBa)
             };
         }
 
+        /// <inheritdoc/>
         public void SetToP2WSH_MultiSig(Signature[] sigs, RedeemScript redeem)
         {
-            OperationList = new IOperation[sigs.Length + 2]; // OP_0 | Sig1 | sig2 | .... | sig(n) | redeemScript
+            Items = new PushDataOp[sigs.Length + 2]; // OP_0 | Sig1 | sig2 | .... | sig(n) | redeemScript
 
-            OperationList[0] = new PushDataOp(OP._0);
+            Items[0] = new PushDataOp(OP._0);
 
             for (int i = 1; i <= sigs.Length; i++)
             {
-                OperationList[i] = new PushDataOp(sigs[i].ToByteArray());
+                Items[i] = new PushDataOp(sigs[i].ToByteArray());
             }
 
             FastStream stream = new FastStream();
-            PushDataOp temp = new PushDataOp(redeem.ToByteArray());
+            PushDataOp temp = new PushDataOp(redeem.Data);
             temp.WriteToStream(stream, false);
 
-            OperationList[^1] = new PushDataOp(stream.ToByteArray());
+            Items[^1] = new PushDataOp(stream.ToByteArray());
         }
-
     }
 }

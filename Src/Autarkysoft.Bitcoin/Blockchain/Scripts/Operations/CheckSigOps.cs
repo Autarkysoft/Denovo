@@ -145,6 +145,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 error = "Invalid number (n) format.";
                 return false;
             }
+            // TODO: this may not be a good check _here_ (the scripts are limited by size already)
             if (n < 0 || n > 20)
             {
                 error = "Invalid number of public keys in multi-sig.";

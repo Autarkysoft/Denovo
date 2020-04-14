@@ -30,6 +30,22 @@ namespace Autarkysoft.Bitcoin
         /// </remarks>
         public const int RngRetryCount = 5;
         /// <summary>
+        /// Byte length of a compressed public key
+        /// </summary>
+        public const int CompressedPubkeyLen = 33;
+        /// <summary>
+        /// Byte length of an uncompressed public key
+        /// </summary>
+        public const int UncompressedPubkeyLen = 65;
+        /// <summary>
+        /// Byte length of <see cref="Cryptography.Hashing.Ripemd160Sha256"/> hash result
+        /// </summary>
+        public const int Hash160Length = 20;
+        /// <summary>
+        /// Byte length of <see cref="Cryptography.Hashing.Sha256"/> hash result
+        /// </summary>
+        public const int Sha256Length = 32;
+        /// <summary>
         /// Maximum allowed length of the scripts in bytes
         /// </summary>
         public const int MaxScriptLength = 10_000;
@@ -38,6 +54,22 @@ namespace Autarkysoft.Bitcoin
         /// (the redeem scripts used in P2SH are also limited by this length)
         /// </summary>
         public const int MaxScriptItemLength = 520;
+        /// <summary>
+        /// Minimum allowed length of the coinbase signature script
+        /// </summary>
+        public const int MinCoinbaseScriptLength = 2;
+        /// <summary>
+        /// Maximum allowed length of the coinbase signature script
+        /// </summary>
+        public const int MaxCoinbaseScriptLength = 100;
+        /// <summary>
+        /// Maximum allowed number of signature check operations per block
+        /// </summary>
+        public const int MaxSigOpCount = 80_000;
+        /// <summary>
+        /// The factor by which values (eg. size, SigOpCount, ...) are multiplied 
+        /// </summary>
+        public const int WitnessScaleFactor = 4;
         /// <summary>
         /// The constant string that is attached to the beginning of a message before it is signed
         /// </summary>

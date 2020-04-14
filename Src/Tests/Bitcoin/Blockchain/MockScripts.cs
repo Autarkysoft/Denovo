@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
@@ -16,109 +17,57 @@ namespace Tests.Bitcoin.Blockchain
 {
     public abstract class MockScriptBase : IScript
     {
-        public virtual bool IsWitness => throw new NotImplementedException();
-        public virtual ScriptType ScriptType => throw new NotImplementedException();
-        public virtual IOperation[] OperationList
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
-
+        public virtual byte[] Data { get; set; }
+        public virtual bool TryEvaluate(out IOperation[] result, out string error) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
-        public virtual void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig) => throw new NotImplementedException();
-        public virtual void ToByteArray(FastStream stream) => throw new NotImplementedException();
-        public virtual byte[] ToByteArray() => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
+        public virtual int CountSigOps() => throw new NotImplementedException();
     }
 
 
 
     public class MockSerializableScript : MockScriptBase
     {
-        public MockSerializableScript(byte[] serializedResult, byte streamFirstByte)
+        public MockSerializableScript(byte[] data, byte streamFirstByte)
         {
-            serBa = new byte[serializedResult.Length + 1];
-            Buffer.BlockCopy(serializedResult, 0, serBa, 1, serializedResult.Length);
+            serBa = new byte[data.Length + 1];
+            Buffer.BlockCopy(data, 0, serBa, 1, data.Length);
             serBa[0] = streamFirstByte;
 
-            ba = serializedResult;
+            Data = data;
         }
-
-        public MockSerializableScript(byte[] serializedResultForSigning, byte[] expectedSignatureBytes)
-        {
-            serSignBa = serializedResultForSigning;
-            signatureBa = expectedSignatureBytes;
-        }
-
 
         private readonly byte[] serBa;
-        private readonly byte[] ba;
-        private readonly byte[] serSignBa;
-        private readonly byte[] signatureBa;
 
-
-        public override void Serialize(FastStream stream)
-        {
-            if (serBa == null)
-            {
-                Assert.True(false, "Wrong method is called.");
-            }
-            stream.Write(serBa);
-        }
-
-        public override void ToByteArray(FastStream stream)
-        {
-            if (ba == null)
-            {
-                Assert.True(false, "Wrong method is called.");
-            }
-            stream.Write(ba);
-        }
-
-        public override byte[] ToByteArray()
-        {
-            if (ba == null)
-            {
-                Assert.True(false, "Wrong method is called.");
-            }
-            return ba;
-        }
-
-        public override void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig)
-        {
-            if (serSignBa == null)
-            {
-                Assert.True(false, "Wrong method is called.");
-            }
-            Assert.True(sig.SequenceEqual(signatureBa));
-            stream.Write(serSignBa);
-        }
+        public override void Serialize(FastStream stream) => stream.Write(serBa);
     }
 
 
     public class MockSerializablePubScript : MockSerializableScript, IPubkeyScript
     {
-        public MockSerializablePubScript(PubkeyScriptType typeRes, byte[] serRes, byte streamFirstByte)
-            : base(serRes, streamFirstByte)
+        public MockSerializablePubScript(PubkeyScriptType typeRes, byte[] data, byte streamFirstByte)
+            : base(data, streamFirstByte)
         {
             typeToReturn = typeRes;
         }
 
-        public MockSerializablePubScript(byte[] serializedResult, byte streamFirstByte)
-            : this(PubkeyScriptType.Unknown, serializedResult, streamFirstByte)
+        public MockSerializablePubScript(byte[] data, byte streamFirstByte)
+            : this(PubkeyScriptType.Unknown, data, streamFirstByte)
         {
         }
 
         private readonly PubkeyScriptType typeToReturn;
 
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
+        public PubkeyScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public bool IsUnspendable() => throw new NotImplementedException();
     }
 
 
     public class MockSerializableSigScript : MockSerializableScript, ISignatureScript
     {
-        public MockSerializableSigScript(byte[] serializedResult, byte streamFirstByte)
-            : base(serializedResult, streamFirstByte)
+        public MockSerializableSigScript(byte[] data, byte streamFirstByte)
+            : base(data, streamFirstByte)
         {
         }
 
@@ -130,25 +79,28 @@ namespace Tests.Bitcoin.Blockchain
         public void SetToP2SH_P2WPKH(PublicKey pubKey) => throw new NotImplementedException();
         public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
+        public bool VerifyCoinbase(int height, IConsensus consensus) => throw new NotImplementedException();
     }
 
 
     public class MockSerializableRedeemScript : MockSerializableScript, IRedeemScript
     {
-        public MockSerializableRedeemScript(RedeemScriptType typeRes, byte[] serRes, byte streamFirstByte)
-            : base(serRes, streamFirstByte)
+        public MockSerializableRedeemScript(RedeemScriptType typeRes, byte[] data, byte streamFirstByte)
+            : base(data, streamFirstByte)
         {
             typeToReturn = typeRes;
         }
 
-        public MockSerializableRedeemScript(byte[] serializedResult, byte streamFirstByte)
-            : this(RedeemScriptType.Unknown, serializedResult, streamFirstByte)
+        public MockSerializableRedeemScript(byte[] data, byte streamFirstByte)
+            : this(RedeemScriptType.Unknown, data, streamFirstByte)
         {
         }
 
         private readonly RedeemScriptType typeToReturn;
 
         public RedeemScriptType GetRedeemScriptType() => typeToReturn;
+        public RedeemScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public int CountSigOps(IOperation[] ops) => throw new NotImplementedException();
     }
 
 
@@ -203,6 +155,8 @@ namespace Tests.Bitcoin.Blockchain
         private readonly PubkeyScriptType typeToReturn;
 
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
+        public PubkeyScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public bool IsUnspendable() => throw new NotImplementedException();
     }
 
 
@@ -221,5 +175,6 @@ namespace Tests.Bitcoin.Blockchain
         public void SetToP2SH_P2WPKH(PublicKey pubKey) => throw new NotImplementedException();
         public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
+        public bool VerifyCoinbase(int height, IConsensus consensus) => throw new NotImplementedException();
     }
 }

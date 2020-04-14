@@ -100,6 +100,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             set => _lockTime = value;
         }
 
+        /// <inheritdoc/>
+        public bool IsVerified { get; set; } = false;
+
+        /// <inheritdoc/>
+        public int SigOpCount { get; set; }
 
         /// <summary>
         /// Total transaction size in bytes
@@ -240,7 +245,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         /// <inheritdoc/>
-        public byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig)
+        public byte[] SerializeForSigning(IOperation[] ops, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig)
         {
             // TODO: change this into Sha256 itself with stream methods inside + benchmark
             FastStream stream = new FastStream();
@@ -268,22 +273,22 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             if (anyone)
             {
-                TxInList[inputIndex].Serialize(stream, scr, sig,false);
+                TxInList[inputIndex].SerializeForSigning(stream, ops, sig, false);
             }
             else
             {
-                PubkeyScript empty = new PubkeyScript();
+                IOperation[] empty = new IOperation[0];
                 // Sequence of other inputs must be set to 0 if the SigHashType is Single or None
                 bool changeSeq = sht != SigHashType.All;
                 for (int i = 0; i < TxInList.Length; i++)
                 {
                     if (i != inputIndex)
                     {
-                        TxInList[i].Serialize(stream, empty, sig, changeSeq);
+                        TxInList[i].SerializeForSigning(stream, empty, sig, changeSeq);
                     }
                     else
                     {
-                        TxInList[i].Serialize(stream, scr, sig, false);
+                        TxInList[i].SerializeForSigning(stream, ops, sig, false);
                     }
                 }
             }
@@ -329,8 +334,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
         /// <inheritdoc/>
-        public byte[] SerializeForSigningSegWit(IScript scr, int inputIndex, ulong amount, SigHashType sht)
+        public byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht)
         {
+            // TODO: like above prevOutScript needs to be of type IOperation[] instead of byte[] and we need to handle
+            //       its conversion to bytep[] here.
             bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
             if (anyone)
             {
@@ -408,7 +415,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             finalStream.Write(TxInList[inputIndex].TxHash);
             finalStream.Write(TxInList[inputIndex].Index);
             // the prevOutScript is a P2WPKH (0014<hash160>) which should be turned into 1976a914<hash160>88ac and placed here
-            ((PubkeyScript)scr).ConvertP2WPKH_to_P2PKH().Serialize(finalStream);
+            finalStream.Write(prevOutScript);
             finalStream.Write(amount);
             finalStream.Write(TxInList[inputIndex].Sequence);
             finalStream.Write(hashOutputs);
@@ -446,30 +453,41 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 throw new ArgumentOutOfRangeException(nameof(inputIndex), "Not enough TxIns.");
             if (!((ReadOnlySpan<byte>)TxInList[inputIndex].TxHash).SequenceEqual(prvTx.GetTransactionHash()))
                 throw new ArgumentException("Wrong previous transaction or index.");
+            if (!prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.TryEvaluate(out IOperation[] prevOps, out string error))
+                throw new ArgumentException($"Previous transaction pubkey script can not be evaluated: {error}.");
+
 
             PubkeyScriptType scrType = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType();
             if (scrType == PubkeyScriptType.P2PKH || scrType == PubkeyScriptType.P2PK)
             {
-                return SerializeForSigning(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript, inputIndex, sht, null);
+                return SerializeForSigning(prevOps, inputIndex, sht, null);
             }
             else if (scrType == PubkeyScriptType.P2SH)
             {
                 if (redeem is null)
-                {
                     throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
-                }
+                if (!redeem.TryEvaluate(out IOperation[] rdmOps, out error))
+                    throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
 
-                ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.ToByteArray());
-                byte[] actHash = ((PushDataOp)prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
+                ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.Data);
+                ReadOnlySpan<byte> actHash = ((ReadOnlySpan<byte>)prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(2, 20);
                 if (!expHash.SequenceEqual(actHash))
                     throw new ArgumentException("Wrong previous transaction or index.");
 
-                return SerializeForSigning(redeem, inputIndex, sht, null);
+                return SerializeForSigning(rdmOps, inputIndex, sht, null);
             }
             else if (scrType == PubkeyScriptType.P2WPKH)
             {
-                return SerializeForSigningSegWit(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript, inputIndex,
-                    prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
+                // the prevOutScript is a P2WPKH (0014<hash160>) which should be turned into 1976a914<hash160>88ac and placed here
+                byte[] temp = new byte[26];
+                temp[0] = 25;
+                temp[1] = (byte)OP.DUP;
+                temp[2] = (byte)OP.HASH160;
+                // Copy both push_size+hash from prev script
+                Buffer.BlockCopy(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data, 1, temp, 3, 21);
+                temp[^2] = (byte)OP.EqualVerify;
+                temp[^1] = (byte)OP.CheckSig;
+                return SerializeForSigningSegWit(temp, inputIndex, prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
             }
             else if (scrType == PubkeyScriptType.P2WSH)
             {
@@ -517,7 +535,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
                 case PubkeyScriptType.P2PKH:
                     ReadOnlySpan<byte> expHash160 =
-                        ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[2]).data;
+                        ((ReadOnlySpan<byte>)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(3, 20);
                     ReadOnlySpan<byte> actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
                     bool compressed = true;
                     if (!actualHash160.SequenceEqual(expHash160))
@@ -542,8 +560,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
                     }
 
-                    ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.ToByteArray());
-                    byte[] actHash = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
+                    ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.Data);
+                    ReadOnlySpan<byte> actHash =
+                        ((ReadOnlySpan<byte>)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(2, 20);
                     if (!expHash.SequenceEqual(actHash))
                     {
                         throw new ArgumentException("Wrong previous transaction or index.");
@@ -552,7 +571,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     TxInList[inputIndex].SigScript.SetToMultiSig(sig, pubKey, redeem, this, prevTx, inputIndex);
                     break;
 
-                case PubkeyScriptType.P2MS:
                 case PubkeyScriptType.CheckLocktimeVerify:
                     throw new NotImplementedException();
 
@@ -560,7 +578,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     throw new ArgumentException("Can not spend an OP_Return output.");
 
                 case PubkeyScriptType.P2WPKH:
-                    expHash160 = ((PushDataOp)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.OperationList[1]).data;
+                    expHash160 = ((ReadOnlySpan<byte>)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(2, 20);
                     actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
                     compressed = true;
                     if (!actualHash160.SequenceEqual(expHash160))

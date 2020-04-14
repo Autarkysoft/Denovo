@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
@@ -102,25 +103,50 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             stream.Write(Sequence);
         }
 
+
         /// <summary>
-        /// Converts this instance into its byte array representation using the given <see cref="Script"/>.
-        /// Used for signing where <see cref="SignatureScript"/> needs to be changed for each input.
+        /// Converts this instance into its byte array representation using the given <see cref="IOperation"/> list 
+        /// from the executing script.
+        /// This is used for signing where <see cref="SignatureScript"/> needs to be changed for the input being signed.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <param name="stream">Stream to use.</param>
-        /// <param name="scr">Script to use</param>
+        /// <param name="stream">Stream to use</param>
+        /// <param name="ops">List of operations from the executing script (usually the <see cref="IPubkeyScript"/>)</param>
         /// <param name="sig">Signature bytes to remove</param>
-        /// <param name="changeSequenceToZero">
+        /// <param name="setSeqToZero">
         /// Sequences are set to 0 for both <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.None"/>
-        /// and <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.Single"/>.
-        /// </param>
-        public void Serialize(FastStream stream, IScript scr, ReadOnlySpan<byte> sig, bool changeSequenceToZero = false)
+        /// and <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.Single"/> but they are unchanged for others.
+        ///</param>
+        public void SerializeForSigning(FastStream stream, IOperation[] ops, ReadOnlySpan<byte> sig, bool setSeqToZero = false)
         {
             stream.Write(TxHash);
             stream.Write(Index);
-            scr.SerializeForSigning(stream, sig);
 
-            if (changeSequenceToZero)
+            int start = 0;
+            for (int i = ops.Length - 1; i >= 0; i--)
+            {
+                if (ops[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                {
+                    start = i;
+                    break;
+                }
+                else if (ops[i] is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
+                {
+                    start = i;
+                    break;
+                }
+            }
+
+            FastStream temp = new FastStream();
+            for (int i = start; i < ops.Length; i++)
+            {
+                ops[i].WriteToStreamForSigning(temp, sig);
+            }
+
+            CompactInt length = new CompactInt(temp.GetSize());
+            length.WriteToStream(stream);
+            stream.Write(temp);
+
+            if (setSeqToZero)
             {
                 stream.Write(new byte[4]);
             }

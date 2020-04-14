@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using System;
 using System.Collections.Generic;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
@@ -12,192 +11,153 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     /// <summary>
     /// Base (abstract) class for all scripts. Inherits from <see cref="IScript"/>.
     /// </summary>
-    /// <remarks>
-    /// Scripts are categoried into two groups: "scripts" and "witnesses"
-    /// 
-    /// All scripts have the same structure: [CompactInt][list of operations].
-    /// CompactInt is:
-    ///   Length of the entire script for "scripts" (SignatureScript, PubkeyScript, RedeemScript)
-    ///   Number of operations in the list for "witnesses"
-    ///
-    /// PushDataOp in scripts is always [DataLength][data].
-    /// DataLength that indicates the size of the data to be pushed is of type
-    ///   StackInt for "scripts"
-    ///   CompactInt for "witnesses"
-    /// </remarks>
     public abstract class Script : IScript
     {
-        /// <summary>
-        /// Initializes this instance with the given maximum length.
-        /// </summary>
-        /// <param name="maxLen">
-        /// Maximum allowed length (for scripts) or item count (for witnesses) according to consensus rules.
-        /// </param>
-        public Script(int maxLen)
+        private byte[] _scrData = new byte[0];
+        /// <inheritdoc/>
+        public byte[] Data
         {
-            maxLenOrCount = maxLen;
+            get => _scrData;
+            set => _scrData = value ?? (new byte[0]);
         }
 
 
         /// <summary>
-        /// Length of compressed public keys
+        /// Sets this instance's <see cref="Data"/> using the given array of <see cref="IOperation"/>s.
         /// </summary>
-        protected const int CompPubKeyLength = 33;
-        /// <summary>
-        /// Length of uncompressed public keys
-        /// </summary>
-        protected const int UncompPubKeyLength = 65;
-        /// <summary>
-        /// Maximum allowed length (for scripts) or item count (for witnesses) according to consensus rules.
-        /// </summary>
-        protected readonly int maxLenOrCount;
-        private int len;
-
-        /// <summary>
-        /// [Default value = false] Returns whether the script instance is of witness type. 
-        /// It will affect (de)serialization methods.
-        /// </summary>
-        public bool IsWitness { get; protected set; } = false;
-        /// <inheritdoc/>
-        public ScriptType ScriptType { get; set; }
-        /// <inheritdoc/>
-        public IOperation[] OperationList { get; set; } = new IOperation[0];
-
-
-
-        /// <inheritdoc/>
-        public virtual void SerializeForSigning(FastStream stream, ReadOnlySpan<byte> sig)
+        /// <param name="ops">Array of operations</param>
+        protected void SetData(IOperation[] ops)
         {
-            int start = 0;
-            for (int i = OperationList.Length - 1; i >= 0; i--)
+            FastStream stream = new FastStream();
+            foreach (var item in ops)
             {
-                if (OperationList[i] is CodeSeparatorOp cs && cs.IsExecuted)
-                {
-                    start = i;
-                    break;
-                }
-                else if (OperationList[i] is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
-                {
-                    start = i;
-                    break;
-                }
+                item.WriteToStream(stream);
             }
-
-            FastStream temp = new FastStream();
-            for (int i = start; i < OperationList.Length; i++)
-            {
-                OperationList[i].WriteToStreamForSigning(temp, sig);
-            }
-
-            CompactInt lengthOrCount = new CompactInt(IsWitness ? OperationList.Length : temp.GetSize());
-
-            lengthOrCount.WriteToStream(stream);
-            stream.Write(temp);
+            Data = stream.ToByteArray();
         }
+
+
+        /// <inheritdoc/>
+        public virtual int CountSigOps()
+        {
+            int res = 0;
+            long index = 0;
+            while (index < Data.Length)
+            {
+                if (Data[index] <= (byte)OP.PushData4)
+                {
+                    if (Data[index] < (byte)OP.PushData1)
+                    {
+                        index += Data[index] + 1;
+                    }
+                    else if (Data[index] == (byte)OP.PushData1)
+                    {
+                        if (Data.Length - index < 2)
+                        {
+                            break;
+                        }
+                        index += Data[index + 1] + 2;
+                    }
+                    else if (Data[index] == (byte)OP.PushData2)
+                    {
+                        if (Data.Length - index < 3)
+                        {
+                            break;
+                        }
+                        ushort val = (ushort)(Data[index + 1] | (Data[index + 2] << 8));
+                        index += val + 3;
+                    }
+                    else if (Data[index] == (byte)OP.PushData4)
+                    {
+                        if (Data.Length - index < 5)
+                        {
+                            break;
+                        }
+                        uint val = (uint)(Data[index] | (Data[index + 1] << 8) | (Data[index + 2] << 16) | (Data[index + 3] << 24));
+                        index += val + 5;
+                    }
+                }
+                else if (Data[index] == (byte)OP.CheckSig || Data[index] == (byte)OP.CheckSigVerify)
+                {
+                    res++;
+                    index++;
+                }
+                else if (Data[index] == (byte)OP.CheckMultiSig || Data[index] == (byte)OP.CheckMultiSigVerify)
+                {
+                    res += 20;
+                    index++;
+                }
+                else
+                {
+                    index++;
+                }
+            }
+
+            return res;
+        }
+
+        /// <inheritdoc/>
+        public bool TryEvaluate(out IOperation[] result, out string error)
+        {
+            if (Data.Length == 0)
+            {
+                result = new IOperation[0];
+                error = null;
+                return true;
+            }
+            else if (Data.Length > Constants.MaxScriptLength)
+            {
+                result = new IOperation[0];
+                error = "Script data length is too big.";
+                return false;
+            }
+            else
+            {
+                List<IOperation> tempList = new List<IOperation>();
+                FastStreamReader stream = new FastStreamReader(Data);
+                while (stream.GetRemainingBytesCount() > 0)
+                {
+                    if (!TryRead(stream, tempList, out error))
+                    {
+                        result = tempList.ToArray();
+                        return false;
+                    }
+                }
+
+                result = tempList.ToArray();
+                error = null;
+                return true;
+            }
+        }
+
 
         /// <inheritdoc/>
         public virtual void Serialize(FastStream stream)
         {
-            FastStream temp = new FastStream();
-            ToByteArray(temp);
-            CompactInt lengthOrCount = new CompactInt(IsWitness ? OperationList.Length : temp.GetSize());
-
-            lengthOrCount.WriteToStream(stream);
-            stream.Write(temp);
+            CompactInt length = new CompactInt(Data.Length);
+            length.WriteToStream(stream);
+            stream.Write(Data);
         }
-
-        /// <inheritdoc/>
-        public void ToByteArray(FastStream stream)
-        {
-            foreach (var op in OperationList)
-            {
-                if (op is PushDataOp push)
-                {
-                    push.WriteToStream(stream, IsWitness);
-                }
-                else
-                {
-                    op.WriteToStream(stream);
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        public byte[] ToByteArray()
-        {
-            FastStream stream = new FastStream(100);
-            ToByteArray(stream);
-            return stream.ToByteArray();
-        }
-
 
         /// <inheritdoc/>
         public virtual bool TryDeserialize(FastStreamReader stream, out string error)
         {
-            if (stream is null)
-            {
-                error = "Stream can not be null.";
-                return false;
-            }
-
-            if (!CompactInt.TryRead(stream, out CompactInt lengthOrCount, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt length, out error))
             {
                 return false;
             }
 
-
-            // TODO: change this to check length/count based on consensus rules.
-            // and move it inside following condition (IsWitness)
-            if (lengthOrCount > int.MaxValue)
+            // We are going to cast length so an initial check should take place here
+            if (length > int.MaxValue)
             {
-                error = (IsWitness ? "Item count" : "Script length") + "is too big.";
+                error = "Script length is too big.";
                 return false;
             }
 
-            if (IsWitness)
+            if (!stream.TryReadByteArray((int)length, out _scrData))
             {
-                int count = (int)lengthOrCount;
-
-                OperationList = new IOperation[count];
-                for (int i = 0; i < count; i++)
-                {
-                    // TODO: the assumption here is that witness doesn't have anything but PushDataOp, this may be wrong.
-                    PushDataOp op = new PushDataOp();
-                    if (!op.TryRead(stream, out error, true))
-                    {
-                        return false;
-                    }
-                    OperationList[i] = op;
-                }
-            }
-            else
-            {
-                len = (int)lengthOrCount;
-
-                if (len == 0)
-                {
-                    OperationList = new IOperation[0];
-                    error = null;
-                    return true;
-                }
-
-                List<IOperation> opList = new List<IOperation>();
-                int offset = 0;
-                while (offset < len)
-                {
-                    if (!TryRead(stream, opList, ref offset, out error))
-                    {
-                        return false;
-                    }
-                }
-
-                // Make sure the correct number of bytes were read as part of the script. No more, no less.
-                if (offset != len)
-                {
-                    error = "Invalid stack format.";
-                    return false;
-                }
-                OperationList = opList.ToArray();
+                error = Err.EndOfStream;
+                return false;
             }
 
             error = null;
@@ -216,10 +176,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         /// <param name="stream">Stream of bytes to use</param>
         /// <param name="opList">The list to add the result to</param>
-        /// <param name="offset">This value will be incremented based on how many bytes were read</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        protected bool TryRead(FastStreamReader stream, List<IOperation> opList, ref int offset, out string error)
+        protected bool TryRead(FastStreamReader stream, List<IOperation> opList, out string error)
         {
             if (!stream.TryPeekByte(out byte firstByte))
             {
@@ -230,35 +189,30 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (IsPushOp(firstByte))
             {
                 PushDataOp op = new PushDataOp();
-                int start = stream.GetCurrentIndex();
-                if (!op.TryRead(stream, out error, IsWitness))
+                if (!op.TryRead(stream, out error, false))
                 {
                     return false;
                 }
                 opList.Add(op);
-                offset += stream.GetCurrentIndex() - start;
             }
             else if (firstByte == (byte)OP.RETURN)
             {
                 ReturnOp op = new ReturnOp();
-                int start = stream.GetCurrentIndex();
-                if (!op.TryRead(stream, len, out error))
+                if (!op.TryRead(stream, stream.GetRemainingBytesCount(), out error))
                 {
                     return false;
                 }
                 opList.Add(op);
-                offset += stream.GetCurrentIndex() - start;
             }
             else
             {
                 _ = stream.TryReadByte(out firstByte);
-                offset++;
                 switch ((OP)firstByte)
                 {
                     // Invalid OPs:
                     case OP.VerIf:
                     case OP.VerNotIf:
-                        error = $"Invalid OP was found: {GetOpName((OP)firstByte)}";
+                        error = $"Invalid OP was found: OP_{(OP)firstByte}";
                         return false;
 
                     // Disabled OPs:
@@ -277,12 +231,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     case OP.MOD:
                     case OP.LSHIFT:
                     case OP.RSHIFT:
-                        error = $"Disabled OP was found: {GetOpName((OP)firstByte)}";
+                        error = $"Disabled OP was found: OP_{(OP)firstByte}";
                         return false;
 
                     // Special case of IFs:
                     case OP.IF:
-                        IFOp ifop = new IFOp(IsWitness);
+                        IFOp ifop = new IFOp(false);
 
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out byte nextB))
@@ -292,9 +246,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         }
 
                         List<IOperation> ifOps = new List<IOperation>();
-                        while (offset < len && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
+                        while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
                         {
-                            if (!TryRead(stream, ifOps, ref offset, out error))
+                            if (!TryRead(stream, ifOps, out error))
                             {
                                 return false;
                             }
@@ -306,14 +260,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         }
                         ifop.mainOps = ifOps.ToArray();
 
-                        if (offset < len)
+                        if (stream.GetRemainingBytesCount() > 0)
                         {
                             if (!stream.TryReadByte(out byte currentB))
                             {
                                 error = Err.EndOfStream;
                                 return false;
                             }
-                            offset++;
 
                             if (currentB == (byte)OP.ELSE)
                             {
@@ -324,9 +277,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 }
 
                                 List<IOperation> elseOps = new List<IOperation>();
-                                while (offset < len && nextB != (byte)OP.EndIf)
+                                while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf)
                                 {
-                                    if (!TryRead(stream, elseOps, ref offset, out error))
+                                    if (!TryRead(stream, elseOps, out error))
                                     {
                                         return false;
                                     }
@@ -358,7 +311,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
                     case OP.NotIf:
-                        NotIfOp notifOp = new NotIfOp(IsWitness);
+                        NotIfOp notifOp = new NotIfOp(false);
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out nextB))
                         {
@@ -367,9 +320,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         }
 
                         ifOps = new List<IOperation>();
-                        while (offset < len && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
+                        while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
                         {
-                            if (!TryRead(stream, ifOps, ref offset, out error))
+                            if (!TryRead(stream, ifOps, out error))
                             {
                                 return false;
                             }
@@ -381,14 +334,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         }
                         notifOp.mainOps = ifOps.ToArray();
 
-                        if (offset < len)
+                        if (stream.GetRemainingBytesCount() > 0)
                         {
                             if (!stream.TryReadByte(out byte currentB))
                             {
                                 error = Err.EndOfStream;
                                 return false;
                             }
-                            offset++;
 
                             if (currentB == (byte)OP.ELSE)
                             {
@@ -399,9 +351,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 }
 
                                 List<IOperation> elseOps = new List<IOperation>();
-                                while (offset < len && nextB != (byte)OP.EndIf)
+                                while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf)
                                 {
-                                    if (!TryRead(stream, elseOps, ref offset, out error))
+                                    if (!TryRead(stream, elseOps, out error))
                                     {
                                         return false;
                                     }
@@ -674,12 +626,5 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             error = null;
             return true;
         }
-
-
-        private string GetOpName(OP val)
-        {
-            return $"OP_{val.ToString()}";
-        }
-
     }
 }

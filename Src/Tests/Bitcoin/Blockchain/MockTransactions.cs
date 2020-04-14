@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
@@ -24,20 +25,19 @@ namespace Tests.Bitcoin.Blockchain
             get => throw new NotImplementedException();
             set => throw new NotImplementedException();
         }
-        public virtual LockTime LockTime
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
+        public virtual LockTime LockTime { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool IsVerified { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public int SigOpCount { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-
-        public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
         public virtual byte[] GetTransactionHash() => throw new NotImplementedException();
         public virtual string GetTransactionId() => throw new NotImplementedException();
         public virtual string GetWitnessTransactionId() => throw new NotImplementedException();
-        public byte[] SerializeForSigning(IScript scr, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig) => throw new NotImplementedException();
-        public byte[] SerializeForSigningSegWit(IScript scr, int inputIndex, ulong amount, SigHashType sht) => throw new NotImplementedException();
+        public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
+        public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
+        public byte[] SerializeForSigning(IOperation[] ops, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig) 
+            => throw new NotImplementedException();
+        public byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht) 
+            => throw new NotImplementedException();
         public virtual byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht)
             => throw new NotImplementedException();
         public virtual byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeemScript)

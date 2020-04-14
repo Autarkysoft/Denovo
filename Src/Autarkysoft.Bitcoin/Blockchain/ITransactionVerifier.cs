@@ -9,10 +9,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
 {
     public interface ITransactionVerifier
     {
-        int SigOpCount { get; set; }
         int BlockHeight { get; set; }
+        int SigOpCount { get; set; }
+        ulong TotalFee { get; set; }
 
         bool Verify(ITransaction tx, out string error);
         bool VerifyCoinbase(ITransaction transaction, out string error);
+        bool VerifyCoinbaseOutput(ITransaction transaction);
     }
 }

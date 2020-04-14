@@ -49,6 +49,18 @@ namespace Tests
         }
 
 
+        internal static byte[] ConcatBytes(int totalSize, params byte[][] bytes)
+        {
+            byte[] res = new byte[totalSize];
+            int offset = 0;
+            foreach (var ba in bytes)
+            {
+                Buffer.BlockCopy(ba, 0, res, offset, ba.Length);
+                offset += ba.Length;
+            }
+            return res;
+        }
+
         private static readonly byte[] data =
         {
             191, 223, 147, 104, 106, 49, 205, 85, 252, 92, 27, 143, 210, 144, 254, 57, 164, 49, 225, 98, 106, 27, 65, 58, 254,

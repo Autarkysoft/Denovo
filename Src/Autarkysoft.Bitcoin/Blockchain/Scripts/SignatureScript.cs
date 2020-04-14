@@ -21,18 +21,96 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Initializes a new instance of <see cref="SignatureScript"/>.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        public SignatureScript() : base(Constants.MaxScriptLength)
+        public SignatureScript()
         {
-            ScriptType = ScriptType.ScriptSig;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="SignatureScript"/> using the given byte array.
+        /// </summary>
+        /// <param name="data">Data to use</param>
+        public SignatureScript(byte[] data)
+        {
+            Data = data;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="SignatureScript"/> using the given operation array.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="ops">An array of operations</param>
+        public SignatureScript(IOperation[] ops)
+        {
+            if (ops == null)
+                throw new ArgumentNullException(nameof(ops), "Operation array can not be null.");
+
+            SetData(ops);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="SignatureScript"/> using the given block height
+        /// (used for creating a coinbase transaction's script).
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="height">Block height</param>
+        /// <param name="extraData">An extra data to push in this coinbase script</param>
+        public SignatureScript(int height, byte[] extraData)
+        {
+            if (height < 0)
+                throw new ArgumentOutOfRangeException(nameof(height), "Block height can not be negative.");
+            if (extraData.Length > Constants.MaxCoinbaseScriptLength - 4) // 1 byte push + 3 byte height byte
+            {
+                throw new ArgumentOutOfRangeException(nameof(extraData.Length),
+                    $"Coinbase script can not be bigger than {Constants.MaxCoinbaseScriptLength}");
+            }
+
+            PushDataOp push = new PushDataOp(height);
+            if (extraData != null)
+            {
+                SetData(new IOperation[] { push, new PushDataOp(extraData) });
+            }
+            else
+            {
+                SetData(new IOperation[] { push });
+            }
         }
 
 
 
         /// <inheritdoc/>
+        public bool VerifyCoinbase(int height, IConsensus consensus)
+        {
+            if (Data.Length < Constants.MinCoinbaseScriptLength || Data.Length > Constants.MaxCoinbaseScriptLength)
+            {
+                return false;
+            }
+
+            if (consensus.IsBip34Enabled(height))
+            {
+                PushDataOp op = new PushDataOp();
+                return op.TryRead(new FastStreamReader(Data), out _) && op.TryGetNumber(out long h, out _, true, 4) && h == height;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        /// <inheritdoc/>
         public void SetToEmpty()
         {
-            OperationList = new IOperation[0];
+            Data = new byte[0];
+        }
+
+
+        private byte[] ConvertToBytes(params PushDataOp[] pushOps)
+        {
+            FastStream stream = new FastStream();
+            foreach (var op in pushOps)
+            {
+                op.WriteToStream(stream);
+            }
+            return stream.ToByteArray();
         }
 
         /// <inheritdoc/>
@@ -42,10 +120,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (sig is null)
                 throw new ArgumentNullException(nameof(sig), "Signature can not be null.");
 
-            OperationList = new IOperation[]
-            {
-                new PushDataOp(sig.ToByteArray()),
-            };
+            SetData(new IOperation[] { new PushDataOp(sig.ToByteArray()) });
         }
 
         /// <inheritdoc/>
@@ -57,11 +132,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (pubKey is null)
                 throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
 
-            OperationList = new IOperation[]
+            var ops = new IOperation[]
             {
                 new PushDataOp(sig.ToByteArray()),
                 new PushDataOp(pubKey.ToByteArray(useCompressed))
             };
+            SetData(ops);
         }
 
         /// <inheritdoc/>
@@ -71,33 +147,37 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (redeem is null)
                 throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null.");
+            if (redeem.Data.Length > Constants.MaxScriptItemLength)
+                throw new ArgumentOutOfRangeException(nameof(redeem), "Redeem script is bigger than allowed length.");
             if (redeem.GetRedeemScriptType() != RedeemScriptType.MultiSig)
                 throw new ArgumentException("Invalid redeem script type.");
+            if (redeem.TryEvaluate(out IOperation[] rdmOps, out string error))
+                throw new ArgumentException($"Can not evaluate redeem script: {error}.");
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
-            if (!((PushDataOp)redeem.OperationList[0]).TryGetNumber(out long m, out string err))
+            if (!((PushDataOp)rdmOps[0]).TryGetNumber(out long m, out string err))
                 throw new ArgumentException($"Invalid m ({err}).");
             if (m < 0)
                 throw new ArgumentOutOfRangeException(nameof(m), "M can not be negative.");
-            if (!((PushDataOp)redeem.OperationList[^2]).TryGetNumber(out long n, out err))
+            if (!((PushDataOp)rdmOps[^2]).TryGetNumber(out long n, out err))
                 throw new ArgumentException($"Invalid n ({err}).");
             if (n < 0)
                 throw new ArgumentOutOfRangeException(nameof(n), "N can not be negative.");
             if (m > n)
                 throw new ArgumentOutOfRangeException(nameof(n), "M can not be bigger than N.");
 
-            byte[] rdmBa = redeem.ToByteArray();
-            if (rdmBa.Length > Constants.MaxScriptItemLength)
-                throw new ArgumentOutOfRangeException(nameof(redeem), "Redeem script is bigger than allowed length.");
+            byte[] rdmBa = redeem.Data;
+
 
             if (m == 0)
             {
-                OperationList = new IOperation[2]
+                var ops = new IOperation[2]
                 {
                     // Due to a bug in bitcoin-core's implementation of OP_CheckMultiSig, there must be an extra item
                     // at the start, that item must be OP_0 in latest standard rules
                     new PushDataOp(OP._0),
                     new PushDataOp(rdmBa)
                 };
+                SetData(ops);
                 return;
             }
 
@@ -123,9 +203,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             List<int> dupPubIndexes = new List<int>();
             PublicKey[] allPubs = new PublicKey[n];
             // RedeemScript = OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
-            for (int i = 1; i < redeem.OperationList.Length - 2; i++)
+            for (int i = 1; i < rdmOps.Length - 2; i++)
             {
-                byte[] pushPubBa = ((PushDataOp)redeem.OperationList[i]).data;
+                byte[] pushPubBa = ((PushDataOp)rdmOps[i]).data;
                 if (compPub.SequenceEqual(pushPubBa) || uncompPub.SequenceEqual(pushPubBa))
                 {
                     if (!PublicKey.TryRead(pushPubBa, out allPubs[i - 1]))
@@ -149,79 +229,81 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 throw new ArgumentException("Public key doesn't exist in redeem script.");
             }
 
-            // A signature script of this type that was set before must at least have 1 signature inside
-            // that means OP_0 <sig> <redeem> or 3 items
-            if (OperationList is null || OperationList.Length < 3 ||
-                !(OperationList[0] is PushDataOp push0) || push0.OpValue != OP._0 ||
-                !(OperationList[^1] is PushDataOp pushn) || ((ReadOnlySpan<byte>)rdmBa).SequenceEqual(pushn.data))
-            {
-                OperationList = new IOperation[2 + (dupPubIndexes.Count + 1 > m ? m : dupPubIndexes.Count + 1)];
-                OperationList[0] = new PushDataOp(OP._0);
-                byte[] sigBa = sig.ToByteArray();
-                for (int i = 0; i < dupPubIndexes.Count + 1 && i < m; i++)
-                {
-                    OperationList[i + 1] = new PushDataOp(sigBa);
-                }
-                OperationList[^1] = new PushDataOp(rdmBa);
-            }
-            else
-            {
-                Signature[] sigs = new Signature[OperationList.Length - 2];
-                for (int i = 1; i < OperationList.Length - 1; i++)
-                {
-                    if (OperationList[i] is PushDataOp push && push.data != null)
-                    {
-                        if (!Signature.TryRead(push.data, out sigs[i - 1], out string error))
-                        {
-                            throw new ArgumentException($"Invalid signature found inside existing SignatureScript {error}.");
-                        }
-                    }
-                    else
-                    {
-                        throw new ArgumentException("Invalid push operation found inside existing SignatureScript.");
-                    }
-                }
+            // TODO: 
+            throw new NotImplementedException("Implement this!");
+            //// A signature script of this type that was set before must at least have 1 signature inside
+            //// that means OP_0 <sig> <redeem> or 3 items
+            //if (OperationList is null || OperationList.Length < 3 ||
+            //    !(OperationList[0] is PushDataOp push0) || push0.OpValue != OP._0 ||
+            //    !(OperationList[^1] is PushDataOp pushn) || ((ReadOnlySpan<byte>)rdmBa).SequenceEqual(pushn.data))
+            //{
+            //    OperationList = new IOperation[2 + (dupPubIndexes.Count + 1 > m ? m : dupPubIndexes.Count + 1)];
+            //    OperationList[0] = new PushDataOp(OP._0);
+            //    byte[] sigBa = sig.ToByteArray();
+            //    for (int i = 0; i < dupPubIndexes.Count + 1 && i < m; i++)
+            //    {
+            //        OperationList[i + 1] = new PushDataOp(sigBa);
+            //    }
+            //    OperationList[^1] = new PushDataOp(rdmBa);
+            //}
+            //else
+            //{
+            //    Signature[] sigs = new Signature[OperationList.Length - 2];
+            //    for (int i = 1; i < OperationList.Length - 1; i++)
+            //    {
+            //        if (OperationList[i] is PushDataOp push && push.data != null)
+            //        {
+            //            if (!Signature.TryRead(push.data, out sigs[i - 1], out string error))
+            //            {
+            //                throw new ArgumentException($"Invalid signature found inside existing SignatureScript {error}.");
+            //            }
+            //        }
+            //        else
+            //        {
+            //            throw new ArgumentException("Invalid push operation found inside existing SignatureScript.");
+            //        }
+            //    }
 
-                int currentSigCount = sigs.Length;
-                int totalSigNeeded = (int)m;
+            //    int currentSigCount = sigs.Length;
+            //    int totalSigNeeded = (int)m;
 
-                IOperation[] final;
-                if (sigs.Length < m)
-                {
-                    final = new IOperation[OperationList.Length + 1];
-                }
-                else // >= m
-                {
-                    final = new IOperation[m + 2];
-                }
+            //    IOperation[] final;
+            //    if (sigs.Length < m)
+            //    {
+            //        final = new IOperation[OperationList.Length + 1];
+            //    }
+            //    else // >= m
+            //    {
+            //        final = new IOperation[m + 2];
+            //    }
 
-                final[0] = new PushDataOp(OP._0);
-                final[^1] = new PushDataOp(rdmBa);
+            //    final[0] = new PushDataOp(OP._0);
+            //    final[^1] = new PushDataOp(rdmBa);
 
-                int insertIndex = 1;
-                int insertRevIndex = final.Length - 1;
+            //    int insertIndex = 1;
+            //    int insertRevIndex = final.Length - 1;
 
-                var calc = new EllipticCurveCalculator();
-                foreach (var item in sigs)
-                {
-                    for (int i = 0; i < allPubs.Length; i++)
-                    {
-                        if (calc.Verify(tx.GetBytesToSign(prevTx, inputIndex, item.SigHash, redeem), item, allPubs[i]))
-                        {
-                            if (i < pubIndex)
-                            {
-                                final[insertIndex++] = new PushDataOp(item.ToByteArray());
-                            }
-                            else
-                            {
-                                final[insertRevIndex--] = new PushDataOp(item.ToByteArray());
-                            }
-                        }
-                    }
-                }
+            //    var calc = new EllipticCurveCalculator();
+            //    foreach (var item in sigs)
+            //    {
+            //        for (int i = 0; i < allPubs.Length; i++)
+            //        {
+            //            if (calc.Verify(tx.GetBytesToSign(prevTx, inputIndex, item.SigHash, redeem), item, allPubs[i]))
+            //            {
+            //                if (i < pubIndex)
+            //                {
+            //                    final[insertIndex++] = new PushDataOp(item.ToByteArray());
+            //                }
+            //                else
+            //                {
+            //                    final[insertRevIndex--] = new PushDataOp(item.ToByteArray());
+            //                }
+            //            }
+            //        }
+            //    }
 
-                final[insertIndex] = new PushDataOp(sig.ToByteArray());
-            }
+            //    final[insertIndex] = new PushDataOp(sig.ToByteArray());
+            //}
         }
 
         /// <inheritdoc/>
@@ -234,10 +316,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (redeem.GetRedeemScriptType() != RedeemScriptType.P2SH_P2WPKH)
                 throw new ArgumentException("Invalid redeem script type.");
 
-            OperationList = new IOperation[]
-            {
-                new PushDataOp(redeem.ToByteArray())
-            };
+            SetData(new IOperation[] { new PushDataOp(redeem.Data) });
         }
 
         /// <inheritdoc/>
@@ -249,10 +328,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
             RedeemScript redeemBuilder = new RedeemScript();
             redeemBuilder.SetToP2SH_P2WPKH(pubKey);
-            OperationList = new IOperation[]
-            {
-                new PushDataOp(redeemBuilder.ToByteArray())
-            };
+            SetData(new IOperation[] { new PushDataOp(redeemBuilder.Data) });
         }
 
         /// <inheritdoc/>
@@ -265,10 +341,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (redeem.GetRedeemScriptType() != RedeemScriptType.P2SH_P2WSH)
                 throw new ArgumentException("Invalid redeem script type.");
 
-            OperationList = new IOperation[]
-            {
-                new PushDataOp(redeem.ToByteArray())
-            };
+            Data = ConvertToBytes(new PushDataOp(redeem.Data));
         }
 
         /// <inheritdoc/>
@@ -281,11 +354,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (redeem.GetRedeemScriptType() != RedeemScriptType.CheckLocktimeVerify)
                 throw new ArgumentException($"Redeem script must be of type {RedeemScriptType.CheckLocktimeVerify}.", nameof(redeem));
 
-            OperationList = new IOperation[]
+            var ops = new IOperation[]
             {
                 new PushDataOp(sig.ToByteArray()),
-                new PushDataOp(redeem.ToByteArray())
+                new PushDataOp(redeem.Data)
             };
+            SetData(ops);
         }
     }
 }

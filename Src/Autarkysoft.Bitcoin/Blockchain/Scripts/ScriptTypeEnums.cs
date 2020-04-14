@@ -60,10 +60,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         P2SH,
         /// <summary>
-        /// "Pay to multi-sig" public script type
-        /// </summary>
-        P2MS,
-        /// <summary>
         /// <see cref="OP.CheckLocktimeVerify"/> public script type
         /// </summary>
         CheckLocktimeVerify,
@@ -81,6 +77,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         P2WSH
     }
 
+    /// <summary>
+    /// Defined special script types in <see cref="IPubkeyScript"/>s that require additional steps
+    /// during transaction verification.
+    /// </summary>
+    public enum PubkeyScriptSpecialType
+    {
+        /// <summary>
+        /// Any script that doesn't require special attention
+        /// </summary>
+        None,
+        /// <summary>
+        /// "Pay to script hash" public script type (top stack item is interpreted as an <see cref="IRedeemScript"/>).
+        /// </summary>
+        P2SH,
+        /// <summary>
+        /// "Pay to witness public key hash" public script type
+        /// (<see cref="ISignatureScript"/> must be empty and <see cref="IWitnessScript"/> must contain only 2 items:
+        /// signature + public key)
+        /// </summary>
+        P2WPKH,
+        /// <summary>
+        /// "Pay to witness script hash" public script type
+        /// </summary>
+        P2WSH
+    }
 
     /// <summary>
     /// Defined script types in <see cref="IRedeemScript"/>s
@@ -115,5 +136,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Redeem script for "pay to witness script hash" scripts
         /// </summary>
         P2WSH,
+    }
+    
+    /// <summary>
+    /// Defined script types in <see cref="IRedeemScript"/>s
+    /// </summary>
+    public enum RedeemScriptSpecialType
+    {
+        /// <summary>
+        /// Any script that doesn't require special attention
+        /// </summary>
+        None,
+        /// <summary>
+        /// Redeem script for "pay to witness pubkey hash in a pay to script hash" scripts
+        /// </summary>
+        P2SH_P2WPKH,
+        /// <summary>
+        /// Redeem script for "pay to witness script hash in a pay to script hash" scripts
+        /// </summary>
+        P2SH_P2WSH,
     }
 }

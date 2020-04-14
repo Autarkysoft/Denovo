@@ -14,23 +14,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 {
     public class RedeemScriptTests
     {
-        // 2 randomly generated public keys:
-        private static readonly byte[] pubBaC1 = Helper.HexToBytes("02a17d82262d4ab8d9499d664c637c075a3ddc1bf2bb0b392188ba9e1043514ffd");
-        private static readonly byte[] pubBaUC1 = Helper.HexToBytes("04a17d82262d4ab8d9499d664c637c075a3ddc1bf2bb0b392188ba9e1043514ffd2ec1051619dec03da6be55608dff5a2a800907e8358b3b76ea86f90f22cd2fc6");
-        private static readonly byte[] pubBaC1_hash = Helper.HexToBytes("03814c6125f6ac2ebfc42d74339af43dc7530313");
-        private static readonly byte[] pubBaUC1_hash = Helper.HexToBytes("7f8b56fd6eeb910db9c0bca69aebada4d3e16d6f");
-
-        private static readonly byte[] pubBaC2 = Helper.HexToBytes("02a63ea6d772bc7127a67be7fc4310164737430de14003c1d7c3f8d5a190f3dfd0");
-        private static readonly byte[] pubBaUC2 = Helper.HexToBytes("04a63ea6d772bc7127a67be7fc4310164737430de14003c1d7c3f8d5a190f3dfd033fbf623236b512c709008c11307453980a926fd361968c7e039375d9662f228");
-
         [Fact]
         public void ConstructorTest()
         {
             RedeemScript scr = new RedeemScript();
-
-            Assert.Empty(scr.OperationList);
-            Assert.False(scr.IsWitness);
-            Assert.Equal(ScriptType.ScriptRedeem, scr.ScriptType);
+            Assert.Empty(scr.Data);
         }
 
         public static IEnumerable<object[]> GetScrTypeCases()
@@ -38,136 +26,112 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[] { new RedeemScript(), RedeemScriptType.Empty };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new DUPOp() } },
+                new RedeemScript(new IOperation[] { new DUPOp() }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[20]) } },
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[20]) }),
                 RedeemScriptType.P2SH_P2WPKH
             };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new PushDataOp(OP._1), new PushDataOp(new byte[20]) } },
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._1), new PushDataOp(new byte[20]) }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[21]) } },
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[21]) }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new PushDataOp(OP._0), new PushDataOp(OP._1) } },
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._0), new PushDataOp(OP._1) }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript()
-                {
-                    OperationList = new IOperation[] { new PushDataOp(new byte[20]), new PushDataOp(new byte[20]) }
-                },
+                new RedeemScript(new IOperation[] { new PushDataOp(new byte[20]), new PushDataOp(new byte[20]) }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[32]) } },
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[32]) }),
                 RedeemScriptType.P2SH_P2WSH
             };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new PushDataOp(OP._1), new PushDataOp(new byte[32]) } },
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._1), new PushDataOp(new byte[32]) }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript() { OperationList = new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[33]) } },
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._0), new PushDataOp(new byte[33]) }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript()
-                {
-                    OperationList = new IOperation[]
-                    {
-                        new PushDataOp(123),
-                        new CheckLocktimeVerifyOp(),
-                        new DROPOp(),
-                        new PushDataOp(new byte[33]),
-                        new CheckSigOp()
-                    }
-                },
+                new RedeemScript(new IOperation[]
+                                {
+                                    new PushDataOp(123),
+                                    new CheckLocktimeVerifyOp(),
+                                    new DROPOp(),
+                                    new PushDataOp(new byte[33]),
+                                    new CheckSigOp()
+                                }),
                 RedeemScriptType.CheckLocktimeVerify
             };
             yield return new object[]
             {
-                new RedeemScript()
-                {
-                    OperationList = new IOperation[]
-                    {
-                        new PushDataOp(123),
-                        new CheckLocktimeVerifyOp(),
-                        new DROPOp(),
-                        new PushDataOp(new byte[65]),
-                        new CheckSigOp()
-                    }
-                },
+                new RedeemScript(new IOperation[]
+                                {
+                                    new PushDataOp(123),
+                                    new CheckLocktimeVerifyOp(),
+                                    new DROPOp(),
+                                    new PushDataOp(new byte[65]),
+                                    new CheckSigOp()
+                                }),
                 RedeemScriptType.CheckLocktimeVerify
             };
             yield return new object[]
             {
-                new RedeemScript()
-                {
-                    OperationList = new IOperation[]
-                    {
-                        new PushDataOp(new byte[6]),
-                        new CheckLocktimeVerifyOp(),
-                        new DROPOp(),
-                        new PushDataOp(new byte[33]),
-                        new CheckSigOp()
-                    }
-                },
+                new RedeemScript(new IOperation[]
+                                {
+                                    new PushDataOp(new byte[6]),
+                                    new CheckLocktimeVerifyOp(),
+                                    new DROPOp(),
+                                    new PushDataOp(new byte[33]),
+                                    new CheckSigOp()
+                                }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript()
-                {
-                    OperationList = new IOperation[]
-                    {
-                        new PushDataOp(123),
-                        new CheckLocktimeVerifyOp(),
-                        new DROPOp(),
-                        new PushDataOp(new byte[34]),
-                        new CheckSigOp()
-                    }
-                },
+                new RedeemScript(new IOperation[]
+                                {
+                                    new PushDataOp(123),
+                                    new CheckLocktimeVerifyOp(),
+                                    new DROPOp(),
+                                    new PushDataOp(new byte[34]),
+                                    new CheckSigOp()
+                                }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript()
-                {
-                    OperationList = new IOperation[]
-                    {
-                        new PushDataOp(123),
-                        new CheckLocktimeVerifyOp(),
-                        new DROPOp(),
-                        new PushDataOp(OP._1),
-                        new CheckSigOp()
-                    }
-                },
+                new RedeemScript(new IOperation[]
+                                {
+                                    new PushDataOp(123),
+                                    new CheckLocktimeVerifyOp(),
+                                    new DROPOp(),
+                                    new PushDataOp(OP._1),
+                                    new CheckSigOp()
+                                }),
                 RedeemScriptType.Unknown
             };
             yield return new object[]
             {
-                new RedeemScript()
-                {
-                    OperationList = new IOperation[]
-                    {
-                        new CheckMultiSigOp()
-                    }
-                },
+                new RedeemScript(new IOperation[] { new CheckMultiSigOp() }),
                 RedeemScriptType.MultiSig
             };
         }
@@ -181,52 +145,40 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetSetToMultiSigCases()
         {
-            PublicKey.TryRead(pubBaUC1, out PublicKey pub1);
-            PublicKey.TryRead(pubBaUC2, out PublicKey pub2);
-
             yield return new object[]
             {
-                1, new PublicKey[] { pub1 }, true,
-                new IOperation[] { new PushDataOp(1), new PushDataOp(pubBaC1), new PushDataOp(1), new CheckMultiSigOp() }
+                1, new PublicKey[] { KeyHelper.Pub1 }, true,
+                Helper.HexToBytes($"5121{KeyHelper.Pub1CompHex}51ae")
             };
             yield return new object[]
             {
-                1, new PublicKey[] { pub1 }, false,
-                new IOperation[] { new PushDataOp(1), new PushDataOp(pubBaUC1), new PushDataOp(1), new CheckMultiSigOp() }
+                1, new PublicKey[] { KeyHelper.Pub1 }, false,
+                Helper.HexToBytes($"5141{KeyHelper.Pub1UnCompHex}51ae")
             };
             yield return new object[]
             {
-                1, new PublicKey[] { pub1, pub2 }, true,
-                new IOperation[]
-                {
-                    new PushDataOp(1), new PushDataOp(pubBaC1), new PushDataOp(pubBaC2), new PushDataOp(2), new CheckMultiSigOp()
-                }
+                1, new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2 }, true,
+                Helper.HexToBytes($"5121{KeyHelper.Pub1CompHex}21{KeyHelper.Pub2CompHex}52ae")
             };
             yield return new object[]
             {
-                1, new PublicKey[] { pub1, pub2 }, false,
-                new IOperation[]
-                {
-                    new PushDataOp(1), new PushDataOp(pubBaUC1), new PushDataOp(pubBaUC2), new PushDataOp(2), new CheckMultiSigOp()
-                }
+                1, new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2 }, false,
+                Helper.HexToBytes($"5141{KeyHelper.Pub1UnCompHex}41{KeyHelper.Pub2UnCompHex}52ae")
             };
             yield return new object[]
             {
-                2, new PublicKey[] { pub1, pub2 }, false,
-                new IOperation[]
-                {
-                    new PushDataOp(2), new PushDataOp(pubBaUC1), new PushDataOp(pubBaUC2), new PushDataOp(2), new CheckMultiSigOp()
-                }
+                2, new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2 }, false,
+                Helper.HexToBytes($"5241{KeyHelper.Pub1UnCompHex}41{KeyHelper.Pub2UnCompHex}52ae")
             };
         }
         [Theory]
         [MemberData(nameof(GetSetToMultiSigCases))]
-        public void SetToMultiSigTest(int m, PublicKey[] pubs, bool comp, IOperation[] expected)
+        public void SetToMultiSigTest(int m, PublicKey[] pubs, bool comp, byte[] expected)
         {
             RedeemScript scr = new RedeemScript();
             scr.SetToMultiSig(m, pubs, comp);
 
-            Assert.Equal(expected, scr.OperationList);
+            Assert.Equal(expected, scr.Data);
         }
 
         public static IEnumerable<object[]> GetSetToMultiSigFailCases()
@@ -289,25 +241,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void SetToP2SH_P2WPKH_CompTest()
         {
             RedeemScript scr = new RedeemScript();
-            PublicKey.TryRead(pubBaUC1, out PublicKey pub);
-            scr.SetToP2SH_P2WPKH(pub, true);
+            scr.SetToP2SH_P2WPKH(KeyHelper.Pub1, true);
+            byte[] expected = Helper.HexToBytes($"0014{KeyHelper.Pub1CompHashHex}");
 
-            IOperation[] expected = new IOperation[] { new PushDataOp(OP._0), new PushDataOp(pubBaC1_hash) };
-
-            Assert.Equal(expected, scr.OperationList);
+            Assert.Equal(expected, scr.Data);
         }
 
         [Fact]
         public void SetToP2SH_P2WPKH_UnCompTest()
         {
             RedeemScript scr = new RedeemScript();
-            PublicKey.TryRead(pubBaUC1, out PublicKey pub);
             // This is non-standard
-            scr.SetToP2SH_P2WPKH(pub, false);
+            scr.SetToP2SH_P2WPKH(KeyHelper.Pub1, false);
 
-            IOperation[] expected = new IOperation[] { new PushDataOp(OP._0), new PushDataOp(pubBaUC1_hash) };
+            byte[] expected = Helper.HexToBytes($"0014{KeyHelper.Pub1UnCompHashHex}");
 
-            Assert.Equal(expected, scr.OperationList);
+            Assert.Equal(expected, scr.Data);
         }
 
         [Fact]
@@ -324,14 +273,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             RedeemScript scr = new RedeemScript();
             MockSerializableScript mockScr = new MockSerializableScript(new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2SH_P2WSH(mockScr);
+            byte[] expected = Helper.HexToBytes("0020039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81");
 
-            IOperation[] expected = new IOperation[]
-            {
-                new PushDataOp(OP._0),
-                new PushDataOp(Helper.HexToBytes("039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81"))
-            };
-
-            Assert.Equal(expected, scr.OperationList);
+            Assert.Equal(expected, scr.Data);
         }
 
         [Fact]

@@ -53,46 +53,6 @@ namespace Tests.Bitcoin.Blockchain.Transactions
             Assert.Equal(expected, actual);
         }
 
-        [Fact]
-        public void Serialize_WithScriptTest()
-        {
-            var scr = new MockSerializableScript(new byte[2] { 2, 255 }, new byte[] { 10, 20, 30 });
-            TxIn tx = new TxIn(Helper.GetBytes(32), 1, null, 953132143);
-            FastStream stream = new FastStream();
-            tx.Serialize(stream, scr, new byte[] { 10, 20, 30 }, false);
-
-            byte[] actual = stream.ToByteArray();
-            byte[] expected = new byte[32 + 4 + 2 + 4];
-            Buffer.BlockCopy(Helper.GetBytes(32), 0, expected, 0, 32);
-            expected[32] = 1;
-            expected[36] = 2;
-            expected[37] = 255;
-            expected[38] = 0x6f;
-            expected[39] = 0xa4;
-            expected[40] = 0xcf;
-            expected[41] = 0x38;
-
-            Assert.Equal(expected, actual);
-        }
-
-        [Fact]
-        public void Serialize_WithScript_SeqChangeTest()
-        {
-            var scr = new MockSerializableScript(new byte[2] { 3, 255 }, new byte[] { 10, 20, 30 });
-            TxIn tx = new TxIn(Helper.GetBytes(32), 2, null, 953132143);
-            FastStream stream = new FastStream();
-            tx.Serialize(stream, scr, new byte[] { 10, 20, 30 }, true);
-
-            byte[] actual = stream.ToByteArray();
-            byte[] expected = new byte[32 + 4 + 2 + 4];
-            Buffer.BlockCopy(Helper.GetBytes(32), 0, expected, 0, 32);
-            expected[32] = 2;
-            expected[36] = 3;
-            expected[37] = 255;
-
-            Assert.Equal(expected, actual);
-        }
-
 
         public static IEnumerable<object[]> GetDeserCases()
         {

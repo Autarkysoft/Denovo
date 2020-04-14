@@ -11,7 +11,7 @@ using System;
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// The script that is used in <see cref="ISignatureScript"/>s of pay to script hash type <see cref="IPubkeyScript"/>s.
+    /// The script that is used inside <see cref="ISignatureScript"/>s when spending P2SH <see cref="IPubkeyScript"/> types.
     /// Implements <see cref="IRedeemScript"/> and inherits from <see cref="Script"/>.
     /// </summary>
     public class RedeemScript : Script, IRedeemScript
@@ -19,23 +19,81 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Initializes a new instance of <see cref="RedeemScript"/>.
         /// </summary>
-        public RedeemScript() : base(520)
+        public RedeemScript()
         {
-            ScriptType = ScriptType.ScriptRedeem;
-            witHashFunc = new Sha256(false);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="RedeemScript"/> using the given byte array.
+        /// </summary>
+        /// <param name="data">Script data to use</param>
+        public RedeemScript(byte[] data)
+        {
+            Data = data;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="RedeemScript"/> using the given operation array.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="ops">An array of operations</param>
+        public RedeemScript(IOperation[] ops)
+        {
+            if (ops == null)
+                throw new ArgumentNullException(nameof(ops), "Operation array can not be null.");
+
+            SetData(ops);
         }
 
 
 
-        private readonly Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
-        private readonly Sha256 witHashFunc = new Sha256(false);
+        /// <inheritdoc/>
+        public int CountSigOps(IOperation[] ops)
+        {
+            int res = 0;
+            for (int i = 0; i < ops.Length; i++)
+            {
+                if (ops[i] is CheckSigOp || ops[i] is CheckSigVerifyOp)
+                {
+                    res++;
+                }
+                else if (ops[i] is CheckMultiSigOp || ops[i] is CheckMultiSigVerifyOp)
+                {
+                    if (i > 0 && ops[i - 1] is PushDataOp push && (push.OpValue >= OP._1 && push.OpValue <= OP._16))
+                    {
+                        res += (int)push.OpValue - 0x50;
+                    }
+                    else
+                    {
+                        res += 20;
+                    }
+                }
+            }
+            return res;
+        }
 
-
+        /// <summary>
+        /// Returns number of CheckSig operations but will not check if script is correctly evaluated.
+        /// Evaluation and check must be done by caller and <see cref="CountSigOps(IOperation[])"/> method should be
+        /// used instead.
+        /// </summary>
+        /// <returns></returns>
+        public override int CountSigOps()
+        {
+            TryEvaluate(out IOperation[] ops, out _);
+            return CountSigOps(ops);
+        }
 
         /// <inheritdoc/>
         public RedeemScriptType GetRedeemScriptType()
         {
-            if (OperationList == null || OperationList.Length == 0)
+            bool b = TryEvaluate(out IOperation[] OperationList, out _);
+
+            if (!b)
+            {
+                return RedeemScriptType.Unknown;
+            }
+            else if (OperationList == null || OperationList.Length == 0)
             {
                 return RedeemScriptType.Empty;
             }
@@ -43,11 +101,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                      OperationList[0] is PushDataOp op0 && op0.OpValue == OP._0 &&
                      OperationList[1] is PushDataOp push1)
             {
-                if (push1.data?.Length == hashFunc.HashByteSize)
+                if (push1.data?.Length == Constants.Hash160Length)
                 {
                     return RedeemScriptType.P2SH_P2WPKH;
                 }
-                else if (push1.data?.Length == witHashFunc.HashByteSize)
+                else if (push1.data?.Length == Constants.Sha256Length)
                 {
                     return RedeemScriptType.P2SH_P2WSH;
                 }
@@ -57,7 +115,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                      OperationList[1] is CheckLocktimeVerifyOp &&
                      OperationList[2] is DROPOp &&
                      OperationList[3] is PushDataOp push3 &&
-                     (push3.data?.Length == CompPubKeyLength || push3.data?.Length == UncompPubKeyLength) &&
+                     (push3.data?.Length == Constants.CompressedPubkeyLen ||
+                      push3.data?.Length == Constants.UncompressedPubkeyLen) &&
                      OperationList[4] is CheckSigOp)
             {
                 return RedeemScriptType.CheckLocktimeVerify;
@@ -72,14 +131,29 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             return RedeemScriptType.Unknown;
         }
 
+        /// <inheritdoc/>
+        public RedeemScriptSpecialType GetSpecialType()
+        {
+            if (Data.Length == 22 && Data[0] == 0 && Data[1] == 20)
+            {
+                return RedeemScriptSpecialType.P2SH_P2WPKH;
+            }
+            else if (Data.Length == 34 && Data[0] == 0 && Data[1] == 32)
+            {
+                return RedeemScriptSpecialType.P2SH_P2WSH;
+            }
+
+            return RedeemScriptSpecialType.None;
+        }
+
 
         /// <summary>
         /// Sets this script to a "m of n multi-signature" script using the given <see cref="PublicKey"/>s.
         /// </summary>
         /// <remarks>
         /// Since normally a m-of-n redeem script is created from all compressed or all uncompressed public keys
-        /// this method has one boolean determining that. If a mixture is needed the <see cref="IScript.OperationList"/>
-        /// should be set manually.
+        /// this method has one boolean determining that. If a mixture is needed an <see cref="IOperation"/> array
+        /// should be created manually and passed to constructor.
         /// Additionally m and n must be at least 1 (although 0 is valid) to prevent insecure redeem scripts (anyone can spend).
         /// </remarks>
         /// <exception cref="ArgumentNullException"/>
@@ -111,15 +185,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             }
 
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
-            OperationList = new IOperation[pubKeys.Length + 3];
-            OperationList[0] = new PushDataOp(m);
-            OperationList[^2] = new PushDataOp(pubKeys.Length);
-            OperationList[^1] = new CheckMultiSigOp();
+            IOperation[] ops = new IOperation[pubKeys.Length + 3];
+            ops[0] = new PushDataOp(m);
+            ops[^2] = new PushDataOp(pubKeys.Length);
+            ops[^1] = new CheckMultiSigOp();
             int i = 1;
             foreach (var item in pubKeys)
             {
-                OperationList[i++] = new PushDataOp(item.ToByteArray(useCompressed));
+                ops[i++] = new PushDataOp(item.ToByteArray(useCompressed));
             }
+            SetData(ops);
         }
 
 
@@ -138,12 +213,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (pubKey is null)
                 throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
 
+            using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(useCompressed));
-            OperationList = new IOperation[]
+            var ops = new IOperation[]
             {
                 new PushDataOp(OP._0),
                 new PushDataOp(hash)
             };
+            SetData(ops);
         }
 
 
@@ -157,36 +234,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (witnessScript is null)
                 throw new ArgumentNullException(nameof(witnessScript), "Witness script can not be null.");
 
-            byte[] hash = witHashFunc.ComputeHash(witnessScript.ToByteArray());
-            OperationList = new IOperation[]
+            using Sha256 witHashFunc = new Sha256();
+            byte[] hash = witHashFunc.ComputeHash(witnessScript.Data);
+            var ops = new IOperation[]
             {
                 new PushDataOp(OP._0),
                 new PushDataOp(hash)
             };
-        }
-
-
-        // TODO: is this used anywhere?
-        public PubkeyScript ConvertP2WPKH_to_P2PKH()
-        {
-            if (GetRedeemScriptType() != RedeemScriptType.P2SH_P2WPKH)
-                throw new ArgumentException("This conversion only works for P2SH-P2WPKH redeem script types.");
-
-            IOperation pushHash = OperationList[1];
-
-            PubkeyScript res = new PubkeyScript()
-            {
-                OperationList = new IOperation[]
-                {
-                    new DUPOp(),
-                    new Hash160Op(),
-                    pushHash,
-                    new EqualVerifyOp(),
-                    new CheckSigOp()
-                },
-            };
-
-            return res;
+            SetData(ops);
         }
     }
 }
