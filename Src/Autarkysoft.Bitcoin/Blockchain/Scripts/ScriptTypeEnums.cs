@@ -6,35 +6,6 @@
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// Defined script types by <see cref="IPubkeyScript"/>s, <see cref="ISignatureScript"/>s, 
-    /// <see cref="IRedeemScript"/>s and <see cref="IWitnessScript"/>s instances.
-    /// </summary>
-    public enum ScriptType
-    {
-        /// <summary>
-        /// Unknown script type
-        /// </summary>
-        Unknown,
-        /// <summary>
-        /// Public key script used in <see cref="IPubkeyScript"/>
-        /// </summary>
-        ScriptPub,
-        /// <summary>
-        /// Signature script used in <see cref="ISignatureScript"/>
-        /// </summary>
-        ScriptSig,
-        /// <summary>
-        /// Redeem script used in <see cref="IRedeemScript"/>
-        /// </summary>
-        ScriptRedeem,
-        /// <summary>
-        /// Witness script used in <see cref="IWitnessScript"/>
-        /// </summary>
-        ScriptWitness,
-    }
-
-
-    /// <summary>
     /// Defined script types in <see cref="IPubkeyScript"/>s
     /// </summary>
     public enum PubkeyScriptType
@@ -93,7 +64,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         P2SH,
         /// <summary>
         /// "Pay to witness public key hash" public script type
-        /// (<see cref="ISignatureScript"/> must be empty and <see cref="IWitnessScript"/> must contain only 2 items:
+        /// (<see cref="ISignatureScript"/> must be empty and <see cref="IWitness"/> must contain only 2 items:
         /// signature + public key)
         /// </summary>
         P2WPKH,

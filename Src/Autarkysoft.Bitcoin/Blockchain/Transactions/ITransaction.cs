@@ -34,7 +34,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <summary>
         /// List of transaction witnesses. It can be null if transaction has no witness.
         /// </summary>
-        IWitnessScript[] WitnessList { get; set; }
+        IWitness[] WitnessList { get; set; }
 
         /// <summary>
         /// Transaction LockTime

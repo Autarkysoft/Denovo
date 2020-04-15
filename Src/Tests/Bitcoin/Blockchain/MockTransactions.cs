@@ -20,7 +20,7 @@ namespace Tests.Bitcoin.Blockchain
         public virtual int Version { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual TxIn[] TxInList { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual TxOut[] TxOutList { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual IWitnessScript[] WitnessList
+        public virtual IWitness[] WitnessList
         {
             get => throw new NotImplementedException();
             set => throw new NotImplementedException();

@@ -30,7 +30,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         protected internal IOperation[] elseOps;
         /// <summary>
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
         /// </summary>
         protected internal bool isWitness;
 
@@ -119,14 +119,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             stream.Write((byte)OpValue);
             foreach (var op in mainOps)
             {
-                if (op is PushDataOp push)
-                {
-                    push.WriteToStream(stream, isWitness);
-                }
-                else
-                {
-                    op.WriteToStream(stream);
-                }
+                op.WriteToStream(stream);
             }
 
             // Continue with OP_ELSE if it exists
@@ -135,14 +128,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 stream.Write((byte)OP.ELSE);
                 foreach (var op in elseOps)
                 {
-                    if (op is PushDataOp push)
-                    {
-                        push.WriteToStream(stream);
-                    }
-                    else
-                    {
-                        op.WriteToStream(stream);
-                    }
+                    op.WriteToStream(stream);
                 }
             }
 
@@ -313,7 +299,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Initializes a new instance of <see cref="IFOp"/> for internal use
         /// </summary>
         /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
         /// </param>
         internal IFOp(bool isWit)
         {
@@ -327,7 +313,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="ifBlockOps">The main array of operations to run after <see cref="OP.IF"/></param>
         /// <param name="elseBlockOps">The alternative set of operations to run if the previous expresions didn't run.</param>
         /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
         /// </param>
         public IFOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps, bool isWit)
         {
@@ -351,7 +337,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Initializes a new instance of <see cref="NotIfOp"/> for internal use
         /// </summary>
         /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
         /// </param>
         internal NotIfOp(bool isWit)
         {
@@ -365,7 +351,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="ifBlockOps">The main array of operations to run after <see cref="OP.IF"/></param>
         /// <param name="elseBlockOps">The alternative set of operations to run if the previous expresions didn't run.</param>
         /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitnessScript"/>.
+        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
         /// </param>
         public NotIfOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps, bool isWit)
         {

@@ -29,6 +29,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
         /// <summary>
         /// Initializes a new instance of <see cref="PushDataOp"/> using the given byte array.
+        /// Throws an <see cref="ArgumentException"/> if there is an OP_number available equal to the value of the byte array.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentException"/>
@@ -54,9 +55,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Initializes a new instance of <see cref="PushDataOp"/> using the given <see cref="IScript"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        /// <param name="script">
-        /// Script to use (will be converted to byte array using the <see cref="IScript.ToByteArray()"/> method)
-        /// </param>
+        /// <param name="script">Script to use</param>
         public PushDataOp(IScript script)
         {
             if (script == null)
@@ -207,16 +206,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <param name="stream">Stream to use</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
-        /// <param name="isWitness">Indicates whether this operation is inside a witness script</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        public bool TryRead(FastStreamReader stream, out string error, bool isWitness = false)
+        public bool TryRead(FastStreamReader stream, out string error)
         {
-            if (stream is null)
-            {
-                error = "Stream can not be null.";
-                return false;
-            }
-
             // Since the first byte could be an OP_num or it could be the length we only peek at it
             if (!stream.TryPeekByte(out byte firstByte))
             {
@@ -224,35 +216,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            // TODO: set a bool for isStrict so that we can reject non-strict encoded lengths
-            // TODO: write more tests for SegWit and how witnesses deal with OP_numbers (allowed?)
-
             _opVal = (OP)firstByte;
             if (firstByte == (byte)OP._0 || firstByte == (byte)OP.Negative1 ||
-                firstByte >= (byte)OP._1 && firstByte <= (byte)OP._16)
+                (firstByte >= (byte)OP._1 && firstByte <= (byte)OP._16))
             {
                 // Move the index forward
                 _ = stream.TryReadByte(out _);
                 data = null;
-            }
-            else if (isWitness)
-            {
-                if (!CompactInt.TryRead(stream, out CompactInt size, out error))
-                {
-                    return false;
-                }
-
-                if (size > Constants.MaxScriptItemLength)
-                {
-                    error = $"Push data size is bigger than allowed {Constants.MaxScriptItemLength} length.";
-                    return false;
-                }
-
-                if (!stream.TryReadByteArray((int)size, out data))
-                {
-                    error = Err.EndOfStream;
-                    return false;
-                }
             }
             else
             {
@@ -262,6 +232,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
 
                 // Size check should only take place when "Running" the OP
+                // Only a quick check to prevent data loss while casting
+                if (size > int.MaxValue)
+                {
+                    error = "Data size is too big.";
+                    return false;
+                }
 
                 if (!stream.TryReadByteArray((int)size, out data))
                 {
@@ -274,36 +250,68 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return true;
         }
 
-        // TODO: try moving the isWitness bool to constructor to simplify the following 2 methods and avoid bugs
+
+        /// <summary>
+        /// Reads the push data from the given stream as a witness item. 
+        /// Expects the following encoding: [CompactInt Data.length][Data]
+        /// The return value indicates success.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
+        /// <returns>True if reading was successful, false if otherwise.</returns>
+        public bool TryReadWitness(FastStreamReader stream, out string error)
+        {
+            // Since the first byte could be an OP_num or it could be the length we only peek at it
+            if (!stream.TryPeekByte(out byte firstByte))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+            if (firstByte == (byte)OP._0 || firstByte == (byte)OP.Negative1 ||
+                (firstByte >= (byte)OP._1 && firstByte <= (byte)OP._16))
+            {
+                // Move the index forward
+                _ = stream.TryReadByte(out _);
+                _opVal = (OP)firstByte;
+                data = null;
+            }
+            else
+            {
+                if (!CompactInt.TryRead(stream, out CompactInt size, out error))
+                {
+                    return false;
+                }
+
+                // There is no size restriction for witnesses
+                // https://github.com/bitcoin/bips/blob/cb071df902eafb7054635201a8b12e76f42774ad/bip-0141.mediawiki#new-script-system
+                // Only a quick check to prevent data loss while casting
+                if (size > int.MaxValue)
+                {
+                    error = "Data size is too big.";
+                    return false;
+                }
+
+                if (!stream.TryReadByteArray((int)size, out data))
+                {
+                    error = Err.EndOfStream;
+                    return false;
+                }
+                // Hack OpValue for equality comparisons
+                _opVal = new StackInt((int)size).GetOpCode();
+            }
+
+            error = null;
+            return true;
+        }
+
 
         /// <inheritdoc/>
         public override void WriteToStream(FastStream stream)
         {
-            WriteToStream(stream, false);
-        }
-
-        /// <summary>
-        /// Writes this operation's data to the given stream.
-        /// Used by <see cref="IDeserializable.Serialize(FastStream)"/> methods 
-        /// (not to be confused with what <see cref="Run(IOpData, out string)"/> does).
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
-        /// <param name="isWitness">[Default value = false] Indicates whether this operation is inside a witness script</param>
-        public void WriteToStream(FastStream stream, bool isWitness = false)
-        {
-            if (OpValue == OP._0 || OpValue == OP.Negative1)
+            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
             {
                 stream.Write((byte)OpValue);
-            }
-            else if (OpValue >= OP._1 && OpValue <= OP._16)
-            {
-                stream.Write((byte)OpValue);
-            }
-            else if (isWitness)
-            {
-                CompactInt size = new CompactInt(data.Length);
-                size.WriteToStream(stream);
-                stream.Write(data);
             }
             else
             {
@@ -313,14 +321,30 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
         }
 
-        /// <inheritdoc/>
-        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
+        /// <summary>
+        /// Writes this operation's data to the given stream as a witness: [CompactInt Data.length][Data].
+        /// Used by <see cref="IDeserializable.Serialize(FastStream)"/> methods 
+        /// (not to be confused with what <see cref="Run(IOpData, out string)"/> does).
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        public void WriteToWitnessStream(FastStream stream)
         {
-            if (OpValue == OP._0 || OpValue == OP.Negative1)
+            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
             {
                 stream.Write((byte)OpValue);
             }
-            else if (OpValue >= OP._1 && OpValue <= OP._16)
+            else
+            {
+                CompactInt size = new CompactInt(data.Length);
+                size.WriteToStream(stream);
+                stream.Write(data);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
+        {
+            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
             {
                 stream.Write((byte)OpValue);
             }

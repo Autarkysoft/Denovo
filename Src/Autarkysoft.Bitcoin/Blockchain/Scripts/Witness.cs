@@ -6,18 +6,39 @@
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
     /// The script that is used in witness part of the transaction as the signature or unlocking script.
-    /// Implements <see cref="IWitnessScript"/> and inherits from <see cref="Script"/>.
+    /// Implements <see cref="IWitness"/> and inherits from <see cref="Script"/>.
     /// <para/> Witnesses are more like stack items rather than scripts.
     /// </summary>
-    public class WitnessScript : IWitnessScript
+    public class Witness : IWitness
     {
-        public WitnessScript()
+        /// <summary>
+        /// Initializes a new instance of <see cref="Witness"/>.
+        /// </summary>
+        public Witness()
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Witness"/> using the given data array.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="dataItems">An array of byte arrays to use as witness items</param>
+        public Witness(byte[][] dataItems)
+        {
+            if (dataItems == null)
+                throw new ArgumentNullException(nameof(dataItems), "Data items can not be null.");
+
+            Items = new PushDataOp[dataItems.Length];
+            for (int i = 0; i < Items.Length; i++)
+            {
+                Items[i] = new PushDataOp(dataItems[i]);
+            }
         }
 
 
@@ -38,7 +59,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 count.WriteToStream(stream);
                 foreach (var item in Items)
                 {
-                    item.WriteToStream(stream, true);
+                    item.WriteToWitnessStream(stream);
                 }
             }
         }
@@ -61,7 +82,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             for (int i = 0; i < Items.Length; i++)
             {
                 PushDataOp temp = new PushDataOp();
-                if (!temp.TryRead(stream, out error, true))
+                if (!temp.TryReadWitness(stream, out error))
                 {
                     return false;
                 }
@@ -99,7 +120,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
             FastStream stream = new FastStream();
             PushDataOp temp = new PushDataOp(redeem.Data);
-            temp.WriteToStream(stream, false);
+            temp.WriteToStream(stream);
 
             Items[^1] = new PushDataOp(stream.ToByteArray());
         }

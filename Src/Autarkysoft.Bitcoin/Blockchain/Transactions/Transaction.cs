@@ -35,7 +35,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="txOuts">List of outputs</param>
         /// <param name="lt">LockTime</param>
         /// <param name="witnesses">[Default value = null] List of witnesses (default is null).</param>
-        public Transaction(int ver, TxIn[] txIns, TxOut[] txOuts, LockTime lt, WitnessScript[] witnesses = null)
+        public Transaction(int ver, TxIn[] txIns, TxOut[] txOuts, LockTime lt, Witness[] witnesses = null)
         {
             Version = ver;
             TxInList = txIns;
@@ -90,7 +90,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
         /// <inheritdoc/>
-        public IWitnessScript[] WitnessList { get; set; }
+        public IWitness[] WitnessList { get; set; }
 
         private LockTime _lockTime;
         /// <inheritdoc/>
@@ -600,10 +600,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     // only initialize witness list once
                     if (WitnessList == null || WitnessList.Length == 0)
                     {
-                        WitnessList = new WitnessScript[TxInList.Length];
+                        WitnessList = new Witness[TxInList.Length];
                         for (int i = 0; i < WitnessList.Length; i++)
                         {
-                            WitnessList[i] = new WitnessScript();
+                            WitnessList[i] = new Witness();
                         }
                     }
 
@@ -629,14 +629,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             switch (scrType)
             {
                 case RedeemScriptType.CheckLocktimeVerify:
-                    ((SignatureScript)TxInList[index].SigScript).SetToCheckLocktimeVerify(sig, redeem);
+                    TxInList[index].SigScript.SetToCheckLocktimeVerify(sig, redeem);
                     break;
                 case RedeemScriptType.P2SH_P2WPKH:
-                    ((SignatureScript)TxInList[index].SigScript).SetToP2SH_P2WPKH(redeem);
-                    ((WitnessScript)WitnessList[index]).SetToP2WPKH(sig, pubKey);
+                    TxInList[index].SigScript.SetToP2SH_P2WPKH(redeem);
+                    WitnessList[index].SetToP2WPKH(sig, pubKey);
                     break;
                 case RedeemScriptType.P2SH_P2WSH:
-                    ((SignatureScript)TxInList[index].SigScript).SetToP2SH_P2WSH(redeem);
+                    TxInList[index].SigScript.SetToP2SH_P2WSH(redeem);
                     //((WitnessScript)WitnessList[index].WitnessItems).SetToP2WSH_MultiSig(sig, pubKey);
                     break;
                 default:
@@ -733,10 +733,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             if (hasWitness)
             {
-                WitnessList = new WitnessScript[TxInList.Length];
+                WitnessList = new Witness[TxInList.Length];
                 for (int i = 0; i < WitnessList.Length; i++)
                 {
-                    WitnessScript temp = new WitnessScript();
+                    Witness temp = new Witness();
                     if (!temp.TryDeserialize(stream, out error))
                     {
                         return false;

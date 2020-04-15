@@ -189,7 +189,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (IsPushOp(firstByte))
             {
                 PushDataOp op = new PushDataOp();
-                if (!op.TryRead(stream, out error, false))
+                if (!op.TryRead(stream, out error))
                 {
                     return false;
                 }
