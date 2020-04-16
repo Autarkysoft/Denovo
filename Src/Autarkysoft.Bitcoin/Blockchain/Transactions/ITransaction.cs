@@ -67,6 +67,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         string GetTransactionId();
 
         /// <summary>
+        /// Returns witness hash of this instance using the defined hash function.
+        /// </summary>
+        /// <returns>Hash digest</returns>
+        byte[] GetWitnessTransactionHash();
+
+        /// <summary>
         /// Returns witness transaction ID of this instance encoded using base-16 encoding.
         /// </summary>
         /// <returns>Base-16 encoded transaction ID</returns>

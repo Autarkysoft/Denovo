@@ -210,6 +210,159 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             Assert.Equal(expected, actual);
         }
 
+
+        public static IEnumerable<object[]> GetWitMerkleCases()
+        {
+            // TODO: find other witness commitments for testing
+            byte[] zeroCommit = new byte[32];
+            byte[] nBa = null;
+            yield return new object[]
+            {
+                 new ITransaction[1] // block #481828
+                 {
+                     // If Block calls GetWitnessTransactionHash on coinbase transaction the MockWTxIdTx will throw an exception
+                     // it should never call that method, instead a byte[32] (all zero) should be used
+                     new MockWTxIdTx(nBa)
+                 },
+                 zeroCommit,
+                 // Merkle root copied from block's highest index output starting with 0x6a24aa21a9ed data using a block explorer
+                 Helper.HexToBytes("e2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9")
+            };
+            yield return new object[]
+            {
+                new ITransaction[2] // block #610784 (tx has no witness)
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("d6c900b378c39a125906d5beb1a0032f2f69c67e05dac0fb0ad1a7b51ebf9283"),
+                },
+                zeroCommit,
+                Helper.HexToBytes("6e07e98e02f24198969280bf1248daf49e64c3792dbd7f92776080af59a85bc3")
+            };
+            yield return new object[]
+            {
+                new ITransaction[2] // block #557991 (tx has witness)
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("bea31d447fc019818137a7ab7ed33c3a131b50c4860faae55f05e1df566c3521"),
+                },
+                zeroCommit,
+                Helper.HexToBytes("02a7c90fe9795d0af5206b29acea5111d03eb8219fff0a67577a5c9482441869")
+            };
+            yield return new object[]
+            {
+                new ITransaction[3] // block #542205  3(->4) => 2 => 1
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("c84bb5f71c134f00450a90b3822625dd9d8d507a724643b5bc1441d7fec06730"),
+                    new MockWTxIdTx("e92905efb73409ecf56cc7729402d00807199316f38f00a5e4c6e30d88fb96ae")
+                },
+                zeroCommit,
+                Helper.HexToBytes("7d69a85bb62a695bdff903264e505360d3badc9f7dd0488cafd6a53d6ee0e977")
+            };
+            yield return new object[]
+            {
+                new ITransaction[4] // block #619699  4 => 2 => 1
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("616dd6f2a1ccd43eb73666537eec1a31c2fcdfcb27987ba3594dd6eed713f97c"),
+                    new MockWTxIdTx("9b68ec760e5a32e31e887f7148fd89f82262dd9b2168196b8ab56dea8fbc4990"),
+                    new MockWTxIdTx("d960cc7e9912ee1f636f490cedf0afc8f935a69b37f5923d5070600144e10fc1")
+                },
+                zeroCommit,
+                Helper.HexToBytes("0c6b3ef03fd460da49822111b81d4e264d325d71495e5434fedaa4412076fcb8")
+            };
+            yield return new object[]
+            {
+                new ITransaction[5] // block #528767  5(->6) => 3(->4) => 2 => 1
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("0b6969f0532acd2c0b6edf8ceba0cda4263e34bb74e126fa38ca0f743990d3b5"),
+                    new MockWTxIdTx("dd31e005ada2d1c0974538a40e82aa5b015d5dfb1f206ab588f276b447abb20d"),
+                    new MockWTxIdTx("2996921b19da93e5493e0fb3a5577ec01989c9b385c3c6a70e48320a5546a3da"),
+                    new MockWTxIdTx("94b0a6335715ee927631c711c2c424e8d3fd2fbf1704e1d485542917a2282132"),
+                },
+                zeroCommit,
+                Helper.HexToBytes("656ee0f12871bcd1516faa8034b8d77849d5cec944421aa44d5fe109a3bc2756")
+            };
+            yield return new object[]
+            {
+                new ITransaction[6] // block #541861  6 => 3(->4) => 2 => 1
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("36382f295fd496a189b994a4cf9056fe48fa2fd541e018dd0148269904484614"),
+                    new MockWTxIdTx("52788762dc471098103ee0dacdff94eea4847cd45dbb3db9dfaa0a2d97fac5fd"),
+                    new MockWTxIdTx("d9c00d28537b9998914cb6fadf7ecc8fe8afbe54a67378ce7c560cf08e864520"),
+                    new MockWTxIdTx("daa91bc760d6d1a4878300ed680cfb12a57eecb6bd18d036e7009e7577dcd7bc"),
+                    new MockWTxIdTx("340d0e8e5bfcdb703b752bfb1cc1f2076e192cdaadd3660a02bf60c4431c252c"),
+                },
+                zeroCommit,
+                Helper.HexToBytes("c9e9e34416703ef71ae09d0d1e4d5a824ac8a2d10e66e164661df2267f5f2d97")
+            };
+            yield return new object[]
+            {
+                new ITransaction[7] // block #538950  7(->8) => 4 => 2 => 1
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("b4fd245a2c45675562546c74d564b8a843b7a10f9b8ac2d5b5939fb817e8b934"),
+                    new MockWTxIdTx("902294c21afa1a00f3d01c0e025f6a840ead5fc31135d83ad5bbbc2bcc0cd4b2"),
+                    new MockWTxIdTx("e7dce4a3e2a958d41bda0e840fca1c4200a8710f0f51df7aa03aff107d7eef90"),
+                    new MockWTxIdTx("547c5115c3d25c6666743e4d5349cd4135c9ea5d9bc563abfa7276a670d213b7"),
+                    new MockWTxIdTx("10e56b8945be140a64ce53cb7f11588085cce11d4da3ee9dc90913677497433b"),
+                    new MockWTxIdTx("508b7aeeb896797cb8cfca9de87e874f6e8d58a085f137a1fcbf29aacfac2eab"),
+                },
+                zeroCommit,
+                Helper.HexToBytes("8b4a4ec22ff353f6cdaef2d1632690599be00c64a7a198219a63c26abaa0404d")
+            };
+            yield return new object[]
+            {
+                new ITransaction[8] // block #545098  8 => 4 => 2 => 1
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("b921f5f55e8e5b2f3fa95bb5246a6a825e6ac92e4f87dcd796cb054a2f9393e1"),
+                    new MockWTxIdTx("722c5109690a894bf41ed61186c388a09d85492de4de93f3f2fcb50ed4c979f7"),
+                    new MockWTxIdTx("56ee79fce2bc6fd4ff491ee371b23f66f68b67ccc2b57bd3fd4fccc21f8442f7"),
+                    new MockWTxIdTx("2be891b00842e2c665c08e4d839d5543d4d0b9974948c9d234dce38a28dab531"),
+                    new MockWTxIdTx("b03c796d535bbc7b363bf52fe9f005489cf1b63aad939a155a88c6386eb37790"),
+                    new MockWTxIdTx("3610d21802b13eb21bca8301e735f3e056ea179ca9a81c6f8ec32b3c99b2b5b2"),
+                    new MockWTxIdTx("46d9b50bbaa6a1aa384347541ba4beff96ffcc6b69b9542fadd2d9578a531bd6"),
+                },
+                zeroCommit,
+                Helper.HexToBytes("03f33ee4bc04703ebe27df891f3a695c3e6fcda1c7bfc9007e56be9949b1b408")
+            };
+            yield return new object[]
+            {
+                new ITransaction[11] // block #486828  11(->12) => 6 => 3(->4) => 2 => 1
+                {
+                    new MockWTxIdTx(nBa),
+                    new MockWTxIdTx("1527d8af6ed673615333c9440e933866327bffb656bd0c82222cdcdbddfb75e0"),
+                    new MockWTxIdTx("ffe4cd908f03b209775c853c08681f6b25d618d7210bb993ff723090b8bb957a"),
+                    new MockWTxIdTx("8fca64173b40f2472565f9e00982a75edfbc098257fa9e14c0bad525b86fe476"),
+                    new MockWTxIdTx("ab822e2b5443d8decca13bc9d17939a5c2b959b5fea418dbc43a79296e2db2f6"),
+                    new MockWTxIdTx("777046e0571e172a92c4605b68352c8fb3528d861b719cb06ccca8b8e03a1e3d"),
+                    new MockWTxIdTx("c3add815275ae4306566d193148a9ff9654466c89b0e2d0c1e04c3b69dad4140"),
+                    new MockWTxIdTx("28e0df2abd103d552b1a05d7ad5ab3cf1c5665b95fc3dacdc2bc57c69919c35f"),
+                    new MockWTxIdTx("d82bc6f392ef9dd5d74f8b37b4d001059b15588669607a1a9d9ddce08e9f2453"),
+                    new MockWTxIdTx("4773295e87e5bbff4c50c0e0770a42c046922e77319ec64d6269ac4c70875285"),
+                    new MockWTxIdTx("ec61ba60120e4cad1ab1029bb83981ad7573ce8396b554382a35ff8c678d98a3"),
+                },
+                zeroCommit,
+                Helper.HexToBytes("73499f5bfa0338e3683100e993f496a93352fee3bcd0f7fe5b161a4393aa241a")
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetWitMerkleCases))]
+        public void ComputeWitnessMerkleRootTest(ITransaction[] txs, byte[] commitment, byte[] expected)
+        {
+            Block block = new Block()
+            {
+                TransactionList = txs
+            };
+
+            byte[] actual = block.ComputeWitnessMerkleRoot(commitment);
+            Assert.Equal(expected, actual);
+        }
+
+
         [Fact]
         public void SerializeHeaderTest()
         {

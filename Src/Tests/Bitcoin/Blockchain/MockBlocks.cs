@@ -36,6 +36,7 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         public virtual byte[] ComputeMerkleRoot() => throw new NotImplementedException();
+        public virtual byte[] ComputeWitnessMerkleRoot(byte[] commitment) => throw new NotImplementedException();
         public virtual byte[] GetBlockHash() => throw new NotImplementedException();
         public virtual string GetBlockID() => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();

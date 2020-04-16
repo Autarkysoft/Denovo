@@ -31,12 +31,13 @@ namespace Tests.Bitcoin.Blockchain
 
         public virtual byte[] GetTransactionHash() => throw new NotImplementedException();
         public virtual string GetTransactionId() => throw new NotImplementedException();
+        public virtual byte[] GetWitnessTransactionHash() => throw new NotImplementedException();
         public virtual string GetWitnessTransactionId() => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
-        public byte[] SerializeForSigning(IOperation[] ops, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig) 
+        public byte[] SerializeForSigning(IOperation[] ops, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig)
             => throw new NotImplementedException();
-        public byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht) 
+        public byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht)
             => throw new NotImplementedException();
         public virtual byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht)
             => throw new NotImplementedException();
@@ -79,6 +80,42 @@ namespace Tests.Bitcoin.Blockchain
                 Assert.True(false, "Mock transaction doesn't have any tx hash set.");
             }
             return Helper.BytesToHex(TxHash.Reverse().ToArray());
+        }
+    }
+
+
+
+    public class MockWTxIdTx : MockTxBase
+    {
+        public MockWTxIdTx(byte[] wtxHashToReturn)
+        {
+            WTxHash = wtxHashToReturn;
+        }
+
+        public MockWTxIdTx(string txIdToReturn) : this(Helper.HexToBytes(txIdToReturn, true))
+        {
+        }
+
+
+        private readonly byte[] WTxHash;
+
+
+        public override byte[] GetWitnessTransactionHash()
+        {
+            if (WTxHash == null)
+            {
+                Assert.True(false, "Mock transaction doesn't have any wtx hash set.");
+            }
+            return WTxHash;
+        }
+
+        public override string GetWitnessTransactionId()
+        {
+            if (WTxHash == null)
+            {
+                Assert.True(false, "Mock transaction doesn't have any wtx hash set.");
+            }
+            return Helper.BytesToHex(WTxHash.Reverse().ToArray());
         }
     }
 

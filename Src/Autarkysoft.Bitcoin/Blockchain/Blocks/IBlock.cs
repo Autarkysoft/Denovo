@@ -72,6 +72,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         byte[] ComputeMerkleRoot();
 
         /// <summary>
+        /// Returns merkle root hash of witnesses in this block using the list of transactions.
+        /// </summary>
+        /// <param name="commitment">32 byte witness commitment</param>
+        /// <returns>Merkle root</returns>
+        byte[] ComputeWitnessMerkleRoot(byte[] commitment);
+
+        /// <summary>
         /// Converts this block's header into its byte array representation and writes the result to the given stream.
         /// </summary>
         /// <param name="stream">Stream to use</param>

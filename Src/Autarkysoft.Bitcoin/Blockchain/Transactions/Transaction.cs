@@ -145,10 +145,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
         /// <inheritdoc/>
-        public string GetWitnessTransactionId()
+        public byte[] GetWitnessTransactionHash()
         {
             // TODO: same as above (verify if signed)
             byte[] hashRes = hashFunc.ComputeHash(ToByteArray());
+            return hashRes;
+        }
+
+        /// <inheritdoc/>
+        public string GetWitnessTransactionId()
+        {
+            // TODO: same as above (verify if signed)
+            byte[] hashRes = GetWitnessTransactionHash();
             Array.Reverse(hashRes);
             return Base16.Encode(hashRes);
         }
