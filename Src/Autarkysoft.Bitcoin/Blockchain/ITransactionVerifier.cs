@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -14,7 +15,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         ulong TotalFee { get; set; }
 
         bool Verify(ITransaction tx, out string error);
-        bool VerifyCoinbase(ITransaction transaction, out string error);
-        bool VerifyCoinbaseOutput(ITransaction transaction);
+        bool VerifyCoinbasePrimary(ITransaction transaction, out string error);
+        bool VerifyCoinbaseOutput(ITransaction transaction, ReadOnlySpan<byte> witPubScr, out string error);
+        byte[] VerifyCoinbaseSegWitCommitment(ITransaction transaction);
     }
 }

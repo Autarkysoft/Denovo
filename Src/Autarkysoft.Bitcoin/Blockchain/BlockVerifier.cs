@@ -5,9 +5,18 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
+using System.Linq;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
+    // TODO: block validation reminder:
+    //       a block with valid POW and valid merkle root can have its transactions modified (duplicate some txs)
+    //       by a malicious node along the way to make it invalid. the node sometimes has to remember invalid block hashes
+    //       that it received to avoid receiving the same thing again. if the reason for being invalid is only merkle root 
+    //       and having those duplicate cases then the hash must not be stored or some workaround must be implemented.
+    //       more info:
+    // https://github.com/bitcoin/bitcoin/blob/1dbf3350c683f93d7fc9b861400724f6fd2b2f1d/src/consensus/merkle.cpp#L8-L42
+
     /// <summary>
     /// Implementation of a block verifier used to validate new blocks.
     /// </summary>
@@ -74,7 +83,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
             txVer.BlockHeight = block.Height;
             txVer.SigOpCount = 0;
-            if (!txVer.VerifyCoinbase(block.TransactionList[0], out error))
+            if (!txVer.VerifyCoinbasePrimary(block.TransactionList[0], out error))
             {
                 return false;
             }
@@ -96,6 +105,36 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 error = "Block has invalid merkle root hash.";
                 return false;
             }
+
+            byte[] witPubScr = null;
+            if (consensus.IsSegWitEnabled(block.Height) && block.TransactionList.Any(tx => tx.WitnessList != null))
+            {
+                byte[] commitment = txVer.VerifyCoinbaseSegWitCommitment(block.TransactionList[0]);
+                if (commitment == null)
+                {
+                    error = "Invalid or non-existant witness commitment in coinbase output";
+                    return false;
+                }
+                // An output expected in coinbase with its PubkeyScript.Data.Length of _at least_ 38 bytes
+                // starting with 0x6a24aa21a9ed and followed by 32 byte commitment hash
+                byte[] root = block.ComputeWitnessMerkleRoot(commitment);
+                witPubScr = new byte[38];
+                witPubScr[0] = 0x6a;
+                witPubScr[1] = 0x24;
+                witPubScr[2] = 0xaa;
+                witPubScr[3] = 0x21;
+                witPubScr[4] = 0xa9;
+                witPubScr[5] = 0xed;
+                Buffer.BlockCopy(root, 0, witPubScr, 6, 32);
+            }
+
+            // TotalFee must be set already in ITransactionVerifier
+            if (!txVer.VerifyCoinbaseOutput(block.TransactionList[0], witPubScr, out error))
+            {
+                error = $"Invalid coinbase output: {error}";
+                return false;
+            }
+
 
             error = null;
             return true;

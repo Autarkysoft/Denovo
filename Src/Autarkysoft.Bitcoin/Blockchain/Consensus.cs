@@ -18,6 +18,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <summary>
         /// Initializes a new instance of <see cref="Consensus"/> using the <see cref="NetworkType"/>.
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         /// <param name="netType">Network type</param>
         public Consensus(NetworkType netType)
         {
