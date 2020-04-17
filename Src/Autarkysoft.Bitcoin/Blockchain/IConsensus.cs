@@ -5,17 +5,73 @@
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
+    /// <summary>
+    /// Defines methods and properties defining the consensus rules used in bitcoin.
+    /// </summary>
     public interface IConsensus
     {
+        /// <summary>
+        /// Returns maximum number of allowed signature operations in a block
+        /// </summary>
         int MaxSigOpCount { get; }
 
         /// <summary>
-        /// BIP-34 requires coinbase transactions to include the block height. It was enabled on 227,931 on mainnet and on 21111 on TestNet and 500 on regtest
+        /// Returns the number of blocks between two block reward halvings
         /// </summary>
-        /// <param name="blockHeight"></param>
-        /// <returns></returns>
-        bool IsBip34Enabled(int blockHeight);
-        bool IsStrictNumberPush(int blockHeight);
-        ulong BlockReward(int blockHeight);
+        int HalvingInterval { get; }
+
+        /// <summary>
+        /// Returns maximum allowed block reward based on its height.
+        /// </summary>
+        /// <param name="height">Block height</param>
+        /// <returns>Block reward in satoshi</returns>
+        ulong GetBlockReward(int height);
+
+        /// <summary>
+        /// BIP-16 enables P2SH scrips
+        /// </summary>
+        /// <param name="height">Block height</param>
+        /// <returns>True if BIP-16 is enabled on this height; otherwise false.</returns>
+        bool IsBip16Enabled(int height);
+
+        /// <summary>
+        /// BIP-34 requires coinbase transactions to include the block height.
+        /// </summary>
+        /// <param name="height">Block height</param>
+        /// <returns>True if BIP-34 is enabled on this height; otherwise false.</returns>
+        bool IsBip34Enabled(int height);
+
+        /// <summary>
+        /// Returns if BIP-65 has enabled <see cref="Scripts.OP.CheckLocktimeVerify"/> OP code
+        /// </summary>
+        /// /// <param name="height">Block height</param>
+        /// <returns>True if BIP-65 is enabled on this height; otherwise false.</returns>
+        bool IsBip65Enabled(int height);
+
+        /// <summary>
+        /// Returns if BIP-112 has enabled <see cref="Scripts.OP.CheckSequenceVerify"/> OP code
+        /// </summary>
+        /// <param name="height">Block height</param>
+        /// <returns>True if BIP-112 is enabled on this height; otherwise false.</returns>
+        bool IsBip112Enabled(int height);
+
+        /// <summary>
+        /// Returns if BIP-66 is enabled to enforce strict DER encoding for signatures.
+        /// </summary>
+        /// <param name="height">Block height</param>
+        /// <returns>True if BIP-66 is enabled on this height; otherwise false.</returns>
+        bool IsStrictDerSig(int height);
+
+        /// <summary>
+        /// Segregated Witness soft fork
+        /// </summary>
+        /// <param name="height">Block height</param>
+        /// <returns>True if SegWit is enabled on this height; otherwise false.</returns>
+        bool IsSegWitEnabled(int height);
+
+
+
+
+        bool IsStrictNumberPush(int height);
     }
 }
