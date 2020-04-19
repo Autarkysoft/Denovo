@@ -73,7 +73,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         // TODO: complete the code for signing part + tests
         private readonly ITransaction Tx;
         private readonly ITransaction PrvTx;
-        private readonly IOperation[] prevScript;
+        public IOperation[] prevScript;
         private readonly int TxInIndex;
         private readonly int TxOutIndex;
 

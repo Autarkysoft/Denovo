@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using System;
 using System.Linq;
 
@@ -82,8 +83,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
 
             txVer.BlockHeight = block.Height;
-            txVer.SigOpCount = 0;
-            if (!txVer.VerifyCoinbasePrimary(block.TransactionList[0], out error))
+            txVer.TotalSigOpCount = 0;
+            ITransaction coinbase = block.TransactionList[0];
+            if (!txVer.VerifyCoinbasePrimary(coinbase, out error))
             {
                 return false;
             }
@@ -93,7 +95,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     return false;
                 }
-                if (txVer.SigOpCount > consensus.MaxSigOpCount)
+                if (txVer.TotalSigOpCount > consensus.MaxSigOpCount)
                 {
                     error = "Maximum allowed sigops exceeded.";
                     return false;
@@ -109,12 +111,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
             byte[] witPubScr = null;
             if (consensus.IsSegWitEnabled(block.Height) && block.TransactionList.Any(tx => tx.WitnessList != null))
             {
-                byte[] commitment = txVer.VerifyCoinbaseSegWitCommitment(block.TransactionList[0]);
-                if (commitment == null)
+                if (coinbase.WitnessList == null || coinbase.WitnessList.Length != 1 ||
+                    coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].data?.Length != 32)
                 {
                     error = "Invalid or non-existant witness commitment in coinbase output";
                     return false;
                 }
+                byte[] commitment = coinbase.WitnessList[0].Items[0].data;
+                
                 // An output expected in coinbase with its PubkeyScript.Data.Length of _at least_ 38 bytes
                 // starting with 0x6a24aa21a9ed and followed by 32 byte commitment hash
                 byte[] root = block.ComputeWitnessMerkleRoot(commitment);
