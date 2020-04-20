@@ -13,9 +13,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
     public interface IBlock : IDeserializable
     {
         /// <summary>
-        /// This block's height
+        /// This block's height (set before verification using the blockchain tip and the <see cref="PreviousBlockHeaderHash"/>)
         /// </summary>
         int Height { get; set; }
+
+        /// <summary>
+        /// This block's raw byte size (normally set during deserialization)
+        /// </summary>
+        int BlockSize { get; set; }
 
         /// <summary>
         /// Block version

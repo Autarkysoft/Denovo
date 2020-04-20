@@ -48,7 +48,6 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, null, "Stream can not be null." };
             yield return new object[]
             {
                 new FastStreamReader(new byte[1]),

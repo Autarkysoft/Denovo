@@ -46,6 +46,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int Sha256Length = 32;
         /// <summary>
+        /// Byte length of the block headers
+        /// </summary>
+        public const int BlockHeaderSize = 80;
+        /// <summary>
         /// Maximum allowed length of the scripts in bytes
         /// </summary>
         public const int MaxScriptLength = 10_000;

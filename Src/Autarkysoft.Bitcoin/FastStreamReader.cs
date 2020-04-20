@@ -7,17 +7,48 @@ using System;
 
 namespace Autarkysoft.Bitcoin
 {
+    /// <summary>
+    /// A custom stream reader to be used in <see cref="IDeserializable"/> objects.
+    /// <para/>All numbers are read as little-endian unless the method name explicitly says big-endian
+    /// like <see cref="TryReadUInt16BigEndian(out ushort)"/>.
+    /// <para/>Note: the main optimization is done by skipping size checks. 
+    /// the <see cref="CheckRemaining(int)"/> method can be called by the user to check remaining bytes, then instead of calling
+    /// TryRead* methods (that perform the same check for each individual object) the Read* method should be called that skips
+    /// the size check.
+    /// See <see cref="Blockchain.Blocks.Block.TryDeserializeHeader(FastStreamReader, out string)"/> for example of how
+    /// this should be used.
+    /// </summary>
     public class FastStreamReader
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="FastStreamReader"/> using the given byte array.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="ba">Data to use</param>
         public FastStreamReader(byte[] ba)
         {
+            if (ba == null)
+                throw new ArgumentNullException(nameof(ba), "Can not instantiate a stream with null bytes.");
+
             data = ba.CloneByteArray();
             position = 0;
         }
 
-        public FastStreamReader(byte[] ba, int start, int count)
+        /// <summary>
+        /// Initializes a new instance of <see cref="FastStreamReader"/> using a sub-array of the given byte array
+        /// from the starting index and the specified length.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="IndexOutOfRangeException"/>
+        /// <param name="ba">Data to use</param>
+        /// <param name="start">Starting index</param>
+        /// <param name="length">Length of the data to copy</param>
+        public FastStreamReader(byte[] ba, int start, int length)
         {
-            data = ba.SubArray(start, count);
+            if (ba == null)
+                throw new ArgumentNullException(nameof(ba), "Can not instantiate a stream with null bytes.");
+
+            data = ba.SubArray(start, length);
             position = 0;
         }
 
@@ -40,15 +71,17 @@ namespace Autarkysoft.Bitcoin
             return result;
         }
 
-        private bool Check(int length)
-        {
-            return data.Length - position >= length;
-        }
+        /// <summary>
+        /// Checks if there is enough bytes remaining to read.
+        /// </summary>
+        /// <param name="length">Length of the data that should be read</param>
+        /// <returns>True if there is enough bytes remaining; otherwise false.</returns>
+        public bool CheckRemaining(int length) => data.Length - position >= length;
 
 
         public bool CompareBytes(byte[] other)
         {
-            if (Check(other.Length))
+            if (CheckRemaining(other.Length))
             {
                 return ((ReadOnlySpan<byte>)data).Slice(position, other.Length).SequenceEqual(other);
             }
@@ -58,9 +91,28 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+
+        /// <summary>
+        /// Reads and returns 32 bytes from this stream.
+        /// </summary>
+        /// <returns>A 32 byte long array</returns>
+        public byte[] ReadByteArray32()
+        {
+            byte[] result = new byte[32];
+            Buffer.BlockCopy(data, position, result, 0, 32);
+            position += 32;
+            return result;
+        }
+
+        /// <summary>
+        /// Reads specified number of bytes from this stream if possible. Return value indicates success.
+        /// </summary>
+        /// <param name="len">Number of bytes to read</param>
+        /// <param name="result">Result (null if failed)</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadByteArray(int len, out byte[] result)
         {
-            if (Check(len))
+            if (CheckRemaining(len))
             {
                 result = new byte[len];
                 Buffer.BlockCopy(data, position, result, 0, len);
@@ -76,7 +128,7 @@ namespace Autarkysoft.Bitcoin
 
         public bool TryPeekByte(out byte b)
         {
-            if (Check(sizeof(byte)))
+            if (CheckRemaining(sizeof(byte)))
             {
                 b = data[position];
                 return true;
@@ -90,7 +142,7 @@ namespace Autarkysoft.Bitcoin
 
         public bool TryReadByte(out byte b)
         {
-            if (Check(sizeof(byte)))
+            if (CheckRemaining(sizeof(byte)))
             {
                 b = data[position];
                 position++;
@@ -103,13 +155,27 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        /// <summary>
+        /// Reads and returns a 32-bit signed integer in little-endian format.
+        /// </summary>
+        /// <returns>A 32-bit signed integer</returns>
+        public int ReadInt32Checked()
+        {
+            int res = data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24);
+            position += sizeof(int);
+            return res;
+        }
 
+        /// <summary>
+        /// Reads and returns a 32-bit signed integer in little-endian format. Return value indicates success
+        /// </summary>
+        /// <param name="val">The 32-bit signed integer result</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadInt32(out int val)
         {
-            if (Check(sizeof(int)))
+            if (CheckRemaining(sizeof(int)))
             {
-                val = data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24);
-                position += sizeof(int);
+                val = ReadInt32Checked();
                 return true;
             }
             else
@@ -119,10 +185,14 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
-
+        /// <summary>
+        /// Reads and returns a 64-bit signed integer in little-endian format. Return value indicates success
+        /// </summary>
+        /// <param name="val">The 64-bit signed integer result</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadInt64(out long val)
         {
-            if (Check(sizeof(long)))
+            if (CheckRemaining(sizeof(long)))
             {
                 val = data[position]
                     | ((long)data[position + 1] << 8)
@@ -143,10 +213,14 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
-
+        /// <summary>
+        /// Reads and returns a 16-bit unsigned integer in little-endian format. Return value indicates success
+        /// </summary>
+        /// <param name="val">The 16-bit unsigned integer result</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadUInt16(out ushort val)
         {
-            if (Check(sizeof(ushort)))
+            if (CheckRemaining(sizeof(ushort)))
             {
                 val = (ushort)(data[position] | (data[position + 1] << 8));
                 position += sizeof(ushort);
@@ -159,9 +233,14 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        /// <summary>
+        /// Reads and returns a 16-bit unsigned integer in big-endian format. Return value indicates success
+        /// </summary>
+        /// <param name="val">The 16-bit unsigned integer result</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadUInt16BigEndian(out ushort val)
         {
-            if (Check(sizeof(ushort)))
+            if (CheckRemaining(sizeof(ushort)))
             {
                 val = (ushort)(data[position + 1] | (data[position] << 8));
                 position += sizeof(ushort);
@@ -174,12 +253,27 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        /// <summary>
+        /// Reads and returns a 32-bit unsigned integer in little-endian format.
+        /// </summary>
+        /// <returns>A 32-bit unsigned integer</returns>
+        public uint ReadUInt32Checked()
+        {
+            uint res = (uint)(data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24));
+            position += sizeof(uint);
+            return res;
+        }
+
+        /// <summary>
+        /// Reads and returns a 32-bit unsigned integer in little-endian format. Return value indicates success
+        /// </summary>
+        /// <param name="val">The 32-bit unsigned integer result</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadUInt32(out uint val)
         {
-            if (Check(sizeof(uint)))
+            if (CheckRemaining(sizeof(uint)))
             {
-                val = (uint)(data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24));
-                position += sizeof(uint);
+                val = ReadUInt32Checked();
                 return true;
             }
             else
@@ -189,9 +283,14 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        /// <summary>
+        /// Reads and returns a 64-bit unsigned integer in little-endian format. Return value indicates success
+        /// </summary>
+        /// <param name="val">The 64-bit unsigned integer result</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadUInt64(out ulong val)
         {
-            if (Check(sizeof(ulong)))
+            if (CheckRemaining(sizeof(ulong)))
             {
                 val = data[position]
                     | ((ulong)data[position + 1] << 8)

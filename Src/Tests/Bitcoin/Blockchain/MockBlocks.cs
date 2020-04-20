@@ -15,6 +15,7 @@ namespace Tests.Bitcoin.Blockchain
     public class MockBlockBase : IBlock
     {
         public virtual int Height { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public int BlockSize { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual int Version { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual byte[] PreviousBlockHeaderHash
         {

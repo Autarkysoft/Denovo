@@ -14,6 +14,15 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 {
     public class BlockTests
     {
+        [Fact]
+        public void Constructor_HeightTest()
+        {
+            Block blk = new Block();
+            Assert.Equal(-1, blk.Height);
+            blk.Height = 10;
+            Assert.Equal(10, blk.Height);
+        }
+
         public static IEnumerable<object[]> GetCtorNullCases()
         {
             yield return new object[] { null, new byte[32], new ITransaction[1] };
@@ -422,6 +431,94 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             Assert.Equal(expected.BlockTime, blk.BlockTime);
             Assert.Equal(expected.NBits, blk.NBits);
             Assert.Equal(expected.Nonce, blk.Nonce);
+        }
+
+        public static IEnumerable<object[]> GetHeaderDeserFailCases()
+        {
+            yield return new object[]
+            {
+                new byte[Constants.BlockHeaderSize -1],
+                Err.EndOfStream
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetHeaderDeserFailCases))]
+        public void TryDeserializeHeader_FailTests(byte[] data, string expErr)
+        {
+            Block blk = new Block();
+            bool b = blk.TryDeserializeHeader(new FastStreamReader(data), out string error);
+
+            Assert.False(b, error);
+            Assert.Equal(expErr, error);
+        }
+
+        public static IEnumerable<object[]> GetDeserCases()
+        {
+            yield return new object[]
+            {
+                // Block #19
+                Helper.HexToBytes("01000000161126f0d39ec082e51bbd29a1dfb40b416b445ac8e493f88ce993860000000030e2a3e32abf1663a854efbef1b233c67c8cdcef5656fe3b4f28e52112469e9bae306849ffff001d16d1b42d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0116ffffffff0100f2052a01000000434104f5efde0c2d30ab28e3dbe804c1a4aaf13066f9b198a4159c76f8f79b3b20caf99f7c979ed6c71481061277a6fc8666977c249da99960c97c8d8714fda9f0e883ac00000000"),
+                new string[] { "9b9e461221e5284f3bfe5656efdc8c7cc633b2f1beef54a86316bf2ae3a3e230" },
+                215
+            };
+            yield return new object[]
+            {
+                // Block #19
+                Helper.HexToBytes("00e0002091921d693f92703ba351c50c0a1751da84fe90b2102b0a000000000000000000e3385bebd6d2913298ccb95771292dca37cb4981e69e2ab583629efc88ff730eb3a09a5ebc20131754b578560301000000010000000000000000000000000000000000000000000000000000000000000000ffffffff5f034b8f09047ba09a5e2f706f6f6c696e2e636f6d2ffabe6d6d2b37576a52671625b0a352b2d646dfb4051152ba3c82d6953302d43fbf08265c0100000000000000ee6d828d00b7412bbccb13ed180f4eba1091558621001300000000000000ffffffff03807c814a0000000017a91454705dd010ab50c03543a543cda327a60d9bf7af870000000000000000266a24b9e11b6d68d05f595165b3f89acda3863f4f07756994e3d7125383506b2c242afc74f63500000000000000002b6a2952534b424c4f434b3a342421e6df124adc350ceb831ea10068c8f16a2f693161ac94129a170022d4cafcb0be5c02000000011629d83d52d711558fdc05fc38875296f34fa36b9c0910bcf2de2d19a57a0e25480000006a47304402204f5d3be59b8f473e09fcc6fe941018b345e860feca178e7a5f4ec20ce7b6cfe3022001f791f95fbd1192fc778b25e478331c31a75b42823a4d8c4b56d72c288818f1012102573239c0bcf5a67afc4bfcdd114a9589ddd8f50e360ae4ee29cc5c4cb62343a1ffffffff01b80b0000000000001976a9144381d5eecfc6c66597621c8a86405b97c913404488ac0000000002000000011629d83d52d711558fdc05fc38875296f34fa36b9c0910bcf2de2d19a57a0e25490000006a47304402202137f9a7796d635717769c04c14e786e0b78b4e2a979818022a61af3545ba69b02200eeacae2827e13584e61ec55377b49720f75393fecc1b6fe240586353e772d0101210392f47b2b822369b978477ca4de231f5eb77e995532bef6d39cf568f45ed6f2f6ffffffff01b80b0000000000001976a914838dcf13cb5fa9bf9d8f2ec792b4306d81408f3b88ac00000000"),
+                new string[]
+                {
+                    "629509d4018a810f7af1e77d5abc5051c09e5b0df9552ca8ab329e0fa5b317cd",
+                    "13618bac55c04704269602e2af1701cd7e1a03617a3f8855ec8f2a4240916961",
+                    "75cb5ec8437b313d7201d7e25bb00d971c554069bdea6c06805314d8b3f14470"
+                },
+                740
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetDeserCases))]
+        public void TryDeserializeTest(byte[] data, string[] expTxIds, int expBlockSize)
+        {
+            Block blk = new Block();
+            bool b = blk.TryDeserialize(new FastStreamReader(data), out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Equal(expBlockSize, blk.BlockSize);
+            // A quick check to make sure transaction is correct
+            Assert.Equal(expTxIds.Length, blk.TransactionList.Length);
+            for (int i = 0; i < blk.TransactionList.Length; i++)
+            {
+                Assert.Equal(expTxIds[i], blk.TransactionList[i].GetTransactionId());
+            }
+        }
+
+        public static IEnumerable<object[]> GetDeserFailCases()
+        {
+            yield return new object[]
+            {
+                new byte[Constants.BlockHeaderSize -1],
+                Err.EndOfStream
+            };
+            yield return new object[]
+            {
+                Helper.ConcatBytes(Constants.BlockHeaderSize + 5, GetSampleBlockHeaderBytes(), new byte[] { 0xfe, 0x00, 0x00, 0x00, 0x80 }),
+                "Number of transactions is too big."
+            };
+            yield return new object[]
+            {
+                Helper.ConcatBytes(Constants.BlockHeaderSize + 1, GetSampleBlockHeaderBytes(), new byte[] { 1 }),
+                Err.EndOfStream
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetDeserFailCases))]
+        public void TryDeserialize_FailTests(byte[] data, string expErr)
+        {
+            Block blk = new Block();
+            bool b = blk.TryDeserialize(new FastStreamReader(data), out string error);
+
+            Assert.False(b, error);
+            Assert.Equal(expErr, error);
         }
     }
 }

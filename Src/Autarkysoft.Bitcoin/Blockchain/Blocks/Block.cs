@@ -48,20 +48,26 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
 
-
-        private const int HeaderSize = 80;
-        private readonly Sha256 hashFunc = new Sha256(true);
-
         /// <inheritdoc/>
         public int Height { get; set; } = -1;
 
-        private int _version;
+        private int _blockSize;
         /// <inheritdoc/>
-        public int Version
+        public int BlockSize
         {
-            get => _version;
-            set => _version = value;
+            get
+            {
+                if (_blockSize == 0)
+                {
+                    _blockSize = Serialize().Length;
+                }
+                return _blockSize;
+            }
+            set => _blockSize = value;
         }
+
+        /// <inheritdoc/>
+        public int Version { get; set; }
 
         private byte[] _prvBlkHash = new byte[32];
         /// <inheritdoc/>
@@ -102,13 +108,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             }
         }
 
-        private uint _time;
         /// <inheritdoc/>
-        public uint BlockTime
-        {
-            get => _time;
-            set => _time = value;
-        }
+        public uint BlockTime { get; set; }
 
         private Target _nBits;
         /// <inheritdoc/>
@@ -118,13 +119,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             set => _nBits = value;
         }
 
-        private uint _nonce;
         /// <inheritdoc/>
-        public uint Nonce
-        {
-            get => _nonce;
-            set => _nonce = value;
-        }
+        public uint Nonce { get; set; }
 
         private ITransaction[] _txs = new ITransaction[0];
         /// <inheritdoc/>
@@ -147,6 +143,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         public byte[] GetBlockHash()
         {
             byte[] bytesToHash = SerializeHeader();
+            using Sha256 hashFunc = new Sha256(true);
             return hashFunc.ComputeHash(bytesToHash);
         }
 
@@ -322,7 +319,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <returns>An array of bytes</returns>
         public byte[] SerializeHeader()
         {
-            FastStream stream = new FastStream(HeaderSize);
+            FastStream stream = new FastStream(Constants.BlockHeaderSize);
             SerializeHeader(stream);
             return stream.ToByteArray();
         }
@@ -356,46 +353,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public bool TryDeserializeHeader(FastStreamReader stream, out string error)
         {
-            if (stream is null)
-            {
-                error = "Stream can not be null.";
-                return false;
-            }
-
-            if (!stream.TryReadInt32(out _version))
+            if (!stream.CheckRemaining(Constants.BlockHeaderSize))
             {
                 error = Err.EndOfStream;
                 return false;
             }
 
-            if (!stream.TryReadByteArray(32, out _prvBlkHash))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
+            Version = stream.ReadInt32Checked();
+            _prvBlkHash = stream.ReadByteArray32();
+            _merkle = stream.ReadByteArray32();
+            BlockTime = stream.ReadUInt32Checked();
 
-            if (!stream.TryReadByteArray(32, out _merkle))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
-
-            if (!stream.TryReadUInt32(out _time))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
-
+            // TODO: add a TryReadChecked to Target
             if (!Target.TryRead(stream, out _nBits, out error))
             {
                 return false;
             }
 
-            if (!stream.TryReadUInt32(out _nonce))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
+            Nonce = stream.ReadUInt32Checked();
 
             error = null;
             return true;
@@ -404,13 +379,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out string error)
         {
-            if (stream is null)
-            {
-                error = "Stream can not be null.";
-                return false;
-            }
-
-            // TODO: add block size check
+            int start = stream.GetCurrentIndex();
 
             if (!TryDeserializeHeader(stream, out error))
             {
@@ -421,7 +390,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             {
                 return false;
             }
-            if (txCount > int.MaxValue) // TODO: set how many ~tx can be in a block instead of int.Max
+            if (txCount > int.MaxValue)
             {
                 error = "Number of transactions is too big.";
                 return false;
@@ -438,12 +407,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 TransactionList[i] = temp;
             }
 
-            ReadOnlySpan<byte> actualMerkle = ComputeMerkleRoot();
-            if (!actualMerkle.SequenceEqual(MerkleRootHash))
-            {
-                error = "Invalid merkle root.";
-                return false;
-            }
+            int end = stream.GetCurrentIndex();
+
+            _blockSize = end - start;
 
             error = null;
             return true;
