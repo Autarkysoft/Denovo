@@ -360,8 +360,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             }
 
             Version = stream.ReadInt32Checked();
-            _prvBlkHash = stream.ReadByteArray32();
-            _merkle = stream.ReadByteArray32();
+            _prvBlkHash = stream.ReadByteArray32Checked();
+            _merkle = stream.ReadByteArray32Checked();
             BlockTime = stream.ReadUInt32Checked();
 
             // TODO: add a TryReadChecked to Target

@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin
 {
@@ -60,9 +61,31 @@ namespace Autarkysoft.Bitcoin
 
 
 
+        /// <summary>
+        /// Checks if there is enough bytes remaining to read.
+        /// </summary>
+        /// <param name="length">Length of the data that should be read</param>
+        /// <returns>True if there is enough bytes remaining; otherwise false.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool CheckRemaining(int length) => data.Length - position >= length;
+
+        /// <summary>
+        /// Returns current index inside the buffer (number of read bytes so far)
+        /// </summary>
+        /// <returns>Current index or number of read bytes</returns>
         public int GetCurrentIndex() => position;
 
+        /// <summary>
+        /// Returns remaining number of bytes in the buffer to read.
+        /// </summary>
+        /// <returns>Number of bytes left</returns>
         public int GetRemainingBytesCount() => data.Length - position;
+
+        /// <summary>
+        /// Moves index forward by 1 (skips one byte).
+        /// </summary>
+        public void SkipOneByte() => position++;
+
 
         public byte[] GetReadBytes(int startIndex)
         {
@@ -70,14 +93,6 @@ namespace Autarkysoft.Bitcoin
             Buffer.BlockCopy(data, startIndex, result, 0, position - startIndex);
             return result;
         }
-
-        /// <summary>
-        /// Checks if there is enough bytes remaining to read.
-        /// </summary>
-        /// <param name="length">Length of the data that should be read</param>
-        /// <returns>True if there is enough bytes remaining; otherwise false.</returns>
-        public bool CheckRemaining(int length) => data.Length - position >= length;
-
 
         public bool CompareBytes(byte[] other)
         {
@@ -96,7 +111,7 @@ namespace Autarkysoft.Bitcoin
         /// Reads and returns 32 bytes from this stream.
         /// </summary>
         /// <returns>A 32 byte long array</returns>
-        public byte[] ReadByteArray32()
+        public byte[] ReadByteArray32Checked()
         {
             byte[] result = new byte[32];
             Buffer.BlockCopy(data, position, result, 0, 32);
@@ -126,6 +141,11 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        /// <summary>
+        /// Reads and returns a single byte without moving the index forward. Return value indicates success
+        /// </summary>
+        /// <param name="b">A signle byte</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryPeekByte(out byte b)
         {
             if (CheckRemaining(sizeof(byte)))
@@ -140,6 +160,11 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        /// <summary>
+        /// Reads and returns a single byte. Return value indicates success
+        /// </summary>
+        /// <param name="b">A signle byte</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadByte(out byte b)
         {
             if (CheckRemaining(sizeof(byte)))
@@ -167,7 +192,7 @@ namespace Autarkysoft.Bitcoin
         }
 
         /// <summary>
-        /// Reads and returns a 32-bit signed integer in little-endian format. Return value indicates success
+        /// Reads and returns a 32-bit signed integer in little-endian format. Return value indicates success.
         /// </summary>
         /// <param name="val">The 32-bit signed integer result</param>
         /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
@@ -186,6 +211,24 @@ namespace Autarkysoft.Bitcoin
         }
 
         /// <summary>
+        /// Reads and returns a 64-bit signed integer in little-endian format.
+        /// </summary>
+        /// <returns>A 64-bit signed integer</returns>
+        public long ReadInt64Checked()
+        {
+            long res = data[position]
+                     | ((long)data[position + 1] << 8)
+                     | ((long)data[position + 2] << 16)
+                     | ((long)data[position + 3] << 24)
+                     | ((long)data[position + 4] << 32)
+                     | ((long)data[position + 5] << 40)
+                     | ((long)data[position + 6] << 48)
+                     | ((long)data[position + 7] << 56);
+            position += sizeof(long);
+            return res;
+        }
+
+        /// <summary>
         /// Reads and returns a 64-bit signed integer in little-endian format. Return value indicates success
         /// </summary>
         /// <param name="val">The 64-bit signed integer result</param>
@@ -194,16 +237,7 @@ namespace Autarkysoft.Bitcoin
         {
             if (CheckRemaining(sizeof(long)))
             {
-                val = data[position]
-                    | ((long)data[position + 1] << 8)
-                    | ((long)data[position + 2] << 16)
-                    | ((long)data[position + 3] << 24)
-                    | ((long)data[position + 4] << 32)
-                    | ((long)data[position + 5] << 40)
-                    | ((long)data[position + 6] << 48)
-                    | ((long)data[position + 7] << 56);
-
-                position += sizeof(long);
+                val = ReadInt64Checked();
                 return true;
             }
             else
@@ -211,6 +245,17 @@ namespace Autarkysoft.Bitcoin
                 val = 0;
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Reads and returns a 16-bit unsigned integer in little-endian format.
+        /// </summary>
+        /// <returns>A 16-bit unsigned integer</returns>
+        public ushort ReadUInt16Checked()
+        {
+            ushort res = (ushort)(data[position] | (data[position + 1] << 8));
+            position += sizeof(ushort);
+            return res;
         }
 
         /// <summary>
@@ -222,8 +267,7 @@ namespace Autarkysoft.Bitcoin
         {
             if (CheckRemaining(sizeof(ushort)))
             {
-                val = (ushort)(data[position] | (data[position + 1] << 8));
-                position += sizeof(ushort);
+                val = ReadUInt16Checked();
                 return true;
             }
             else
@@ -231,6 +275,17 @@ namespace Autarkysoft.Bitcoin
                 val = 0;
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Reads and returns a 16-bit unsigned integer in little-endian format.
+        /// </summary>
+        /// <returns>A 16-bit unsigned integer</returns>
+        public ushort ReadUInt16BigEndianChecked()
+        {
+            ushort res = (ushort)(data[position + 1] | (data[position] << 8));
+            position += sizeof(ushort);
+            return res;
         }
 
         /// <summary>
@@ -242,8 +297,7 @@ namespace Autarkysoft.Bitcoin
         {
             if (CheckRemaining(sizeof(ushort)))
             {
-                val = (ushort)(data[position + 1] | (data[position] << 8));
-                position += sizeof(ushort);
+                val = ReadUInt16BigEndianChecked();
                 return true;
             }
             else
@@ -284,6 +338,25 @@ namespace Autarkysoft.Bitcoin
         }
 
         /// <summary>
+        /// Reads and returns a 32-bit unsigned integer in little-endian format.
+        /// </summary>
+        /// <returns>A 32-bit unsigned integer</returns>
+        public ulong ReadUInt64Checked()
+        {
+            ulong res = data[position]
+                     | ((ulong)data[position + 1] << 8)
+                     | ((ulong)data[position + 2] << 16)
+                     | ((ulong)data[position + 3] << 24)
+                     | ((ulong)data[position + 4] << 32)
+                     | ((ulong)data[position + 5] << 40)
+                     | ((ulong)data[position + 6] << 48)
+                     | ((ulong)data[position + 7] << 56);
+
+            position += sizeof(ulong);
+            return res;
+        }
+
+        /// <summary>
         /// Reads and returns a 64-bit unsigned integer in little-endian format. Return value indicates success
         /// </summary>
         /// <param name="val">The 64-bit unsigned integer result</param>
@@ -292,16 +365,7 @@ namespace Autarkysoft.Bitcoin
         {
             if (CheckRemaining(sizeof(ulong)))
             {
-                val = data[position]
-                    | ((ulong)data[position + 1] << 8)
-                    | ((ulong)data[position + 2] << 16)
-                    | ((ulong)data[position + 3] << 24)
-                    | ((ulong)data[position + 4] << 32)
-                    | ((ulong)data[position + 5] << 40)
-                    | ((ulong)data[position + 6] << 48)
-                    | ((ulong)data[position + 7] << 56);
-
-                position += sizeof(ulong);
+                val = ReadUInt64Checked();
                 return true;
             }
             else
