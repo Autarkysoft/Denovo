@@ -30,8 +30,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Return value indicates success.
         /// </summary>
         /// <param name="result">An array of <see cref="IOperation"/>s</param>
+        /// <param name="opCount">
+        /// Number of OPs in this script (needs to be updated after executing 
+        /// <see cref="OP.CheckMultiSig"/> or <see cref="OP.CheckMultiSigVerify"/> operations based on number of pubkeys.
+        /// </param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if evaluation was successful, false if otherwise.</returns>
-        bool TryEvaluate(out IOperation[] result, out string error);
+        bool TryEvaluate(out IOperation[] result, out int opCount, out string error);
     }
 }

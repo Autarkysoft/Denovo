@@ -139,7 +139,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-
+            // TODO: add block size and weight checks
+            // TODO: add block version checks
             error = null;
             return true;
         }

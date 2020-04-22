@@ -151,7 +151,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 throw new ArgumentOutOfRangeException(nameof(redeem), "Redeem script is bigger than allowed length.");
             if (redeem.GetRedeemScriptType() != RedeemScriptType.MultiSig)
                 throw new ArgumentException("Invalid redeem script type.");
-            if (redeem.TryEvaluate(out IOperation[] rdmOps, out string error))
+            if (redeem.TryEvaluate(out IOperation[] rdmOps, out _, out string error))
                 throw new ArgumentException($"Can not evaluate redeem script: {error}.");
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
             if (!((PushDataOp)rdmOps[0]).TryGetNumber(out long m, out string err))

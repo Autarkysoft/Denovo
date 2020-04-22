@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
@@ -14,23 +15,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
     public class CheckMultiSigOpTests
     {
-        private static readonly Signature sig1 = new Signature(1, 2) { SigHash = SigHashType.All };
-        private static readonly Signature sig2 = new Signature(10, 20) { SigHash = SigHashType.All };
-
-        private static readonly byte[] pub2Bytes = Helper.HexToBytes("0377af7bee92f893844ba467e3b312efd034fccc001dbbe40e13035973ef5e0094");
-        private static readonly byte[] pub3Bytes = Helper.HexToBytes("02dfa5c61b6b5c7f57a09d312b9c724d130148607159d577cfb3e728968388c331");
-        private static PublicKey GetPub2()
-        {
-            PublicKey.TryRead(pub2Bytes, out PublicKey res);
-            return res;
-        }
-        private static PublicKey GetPub3()
-        {
-            PublicKey.TryRead(pub3Bytes, out PublicKey res);
-            return res;
-        }
-
-
         [Fact]
         public void Run_CorrectSigsTest()
         {
@@ -39,27 +23,29 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                                              FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 8,
+                _opCountToReturn = 1,
                 popData = new byte[][] { OpTestCaseHelper.b7, OpTestCaseHelper.num3 },
                 popIndexData = new Dictionary<int, byte[]> { { 3, OpTestCaseHelper.num2 } },
                 popCountData = new byte[][][]
                 {
                     new byte[][]
                     {
-                        Helper.GetPubkeySampleBytes(true), pub2Bytes, pub3Bytes
+                        KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes,
                     },
                     new byte[][]
                     {
-                        sig1.ToByteArray(), sig2.ToByteArray(),
+                        Helper.ShortSig1Bytes, Helper.ShortSig2Bytes,
                     }
                 },
-                expectedSigs = new Signature[] { sig1, sig2 },
-                expectedPubkeys = new PublicKey[] { Helper.GetPubkeySample(), GetPub2(), GetPub3() },
+                expectedSigs = new Signature[] { Helper.ShortSig1, Helper.ShortSig2 },
+                expectedPubkeys = new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2, KeyHelper.Pub3 },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = true,
                 pushData = new byte[][] { OpTestCaseHelper.TrueBytes }
             };
 
             OpTestCaseHelper.RunTest<CheckMultiSigOp>(data, OP.CheckMultiSig);
+            Assert.Equal(4, data.OpCount);
         }
 
         [Fact]
@@ -70,27 +56,29 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                                              FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 8,
+                _opCountToReturn = 5,
                 popData = new byte[][] { OpTestCaseHelper.b7, OpTestCaseHelper.num3 },
                 popIndexData = new Dictionary<int, byte[]> { { 3, OpTestCaseHelper.num2 } },
                 popCountData = new byte[][][]
                 {
                     new byte[][]
                     {
-                        Helper.GetPubkeySampleBytes(true), pub2Bytes, pub3Bytes
+                        KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes,
                     },
                     new byte[][]
                     {
-                        sig1.ToByteArray(), sig2.ToByteArray(),
+                        Helper.ShortSig1Bytes, Helper.ShortSig2Bytes,
                     }
                 },
-                expectedSigs = new Signature[] { sig1, sig2 },
-                expectedPubkeys = new PublicKey[] { Helper.GetPubkeySample(), GetPub2(), GetPub3() },
+                expectedSigs = new Signature[] { Helper.ShortSig1, Helper.ShortSig2 },
+                expectedPubkeys = new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2, KeyHelper.Pub3 },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = false,
                 pushData = new byte[][] { OpTestCaseHelper.FalseBytes }
             };
 
             OpTestCaseHelper.RunTest<CheckMultiSigOp>(data, OP.CheckMultiSig);
+            Assert.Equal(8, data.OpCount);
         }
 
         public static IEnumerable<object[]> GetSpecialCase()
@@ -170,6 +158,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             bool b2 = operations[^1].Run(data, out string error2);
             Assert.Equal(expBool, b2);
             Assert.Equal(expError, error2);
+            Assert.Equal(0, data.OpCount);
+        }
+
+        [Fact]
+        public void Run_()
+        {
+
         }
 
 
@@ -188,15 +183,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop)
                 {
                     _itemCount = 3,
-                    popData = new byte[1][] { new byte[2] { 1, 2 } }
+                    _opCountToReturn = Constants.MaxScriptOpCount - 2,
+                    popData = new byte[1][] { OpTestCaseHelper.num3 }
                 },
-                "Invalid number (n) format."
+                "Number of OPs in this script exceeds the allowed number."
             };
             yield return new object[]
             {
                 new MockOpData(FuncCallName.Pop)
                 {
                     _itemCount = 3,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { new byte[1] { 21 } }
                 },
                 "Invalid number of public keys in multi-sig."
@@ -206,6 +203,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop)
                 {
                     _itemCount = 3,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.numNeg1 }
                 },
                 "Invalid number of public keys in multi-sig."
@@ -215,6 +213,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop)
                 {
                     _itemCount = 3,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num2 }
                 },
                 Err.OpNotEnoughItems
@@ -224,6 +223,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex)
                 {
                     _itemCount = 3,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, new byte[2] { 1, 2 } } },
                 },
@@ -234,6 +234,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex)
                 {
                     _itemCount = 3,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, new byte[1] { 21 } } },
                 },
@@ -244,6 +245,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex)
                 {
                     _itemCount = 3,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, OpTestCaseHelper.num2 } }, // m > n
                 },
@@ -254,6 +256,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex)
                 {
                     _itemCount = 3,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, OpTestCaseHelper.numNeg1 } },
                 },
@@ -264,6 +267,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex)
                 {
                     _itemCount = 4,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num2 },
                     popIndexData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.num2 } },
                 },
@@ -274,6 +278,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex)
                 {
                     _itemCount = 4,
+                    _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num2 },
                     popIndexData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.num2 } },
                 },
@@ -285,15 +290,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                                FuncCallName.PopCount)
                 {
                     _itemCount = 7,
+                    _opCountToReturn = 0,
                     popData = new byte[][] { OpTestCaseHelper.num2 },
                     popIndexData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.num2 } },
                     popCountData = new byte[][][]
                     {
                         new byte[][]
                         {
-                            pub2Bytes, new byte[3]
+                            KeyHelper.Pub2CompBytes, new byte[3]
                         },
-
                     }
                 },
                 "Invalid public key."
@@ -304,17 +309,18 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                                FuncCallName.PopCount, FuncCallName.PopCount)
                 {
                     _itemCount = 7,
+                    _opCountToReturn = 0,
                     popData = new byte[][] { OpTestCaseHelper.num2 },
                     popIndexData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.num2 } },
                     popCountData = new byte[][][]
                     {
                         new byte[][]
                         {
-                            pub2Bytes, pub3Bytes
+                            KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes
                         },
                         new byte[][]
                         {
-                            sig1.ToByteArray(), new byte[3]
+                            Helper.ShortSig1Bytes, new byte[3]
                         },
                     }
                 },
@@ -327,21 +333,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                                FuncCallName.Pop)
                 {
                     _itemCount = 7,
+                    _opCountToReturn = 0,
                     popData = new byte[][] { OpTestCaseHelper.b7, OpTestCaseHelper.num2 },
                     popIndexData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.num2 } },
                     popCountData = new byte[][][]
                     {
                         new byte[][]
                         {
-                            pub2Bytes, pub3Bytes
+                            KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes
                         },
                         new byte[][]
                         {
-                            sig1.ToByteArray(), sig2.ToByteArray()
+                            Helper.ShortSig1Bytes, Helper.ShortSig2Bytes
                         },
                     },
-                    expectedPubkeys = new PublicKey[] { GetPub2(), GetPub3() },
-                    expectedSigs = new Signature[] { sig1, sig2 },
+                    expectedPubkeys = new PublicKey[] { KeyHelper.Pub2, KeyHelper.Pub3},
+                    expectedSigs = new Signature[] { Helper.ShortSig1, Helper.ShortSig2 },
                     expectedMultiSigGarbage = OpTestCaseHelper.b7,
                     garbageCheckResult = false
                 },

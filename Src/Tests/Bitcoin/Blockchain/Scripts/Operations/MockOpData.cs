@@ -126,6 +126,24 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             }
         }
 
+        internal int _opCountToReturn = -1;
+        public int OpCount
+        {
+            get
+            {
+                if (_opCountToReturn < 0)
+                {
+                    Assert.True(false, $"Unexpected call to OpCount.Get() was detected " +
+                                       $"({nameof(_opCountToReturn)} field is not set).");
+                }
+                return _opCountToReturn;
+            }
+            set
+            {
+                _opCountToReturn = value;
+            }
+        }
+
 
         private void CheckCall(FuncCallName funcName)
         {

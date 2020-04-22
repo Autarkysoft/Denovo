@@ -63,7 +63,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <inheritdoc/>
         public PubkeyScriptType GetPublicScriptType()
         {
-            bool b = TryEvaluate(out IOperation[] OperationList, out _);
+            bool b = TryEvaluate(out IOperation[] OperationList, out _, out _);
 
             if (!b)
             {

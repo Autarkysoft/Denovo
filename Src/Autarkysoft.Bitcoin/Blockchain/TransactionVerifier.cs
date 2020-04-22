@@ -188,7 +188,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     return false;
                 }
 
-                if (!prevOutput.PubScript.TryEvaluate(out IOperation[] pubOps, out error))
+                if (!prevOutput.PubScript.TryEvaluate(out IOperation[] pubOps, out int pubOpCount, out error))
                 {
                     error = $"Invalid input transaction pubkey script." +
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -196,7 +196,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     return false;
                 }
 
-                if (!item.SigScript.TryEvaluate(out IOperation[] sigOps, out error))
+                if (!item.SigScript.TryEvaluate(out IOperation[] sigOps, out int sigOpCount, out error))
                 {
                     error = $"Invalid transaction signature script." +
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -211,6 +211,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     // TODO: check witness of this item at its corresponding indes is empty
                     stack.prevScript = sigOps;
+                    stack.OpCount = sigOpCount;
                     foreach (var op in sigOps)
                     {
                         if (!op.Run(stack, out error))
@@ -223,6 +224,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
 
                     stack.prevScript = pubOps;
+                    stack.OpCount = pubOpCount;
                     foreach (var op in pubOps)
                     {
                         if (!op.Run(stack, out error))
@@ -240,7 +242,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         RedeemScript redeem = new RedeemScript(pushRedeem.data);
                         RedeemScriptSpecialType rdmType = redeem.GetSpecialType();
-                        if (!redeem.TryEvaluate(out IOperation[] redeemOps, out error))
+                        if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
                         {
                             error = $"Script evaluation failed." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -249,6 +251,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
 
                         stack.prevScript = sigOps;
+                        stack.OpCount = sigOpCount;
                         foreach (var op in sigOps)
                         {
                             if (!op.Run(stack, out error))
@@ -261,6 +264,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
 
                         stack.prevScript = pubOps;
+                        stack.OpCount = pubOpCount;
                         foreach (var op in pubOps)
                         {
                             if (!op.Run(stack, out error))
@@ -276,6 +280,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             // TODO: check witness of this item at its corresponding indes is empty
                             stack.prevScript = redeemOps;
+                            stack.OpCount = redeemOpCount;
                             foreach (var op in redeemOps)
                             {
                                 if (!op.Run(stack, out error))
@@ -350,7 +355,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
 
                     RedeemScript redeem = new RedeemScript(tx.WitnessList[i].Items[^1].data);
-                    if (!redeem.TryEvaluate(out IOperation[] redeemOps, out error))
+                    if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
                     {
                         error = $"Script evaluation failed." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +

@@ -96,7 +96,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
         /// used in signing operations for SegWit transactions. Return result is the hash result.
         /// </summary>
-        /// <param name="prevOutScript">Script bytes used in signing SegWit outputs</param>
+        /// <param name="prevOutScript">Script bytes used in signing SegWit outputs (aka scriptCode)</param>
         /// <param name="inputIndex">Index of the input being signed</param>
         /// <param name="amount">The amount in satoshi that is being spent</param>
         /// <param name="sht">Signature hash type</param>

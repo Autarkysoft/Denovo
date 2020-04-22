@@ -346,6 +346,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         {
             // TODO: like above prevOutScript needs to be of type IOperation[] instead of byte[] and we need to handle
             //       its conversion to bytep[] here.
+            // TODO: this needs to be optimized by storing hashPrevouts,... to be reused
             bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
             if (anyone)
             {
@@ -416,13 +417,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 sht |= SigHashType.AnyoneCanPay;
             }
 
-            FastStream finalStream = new FastStream(182);
+            // 4(Version) + 32(hashPrevouts) + 32(hashSequence) + 36 (outpoint) + ??(scriptCode.Length) + 8 (amount) +
+            // 4(Sequence) + 32(hashOutputs) + 4(LockTime) + 4(SigHashType)
+            FastStream finalStream = new FastStream(156 + prevOutScript.Length);
             finalStream.Write(Version);
             finalStream.Write(hashPrevouts);
             finalStream.Write(hashSequence);
             finalStream.Write(TxInList[inputIndex].TxHash);
             finalStream.Write(TxInList[inputIndex].Index);
-            // the prevOutScript is a P2WPKH (0014<hash160>) which should be turned into 1976a914<hash160>88ac and placed here
             finalStream.Write(prevOutScript);
             finalStream.Write(amount);
             finalStream.Write(TxInList[inputIndex].Sequence);
@@ -461,8 +463,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 throw new ArgumentOutOfRangeException(nameof(inputIndex), "Not enough TxIns.");
             if (!((ReadOnlySpan<byte>)TxInList[inputIndex].TxHash).SequenceEqual(prvTx.GetTransactionHash()))
                 throw new ArgumentException("Wrong previous transaction or index.");
-            if (!prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.TryEvaluate(out IOperation[] prevOps, out string error))
+            if (!prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.TryEvaluate(out IOperation[] prevOps, out int opCount, out string error))
                 throw new ArgumentException($"Previous transaction pubkey script can not be evaluated: {error}.");
+            if (opCount > Constants.MaxScriptOpCount)
+                throw new ArgumentOutOfRangeException(nameof(opCount), "Number of OPs in this script exceeds the allowed number.");
 
 
             PubkeyScriptType scrType = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType();
@@ -474,8 +478,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             {
                 if (redeem is null)
                     throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
-                if (!redeem.TryEvaluate(out IOperation[] rdmOps, out error))
+                if (!redeem.TryEvaluate(out IOperation[] rdmOps, out opCount, out error))
                     throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
+                if (opCount > Constants.MaxScriptOpCount)
+                    throw new ArgumentOutOfRangeException(nameof(opCount), "Number of OPs in this script exceeds the allowed number.");
 
                 ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.Data);
                 ReadOnlySpan<byte> actHash = ((ReadOnlySpan<byte>)prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(2, 20);

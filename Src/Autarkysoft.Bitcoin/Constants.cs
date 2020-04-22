@@ -54,6 +54,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int MaxScriptLength = 10_000;
         /// <summary>
+        /// Maximum allowed number of non-push OPs in a script
+        /// </summary>
+        public const int MaxScriptOpCount = 201;
+        /// <summary>
         /// Maximum allowed length of items to be pushed to the stack 
         /// (the redeem scripts used in P2SH are also limited by this length)
         /// </summary>

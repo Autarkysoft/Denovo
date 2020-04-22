@@ -18,7 +18,7 @@ namespace Tests.Bitcoin.Blockchain
     public abstract class MockScriptBase : IScript
     {
         public virtual byte[] Data { get; set; }
-        public virtual bool TryEvaluate(out IOperation[] result, out string error) => throw new NotImplementedException();
+        public virtual bool TryEvaluate(out IOperation[] result, out int opCount, out string error) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
         public virtual int CountSigOps() => throw new NotImplementedException();

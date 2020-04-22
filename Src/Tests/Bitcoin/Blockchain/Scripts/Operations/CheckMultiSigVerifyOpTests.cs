@@ -14,23 +14,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
     public class CheckMultiSigVerifyOpTests
     {
-        private static readonly Signature sig1 = new Signature(1, 2) { SigHash = SigHashType.All };
-        private static readonly Signature sig2 = new Signature(10, 20) { SigHash = SigHashType.All };
-
-        private static readonly byte[] pub2Bytes = Helper.HexToBytes("0377af7bee92f893844ba467e3b312efd034fccc001dbbe40e13035973ef5e0094");
-        private static readonly byte[] pub3Bytes = Helper.HexToBytes("02dfa5c61b6b5c7f57a09d312b9c724d130148607159d577cfb3e728968388c331");
-        private PublicKey GetPub2()
-        {
-            PublicKey.TryRead(pub2Bytes, out PublicKey res);
-            return res;
-        }
-        private PublicKey GetPub3()
-        {
-            PublicKey.TryRead(pub3Bytes, out PublicKey res);
-            return res;
-        }
-
-
         [Fact]
         public void Run_CorrectSigsTest()
         {
@@ -39,28 +22,29 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                                              FuncCallName.Pop)
             {
                 _itemCount = 8,
+                _opCountToReturn = 0,
                 popData = new byte[][] { OpTestCaseHelper.b7, OpTestCaseHelper.num3 },
                 popIndexData = new Dictionary<int, byte[]> { { 3, OpTestCaseHelper.num2 } },
                 popCountData = new byte[][][]
                 {
                     new byte[][]
                     {
-                        Helper.GetPubkeySampleBytes(true), pub2Bytes, pub3Bytes
+                        KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes
                     },
                     new byte[][]
                     {
-                        sig1.ToByteArray(), sig2.ToByteArray(),
+                        Helper.ShortSig1Bytes, Helper.ShortSig2Bytes
                     }
                 },
-                expectedSigs = new Signature[] { sig1, sig2 },
-                expectedPubkeys = new PublicKey[] { Helper.GetPubkeySample(), GetPub2(), GetPub3() },
+                expectedSigs = new Signature[] { Helper.ShortSig1, Helper.ShortSig2 },
+                expectedPubkeys = new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2, KeyHelper.Pub3 },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = true,
             };
 
             OpTestCaseHelper.RunTest<CheckMultiSigVerifyOp>(data, OP.CheckMultiSigVerify);
         }
-        
+
         [Fact]
         public void Run_WrongSigsTest()
         {
@@ -69,21 +53,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                                              FuncCallName.Pop)
             {
                 _itemCount = 8,
+                _opCountToReturn = 0,
                 popData = new byte[][] { OpTestCaseHelper.b7, OpTestCaseHelper.num3 },
                 popIndexData = new Dictionary<int, byte[]> { { 3, OpTestCaseHelper.num2 } },
                 popCountData = new byte[][][]
                 {
                     new byte[][]
                     {
-                        Helper.GetPubkeySampleBytes(true), pub2Bytes, pub3Bytes
+                        KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes
                     },
                     new byte[][]
                     {
-                        sig1.ToByteArray(), sig2.ToByteArray(),
+                        Helper.ShortSig1Bytes, Helper.ShortSig2Bytes
                     }
                 },
-                expectedSigs = new Signature[] { sig1, sig2 },
-                expectedPubkeys = new PublicKey[] { Helper.GetPubkeySample(), GetPub2(), GetPub3() },
+                expectedSigs = new Signature[] { Helper.ShortSig1, Helper.ShortSig2 },
+                expectedPubkeys = new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2, KeyHelper.Pub3 },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = false,
             };

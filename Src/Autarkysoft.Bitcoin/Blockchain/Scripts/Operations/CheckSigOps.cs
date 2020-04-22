@@ -140,15 +140,22 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             byte[] nBa = opData.Pop();
-            if (!TryConvertToLong(nBa, out long n, true, 1))
+            if (!TryConvertToLong(nBa, out long n, false, maxDataLength: 4))
             {
                 error = "Invalid number (n) format.";
                 return false;
             }
-            // TODO: this may not be a good check _here_ (the scripts are limited by size already)
+
             if (n < 0 || n > 20)
             {
                 error = "Invalid number of public keys in multi-sig.";
+                return false;
+            }
+
+            opData.OpCount += (int)n;
+            if (opData.OpCount > Constants.MaxScriptOpCount)
+            {
+                error = "Number of OPs in this script exceeds the allowed number.";
                 return false;
             }
 

@@ -57,6 +57,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         bool IsBip112Enabled { get; }
 
         /// <summary>
+        /// Number of OPs in the script that is being evaluated.
+        /// Must be reset for each script and be updated by 
+        /// <see cref="CheckMultiSigOp"/> and <see cref="CheckMultiSigVerifyOp"/> operations.
+        /// </summary>
+        int OpCount { get; set; }
+
+        /// <summary>
         /// Compares locktime for a <see cref="OP.CheckLocktimeVerify"/> operation.
         /// </summary>
         /// <param name="other">The converted locktime value from the stack</param>

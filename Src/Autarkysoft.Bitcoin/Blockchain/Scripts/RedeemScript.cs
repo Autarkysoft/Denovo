@@ -80,14 +80,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <returns></returns>
         public override int CountSigOps()
         {
-            TryEvaluate(out IOperation[] ops, out _);
+            TryEvaluate(out IOperation[] ops, out _, out _);
             return CountSigOps(ops);
         }
 
         /// <inheritdoc/>
         public RedeemScriptType GetRedeemScriptType()
         {
-            bool b = TryEvaluate(out IOperation[] OperationList, out _);
+            bool b = TryEvaluate(out IOperation[] OperationList, out _, out _);
 
             if (!b)
             {

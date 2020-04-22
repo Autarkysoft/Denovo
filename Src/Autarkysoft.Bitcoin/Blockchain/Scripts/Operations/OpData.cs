@@ -84,6 +84,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// otherwise it can be anything.
         /// </summary>
         public bool IsStrictMultiSigGarbage { get; set; } = true;
+        
+        /// <inheritdoc/>
+        public int OpCount { get; set; }
 
         private readonly EllipticCurveCalculator calc;
 

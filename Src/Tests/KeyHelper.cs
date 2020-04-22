@@ -60,5 +60,28 @@ namespace Tests
         internal static string Pub2BechAddr => "bc1q3a35eq9ya8ykr82g2m55mcq5c5u04k4rvdeav8";
         internal static string Pub2NestedSegwit => "3HuNV2HoYAdUspE7utaXQoTgHvR5Fk33f2";
         internal static string Pub2NestedSegwitHex => "b1d82aac8ec0d0f0841547bdfbce08a80826bc96";
+
+
+
+        internal static PrivateKey Prv3 => new PrivateKey("KwToaM89oezgBF1TNjws2BC6Uo7nt57iWkFeqZQGibLBLgoYy2QT");
+        internal static PublicKey Pub3
+        {
+            get
+            {
+                PublicKey.TryRead(Pub3UnCompBytes, out PublicKey result);
+                return result;
+            }
+        }
+        internal static string Pub3CompHex => "020c347b1b571244a32895604f593bfffc2bad4689488bfaed8048c7a116b13604";
+        internal static string Pub3UnCompHex => "040c347b1b571244a32895604f593bfffc2bad4689488bfaed8048c7a116b13604c604ade728f0824b6ec409f8264a2b6205021f89eefa71a1106d44b06ea92024";
+        internal static byte[] Pub3CompBytes => Helper.HexToBytes(Pub3CompHex);
+        internal static byte[] Pub3UnCompBytes => Helper.HexToBytes(Pub3UnCompHex);
+        internal static byte[] Pub3CompHash => Helper.HexToBytes("65dd8f5cfe404d6919f53de4f9fa91378cfb17c6");
+        internal static byte[] Pub3UnCompHash => Helper.HexToBytes("d3deb65141b9a889f3bf9c451ce18987b017ba56");
+        internal static string Pub3CompAddr => "1AHcfdoEvJodDUMsBFynie9qZbyHbissox";
+        internal static string Pub3UnCompAddr => "1LKGNnoAfau62HpKYbTwQ89c6MHHCBbtVm";
+        internal static string Pub3BechAddr => "bc1qvhwc7h87gpxkjx048hj0n753x7x0k97xue29t8";
+        internal static string Pub3NestedSegwit => "32HGWhsh8oUCReuBs7HHFtNtf7LktbHrjv";
+        internal static string Pub3NestedSegwitHex => "067a522bdae6b12e7a45fa816fd388a2af4744c0";
     }
 }
