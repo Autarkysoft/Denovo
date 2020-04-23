@@ -203,31 +203,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
             }
 
-            PublicKey[] pubs = new PublicKey[n];
-            Signature[] sigs = new Signature[m];
+            byte[][] allPubs = opData.Pop((int)n);
+            byte[][] allSigs = opData.Pop((int)m);
 
-            // TODO: benchmark using PopMulti versus Pop
-            byte[][] allPubs = opData.Pop(pubs.Length);
-            for (int i = 0; i < pubs.Length; i++)
-            {
-                if (!PublicKey.TryRead(allPubs[i], out pubs[i]))
-                {
-                    error = "Invalid public key.";
-                    return false;
-                }
-            }
-            // TODO: same benchmark as above needed
-            byte[][] allSigs = opData.Pop(sigs.Length);
-            for (int i = 0; i < sigs.Length; i++)
-            {
-                if (!Signature.TryRead(allSigs[i], out sigs[i], out string err))
-                {
-                    error = $"Invalid signature ({err}).";
-                    return false;
-                }
-            }
-
-            // Handle bitcoin-core bug (has to pop 1 extra item)
+            // Handle bitcoin-core bug before checking signatures (has to pop 1 extra item)
             byte[] garbage = opData.Pop();
             if (!opData.CheckMultiSigGarbage(garbage))
             {
@@ -236,7 +215,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             error = null;
-            return opData.Verify(sigs, pubs);
+            return opData.Verify(allSigs, allPubs);
         }
     }
 

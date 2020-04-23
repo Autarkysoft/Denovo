@@ -49,30 +49,18 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             return sigVerificationSuccess;
         }
 
-        internal Signature[] expectedSigs;
-        internal PublicKey[] expectedPubkeys;
+        internal byte[][] expectedSigs;
+        internal byte[][] expectedPubkeys;
 
-        public bool Verify(Signature[] sigs, PublicKey[] pubKeys)
+        public bool Verify(byte[][] sigs, byte[][] pubKeys)
         {
             if (expectedSigs is null || expectedPubkeys is null)
             {
                 Assert.True(false, "Expected signature list and/or public key list must be set first.");
             }
 
-            Assert.Equal(expectedSigs.Length, sigs.Length);
-            Assert.Equal(expectedPubkeys.Length, pubKeys.Length);
-
-            for (int i = 0; i < sigs.Length; i++)
-            {
-                Assert.Equal(expectedSigs[i].R, sigs[i].R);
-                Assert.Equal(expectedSigs[i].S, sigs[i].S);
-                Assert.Equal(expectedSigs[i].SigHash, sigs[i].SigHash);
-            }
-
-            for (int i = 0; i < pubKeys.Length; i++)
-            {
-                Assert.Equal(expectedPubkeys[i].ToByteArray(true), pubKeys[i].ToByteArray(true));
-            }
+            Assert.Equal(expectedSigs, sigs);
+            Assert.Equal(expectedPubkeys, pubKeys);
 
             return sigVerificationSuccess;
         }

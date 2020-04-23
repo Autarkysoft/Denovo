@@ -84,7 +84,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// otherwise it can be anything.
         /// </summary>
         public bool IsStrictMultiSigGarbage { get; set; } = true;
-        
+
         /// <inheritdoc/>
         public int OpCount { get; set; }
 
@@ -99,19 +99,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public bool Verify(Signature[] sigs, PublicKey[] pubKeys)
+        public bool Verify(byte[][] sigs, byte[][] pubKeys)
         {
-            Dictionary<SigHashType, byte[]> bytesToSign = new Dictionary<SigHashType, byte[]>(6);
-            foreach (var item in sigs)
-            {
-                if (!bytesToSign.ContainsKey(item.SigHash))
-                {
-                    //bytesToSign.Add(item.SigHash, Tx.SerializeForSigning(prevScript, TxInIndex, item.SigHash));
-                }
-            }
-
-            // TODO: write the loop to check signatures versus pubkeys
-
+            // TODO: implement this
             throw new NotImplementedException();
         }
 

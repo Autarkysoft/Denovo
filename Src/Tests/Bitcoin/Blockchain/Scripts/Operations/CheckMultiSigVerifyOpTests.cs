@@ -36,8 +36,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                         Helper.ShortSig1Bytes, Helper.ShortSig2Bytes
                     }
                 },
-                expectedSigs = new Signature[] { Helper.ShortSig1, Helper.ShortSig2 },
-                expectedPubkeys = new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2, KeyHelper.Pub3 },
+                expectedSigs = new byte[][] { Helper.ShortSig1Bytes, Helper.ShortSig2Bytes },
+                expectedPubkeys = new byte[][] { KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = true,
             };
@@ -67,8 +67,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                         Helper.ShortSig1Bytes, Helper.ShortSig2Bytes
                     }
                 },
-                expectedSigs = new Signature[] { Helper.ShortSig1, Helper.ShortSig2 },
-                expectedPubkeys = new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2, KeyHelper.Pub3 },
+                expectedSigs = new byte[][] { Helper.ShortSig1Bytes, Helper.ShortSig2Bytes },
+                expectedPubkeys = new byte[][] { KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = false,
             };

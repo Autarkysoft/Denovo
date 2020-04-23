@@ -36,7 +36,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="sigs">Array of signatures</param>
         /// <param name="pubKeys">Array of public keys</param>
         /// <returns>True if all verifications succeed, otherwise false.</returns>
-        bool Verify(Signature[] sigs, PublicKey[] pubKeys);
+        bool Verify(byte[][] sigs, byte[][] pubKeys);
 
         /// <summary>
         /// Checks to see if the extra (last) item that a <see cref="OP.CheckMultiSig"/> operation pops is valid
