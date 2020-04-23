@@ -49,6 +49,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
         bool IsBip65Enabled(int height);
 
         /// <summary>
+        /// Returns if BIP-66 is enabled to enforce strict DER encoding for signatures.
+        /// </summary>
+        /// <param name="height">Block height</param>
+        /// <returns>True if BIP-66 is enabled on this height; otherwise false.</returns>
+        bool IsStrictDerSig(int height);
+
+        /// <summary>
         /// Returns if BIP-112 has enabled <see cref="Scripts.OP.CheckSequenceVerify"/> OP code
         /// </summary>
         /// <param name="height">Block height</param>
@@ -56,11 +63,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         bool IsBip112Enabled(int height);
 
         /// <summary>
-        /// Returns if BIP-66 is enabled to enforce strict DER encoding for signatures.
+        /// Returns if BIP-147 has enabled enforcing the dummy stack element that <see cref="Scripts.OP.CheckMultiSig"/> ops pop.
         /// </summary>
         /// <param name="height">Block height</param>
-        /// <returns>True if BIP-66 is enabled on this height; otherwise false.</returns>
-        bool IsStrictDerSig(int height);
+        /// <returns>True if BIP-147 is enabled on this height; otherwise false.</returns>
+        bool IsBip147Enabled(int height);
 
         /// <summary>
         /// Segregated Witness soft fork

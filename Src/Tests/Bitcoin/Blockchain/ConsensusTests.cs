@@ -99,6 +99,18 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(481823, false)]
         [InlineData(481824, true)]
         [InlineData(481825, true)]
+        public void IsBip147EnabledTest(int height, bool expected)
+        {
+            Consensus cs = new Consensus(NetworkType.MainNet);
+            bool actual = cs.IsBip147Enabled(height);
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(1, false)]
+        [InlineData(481823, false)]
+        [InlineData(481824, true)]
+        [InlineData(481825, true)]
         public void IsSegWitEnabledTest(int height, bool expected)
         {
             Consensus cs = new Consensus(NetworkType.MainNet);

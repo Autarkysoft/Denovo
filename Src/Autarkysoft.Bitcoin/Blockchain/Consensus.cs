@@ -110,6 +110,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsBip147Enabled(int height) => height >= seg; // BIP-147 was enabled alongside segwit
+
+        /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSegWitEnabled(int height) => height >= seg;
 
 
