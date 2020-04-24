@@ -255,31 +255,26 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <inheritdoc/>
         public byte[] SerializeForSigning(IOperation[] ops, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig)
         {
+            bool isSingle = sht.IsSingle();
+            if (isSingle && TxOutList.Length <= inputIndex)
+            {
+                byte[] res = new byte[32];
+                res[0] = 1;
+                return res;
+            }
+            bool isNone = sht.IsNone();
+            bool isAnyone = sht.IsAnyoneCanPay();
             // TODO: change this into Sha256 itself with stream methods inside + benchmark
             FastStream stream = new FastStream();
 
-            bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
-            if (anyone)
-            {
-                sht ^= SigHashType.AnyoneCanPay;
-            }
 
-            if (sht == SigHashType.Single)
-            {
-                if (TxOutList.Length <= inputIndex)
-                {
-                    byte[] res = new byte[32];
-                    res[0] = 1;
-                    return res;
-                }
-            }
 
             stream.Write(Version);
 
-            var tinCount = new CompactInt(anyone ? 1 : TxInList.Length);
+            var tinCount = new CompactInt(isAnyone ? 1 : TxInList.Length);
             tinCount.WriteToStream(stream);
 
-            if (anyone)
+            if (isAnyone)
             {
                 TxInList[inputIndex].SerializeForSigning(stream, ops, sig, false);
             }
@@ -287,7 +282,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             {
                 IOperation[] empty = new IOperation[0];
                 // Sequence of other inputs must be set to 0 if the SigHashType is Single or None
-                bool changeSeq = sht != SigHashType.All;
+                bool changeSeq = isSingle || isNone;
                 for (int i = 0; i < TxInList.Length; i++)
                 {
                     if (i != inputIndex)
@@ -301,25 +296,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 }
             }
 
-            // The switch expression does not handle all possible values of its input type (it is not exhaustive).
-#pragma warning disable CS8509 
-            CompactInt toutCount = sht switch
-#pragma warning restore CS8509
-            {
-                SigHashType.All => new CompactInt((ulong)TxOutList.Length),
-                SigHashType.None => new CompactInt(),
-                SigHashType.Single => new CompactInt(inputIndex + 1),
-            };
+            CompactInt toutCount = new CompactInt(isNone ? 0 : isSingle ? inputIndex + 1 : TxOutList.Length);
             toutCount.WriteToStream(stream);
 
-            if (sht == SigHashType.All)
-            {
-                foreach (var tout in TxOutList)
-                {
-                    tout.Serialize(stream);
-                }
-            }
-            else if (sht == SigHashType.Single)
+            if (isSingle)
             {
                 for (int i = 0; i < inputIndex; i++)
                 {
@@ -327,15 +307,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 }
                 TxOutList[inputIndex].Serialize(stream);
             }
+            else if (!isNone)
+            {
+                foreach (var tout in TxOutList)
+                {
+                    tout.Serialize(stream);
+                }
+            }
 
             LockTime.WriteToStream(stream);
 
-            if (anyone)
-            {
-                sht |= SigHashType.AnyoneCanPay;
-            }
-
-            stream.Write((uint)sht);
+            stream.Write((int)sht);
 
             byte[] hash = hashFunc.ComputeHash(stream.ToByteArray());
             return hash;
@@ -347,14 +329,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             // TODO: like above prevOutScript needs to be of type IOperation[] instead of byte[] and we need to handle
             //       its conversion to bytep[] here.
             // TODO: this needs to be optimized by storing hashPrevouts,... to be reused
-            bool anyone = (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
-            if (anyone)
-            {
-                sht ^= SigHashType.AnyoneCanPay;
-            }
+            bool isAnyone = sht.IsAnyoneCanPay();
+            bool isNone = sht.IsNone();
+            bool isSingle = sht.IsSingle();
 
             byte[] hashPrevouts;
-            if (anyone)
+            if (isAnyone)
             {
                 hashPrevouts = new byte[32];
             }
@@ -372,7 +352,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
 
             byte[] hashSequence;
-            if (!anyone && sht == SigHashType.All)
+            if (isSingle || isNone || isAnyone)
+            {
+                hashSequence = new byte[32];
+            }
+            else
             {
                 // Sequences are 4 bytes each
                 FastStream seqStream = new FastStream(TxInList.Length * 4);
@@ -383,13 +367,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
                 hashSequence = hashFunc.ComputeHash(seqStream.ToByteArray());
             }
-            else
-            {
-                hashSequence = new byte[32];
-            }
 
             byte[] hashOutputs;
-            if (sht == SigHashType.All)
+            if (!isSingle && !isNone)
             {
                 // 33 is the approximate size of most TxOuts
                 FastStream outputStream = new FastStream(TxOutList.Length * 33);
@@ -400,7 +380,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
                 hashOutputs = hashFunc.ComputeHash(outputStream.ToByteArray());
             }
-            else if (sht == SigHashType.Single && inputIndex < TxOutList.Length)
+            else if (isSingle && inputIndex < TxOutList.Length)
             {
                 FastStream outputStream = new FastStream(33);
                 TxOutList[inputIndex].Serialize(outputStream);
@@ -410,11 +390,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             else
             {
                 hashOutputs = new byte[32];
-            }
-
-            if (anyone)
-            {
-                sht |= SigHashType.AnyoneCanPay;
             }
 
             // 4(Version) + 32(hashPrevouts) + 32(hashSequence) + 36 (outpoint) + ??(scriptCode.Length) + 8 (amount) +
@@ -430,7 +405,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             finalStream.Write(TxInList[inputIndex].Sequence);
             finalStream.Write(hashOutputs);
             LockTime.WriteToStream(finalStream);
-            finalStream.Write((uint)sht);
+            finalStream.Write((int)sht);
 
             byte[] hashPreimage = hashFunc.ComputeHash(finalStream.ToByteArray());
             return hashPreimage;

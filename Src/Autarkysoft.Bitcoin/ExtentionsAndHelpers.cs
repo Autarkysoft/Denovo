@@ -3,9 +3,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin
 {
@@ -391,5 +393,39 @@ namespace Autarkysoft.Bitcoin
                 }
             }
         }
+    }
+
+
+
+
+
+    /// <summary>
+    /// <see cref="SigHashType"/> extention
+    /// </summary>
+    public static class SigHashTypeExtension
+    {
+        /// <summary>
+        /// Returns if this <see cref="SigHashType"/> has <see cref="SigHashType.AnyoneCanPay"/> bit set.
+        /// </summary>
+        /// <param name="sht"><see cref="SigHashType"/> to check</param>
+        /// <returns>True if the last bit is set</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsAnyoneCanPay(this SigHashType sht) => (sht & SigHashType.AnyoneCanPay) == SigHashType.AnyoneCanPay;
+
+        /// <summary>
+        /// Returns if this <see cref="SigHashType"/> is considered of type <see cref="SigHashType.None"/>.
+        /// </summary>
+        /// <param name="sht"><see cref="SigHashType"/> to check</param>
+        /// <returns>True if the type is <see cref="SigHashType.None"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNone(this SigHashType sht) => ((int)sht & 0b0001_1111) == (int)SigHashType.None;
+
+        /// <summary>
+        /// Returns if this <see cref="SigHashType"/> is considered of type <see cref="SigHashType.Single"/>.
+        /// </summary>
+        /// <param name="sht"><see cref="SigHashType"/> to check</param>
+        /// <returns>True if the type is <see cref="SigHashType.Single"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsSingle(this SigHashType sht) => ((int)sht & 0b0001_1111) == (int)SigHashType.Single;
     }
 }

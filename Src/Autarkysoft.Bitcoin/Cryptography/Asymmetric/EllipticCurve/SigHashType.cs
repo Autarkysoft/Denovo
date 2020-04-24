@@ -7,12 +7,6 @@ using System;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 {
-    // TODO:
-    // SigHashType = 0    c99c49da4c38af669dea436d3e73780dfdb6c1ecf9958baa52960e8baee30e73
-    // https://blockchain.info/rawtx/c99c49da4c38af669dea436d3e73780dfdb6c1ecf9958baa52960e8baee30e73?format=hex
-
-    // TODO: try changing this from a "flag" into a struct or maybe a simple int and also add the bug case for 0
-
     /// <summary>
     /// A single byte added to bitcoin transaction signatures to indicate which parts of the transaction were signed. 
     /// This way the unsigned parts can be modified.
@@ -24,7 +18,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// https://github.com/bitcoin/bitcoin/blob/e5fdda68c6d2313edb74443f0d1e6d2ce2d97f5e/src/script/interpreter.h#L21-L28
     /// </remarks>
     [Flags]
-    public enum SigHashType : byte
+    public enum SigHashType
     {
         /// <summary>
         /// Everything about the transaction is signed
