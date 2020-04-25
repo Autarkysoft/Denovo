@@ -110,10 +110,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <inheritdoc/>
-        public bool IsBip65Enabled { get; }
+        public bool IsBip65Enabled { get; set; }
 
         /// <inheritdoc/>
-        public bool IsBip112Enabled { get; }
+        public bool IsBip112Enabled { get; set; }
+
+        /// <inheritdoc/>
+        public bool IsStrictDerSig { get; set; }
 
         /// <inheritdoc/>
         public bool CompareLocktimes(long other, out string error)

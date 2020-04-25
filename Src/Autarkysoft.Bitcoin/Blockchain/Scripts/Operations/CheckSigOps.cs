@@ -32,10 +32,22 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             byte[][] values = opData.Pop(2);
 
-            if (!Signature.TryRead(values[0], out Signature sig, out error))
+            Signature sig;
+            if (opData.IsStrictDerSig)
             {
-                return false;
+                if (!Signature.TryReadStrict(values[0], out sig, out error))
+                {
+                    return false;
+                }
             }
+            else
+            {
+                if (!Signature.TryReadLoose(values[0], out sig, out error))
+                {
+                    return false;
+                }
+            }
+
 
             if (!PublicKey.TryRead(values[1], out PublicKey pubK))
             {

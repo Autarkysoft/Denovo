@@ -49,12 +49,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <summary>
         /// Returns if BIP-65 has enabled <see cref="OP.CheckLocktimeVerify"/> OP code
         /// </summary>
-        bool IsBip65Enabled { get; }
+        bool IsBip65Enabled { get; set; }
 
         /// <summary>
         /// Returns if BIP-112 has enabled <see cref="OP.CheckSequenceVerify"/> OP code
         /// </summary>
-        bool IsBip112Enabled { get; }
+        bool IsBip112Enabled { get; set; }
+
+        /// <summary>
+        /// Returns if BIP-66 is enabled to enforce strict DER encoding for signatures.
+        /// </summary>
+        bool IsStrictDerSig { get; set; }
 
         /// <summary>
         /// Number of OPs in the script that is being evaluated.

@@ -62,14 +62,108 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
 
         /// <summary>
-        /// Creates a new instance of <see cref="Signature"/> by reading it from a DER encoded byte array.
+        /// Creates a new instance of <see cref="Signature"/> by reading it from a DER encoded byte array with loose rules.
         /// Return value indicates success.
         /// </summary>
         /// <param name="derSig">Signature bytes encoded using DER encoding</param>
         /// <param name="result">Resulting signature (empty in case of failure)</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if successful, otherwise false.</returns>
-        public static bool TryRead(byte[] derSig, out Signature result, out string error)
+        public static bool TryReadLoose(byte[] derSig, out Signature result, out string error)
+        {
+            result = null;
+
+            if (derSig == null)
+            {
+                error = "Byte array can not be null.";
+                return false;
+            }
+
+            // Min = 3006[0201(01)0201(01)]-01
+            if (derSig.Length < 9)
+            {
+                error = "Invalid DER encoding length.";
+                return false;
+            }
+
+            FastStreamReader stream = new FastStreamReader(derSig);
+
+            if (!stream.TryReadByte(out byte seqTag) || seqTag != SequenceTag)
+            {
+                error = "Sequence tag was not found in DER encoded signature.";
+                return false;
+            }
+
+            if (!stream.TryReadDerLength(out int seqLen))
+            {
+                error = "Invalid sequence length.";
+                return false;
+            }
+
+            if (!stream.CheckRemaining(seqLen))
+            {
+                error = "Invalid total length according to sequence length.";
+                return false;
+            }
+
+            if (!stream.TryReadByte(out byte intTag1) || intTag1 != IntegerTag)
+            {
+                error = "First integer tag was not found in DER encoded signature.";
+                return false;
+            }
+
+            if (!stream.TryReadDerLength(out int rLen) || rLen == 0)
+            {
+                error = "Invalid R length.";
+                return false;
+            }
+
+            if (!stream.TryReadByteArray(rLen, out byte[] rBa))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+            if (!stream.TryReadByte(out byte intTag2) || intTag2 != IntegerTag)
+            {
+                error = "Second integer tag was not found in DER encoded signature.";
+                return false;
+            }
+
+            if (!stream.TryReadDerLength(out int sLen) || sLen == 0)
+            {
+                error = "Invalid S length.";
+                return false;
+            }
+
+            if (!stream.TryReadByteArray(rLen, out byte[] sBa))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+
+            result = new Signature()
+            {
+                R = new BigInteger(rBa, false, true),
+                S = new BigInteger(sBa, false, true),
+                SigHash = (SigHashType)derSig[^1]
+            };
+
+            error = null;
+            return true;
+        }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="Signature"/> by reading it from a DER encoded byte array while requiring
+        /// strict encoding according to BIP-66.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="derSig">Signature bytes encoded using DER encoding</param>
+        /// <param name="result">Resulting signature (empty in case of failure)</param>
+        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public static bool TryReadStrict(byte[] derSig, out Signature result, out string error)
         {
             result = null;
 

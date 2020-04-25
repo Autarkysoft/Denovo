@@ -74,8 +74,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        public bool IsStrictDerSig { get; set; } = true;
+
+
         internal bool bip65;
-        public bool IsBip65Enabled => bip65;
+        public bool IsBip65Enabled
+        {
+            get => bip65;
+            set => throw new Exception();
+        }
 
         internal long expectedLocktime;
         internal bool locktimeVerificationSuccess;
@@ -95,7 +102,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
         internal bool bip112;
-        public bool IsBip112Enabled => bip112;
+        public bool IsBip112Enabled
+        {
+            get => bip112;
+            set => throw new Exception();
+        }
 
         internal long expectedSequence;
         internal bool SequenceVerificationSuccess;

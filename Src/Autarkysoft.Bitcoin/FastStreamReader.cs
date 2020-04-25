@@ -374,5 +374,48 @@ namespace Autarkysoft.Bitcoin
                 return false;
             }
         }
+
+
+        /// <summary>
+        /// Reads and returns a DER length. Return value indicates success
+        /// </summary>
+        /// <param name="len">Der length</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
+        public bool TryReadDerLength(out int len)
+        {
+            // DER length: if data.length<128 => 1 byte (the length itself)
+            //             if data.length>=128 => first 7 bits is byte size of length followed by length bytes
+            // https://docs.microsoft.com/en-us/windows/win32/seccertenroll/about-encoded-length-and-value-bytes
+            if (TryReadByte(out byte b))
+            {
+                if (b > 128)
+                {
+                    if (TryReadByteArray(b & 0b0111_1111, out byte[] temp))
+                    {
+                        len = 0;
+                        for (int i = 0, j = (temp.Length - 1) * 8; i < temp.Length; i++, j -= 8)
+                        {
+                            len |= temp[i + 1] << j;
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        len = 0;
+                        return false;
+                    }
+                }
+                else
+                {
+                    len = b;
+                    return true;
+                }
+            }
+            else
+            {
+                len = 0;
+                return false;
+            }
+        }
     }
 }

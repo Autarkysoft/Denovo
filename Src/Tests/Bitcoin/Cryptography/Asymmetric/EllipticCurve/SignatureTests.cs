@@ -71,9 +71,9 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
         [Theory]
         [MemberData(nameof(GetSigCases))]
-        public void TryReadTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
+        public void TryReadStrictTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
         {
-            bool b = Signature.TryRead(data, out Signature sig, out string error);
+            bool b = Signature.TryReadStrict(data, out Signature sig, out string error);
 
             Assert.True(b, error);
             Assert.Null(error);
@@ -188,9 +188,9 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
         [Theory]
         [MemberData(nameof(GetSigFailCases))]
-        public void TryRead_FailTest(byte[] data, string expErr)
+        public void TryReadStrict_FailTest(byte[] data, string expErr)
         {
-            bool b = Signature.TryRead(data, out Signature sig, out string error);
+            bool b = Signature.TryReadStrict(data, out Signature sig, out string error);
 
             Assert.False(b, error);
             Assert.Null(sig);

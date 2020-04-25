@@ -141,7 +141,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private bool VerifySegWit(ITransaction tx, byte[] prevOutScript, int index, ulong amount,
                                   PushDataOp sigPush, PushDataOp pubPush, out string error)
         {
-            if (!Signature.TryRead(sigPush.data, out Signature sig, out error))
+            if (!Signature.TryReadStrict(sigPush.data, out Signature sig, out error))
             {
                 return false;
             }
