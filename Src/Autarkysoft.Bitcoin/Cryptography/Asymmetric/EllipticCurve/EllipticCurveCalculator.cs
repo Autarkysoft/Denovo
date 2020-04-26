@@ -153,12 +153,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 result = new EllipticCurvePoint(x, y);
                 return curve.IsOnCurve(result);
             }
-            else if (bytes.Length == 65 && bytes[0] == 4)
+            else if (bytes.Length == 65 && (bytes[0] == 4 || bytes[0] == 6 || bytes[0] == 7))
             {
                 byte[] xBa = bytes.SubArray(1, 32);
                 byte[] yBa = bytes.SubArray(33, 32);
 
-                result = new EllipticCurvePoint(xBa.ToBigInt(true, true), yBa.ToBigInt(true, true));
+                BigInteger x = xBa.ToBigInt(true, true);
+                BigInteger y = yBa.ToBigInt(true, true);
+
+                // Hybrid form: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.202.2977&rep=rep1&type=pdf
+                if ((bytes[0] == 6 && !y.IsEven) || (bytes[0] == 7 && y.IsEven))
+                {
+                    return false;
+                }
+
+                result = new EllipticCurvePoint(x, y);
                 return curve.IsOnCurve(result);
             }
             else
