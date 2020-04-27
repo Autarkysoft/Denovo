@@ -82,6 +82,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             // Min = 3006[0201(01)0201(01)]-01
             if (derSig.Length < 9)
             {
+                // This also handles the Length == 0 case
                 error = "Invalid DER encoding length.";
                 return false;
             }
@@ -136,7 +137,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 return false;
             }
 
-            if (!stream.TryReadByteArray(rLen, out byte[] sBa))
+            if (!stream.TryReadByteArray(sLen, out byte[] sBa))
             {
                 error = Err.EndOfStream;
                 return false;
@@ -145,8 +146,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
             result = new Signature()
             {
-                R = new BigInteger(rBa, false, true),
-                S = new BigInteger(sBa, false, true),
+                R = new BigInteger(rBa, true, true),
+                S = new BigInteger(sBa, true, true),
                 SigHash = (SigHashType)derSig[^1]
             };
 

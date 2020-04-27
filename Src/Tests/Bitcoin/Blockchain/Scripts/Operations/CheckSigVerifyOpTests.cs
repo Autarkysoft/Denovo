@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using System.Collections.Generic;
 using Xunit;
 
@@ -13,20 +12,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
     public class CheckSigVerifyOpTests
     {
-        private static readonly Signature sig = new Signature(1, 2) { SigHash = SigHashType.All };
-        private static readonly byte[] sigBa = sig.ToByteArray();
-
         [Fact]
         public void Run_CorrectSigTest()
         {
             MockOpData data = new MockOpData(FuncCallName.PopCount)
             {
                 _itemCount = 2,
-                expectedSig = sig,
-                expectedPubkey = Helper.GetPubkeySample(),
-                expectedSigBa = sigBa,
+                expectedSig = Helper.ShortSig1,
+                expectedPubkey = KeyHelper.Pub1,
+                expectedSigBa = Helper.ShortSig1Bytes,
                 sigVerificationSuccess = true,
-                popCountData = new byte[][][] { new byte[][] { sigBa, Helper.GetPubkeySampleBytes(true) } },
+                popCountData = new byte[][][] { new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes } },
             };
 
             OpTestCaseHelper.RunTest<CheckSigVerifyOp>(data, OP.CheckSigVerify);
@@ -38,23 +34,33 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             MockOpData data = new MockOpData(FuncCallName.PopCount)
             {
                 _itemCount = 2,
-                expectedSig = sig,
-                expectedPubkey = Helper.GetPubkeySample(),
-                expectedSigBa = sigBa,
+                expectedSig = Helper.ShortSig1,
+                expectedPubkey = KeyHelper.Pub1,
+                expectedSigBa = Helper.ShortSig1Bytes,
                 sigVerificationSuccess = false,
-                popCountData = new byte[][][] { new byte[][] { sigBa, Helper.GetPubkeySampleBytes(true) } },
+                popCountData = new byte[][][] { new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes } },
             };
 
-            OpTestCaseHelper.RunFailTest<CheckSigVerifyOp>(data, "Invalid signature.");
+            OpTestCaseHelper.RunFailTest<CheckSigVerifyOp>(data, "Signature verification failed.");
         }
 
         public static IEnumerable<object[]> GetErrorCases()
         {
-            yield return new object[] { null, 1, null, Err.OpNotEnoughItems };
+            yield return new object[] { null, 1, false, null, Err.OpNotEnoughItems };
+            yield return new object[] { null, 1, true, null, Err.OpNotEnoughItems };
             yield return new object[]
             {
                 new FuncCallName[] { FuncCallName.PopCount },
                 2,
+                false,
+                new byte[][][] { new byte[][] { new byte[] { 1, 2, 3 }, new byte[0] } },
+                "Signature verification failed."
+            };
+            yield return new object[]
+            {
+                new FuncCallName[] { FuncCallName.PopCount },
+                2,
+                true,
                 new byte[][][] { new byte[][] { new byte[] { 1, 2, 3 }, new byte[0] } },
                 "Invalid DER encoding length."
             };
@@ -62,18 +68,29 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             {
                 new FuncCallName[] { FuncCallName.PopCount },
                 2,
-                new byte[][][] { new byte[][] { sig.ToByteArray(), new byte[] { 1, 2, 3 } } },
-                "Invalid public key format."
+                false,
+                new byte[][][] { new byte[][] { Helper.ShortSig1Bytes, new byte[0] } },
+                "Signature verification failed."
+            };
+            yield return new object[]
+            {
+                new FuncCallName[] { FuncCallName.PopCount },
+                2,
+                true,
+                new byte[][][] { new byte[][] { Helper.ShortSig1Bytes, new byte[0] } },
+                "Signature verification failed."
             };
         }
         [Theory]
         [MemberData(nameof(GetErrorCases))]
-        public void Run_ErrorTest(FuncCallName[] expFuncCalls, int count, byte[][][] expPopData, string expErr)
+        public void Run_ErrorTest(FuncCallName[] expFuncCalls, int count, bool strict, byte[][][] expPopData, string expErr)
         {
+            // Note that MockOpData makes sure IOpData.Verify() is _not_ called in any of these cases
             MockOpData data = new MockOpData(expFuncCalls)
             {
                 _itemCount = count,
-                popCountData = expPopData
+                popCountData = expPopData,
+                IsStrictDerSig = strict
             };
 
             OpTestCaseHelper.RunFailTest<CheckSigVerifyOp>(data, expErr);

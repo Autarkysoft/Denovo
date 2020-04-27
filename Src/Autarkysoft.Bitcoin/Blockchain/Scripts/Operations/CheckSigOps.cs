@@ -42,19 +42,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                if (!Signature.TryReadLoose(values[0], out sig, out error))
+                if (!Signature.TryReadLoose(values[0], out sig, out _))
                 {
+                    error = null;
                     return false;
                 }
             }
 
-
             if (!PublicKey.TryRead(values[1], out PublicKey pubK))
             {
-                error = "Invalid public key format.";
+                error = null;
                 return false;
             }
 
+            error = null;
             return opData.Verify(sig, pubK, values[0]);
         }
     }
@@ -113,7 +114,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
                 else
                 {
-                    error = "Invalid signature.";
+                    error = "Signature verification failed.";
                     return false;
                 }
             }
@@ -134,7 +135,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     {
         /// <summary>
         /// Removes all needed items from the stack as public keys and signatures and calls 
-        /// <see cref="IOpData.Verify(Signature[], PublicKey[])"/>.
+        /// <see cref="IOpData.Verify(byte[][], byte[][])"/>.
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
@@ -286,7 +287,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
                 else
                 {
-                    error = "Invalid signature.";
+                    error = "Signature verification failed.";
                     return false;
                 }
             }

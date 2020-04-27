@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Newtonsoft.Json;
 using System;
 using System.Globalization;
@@ -102,37 +101,13 @@ namespace Tests
         }
 
 
-        /// <summary>
-        /// Returns a sample random public key
-        /// </summary>
-        /// <returns></returns>
-        internal static PublicKey GetPubkeySample()
-        {
-            PublicKey.TryRead(HexToBytes("04abde9fb49901a5b007a0ee79676f07759374f03be85357bda6178d3ee3a2d7add3704f41ca1a3884934cff6cf9c338ea9fdba790a4c615f4def68ef15fb310de"), out PublicKey result);
-            return result;
-        }
-
-
-        /// <summary>
-        /// Returns the byte array representation of the sample public key returned from <see cref="GetPubkeySample"/> method.
-        /// </summary>
-        /// <param name="compressed"></param>
-        /// <returns></returns>
-        internal static byte[] GetPubkeySampleBytes(bool compressed)
-        {
-            return compressed ?
-                HexToBytes("02abde9fb49901a5b007a0ee79676f07759374f03be85357bda6178d3ee3a2d7ad") :
-                HexToBytes("04abde9fb49901a5b007a0ee79676f07759374f03be85357bda6178d3ee3a2d7add3704f41ca1a3884934cff6cf9c338ea9fdba790a4c615f4def68ef15fb310de");
-        }
-
-
         public static readonly Signature ShortSig1 = new Signature(1, 2) { SigHash = SigHashType.All };
         public static readonly string ShortSig1Hex = "300602010102010201";
-        public static readonly byte[] ShortSig1Bytes = Helper.HexToBytes(ShortSig1Hex);
+        public static readonly byte[] ShortSig1Bytes = HexToBytes(ShortSig1Hex);
 
         public static readonly Signature ShortSig2 = new Signature(10, 20) { SigHash = SigHashType.Single };
         public static readonly string ShortSig2Hex = "300602010a02011403";
-        public static readonly byte[] ShortSig2Bytes = Helper.HexToBytes(ShortSig2Hex);
+        public static readonly byte[] ShortSig2Bytes = HexToBytes(ShortSig2Hex);
 
 
         /// <summary>
