@@ -73,7 +73,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 sigVerificationSuccess = false,
             };
 
-            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, "Invalid signature.");
+            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, "Signature verification failed.");
         }
 
         [Fact]
