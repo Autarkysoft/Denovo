@@ -327,7 +327,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Convert_MultiSigTest(IOperation[] ops, byte[][] sigs, byte[] expected)
         {
             ScriptSerializer ser = new ScriptSerializer();
-            byte[] actual = ser.Convert(ops, sigs);
+            byte[] actual = ser.ConvertMulti(ops, sigs);
             Assert.Equal(expected, actual);
         }
 

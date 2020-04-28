@@ -62,7 +62,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="ops">An array of <see cref="IOperation"/>s in the script</param>
         /// <param name="sigs">An array of signatrue to remove</param>
         /// <returns>An array of bytes</returns>
-        public byte[] Convert(IOperation[] ops, byte[][] sigs)
+        public byte[] ConvertMulti(IOperation[] ops, byte[][] sigs)
         {
             int start = FindLastExecutedCodeSeparator(ops);
 
