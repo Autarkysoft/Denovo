@@ -35,8 +35,7 @@ namespace Tests.Bitcoin.Blockchain
         public virtual string GetWitnessTransactionId() => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
-        public byte[] SerializeForSigning(IOperation[] ops, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig)
-            => throw new NotImplementedException();
+        public byte[] SerializeForSigning(byte[] spendScr, int inputIndex, SigHashType sht) => throw new NotImplementedException();
         public byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht)
             => throw new NotImplementedException();
         public virtual byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht)

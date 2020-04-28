@@ -71,11 +71,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         private byte[][] holder;
 
         // TODO: complete the code for signing part + tests
-        private readonly ITransaction Tx;
-        private readonly ITransaction PrvTx;
+        public ITransaction Tx { get; set; }
         public IOperation[] prevScript;
-        private readonly int TxInIndex;
-        private readonly int TxOutIndex;
+        public int TxInIndex { get; set; }
 
 
         /// <summary>
@@ -83,19 +81,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// If true it will enforce the extra item popped by <see cref="OP.CheckMultiSig"/> to be <see cref="OP._0"/>,
         /// otherwise it can be anything.
         /// </summary>
-        public bool IsStrictMultiSigGarbage { get; set; } = true;
+        public bool IsStrictMultiSigGarbage { get; set; }
+
+        public bool ForceLowS { get; set; }
+        public bool ForceStrictPush { get; set; }
 
         /// <inheritdoc/>
         public int OpCount { get; set; }
 
         private readonly EllipticCurveCalculator calc;
+        private readonly ScriptSerializer scriptSer = new ScriptSerializer();
 
 
         /// <inheritdoc/>
         public bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa)
         {
-            byte[] dataToSign = Tx.SerializeForSigning(prevScript, TxInIndex, sig.SigHash, sigBa);
-            return calc.Verify(dataToSign, sig, pubKey);
+            byte[] spendScr = scriptSer.Convert(prevScript, sigBa);
+            byte[] dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
+            return calc.Verify(dataToSign, sig, pubKey, ForceLowS);
         }
 
         /// <inheritdoc/>
@@ -127,7 +130,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            if (Tx.LockTime.IsSameType(other))
+            if (!Tx.LockTime.IsSameType(other))
             {
                 error = "Extracted locktime from script should be the same type as transaction's locktime.";
                 return false;
@@ -182,7 +185,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             LockTime temp = new LockTime(Tx.TxInList[TxInIndex].Sequence & 0b00000000_01000000_11111111_11111111U);
-            if (!temp.IsSameType(other & 0b00000000_01000000_11111111_11111111U))
+            other &= 0b00000000_01000000_11111111_11111111U;
+            if (!temp.IsSameType(other))
             {
                 error = "Extracted sequence from script should be the same type as transaction's sequence as locktime.";
                 return false;

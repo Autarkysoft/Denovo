@@ -43,5 +43,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="stream">Stream to use</param>
         /// <param name="sig">Signature bytes to remove</param>
         void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig);
+
+        /// <summary>
+        /// Writes byte (array) representation of this instance to the given stream for signing operations.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        /// <param name="sigs">Multiple signature bytes to remove (used in <see cref="OP.CheckMultiSig"/> ops)</param>
+        void WriteToStreamForSigning(FastStream stream, byte[][] sigs);
     }
 }

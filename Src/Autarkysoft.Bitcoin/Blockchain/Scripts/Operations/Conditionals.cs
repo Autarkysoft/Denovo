@@ -215,6 +215,84 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream, byte[][] sigs)
+        {
+            int lastExecutedElseCSep = -1;
+            if (elseOps != null)
+            {
+                for (int i = elseOps.Length - 1; i >= 0; i--)
+                {
+                    if (elseOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        lastExecutedElseCSep = i;
+                        break;
+                    }
+                }
+            }
+
+            if (lastExecutedElseCSep >= 0)
+            {
+                WriteElse(stream, lastExecutedElseCSep, sigs);
+            }
+            else
+            {
+                int lastExecutedCSep = -1;
+                for (int i = mainOps.Length - 1; i >= 0; i--)
+                {
+                    if (mainOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        lastExecutedCSep = i;
+                        break;
+                    }
+                }
+
+                if (lastExecutedCSep >= 0)
+                {
+                    WriteMain(stream, lastExecutedCSep, sigs);
+                    if (elseOps != null)
+                    {
+                        stream.Write((byte)OP.ELSE);
+                        WriteElse(stream, 0, sigs);
+                    }
+                }
+                else
+                {
+                    // This branch is when there is either no OP_CodeSeparator or they weren't executed
+                    // (eg. the whole IF/ELSE be in unexecuted branch of another IF/ELSE)
+                    stream.Write((byte)OpValue);
+                    WriteMain(stream, 0, sigs);
+                    if (elseOps != null)
+                    {
+                        stream.Write((byte)OP.ELSE);
+                        WriteElse(stream, 0, sigs);
+                    }
+                }
+            }
+
+            // End with OP_EndIf
+            stream.Write((byte)OP.EndIf);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteMain(FastStream stream, int start, byte[][] sigs)
+        {
+            for (int i = start; i < mainOps.Length; i++)
+            {
+                mainOps[i].WriteToStreamForSigning(stream, sigs);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteElse(FastStream stream, int start, byte[][] sigs)
+        {
+            for (int i = start; i < elseOps.Length; i++)
+            {
+                elseOps[i].WriteToStreamForSigning(stream, sigs);
+            }
+        }
+
+
         /// <summary>
         /// Determines whether the specified object is equal to the current object.
         /// </summary>

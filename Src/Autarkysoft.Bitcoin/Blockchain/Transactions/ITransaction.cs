@@ -4,10 +4,8 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
-using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
-using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
@@ -82,32 +80,28 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
         /// used in signing operations. Return result is the hash result.
         /// </summary>
-        /// <param name="ops">
-        /// An array of <see cref="IOperation"/>s from the executing script that needs to be placed instead of 
-        /// signing input's <see cref="SignatureScript"/> while serializing.
-        /// </param>
+        /// <param name="spendScript">Serialization of the script being spent</param>
         /// <param name="inputIndex">Index of the input being signed</param>
         /// <param name="sht">Signature hash type</param>
-        /// <param name="sig">Signature bytes to remove</param>
         /// <returns>32 byte hash</returns>
-        byte[] SerializeForSigning(IOperation[] ops, int inputIndex, SigHashType sht, ReadOnlySpan<byte> sig);
+        byte[] SerializeForSigning(byte[] spendScript, int inputIndex, SigHashType sht);
 
         /// <summary>
         /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
         /// used in signing operations for SegWit transactions. Return result is the hash result.
         /// </summary>
-        /// <param name="prevOutScript">Script bytes used in signing SegWit outputs (aka scriptCode)</param>
+        /// <param name="spendScript">Script bytes used in signing SegWit outputs (aka scriptCode)</param>
         /// <param name="inputIndex">Index of the input being signed</param>
         /// <param name="amount">The amount in satoshi that is being spent</param>
         /// <param name="sht">Signature hash type</param>
         /// <returns>32 byte hash</returns>
-        byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht);
+        byte[] SerializeForSigningSegWit(byte[] spendScript, int inputIndex, ulong amount, SigHashType sht);
 
         /// <summary>
         /// Returns the hash result that needs to be signed with the private key. 
         /// <para/>This method should only used by wallets to sign predefined (standard) transactions.
         /// For verification of already signed transactions use <see cref="TransactionVerifier"/> which calls
-        /// <see cref="SerializeForSigning(IOperation[], int, SigHashType, ReadOnlySpan{byte})"/> and
+        /// <see cref="SerializeForSigning(byte[], int, SigHashType)"/> and
         /// <see cref="SerializeForSigningSegWit(byte[], int, ulong, SigHashType)"/> methods.
         /// </summary>
         /// <param name="prvTx">The transaction being spent</param>

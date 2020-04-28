@@ -39,11 +39,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <summary>
         /// Writes nothing to stream since <see cref="OP.CodeSeparator"/>s are not included in scripts while signing.
         /// </summary>
-        /// <param name="stream">Stream to use</param>
-        /// <param name="sig"></param>
+        /// <param name="stream">Doesn't write anything to stream</param>
+        /// <param name="sig">Doesn't write anything to stream</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
-        {
-        }
+        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig) { }
+
+        /// <summary>
+        /// Writes nothing to stream since <see cref="OP.CodeSeparator"/>s are not included in scripts while signing.
+        /// </summary>
+        /// <param name="stream">Doesn't write anything to stream</param>
+        /// <param name="sigs">Doesn't write anything to stream</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void WriteToStreamForSigning(FastStream stream, byte[][] sigs) { }
     }
 }

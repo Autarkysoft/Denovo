@@ -110,41 +110,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// This is used for signing where <see cref="SignatureScript"/> needs to be changed for the input being signed.
         /// </summary>
         /// <param name="stream">Stream to use</param>
-        /// <param name="ops">List of operations from the executing script (usually the <see cref="IPubkeyScript"/>)</param>
-        /// <param name="sig">Signature bytes to remove</param>
+        /// <param name="spendScript">Serialization of the script being spent</param>
         /// <param name="setSeqToZero">
         /// Sequences are set to 0 for both <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.None"/>
         /// and <see cref="Cryptography.Asymmetric.EllipticCurve.SigHashType.Single"/> but they are unchanged for others.
         ///</param>
-        public void SerializeForSigning(FastStream stream, IOperation[] ops, ReadOnlySpan<byte> sig, bool setSeqToZero = false)
+        public void SerializeForSigning(FastStream stream, byte[] spendScript, bool setSeqToZero = false)
         {
             stream.Write(TxHash);
             stream.Write(Index);
-
-            int start = 0;
-            for (int i = ops.Length - 1; i >= 0; i--)
-            {
-                if (ops[i] is CodeSeparatorOp cs && cs.IsExecuted)
-                {
-                    start = i;
-                    break;
-                }
-                else if (ops[i] is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
-                {
-                    start = i;
-                    break;
-                }
-            }
-
-            FastStream temp = new FastStream();
-            for (int i = start; i < ops.Length; i++)
-            {
-                ops[i].WriteToStreamForSigning(temp, sig);
-            }
-
-            CompactInt length = new CompactInt(temp.GetSize());
-            length.WriteToStream(stream);
-            stream.Write(temp);
+            stream.WriteWithCompactIntLength(spendScript);
 
             if (setSeqToZero)
             {

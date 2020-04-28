@@ -269,6 +269,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public virtual void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig) => stream.Write((byte)OpValue);
 
+        /// <inheritdoc/>
+        public virtual void WriteToStreamForSigning(FastStream stream, byte[][] sigs) => stream.Write((byte)OpValue);
+
 
         /// <summary>
         /// Determines whether the specified object is equal to the current object.

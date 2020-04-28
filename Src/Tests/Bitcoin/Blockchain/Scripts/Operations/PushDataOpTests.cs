@@ -168,7 +168,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
         public static IEnumerable<object[]> GetRunCases()
         {
-            yield return new object[] { new PushDataOp(0), new byte[0] };
+            yield return new object[] { new PushDataOp(0L), new byte[0] };
             yield return new object[] { new PushDataOp(-1), new byte[] { 0b10000001 } };
             yield return new object[] { new PushDataOp(1), new byte[] { 1 } };
             yield return new object[] { new PushDataOp(2), new byte[] { 2 } };
@@ -434,7 +434,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             return new TheoryData<PushDataOp, byte[], byte[]>()
             {
                 { new PushDataOp(-1), new byte[1] { 0x4f }, new byte[1] { 0x4f } },
-                { new PushDataOp(0), new byte[1] { 0 }, new byte[1] { 0 } },
+                { new PushDataOp(0L), new byte[1] { 0 }, new byte[1] { 0 } },
                 { new PushDataOp(1), new byte[1] { 0x51 }, new byte[1] { 0x51 } },
                 { new PushDataOp(2), new byte[1] { 0x52 }, new byte[1] { 0x52 } },
                 { new PushDataOp(16), new byte[1] { 0x60 }, new byte[1] { 0x60 } },
@@ -464,8 +464,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public static IEnumerable<object[]> GetEqualCases()
         {
             yield return new object[] { new PushDataOp(1), new PushDataOp(1), true };
-            yield return new object[] { new PushDataOp(1), new PushDataOp(0), false };
-            yield return new object[] { new PushDataOp(new byte[] { 1, 2, 3 }), new PushDataOp(0), false };
+            yield return new object[] { new PushDataOp(1), new PushDataOp(0L), false };
+            yield return new object[] { new PushDataOp(new byte[] { 1, 2, 3 }), new PushDataOp(0L), false };
             yield return new object[] { new PushDataOp(new byte[] { 1, 2, 3 }), new PushDataOp(new byte[] { 1, 2, 3 }), true };
             yield return new object[] { new PushDataOp(new byte[] { 1, 4, 3 }), new PushDataOp(new byte[] { 1, 2, 3 }), false };
             yield return new object[] { new PushDataOp(new byte[] { 1, 2 }), new PushDataOp(new byte[] { 1, 2, 3 }), false };

@@ -89,11 +89,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Initializes a new instance of <see cref="PushDataOp"/> using the given integer.
         /// </summary>
         /// <param name="num">Integer value to use</param>
-        public PushDataOp(int num)
+        public PushDataOp(long num)
         {
             if (num >= -1 && num <= 16) // We have OP for these
             {
-                _ = TryConvertToOp(num, out _opVal);
+                _ = TryConvertToOp((int)num, out _opVal);
                 data = null;
             }
             else // There is no OP code, we have to use regular push
@@ -350,6 +350,30 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else if (!sig.SequenceEqual(data))
             {
+                StackInt size = new StackInt(data.Length);
+                size.WriteToStream(stream);
+                stream.Write(data);
+            }
+        }
+
+
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream, byte[][] sigs)
+        {
+            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
+            {
+                stream.Write((byte)OpValue);
+            }
+            else
+            {
+                foreach (ReadOnlySpan<byte> item in sigs)
+                {
+                    if (item.SequenceEqual(data))
+                    {
+                        return;
+                    }
+                }
+
                 StackInt size = new StackInt(data.Length);
                 size.WriteToStream(stream);
                 stream.Write(data);

@@ -146,5 +146,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
         /// <inheritdoc/>
         public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig) => stream.Write(data);
+
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream, byte[][] sigs) => stream.Write(data);
     }
 }

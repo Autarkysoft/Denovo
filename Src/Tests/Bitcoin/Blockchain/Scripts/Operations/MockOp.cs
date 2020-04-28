@@ -46,5 +46,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             throw new System.NotImplementedException();
         }
+
+        public void WriteToStreamForSigning(FastStream stream, byte[][] sigs)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -183,6 +183,13 @@ namespace Autarkysoft.Bitcoin
             position += data.Length;
         }
 
+        public void Write(byte[] data, int startIndex, int count)
+        {
+            CheckAndResize(count);
+            Buffer.BlockCopy(data, startIndex, buffer, position, count);
+            position += count;
+        }
+
         /// <summary>
         /// Writes the given byte array to stream with zero pads to reach the specified length (<paramref name="sizeWithPad"/>).
         /// <para/> eg. Write 1 byte=X with <paramref name="sizeWithPad"/>=1 => writes X
@@ -195,6 +202,26 @@ namespace Autarkysoft.Bitcoin
             CheckAndResize(sizeWithPad);
             Buffer.BlockCopy(data, 0, buffer, position, data.Length);
             position += sizeWithPad;
+        }
+
+        /// <summary>
+        /// Writes the given byte array to stream while adding the data length to the beginning as a <see cref="CompactInt"/>.
+        /// </summary>
+        /// <param name="data">The data to write</param>
+        public void WriteWithCompactIntLength(byte[] data)
+        {
+            if (data.Length <= 252)
+            {
+                Write((byte)data.Length);
+                CheckAndResize(data.Length);
+                Write(data);
+            }
+            else
+            {
+                CompactInt len = new CompactInt(data.Length);
+                len.WriteToStream(this);
+                Write(data);
+            }
         }
 
         /// <summary>
