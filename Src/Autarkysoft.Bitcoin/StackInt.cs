@@ -73,10 +73,11 @@ namespace Autarkysoft.Bitcoin
         /// Return value indicates success.
         /// </summary>
         /// <param name="stream">Stream containing the <see cref="StackInt"/></param>
+        /// <param name="isStrict">Determines if strict rules (shortest encoding possible) should be enforced</param>
         /// <param name="result">The result</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        public static bool TryRead(FastStreamReader stream, out StackInt result, out string error)
+        public static bool TryRead(FastStreamReader stream, bool isStrict, out StackInt result, out string error)
         {
             if (stream is null)
             {
@@ -104,7 +105,7 @@ namespace Autarkysoft.Bitcoin
                     return false;
                 }
 
-                if (val < (byte)OP.PushData1)
+                if (isStrict && val < (byte)OP.PushData1)
                 {
                     error = $"For OP_{OP.PushData1} the data value must be bigger than {(byte)OP.PushData1 - 1}.";
                     result = 0;
@@ -121,7 +122,7 @@ namespace Autarkysoft.Bitcoin
                     return false;
                 }
 
-                if (val <= byte.MaxValue)
+                if (isStrict && val <= byte.MaxValue)
                 {
                     error = $"For OP_{OP.PushData2} the data value must be bigger than {byte.MaxValue}.";
                     result = 0;
@@ -138,7 +139,7 @@ namespace Autarkysoft.Bitcoin
                     return false;
                 }
 
-                if (val <= ushort.MaxValue)
+                if (isStrict && val <= ushort.MaxValue)
                 {
                     error = $"For OP_{OP.PushData4} the data value must be bigger than {ushort.MaxValue}.";
                     result = 0;

@@ -226,7 +226,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                if (!StackInt.TryRead(stream, out StackInt size, out error))
+                if (!StackInt.TryRead(stream, false, out StackInt size, out error))
                 {
                     return false;
                 }

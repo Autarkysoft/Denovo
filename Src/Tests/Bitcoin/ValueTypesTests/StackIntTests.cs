@@ -73,10 +73,10 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
         [Theory]
         [MemberData(nameof(GetReadCases))]
-        public void TryReadTest(byte[] data, int finalPos, uint expected)
+        public void TryRead_StrictTest(byte[] data, int finalPos, uint expected)
         {
             FastStreamReader stream = new FastStreamReader(data);
-            bool b = StackInt.TryRead(stream, out StackInt actual, out string error);
+            bool b = StackInt.TryRead(stream, true, out StackInt actual, out string error);
 
             Assert.True(b);
             Assert.Null(error);
@@ -84,16 +84,50 @@ namespace Tests.Bitcoin.ValueTypesTests
             Helper.ComparePrivateField(actual, "value", expected);
         }
 
+        [Theory]
+        [MemberData(nameof(GetReadCases))]
+        public void TryRead_NotStrictTest(byte[] data, int finalPos, uint expected)
+        {
+            FastStreamReader stream = new FastStreamReader(data);
+            bool b = StackInt.TryRead(stream, false, out StackInt actual, out string error);
+
+            Assert.True(b);
+            Assert.Null(error);
+            Helper.ComparePrivateField(stream, "position", finalPos);
+            Helper.ComparePrivateField(actual, "value", expected);
+        }
+
+        public static IEnumerable<object[]> GetReadNotStrictCases()
+        {
+            yield return new object[] { new byte[] { 76, 0 }, 2, 0 };
+            yield return new object[] { new byte[] { 76, 75 }, 2, 75 };
+            yield return new object[] { new byte[] { 77, 0, 0 }, 3, 0 };
+            yield return new object[] { new byte[] { 77, 76, 0 }, 3, 76 };
+            yield return new object[] { new byte[] { 77, 255, 0 }, 3, 255 };
+            yield return new object[] { new byte[] { 78, 0, 0, 0, 0 }, 5, 0 };
+            yield return new object[] { new byte[] { 78, 76, 0, 0, 0 }, 5, 76 };
+            yield return new object[] { new byte[] { 78, 255, 0, 0, 0 }, 5, 255 };
+            yield return new object[] { new byte[] { 78, 255, 255, 0, 0 }, 5, ushort.MaxValue };
+        }
+        [Theory]
+        [MemberData(nameof(GetReadNotStrictCases))]
+        public void TryRead_NotStrict_SpecialCasesTest(byte[] data, int finalPos, uint expected)
+        {
+            FastStreamReader stream = new FastStreamReader(data);
+            bool b = StackInt.TryRead(stream, false, out StackInt actual, out string error);
+
+            Assert.True(b);
+            Assert.Null(error);
+            Helper.ComparePrivateField(stream, "position", finalPos);
+            Helper.ComparePrivateField(actual, "value", expected);
+        }
 
         public static IEnumerable<object[]> GetReadFailCases()
         {
             yield return new object[] { new byte[] { }, 0, Err.EndOfStream };
             yield return new object[] { new byte[] { 76 }, 1, "OP_PushData1 needs to be followed by at least one byte." };
-            yield return new object[] { new byte[] { 76, 0 }, 2, "For OP_PushData1 the data value must be bigger than 75." };
-            yield return new object[] { new byte[] { 76, 75 }, 2, "For OP_PushData1 the data value must be bigger than 75." };
             yield return new object[] { new byte[] { 77 }, 1, "OP_PushData2 needs to be followed by at least two byte." };
             yield return new object[] { new byte[] { 77, 5 }, 1, "OP_PushData2 needs to be followed by at least two byte." };
-            yield return new object[] { new byte[] { 77, 0, 0 }, 3, "For OP_PushData2 the data value must be bigger than 255." };
             yield return new object[] { new byte[] { 78 }, 1, "OP_PushData4 needs to be followed by at least 4 byte." };
             yield return new object[]
             {
@@ -101,6 +135,27 @@ namespace Tests.Bitcoin.ValueTypesTests
                 1,
                 "OP_PushData4 needs to be followed by at least 4 byte."
             };
+            yield return new object[] { new byte[] { 79, 255, 255 }, 1, "Unknown OP_Push value." };
+            yield return new object[] { new byte[] { 255, 255, 255 }, 1, "Unknown OP_Push value." };
+        }
+        [Theory]
+        [MemberData(nameof(GetReadFailCases))]
+        public void TryRead_FailTest(byte[] data, int finalPos, string expError)
+        {
+            FastStreamReader stream = new FastStreamReader(data);
+            bool b = StackInt.TryRead(stream, false, out StackInt actual, out string error);
+
+            Assert.False(b);
+            Assert.Equal(expError, error);
+            Helper.ComparePrivateField(stream, "position", finalPos);
+            Helper.ComparePrivateField(actual, "value", 0U);
+        }
+
+        public static IEnumerable<object[]> GetReadFailStrictCases()
+        {
+            yield return new object[] { new byte[] { 76, 0 }, 2, "For OP_PushData1 the data value must be bigger than 75." };
+            yield return new object[] { new byte[] { 76, 75 }, 2, "For OP_PushData1 the data value must be bigger than 75." };
+            yield return new object[] { new byte[] { 77, 0, 0 }, 3, "For OP_PushData2 the data value must be bigger than 255." };
             yield return new object[]
             {
                 new byte[] { 78, 0, 0, 0, 0 },
@@ -113,15 +168,13 @@ namespace Tests.Bitcoin.ValueTypesTests
                 5,
                 $"For OP_PushData4 the data value must be bigger than {ushort.MaxValue}."
             };
-            yield return new object[] { new byte[] { 79, 255, 255 }, 1, "Unknown OP_Push value." };
-            yield return new object[] { new byte[] { 255, 255, 255 }, 1, "Unknown OP_Push value." };
         }
         [Theory]
-        [MemberData(nameof(GetReadFailCases))]
-        public void TryRead_FailTest(byte[] data, int finalPos, string expError)
+        [MemberData(nameof(GetReadFailStrictCases))]
+        public void TryRead_FailStrictTest(byte[] data, int finalPos, string expError)
         {
             FastStreamReader stream = new FastStreamReader(data);
-            bool b = StackInt.TryRead(stream, out StackInt actual, out string error);
+            bool b = StackInt.TryRead(stream, true, out StackInt actual, out string error);
 
             Assert.False(b);
             Assert.Equal(expError, error);
@@ -132,7 +185,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void TryRead_Fail_NullStreamTest()
         {
-            bool b = StackInt.TryRead(null, out StackInt actual, out string error);
+            bool b = StackInt.TryRead(null, true, out StackInt actual, out string error);
 
             Assert.False(b);
             Assert.Equal("Stream can not be null.", error);
