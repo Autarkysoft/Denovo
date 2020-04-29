@@ -54,7 +54,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         internal byte[][] expectedSigs;
         internal byte[][] expectedPubkeys;
 
-        public bool Verify(byte[][] sigs, byte[][] pubKeys)
+        public bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out string error)
         {
             if (expectedSigs is null || expectedPubkeys is null)
             {
@@ -64,6 +64,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Equal(expectedSigs, sigs);
             Assert.Equal(expectedPubkeys, pubKeys);
 
+            error = null;
             return sigVerificationSuccess;
         }
 

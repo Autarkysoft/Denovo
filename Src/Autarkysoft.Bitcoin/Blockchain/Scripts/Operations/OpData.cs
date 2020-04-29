@@ -102,10 +102,47 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public bool Verify(byte[][] sigs, byte[][] pubKeys)
+        public bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out string error)
         {
-            // TODO: implement this
-            throw new NotImplementedException();
+            byte[] spendScr = scriptSer.ConvertMulti(prevScript, sigs);
+            int sigIndex = sigs.Length - 1;
+            int pubIndex = pubKeys.Length - 1;
+
+            while (m > 0 && sigIndex >= 0 && pubIndex >= 0 && m <= pubIndex + 1)
+            {
+                Signature sig;
+                if (IsStrictDerSig)
+                {
+                    if (!Signature.TryReadStrict(sigs[sigIndex], out sig, out error))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!Signature.TryReadLoose(sigs[sigIndex], out sig, out _))
+                    {
+                        sigIndex--;
+                        pubIndex--;
+                        continue;
+                    }
+                }
+
+                if (!PublicKey.TryRead(pubKeys[pubIndex--], out PublicKey pubK))
+                {
+                    continue;
+                }
+
+                byte[] dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
+                if (calc.Verify(dataToSign, sig, pubK, ForceLowS))
+                {
+                    sigIndex--;
+                    m--;
+                }
+            }
+
+            error = null;
+            return m == 0;
         }
 
         /// <inheritdoc/>

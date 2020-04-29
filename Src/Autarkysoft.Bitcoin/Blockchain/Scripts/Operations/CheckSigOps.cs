@@ -135,7 +135,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     {
         /// <summary>
         /// Removes all needed items from the stack as public keys and signatures and calls 
-        /// <see cref="IOpData.Verify(byte[][], byte[][])"/>.
+        /// <see cref="IOpData.Verify(byte[][], byte[][], int, out string)"/>.
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
@@ -227,8 +227,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            error = null;
-            return opData.Verify(allSigs, allPubs);
+            if (m == 0)
+            {
+                error = null;
+                return true;
+            }
+
+            return opData.Verify(allSigs, allPubs, (int)m, out error);
         }
     }
 
