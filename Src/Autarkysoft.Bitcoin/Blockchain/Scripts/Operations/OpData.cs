@@ -7,7 +7,6 @@ using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System;
-using System.Collections.Generic;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -72,8 +71,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
         // TODO: complete the code for signing part + tests
         public ITransaction Tx { get; set; }
-        public IOperation[] prevScript;
+        public IOperation[] ExecutingScript { get; set; }
         public int TxInIndex { get; set; }
+        public ulong AmountBeingSpent { get; set; }
+        public bool IsSegWit { get; set; }
 
 
         /// <summary>
@@ -96,15 +97,34 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa)
         {
-            byte[] spendScr = scriptSer.Convert(prevScript, sigBa);
-            byte[] dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
+            byte[] spendScr, dataToSign;
+            if (IsSegWit)
+            {
+                spendScr = scriptSer.ConvertWitness(ExecutingScript);
+                dataToSign = Tx.SerializeForSigningSegWit(spendScr, TxInIndex, AmountBeingSpent, sig.SigHash);
+            }
+            else
+            {
+                spendScr = scriptSer.Convert(ExecutingScript, sigBa);
+                dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
+            }
+
             return calc.Verify(dataToSign, sig, pubKey, ForceLowS);
         }
 
         /// <inheritdoc/>
         public bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out string error)
         {
-            byte[] spendScr = scriptSer.ConvertMulti(prevScript, sigs);
+            byte[] spendScr;
+            if (IsSegWit)
+            {
+                spendScr = scriptSer.ConvertWitness(ExecutingScript);
+            }
+            else
+            {
+                spendScr = scriptSer.ConvertMulti(ExecutingScript, sigs);
+            }
+
             int sigIndex = sigs.Length - 1;
             int pubIndex = pubKeys.Length - 1;
 
@@ -133,7 +153,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     continue;
                 }
 
-                byte[] dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
+                byte[] dataToSign;
+                if (IsSegWit)
+                {
+                    dataToSign = Tx.SerializeForSigningSegWit(spendScr, TxInIndex, AmountBeingSpent, sig.SigHash);
+                }
+                else
+                {
+                    dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
+                }
+
                 if (calc.Verify(dataToSign, sig, pubK, ForceLowS))
                 {
                     sigIndex--;

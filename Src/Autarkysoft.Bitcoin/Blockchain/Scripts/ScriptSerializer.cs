@@ -76,7 +76,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <summary>
-        /// Converts the given P2WPKH script operation to the byte array used in serialization for signing.
+        /// Converts the given P2WPKH script operations to the byte array used in serialization for signing.
         /// <para/>Note: Will not validate (assumes the validation is done by the caller)
         /// <para/>Note: does not include result length
         /// </summary>
@@ -96,6 +96,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             result[^1] = (byte)OP.CheckSig;
 
             return result;
+        }
+
+        /// <summary>
+        /// Converts the given witness script operations to the byte array used in serialization for signing.
+        /// </summary>
+        /// <param name="ops">Arra of <see cref="IOperation"/>s inside the script to be converted</param>
+        /// <returns>An array of bytes</returns>
+        public byte[] ConvertWitness(IOperation[] ops)
+        {
+            FastStream stream = new FastStream();
+            int start = FindLastExecutedCodeSeparator(ops);
+            for (int i = start; i < ops.Length; i++)
+            {
+                ops[i].WriteToStreamForSigningSegWit(stream);
+            }
+
+            return stream.ToByteArray();
         }
     }
 }

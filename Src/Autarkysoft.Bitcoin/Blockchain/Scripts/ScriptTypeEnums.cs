@@ -71,7 +71,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// "Pay to witness script hash" public script type
         /// </summary>
-        P2WSH
+        P2WSH,
+        /// <summary>
+        /// Witness but with an unknown version (currently anything above zero)
+        /// </summary>
+        UnknownWitness
     }
 
     /// <summary>
@@ -108,7 +112,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         P2WSH,
     }
-    
+
     /// <summary>
     /// Defined script types in <see cref="IRedeemScript"/>s
     /// </summary>

@@ -87,6 +87,57 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <summary>
+        /// Returns number of <see cref="OP.CheckSig"/>, <see cref="OP.CheckSigVerify"/>, <see cref="OP.CheckMultiSig"/>
+        /// and <see cref="OP.CheckMultiSigVerify"/> operations in this instance without a full script evaluation.
+        /// </summary>
+        /// <returns>Number of "SigOps"</returns>
+        public int CountSigOps()
+        {
+            int res = 0;
+            for (int i = 0; i < mainOps.Length; i++)
+            {
+                if (mainOps[i] is CheckSigOp || mainOps[i] is CheckSigVerifyOp)
+                {
+                    res++;
+                }
+                else if (mainOps[i] is CheckMultiSigOp || mainOps[i] is CheckMultiSigVerifyOp)
+                {
+                    if (i > 0 && mainOps[i - 1] is PushDataOp push && (push.OpValue >= OP._1 && push.OpValue <= OP._16))
+                    {
+                        res += (int)push.OpValue - 0x50;
+                    }
+                    else
+                    {
+                        res += 20;
+                    }
+                }
+            }
+            if (elseOps != null)
+            {
+                for (int i = 0; i < elseOps.Length; i++)
+                {
+                    if (elseOps[i] is CheckSigOp || elseOps[i] is CheckSigVerifyOp)
+                    {
+                        res++;
+                    }
+                    else if (elseOps[i] is CheckMultiSigOp || elseOps[i] is CheckMultiSigVerifyOp)
+                    {
+                        if (i > 0 && elseOps[i - 1] is PushDataOp push && (push.OpValue >= OP._1 && push.OpValue <= OP._16))
+                        {
+                            res += (int)push.OpValue - 0x50;
+                        }
+                        else
+                        {
+                            res += 20;
+                        }
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
         /// Returns if there is any executed <see cref="OP.CodeSeparator"/> operations among the operation lists.
         /// </summary>
         /// <returns>True if there were any executed <see cref="OP.CodeSeparator"/>s, otherwise false.</returns>
@@ -290,6 +341,81 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 elseOps[i].WriteToStreamForSigning(stream, sigs);
             }
+        }
+
+
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigningSegWit(FastStream stream)
+        {
+            int lastExecutedElseCSep = -1;
+            if (elseOps != null)
+            {
+                for (int i = elseOps.Length - 1; i >= 0; i--)
+                {
+                    if (elseOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        lastExecutedElseCSep = i;
+                        break;
+                    }
+                }
+            }
+
+            if (lastExecutedElseCSep >= 0)
+            {
+                for (int i = lastExecutedElseCSep; i < elseOps.Length; i++)
+                {
+                    elseOps[i].WriteToStreamForSigningSegWit(stream);
+                }
+            }
+            else
+            {
+                int lastExecutedCSep = -1;
+                for (int i = mainOps.Length - 1; i >= 0; i--)
+                {
+                    if (mainOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        lastExecutedCSep = i;
+                        break;
+                    }
+                }
+
+                if (lastExecutedCSep >= 0)
+                {
+                    for (int i = lastExecutedCSep; i < mainOps.Length; i++)
+                    {
+                        mainOps[i].WriteToStreamForSigningSegWit(stream);
+                    }
+                    if (elseOps != null)
+                    {
+                        stream.Write((byte)OP.ELSE);
+                        for (int i = 0; i < elseOps.Length; i++)
+                        {
+                            elseOps[i].WriteToStreamForSigningSegWit(stream);
+                        }
+                    }
+                }
+                else
+                {
+                    // This branch is when there is either no OP_CodeSeparator or they weren't executed
+                    // (eg. the whole IF/ELSE be in unexecuted branch of another IF/ELSE)
+                    stream.Write((byte)OpValue);
+                    for (int i = 0; i < mainOps.Length; i++)
+                    {
+                        mainOps[i].WriteToStreamForSigningSegWit(stream);
+                    }
+                    if (elseOps != null)
+                    {
+                        stream.Write((byte)OP.ELSE);
+                        for (int i = 0; i < elseOps.Length; i++)
+                        {
+                            elseOps[i].WriteToStreamForSigningSegWit(stream);
+                        }
+                    }
+                }
+            }
+
+            // End with OP_EndIf
+            stream.Write((byte)OP.EndIf);
         }
 
 

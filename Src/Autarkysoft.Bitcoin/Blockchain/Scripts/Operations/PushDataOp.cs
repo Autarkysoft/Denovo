@@ -381,6 +381,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigningSegWit(FastStream stream) => WriteToWitnessStream(stream);
+
+
         /// <summary>
         /// Determines whether the specified object is equal to the current object.
         /// </summary>

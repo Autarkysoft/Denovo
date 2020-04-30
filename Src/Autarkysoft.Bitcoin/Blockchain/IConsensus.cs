@@ -75,10 +75,5 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="height">Block height</param>
         /// <returns>True if SegWit is enabled on this height; otherwise false.</returns>
         bool IsSegWitEnabled(int height);
-
-
-
-
-        bool IsStrictNumberPush(int height);
     }
 }

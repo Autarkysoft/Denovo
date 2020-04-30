@@ -14,5 +14,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
     {
         public IUtxo Find(TxIn tin);
         void MarkSpent(TxIn[] txInList);
+        ulong MarkSpentAndGetFee(TxIn[] txInList);
     }
 }

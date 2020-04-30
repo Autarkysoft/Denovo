@@ -32,7 +32,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="result">An array of <see cref="IOperation"/>s</param>
         /// <param name="opCount">
         /// Number of OPs in this script (needs to be updated after executing 
-        /// <see cref="OP.CheckMultiSig"/> or <see cref="OP.CheckMultiSigVerify"/> operations based on number of pubkeys.
+        /// <see cref="OP.CheckMultiSig"/> or <see cref="OP.CheckMultiSigVerify"/> operations based on number of pubkeys).
+        /// <para/>Has to also check if count is under allowed number
         /// </param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if evaluation was successful, false if otherwise.</returns>

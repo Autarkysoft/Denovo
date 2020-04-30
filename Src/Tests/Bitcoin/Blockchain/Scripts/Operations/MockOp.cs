@@ -37,19 +37,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             }
         }
 
-        public void WriteToStream(FastStream stream)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void WriteToStreamForSigning(FastStream stream, byte[][] sigs)
-        {
-            throw new NotImplementedException();
-        }
+        public void WriteToStream(FastStream stream) => throw new NotImplementedException();
+        public void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig) => throw new NotImplementedException();
+        public void WriteToStreamForSigning(FastStream stream, byte[][] sigs) => throw new NotImplementedException();
+        public void WriteToStreamForSigningSegWit(FastStream stream) => throw new NotImplementedException();
     }
 }

@@ -51,5 +51,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="sigs">Doesn't write anything to stream</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override void WriteToStreamForSigning(FastStream stream, byte[][] sigs) { }
+
+        /// <summary>
+        /// Writes <see cref="OP.CodeSeparator"/> to stream only if it was not executed.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        public override void WriteToStreamForSigningSegWit(FastStream stream)
+        {
+            if (!IsExecuted)
+            {
+                stream.Write((byte)OpValue);
+            }
+        }
     }
 }

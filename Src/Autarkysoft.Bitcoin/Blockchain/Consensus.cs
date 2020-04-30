@@ -115,15 +115,5 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSegWitEnabled(int height) => height >= seg;
-
-
-
-        /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsStrictNumberPush(int height)
-        {
-            // TODO: research about this and implement
-            throw new NotImplementedException();
-        }
     }
 }

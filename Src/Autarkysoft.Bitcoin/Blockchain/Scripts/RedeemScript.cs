@@ -68,6 +68,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         res += 20;
                     }
                 }
+                else if (ops[i] is IfElseOpsBase conditional)
+                {
+                    res += conditional.CountSigOps();
+                }
             }
             return res;
         }

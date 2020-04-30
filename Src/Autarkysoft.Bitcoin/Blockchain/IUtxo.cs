@@ -12,7 +12,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public bool IsMempoolSpent { get; set; }
         public bool IsBlockSpent { get; set; }
 
-        public int Index { get; set; }
+        public uint Index { get; set; }
         public ulong Amount { get; set; }
         public PubkeyScript PubScript { get; set; }
     }

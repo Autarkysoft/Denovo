@@ -41,11 +41,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
             mempool = memoryPool;
             this.consensus = consensus;
             calc = new EllipticCurveCalculator();
+            scrSer = new ScriptSerializer();
         }
 
 
         private readonly bool isMempool;
         private readonly EllipticCurveCalculator calc;
+        private readonly ScriptSerializer scrSer;
         private readonly IUtxoDatabase utxoDb;
         private readonly IMemoryPool mempool;
         private readonly IConsensus consensus;
@@ -57,6 +59,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public int TotalSigOpCount { get; set; }
         /// <inheritdoc/>
         public ulong TotalFee { get; set; }
+
+        public bool ForceLowS { get; set; }
+        public bool ForceStrictPush { get; set; }
 
         /// <inheritdoc/>
         public bool VerifyCoinbasePrimary(ITransaction transaction, out string error)
@@ -138,35 +143,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
-        private bool VerifySegWit(ITransaction tx, byte[] prevOutScript, int index, ulong amount,
-                                  PushDataOp sigPush, PushDataOp pubPush, out string error)
-        {
-            if (!Signature.TryReadStrict(sigPush.data, out Signature sig, out error))
-            {
-                return false;
-            }
-            if (!PublicKey.TryRead(pubPush.data, out PublicKey pub))
-            {
-                error = "Invalid public key.";
-                return false;
-            }
-
-            byte[] dataToSign = tx.SerializeForSigningSegWit(prevOutScript, index, amount, sig.SigHash);
-            return calc.Verify(dataToSign, sig, pub);
-        }
-
         /// <inheritdoc/>
         public bool Verify(ITransaction tx, out string error)
         {
-            // TODO: 2 things currently missing (will be fixed while adding tests):
-            //       1) amounts need to be checked and total fee should be set at the end
-            //       2) SegWit script evaluation needs to be fixed.
-
-            // If a tx is already in memory pool it must have been verified and be valid
+            // If a tx is already in memory pool it must have been verified and be valid.
+            // The SigOpCount property must be set by the caller (mempool dependency).
             if (mempool.Contains(tx))
             {
                 TotalSigOpCount += tx.SigOpCount;
-                utxoDb.MarkSpent(tx.TxInList);
+                TotalFee += utxoDb.MarkSpentAndGetFee(tx.TxInList);
                 error = null;
                 return true;
             }
@@ -177,16 +162,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
+            ulong toSpend = 0;
+
             for (int i = 0; i < tx.TxInList.Length; i++)
             {
-                TxIn item = tx.TxInList[i];
-                IUtxo prevOutput = utxoDb.Find(item);
+                TxIn currentInput = tx.TxInList[i];
+                IUtxo prevOutput = utxoDb.Find(currentInput);
                 if (prevOutput is null)
                 {
                     // TODO: add a ToString() method to TxIn?
-                    error = $"Input {item.TxHash.ToBase16()}:{item.Index} was not found.";
+                    error = $"Input {currentInput.TxHash.ToBase16()}:{currentInput.Index} was not found.";
                     return false;
                 }
+                toSpend += prevOutput.Amount;
 
                 if (!prevOutput.PubScript.TryEvaluate(out IOperation[] pubOps, out int pubOpCount, out error))
                 {
@@ -196,7 +184,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     return false;
                 }
 
-                if (!item.SigScript.TryEvaluate(out IOperation[] sigOps, out int sigOpCount, out error))
+                if (!currentInput.SigScript.TryEvaluate(out IOperation[] signatureOps, out int signatureOpCount, out error))
                 {
                     error = $"Invalid transaction signature script." +
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -204,15 +192,54 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     return false;
                 }
 
-                OpData stack = new OpData();
+                OpData stack = new OpData()
+                {
+                    Tx = tx,
+                    TxInIndex = i,
 
+                    ForceLowS = ForceLowS,
+                    ForceStrictPush = ForceStrictPush,
+
+                    IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
+                    IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
+                    IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
+                    IsStrictMultiSigGarbage = consensus.IsBip147Enabled(BlockHeight),
+                };
+
+                // TODO: add Is*Enabled bool to below GetSpecialType() method
                 PubkeyScriptSpecialType pubType = prevOutput.PubScript.GetSpecialType();
+                if (pubType == PubkeyScriptSpecialType.P2SH && !consensus.IsBip16Enabled(BlockHeight))
+                {
+                    pubType = PubkeyScriptSpecialType.None;
+                }
+                else if ((pubType == PubkeyScriptSpecialType.P2WPKH || pubType == PubkeyScriptSpecialType.P2WSH)
+                         && !consensus.IsSegWitEnabled(BlockHeight))
+                {
+                    pubType = PubkeyScriptSpecialType.None;
+                }
+                else if (pubOps.Length == 2 && pubOps[0] is PushDataOp p1 && (p1.OpValue >= OP._1 && p1.OpValue <= OP._16) &&
+                         pubOps[1] is PushDataOp)
+                {
+                    pubType = PubkeyScriptSpecialType.UnknownWitness;
+                }
+
                 if (pubType == PubkeyScriptSpecialType.None)
                 {
-                    // TODO: check witness of this item at its corresponding indes is empty
-                    stack.prevScript = sigOps;
-                    stack.OpCount = sigOpCount;
-                    foreach (var op in sigOps)
+                    TotalSigOpCount += prevOutput.PubScript.CountSigOps() + currentInput.SigScript.CountSigOps();
+
+                    if ((tx.WitnessList != null && tx.WitnessList.Length != 0) &&
+                        (tx.WitnessList[i].Items.Length != 0))
+                    {
+                        error = $"Unexpected witness." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                $"{Environment.NewLine}More info: {error}";
+                        return false;
+                    }
+
+                    // Note that checking OP count is below max is done during Evaluate() and op.Run()
+                    stack.ExecutingScript = signatureOps;
+                    stack.OpCount = signatureOpCount;
+                    foreach (var op in signatureOps)
                     {
                         if (!op.Run(stack, out error))
                         {
@@ -223,7 +250,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
                     }
 
-                    stack.prevScript = pubOps;
+                    stack.ExecutingScript = pubOps;
                     stack.OpCount = pubOpCount;
                     foreach (var op in pubOps)
                     {
@@ -238,21 +265,26 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2SH)
                 {
-                    if (sigOps.Length > 0 && sigOps[^1] is PushDataOp pushRedeem)
+                    if (signatureOps.Length == 0 || !(signatureOps[^1] is PushDataOp rdmPush))
                     {
-                        RedeemScript redeem = new RedeemScript(pushRedeem.data);
+                        error = "Redeem script was not found.";
+                        return false;
+                    }
+                    else
+                    {
+                        RedeemScript redeem = new RedeemScript(rdmPush.data);
                         RedeemScriptSpecialType rdmType = redeem.GetSpecialType();
                         if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
                         {
-                            error = $"Script evaluation failed." +
+                            error = $"Script evaluation failed (invalid redeem script)." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                     $"{Environment.NewLine}More info: {error}";
                             return false;
                         }
 
-                        stack.prevScript = sigOps;
-                        stack.OpCount = sigOpCount;
-                        foreach (var op in sigOps)
+                        stack.ExecutingScript = signatureOps;
+                        stack.OpCount = signatureOpCount;
+                        foreach (var op in signatureOps)
                         {
                             if (!op.Run(stack, out error))
                             {
@@ -263,7 +295,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             }
                         }
 
-                        stack.prevScript = pubOps;
+                        stack.ExecutingScript = pubOps;
                         stack.OpCount = pubOpCount;
                         foreach (var op in pubOps)
                         {
@@ -276,10 +308,27 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             }
                         }
 
+                        if (!new VerifyOp().Run(stack, out _))
+                        {
+                            error = $"Script evaluation failed (top stack item is false: redeem script hash is not the same)." +
+                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
+                            return false;
+                        }
+
                         if (rdmType == RedeemScriptSpecialType.None)
                         {
-                            // TODO: check witness of this item at its corresponding indes is empty
-                            stack.prevScript = redeemOps;
+                            if ((tx.WitnessList != null && tx.WitnessList.Length != 0) &&
+                                (tx.WitnessList[i].Items.Length != 0))
+                            {
+                                error = $"Unexpected witness." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+
+                            TotalSigOpCount += redeem.CountSigOps(redeemOps);
+
+                            stack.ExecutingScript = redeemOps;
                             stack.OpCount = redeemOpCount;
                             foreach (var op in redeemOps)
                             {
@@ -302,24 +351,114 @@ namespace Autarkysoft.Bitcoin.Blockchain
                                 return false;
                             }
 
-                            byte[] temp = new byte[26];
-                            temp[0] = 25;
-                            temp[1] = (byte)OP.DUP;
-                            temp[2] = (byte)OP.HASH160;
-                            // Copy both push_size+hash from prev script
-                            Buffer.BlockCopy(pushRedeem.data, 1, temp, 3, 21);
-                            temp[^2] = (byte)OP.EqualVerify;
-                            temp[^1] = (byte)OP.CheckSig;
+                            TotalSigOpCount++;
 
-                            return VerifySegWit(tx, temp, i, prevOutput.Amount,
-                                                tx.WitnessList[i].Items[0], tx.WitnessList[i].Items[1], out error);
+                            if (!Signature.TryReadStrict(tx.WitnessList[i].Items[0].data, out Signature sig, out error))
+                            {
+                                error = $"Invalid signature encoding." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+                            if (!PublicKey.TryRead(tx.WitnessList[i].Items[1].data, out PublicKey pub))
+                            {
+                                stack.Push(new byte[0]);
+                            }
+                            else
+                            {
+                                // Push pubkey
+                                tx.WitnessList[i].Items[1].Run(stack, out _);
+                                // Replace it with HASH160
+                                new Hash160Op().Run(stack, out _);
+                                // Push expected hash
+                                redeemOps[1].Run(stack, out _);
+                                // Check equality
+                                if (!new EqualVerifyOp().Run(stack, out error))
+                                {
+                                    error = $"Script evaluation failed." +
+                                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                            $"{Environment.NewLine}More info: {error}";
+                                    return false;
+                                }
+
+                                byte[] spendScr = scrSer.ConvertP2wpkh(redeemOps);
+                                byte[] dataToSign = tx.SerializeForSigningSegWit(spendScr, i, prevOutput.Amount, sig.SigHash);
+                                bool b = calc.Verify(dataToSign, sig, pub, ForceLowS);
+                                stack.Push(b ? new byte[] { 1 } : new byte[0]);
+                            }
                         }
-                    }
-                    else
-                    {
-                        // TODO: this should be changed!
-                        error = "Redeem script was not found.";
-                        return false;
+                        else if (rdmType == RedeemScriptSpecialType.P2SH_P2WSH)
+                        {
+                            if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length < 1)
+                            {
+                                error = $"Mandatory witness is not found." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+
+                            RedeemScript witRdm = new RedeemScript(tx.WitnessList[i].Items[^1].data);
+                            if (!witRdm.TryEvaluate(out IOperation[] witRdmOps, out int witRdmOpCount, out error))
+                            {
+                                error = $"Script evaluation failed." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+
+                            TotalSigOpCount += witRdm.CountSigOps(witRdmOps);
+
+                            foreach (var op in tx.WitnessList[i].Items)
+                            {
+                                if (!op.Run(stack, out error))
+                                {
+                                    error = $"Script evaluation failed." +
+                                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                            $"{Environment.NewLine}More info: {error}";
+                                    return false;
+                                }
+                            }
+
+                            if (!new Sha256Op().Run(stack, out error))
+                            {
+                                error = $"Script evaluation failed." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+
+                            if (!redeemOps[^1].Run(stack, out error))
+                            {
+                                error = $"Script evaluation failed." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+
+                            if (!new EqualVerifyOp().Run(stack, out error))
+                            {
+                                error = $"Script evaluation failed." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+
+                            stack.AmountBeingSpent = prevOutput.Amount;
+                            stack.IsSegWit = true;
+                            stack.OpCount = witRdmOpCount;
+                            stack.ExecutingScript = witRdmOps;
+
+                            foreach (var op in witRdmOps)
+                            {
+                                if (!op.Run(stack, out error))
+                                {
+                                    error = $"Script evaluation failed." +
+                                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                            $"{Environment.NewLine}More info: {error}";
+                                    return false;
+                                }
+                            }
+                        }
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2WPKH)
@@ -332,17 +471,41 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
-                    byte[] temp = new byte[26];
-                    temp[0] = 25;
-                    temp[1] = (byte)OP.DUP;
-                    temp[2] = (byte)OP.HASH160;
-                    // Copy both push_size+hash from prev script
-                    Buffer.BlockCopy(prevOutput.PubScript.Data, 1, temp, 3, 21);
-                    temp[^2] = (byte)OP.EqualVerify;
-                    temp[^1] = (byte)OP.CheckSig;
+                    TotalSigOpCount++;
 
-                    return VerifySegWit(tx, temp, i, prevOutput.Amount,
-                                        tx.WitnessList[i].Items[0], tx.WitnessList[i].Items[1], out error);
+                    if (!Signature.TryReadStrict(tx.WitnessList[i].Items[0].data, out Signature sig, out error))
+                    {
+                        error = $"Invalid signature encoding." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                $"{Environment.NewLine}More info: {error}";
+                        return false;
+                    }
+                    if (!PublicKey.TryRead(tx.WitnessList[i].Items[1].data, out PublicKey pub))
+                    {
+                        stack.Push(new byte[0]);
+                    }
+                    else
+                    {
+                        // Push pubkey
+                        tx.WitnessList[i].Items[1].Run(stack, out _);
+                        // Replace it with HASH160
+                        new Hash160Op().Run(stack, out _);
+                        // Push expected hash
+                        pubOps[1].Run(stack, out _);
+                        // Check equality
+                        if (!new EqualVerifyOp().Run(stack, out error))
+                        {
+                            error = $"Script evaluation failed." +
+                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                    $"{Environment.NewLine}More info: {error}";
+                            return false;
+                        }
+
+                        byte[] spendScr = scrSer.ConvertP2wpkh(pubOps);
+                        byte[] dataToSign = tx.SerializeForSigningSegWit(spendScr, i, prevOutput.Amount, sig.SigHash);
+                        bool b = calc.Verify(dataToSign, sig, pub, ForceLowS);
+                        stack.Push(b ? new byte[] { 1 } : new byte[0]);
+                    }
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2WSH)
                 {
@@ -363,6 +526,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
+                    TotalSigOpCount += redeem.CountSigOps(redeemOps);
+
                     foreach (var op in tx.WitnessList[i].Items)
                     {
                         if (!op.Run(stack, out error))
@@ -382,7 +547,27 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
-                    // TODO: CheckSigOps need to change
+                    if (!pubOps[^1].Run(stack, out error))
+                    {
+                        error = $"Script evaluation failed." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                $"{Environment.NewLine}More info: {error}";
+                        return false;
+                    }
+
+                    if (!new EqualVerifyOp().Run(stack, out error))
+                    {
+                        error = $"Script evaluation failed." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                $"{Environment.NewLine}More info: {error}";
+                        return false;
+                    }
+
+                    stack.AmountBeingSpent = prevOutput.Amount;
+                    stack.IsSegWit = true;
+                    stack.OpCount = redeemOpCount;
+                    stack.ExecutingScript = redeemOps;
+
                     foreach (var op in redeemOps)
                     {
                         if (!op.Run(stack, out error))
@@ -394,11 +579,18 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
                     }
                 }
+                else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
+                {
+                    foreach (var op in pubOps)
+                    {
+                        op.Run(stack, out _);
+                    }
+                    // VerifyOp will make sure top stack item is not "False"
+                }
                 else
                 {
                     throw new ArgumentException("Pubkey special script type is not defined.");
                 }
-
 
 
                 if (stack.ItemCount == 0)
@@ -407,7 +599,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
                     return false;
                 }
-                else if (new VerifyOp().Run(stack, out _))
+                else if (!new VerifyOp().Run(stack, out _))
                 {
                     error = $"Script evaluation failed (top stack item is false)." +
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
@@ -422,14 +614,23 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     prevOutput.IsBlockSpent = true;
                 }
-
             }
 
+            ulong spent = 0;
+            foreach (var tout in tx.TxOutList)
+            {
+                spent += tout.Amount;
+            }
+            ulong fee = toSpend - spent;
+            if (fee < 0)
+            {
+                error = "Transaction is spending more than it can.";
+                return false;
+            }
+            TotalFee += fee;
 
             error = null;
             return true;
         }
-
-
     }
 }
