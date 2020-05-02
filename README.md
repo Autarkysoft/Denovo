@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/Autarkysoft/Denovo.svg?branch=master)](https://travis-ci.org/Autarkysoft/Denovo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Autarkysoft/Denovo/blob/master/License)
+[![NuGet](https://img.shields.io/nuget/v/Autarkysoft.Bitcoin.svg)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
 
 <p align="center"><b>The Revolution Will Not Be Centralized</b></p>
 
@@ -14,10 +15,20 @@ for more information).
 # Bitcoin.Net
 The backbone of Denovo, Bitcoin.net is a stand alone bitcoin library written completely in C# and from scratch (no code translating)
 with no dependencies. 
-It is released as a different project so that it could be used by any other third party projects.
-* Current version is `0.0.0.0` (check the [versioning convention](https://github.com/Autarkysoft/Conventions/blob/master/Versioning.md)
-for more information).
-* Development is almost finished (getting ready to release first beta version `0.1.0.0`)
+It is released as a different project so that it could be used by any other third party projects.  
+Current version is `0.1.0.0` (check the [versioning convention](https://github.com/Autarkysoft/Conventions/blob/master/Versioning.md)
+for more information). This is first release of the library. The implementation is covering almost the entire bitcoin protocol,
+there may be some missing parts or some bugs.  
+Please report any problems that you encounter or any feedback that you may have.    
+
+### Bitcoin.Net can be downloaded from Nuget:  
+Using Package manager in Visual Studio:  
+
+    Install-Package Autarkysoft.Bitcoin
+    
+Using .Net CLI:  
+
+    dotnet add package Autarkysoft.Bitcoin
 
 ### Current Features
 * Full xml documentation of the code explaining what each member does, expections that may be thrown, examples if needed,...
@@ -33,13 +44,23 @@ for more information).
   * RFC-6979: Optimized. Also an extra entropy is added so that signer can grind to find low R values to a fixed length (<32).
 * Implementation of improvement proposals, consensus related BIPs are part of the library and optional bips (eg. BIP-32)
 are in separate classes. Currently:
-  * BIPs: 16, 65, 66, 68, 112, 141, 143, 144, 173
-  * BIP-14
-  * BIP-21
-  * BIP-32
-  * BIP-39
-  * BIP-178
-  * BIP-340
+  * BIPs: [16](https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki "Pay to Script Hash"), 
+  [34](https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki "Block v2, Height in Coinbase"), 
+  [65](https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki "OP_CheckLocktimeVerify"), 
+  [66](https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki "Strict DER signatures"), 
+  [68](https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki "Relative lock-time using consensus-enforced sequence numbers"), 
+  [112](https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki "OP_CheckSequenceVerify"), 
+  [141](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki "Segregated Witness (Consensus layer)"), 
+  [143](https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki "Transaction Signature Verification for Version 0 Witness Program"), 
+  [144](https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki "Segregated Witness (Peer Services)"), 
+  [147](https://github.com/bitcoin/bips/blob/master/bip-0147.mediawiki "Dealing with dummy stack element malleability"), 
+  [173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki "Base32 address format for native v0-16 witness outputs")
+  * [BIP-14](https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki "Protocol Version and User Agent")
+  * [BIP-21](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki "URI Scheme")
+  * [BIP-32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets")
+  * [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys")
+  * [BIP-178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF")
+  * [BIP-340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
 
 ### Future plans
 * Optimization of the libray
