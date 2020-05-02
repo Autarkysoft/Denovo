@@ -2,17 +2,22 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyVersion>0.0.0.0</AssemblyVersion>
-    <FileVersion>0.0.0.0</FileVersion>
-    <Version>0.0.0</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <Version>0.1.0</Version>
     <Authors>Coding-Enthusiast</Authors>
     <Company>Autarkysoft</Company>
-    <Description>Bitcoin library</Description>
+    <Description>The unique implementation of Bitcoin protocol in C#</Description>
     <Copyright>Copyright (c) 2020 Autarkysoft</Copyright>
-    <PackageProjectUrl>https://github.com/Autarkysoft/Denovo</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Autarkysoft/Denovo/tree/master/Src/Autarkysoft.Bitcoin</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Autarkysoft/Denovo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>bitcoin</PackageTags>
+    <PackageIcon>PackageIcon.png</PackageIcon>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -26,6 +31,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\PackageIcon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
     <None Remove="ImprovementProposals\BIP0039WordLists\ChineseSimplified.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\ChineseTraditional.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\English.txt" />
