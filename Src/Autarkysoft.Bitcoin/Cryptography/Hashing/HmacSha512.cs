@@ -45,7 +45,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <inheritdoc/>
         public int OutputSize => 64;
 
-        // these pads are supposed to be used as working vector of SHA256 hence the size=80
+        // these pads are supposed to be used as working vector of SHA512 hence the size=80
         private ulong[] opad = new ulong[80];
         private ulong[] ipad = new ulong[80];
         private byte[] _keyValue;
@@ -206,9 +206,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 }
 
                 // Now based on key, the pads are set. 
-                // We use pad fields as working vectors for SHA256 hash which also contain the data and act as blocks.
+                // We use pad fields as working vectors for SHA512 hash which also contain the data and act as blocks.
 
-                // Final result is SHA512(outer_pad | SHA256(inner_pad | data))
+                // Final result is SHA512(outer_pad | SHA512(inner_pad | data))
 
                 // 1. Compute SHA512(inner_pad | data)
                 hashFunc.Init(hPt);
@@ -247,7 +247,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         public unsafe byte[] ComputeHash(byte[] data)
         {
             if (disposedValue)
-                throw new ObjectDisposedException($"{nameof(HmacSha256)} instance was disposed.");
+                throw new ObjectDisposedException($"{nameof(HmacSha512)} instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
             if (_keyValue == null)
@@ -258,14 +258,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             fixed (ulong* oPt = &opad[0], iPt = &ipad[0])
             fixed (ulong* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
-                // Final result is SHA512(outer_pad | SHA256(inner_pad | data))
+                // Final result is SHA512(outer_pad | SHA512(inner_pad | data))
 
                 // 1. Compute SHA512(inner_pad | data)
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, iPt);
                 hashFunc.DoHash(data, data.Length + 128); // len + hashFunc.BlockByteSize
 
-                // 2. Compute SHA256(outer_pad | hash)
+                // 2. Compute SHA512(outer_pad | hash)
                 Buffer.BlockCopy(hashFunc.hashState, 0, hashFunc.w, 0, 64); // 64 bytes is upto index 7
                 wPt[8] = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000UL; // 1 followed by 0 bits: pad1
                 wPt[9] = 0;
