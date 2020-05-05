@@ -32,7 +32,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
             if (hmac is null)
                 throw new ArgumentNullException(nameof(hmac), "HMAC function can not be null.");
 
-
             this.iteration = iteration;
             hmacFunc = hmac;
         }
@@ -60,14 +59,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
         public unsafe byte[] GetBytes(byte[] password, byte[] salt, int dkLen)
         {
             if (isDisposed)
-                throw new ObjectDisposedException($"{nameof(PBKDF2)} instance was disposed");
+                throw new ObjectDisposedException(nameof(PBKDF2), "Instance was disposed.");
             if (password is null)
                 throw new ArgumentNullException(nameof(password), "Password can not be null.");
             if (salt is null)
                 throw new ArgumentNullException(nameof(salt), "Salt can not be null.");
             // Fail if dkLen > (2^32 - 1) * hLen is skipped since dkLen is already limited by size of int
             if (dkLen <= 0)
-                throw new ArgumentOutOfRangeException(nameof(dkLen), "Derived key length can not be negative or zero!");
+                throw new ArgumentOutOfRangeException(nameof(dkLen), "Derived key length must be bigger than zero.");
 
 
             hmacFunc.Key = password;
@@ -157,8 +156,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
 
 
 
-
-
         private bool isDisposed = false;
 
         /// <summary>
@@ -181,7 +178,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
                 isDisposed = true;
             }
         }
-
 
         /// <summary>
         /// Releases all resources used by the current instance of the <see cref="PBKDF2"/> class.
