@@ -7,6 +7,7 @@ namespace Tests.Bitcoin
 {
     public class Err
     {
+        public const string InvalidNetwork = "Given network type is not valid.";
         public const string EndOfStream = "Reached end of stream.";
         public const string OpNotEnoughItems = "Not enough items left in the stack.";
         public const string OpStackItemOverflow = "Stack item count limit exceeded.";

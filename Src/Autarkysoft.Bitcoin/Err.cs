@@ -7,6 +7,7 @@ namespace Autarkysoft.Bitcoin
 {
     internal struct Err
     {
+        internal const string InvalidNetwork = "Given network type is not valid.";
         internal const string EndOfStream = "Reached end of stream.";
         internal const string OpNotEnoughItems = "Not enough items left in the stack.";
         internal const string OpStackItemOverflow = "Stack item count limit exceeded.";

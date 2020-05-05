@@ -136,6 +136,7 @@ namespace Tests.Bitcoin.Encoders
         [InlineData("abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw", 255, "abcdef", "Invalid data format.")]
         [InlineData("bc1zw508d6qejxtdg4y5r3zarvaryvqyzf3du", 255, "bc", "Invalid data format.")]
         [InlineData("tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pjxtptv", 255, "tb", "Invalid data format.")]
+        [InlineData("tb1qr", 255, ".", "Input is not a valid bech32 encoded string.")] // Short data
         public void Decode_ExceptionTests(string bech, byte expWitVer, string expHrp, string expErr)
         {
             byte actWitVer = 255;

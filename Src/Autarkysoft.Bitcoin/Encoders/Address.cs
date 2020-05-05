@@ -33,6 +33,92 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
+        /// Address type, there are currently 4 defined types
+        /// </summary>
+        public enum AddressType
+        {
+            /// <summary>
+            /// Unknown or invalid address
+            /// </summary>
+            Unknown,
+            /// <summary>
+            /// Pay to public key hash
+            /// </summary>
+            P2PKH,
+            /// <summary>
+            /// Pay to script hash
+            /// </summary>
+            P2SH,
+            /// <summary>
+            /// Pay to witness public key hash
+            /// </summary>
+            P2WPKH,
+            /// <summary>
+            /// Pay to witness script hash
+            /// </summary>
+            P2WSH
+        }
+
+        /// <summary>
+        /// Returns the type of the given address
+        /// </summary>
+        /// <param name="address">Address string to check</param>
+        /// <param name="netType">Network type</param>
+        /// <returns>Address type</returns>
+        public AddressType GetAddressType(string address, NetworkType netType)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return AddressType.Unknown;
+            }
+            else if (b58Encoder.IsValid(address))
+            {
+                byte[] decoded = b58Encoder.DecodeWithCheckSum(address);
+                if (decoded.Length == 21)
+                {
+                    if ((netType == NetworkType.MainNet && decoded[0] == P2pkhVerMainNet) ||
+                        (netType == NetworkType.TestNet && decoded[0] == P2pkhVerTestNet) ||
+                        (netType == NetworkType.RegTest && decoded[0] == P2pkhVerRegTest))
+                    {
+                        return AddressType.P2PKH;
+                    }
+                    else if ((netType == NetworkType.MainNet && decoded[0] == P2shVerMainNet) ||
+                             (netType == NetworkType.TestNet && decoded[0] == P2shVerTestNet) ||
+                             (netType == NetworkType.RegTest && decoded[0] == P2shVerRegTest))
+                    {
+                        return AddressType.P2SH;
+                    }
+                }
+            }
+            else if (b32Encoder.IsValid(address))
+            {
+                byte[] decoded = b32Encoder.Decode(address, out byte witVer, out string hrp);
+                if (witVer == 0)
+                {
+                    if (decoded.Length == 20 && (
+                        (netType == NetworkType.MainNet && hrp == HrpMainNet) ||
+                        (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                        (netType == NetworkType.RegTest && hrp == HrpRegTest)
+                        ))
+                    {
+                        return AddressType.P2WPKH;
+                    }
+                    else if (decoded.Length == 32 && (
+                             (netType == NetworkType.MainNet && hrp == HrpMainNet) ||
+                             (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                             (netType == NetworkType.RegTest && hrp == HrpRegTest)
+                             ))
+                    {
+                        return AddressType.P2WSH;
+                    }
+                }
+            }
+
+            return AddressType.Unknown;
+        }
+
+
+        /// <summary>
         /// Return the pay to public key hash address from the given <see cref="PublicKey"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -54,7 +140,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                 NetworkType.MainNet => P2pkhVerMainNet,
                 NetworkType.TestNet => P2pkhVerTestNet,
                 NetworkType.RegTest => P2pkhVerRegTest,
-                _ => throw new ArgumentException("Given network type is not defined.")
+                _ => throw new ArgumentException(Err.InvalidNetwork)
             };
 
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
@@ -82,13 +168,15 @@ namespace Autarkysoft.Bitcoin.Encoders
         {
             if (pubk is null)
                 throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
+            if (witVer != 0)
+                throw new ArgumentException("Currently only address version 0 is defined for P2WPKH.", nameof(witVer));
 
             string hrp = netType switch
             {
                 NetworkType.MainNet => HrpMainNet,
                 NetworkType.TestNet => HrpTestNet,
                 NetworkType.RegTest => HrpRegTest,
-                _ => throw new ArgumentException($"Given network type is not defined."),
+                _ => throw new ArgumentException(Err.InvalidNetwork),
             };
 
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
@@ -153,8 +241,8 @@ namespace Autarkysoft.Bitcoin.Encoders
                         return false;
                     }
                     decoded = b32Encoder.Decode(address, out byte witVer, out string hrp);
-                    if (witVer != 0 && decoded.Length != 20 &&
-                        hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest)
+                    if (witVer != 0 || decoded.Length != 20 ||
+                        (hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest))
                     {
                         return false;
                     }
@@ -167,8 +255,8 @@ namespace Autarkysoft.Bitcoin.Encoders
                         return false;
                     }
                     decoded = b32Encoder.Decode(address, out witVer, out hrp);
-                    if (witVer != 0 && decoded.Length != 32 &&
-                        hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest)
+                    if (witVer != 0 || decoded.Length != 32 ||
+                        (hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest))
                     {
                         return false;
                     }
