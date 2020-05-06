@@ -84,7 +84,7 @@ namespace Tests.Bitcoin.Cryptography.KeyDerivationFunctions
         [MemberData(nameof(GetSCryptCases))]
         public void ScryptTest(byte[] password, byte[] salt, byte[] expectedDK, int n, int r, int p, int dkLen)
         {
-            Scrypt sc = new Scrypt(n, r, p);
+            using Scrypt sc = new Scrypt(n, r, p);
             byte[] actual = sc.GetBytes(password, salt, dkLen);
             Assert.Equal(expectedDK, actual);
         }
