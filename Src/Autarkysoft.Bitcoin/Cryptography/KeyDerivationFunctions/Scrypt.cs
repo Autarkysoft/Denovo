@@ -29,9 +29,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
             if (costParam <= 1 || (costParam & (costParam - 1)) != 0)
                 throw new ArgumentException("Cost parameter must be a multiple of 2^n and bigger than 1.", nameof(costParam));
             if (blockSizeFactor <= 0)
-                throw new ArgumentOutOfRangeException(nameof(blockSizeFactor), "Blocksize factor can not be negative.");
+                throw new ArgumentOutOfRangeException(nameof(blockSizeFactor), "Blocksize factor must be bigger than 0.");
             if (parallelization <= 0)
-                throw new ArgumentOutOfRangeException(nameof(parallelization), "Parallelization factor can not be negative.");
+                throw new ArgumentOutOfRangeException(nameof(parallelization), "Parallelization factor must be bigger than 0.");
             //TODO: check OutOfMemory possibility (since scrypt is used internally for BIPs it is not important for now)
 
             n = costParam;
@@ -70,6 +70,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
         /// <summary>
         /// Returns the pseudo-random key based on given password and salt.
         /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <exception cref="ObjectDisposedException"/>
         /// <param name="password">Password</param>
         /// <param name="salt">Salt</param>
         /// <param name="dkLen">Length of the returned derived key</param>
@@ -82,7 +85,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
                 throw new ArgumentNullException(nameof(password), "Password can not be null.");
             if (salt is null)
                 throw new ArgumentNullException(nameof(salt), "Salt can not be null.");
-
+            if (dkLen <= 0)
+                throw new ArgumentOutOfRangeException(nameof(dkLen), "Derived key length must be bigger than zero.");
 
             byte[] dk = kdf.GetBytes(password, salt, p * 128 * r);
 
@@ -236,7 +240,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
             {
                 first[i] ^= second[i];
             }
-
         }
 
         private unsafe void Salsa20_8(uint* block)
@@ -305,11 +308,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint R(uint a, int b)
-        {
-            return unchecked((a << b) | (a >> (32 - b)));
-        }
+        private uint R(uint a, int b) => unchecked((a << b) | (a >> (32 - b)));
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe void Copy64(uint* src, uint* dst)
         {
             for (int i = 0; i < 16; i += 2)
@@ -359,6 +360,5 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
         {
             Dispose(true);
         }
-
     }
 }
