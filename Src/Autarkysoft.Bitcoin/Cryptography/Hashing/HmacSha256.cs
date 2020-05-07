@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
-using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
@@ -112,18 +111,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void InitPads(uint* i, uint* o)
-        {
-            for (int j = 0; j < 16; j++)
-            {
-                i[j] = 0x36363636;
-                o[j] = 0x5c5c5c5c;
-            }
-        }
-
-
-
         /// <summary>
         /// Computes the hash value for the specified byte array.
         /// </summary>
@@ -152,19 +139,17 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
                     for (int i = 0; i < 8; i++) // 8 items in HashState = 8*4 = 32 byte
                     {
-                        iPt[i] = 0x36363636 ^ hPt[i];
-                        oPt[i] = 0x5c5c5c5c ^ hPt[i];
+                        iPt[i] = 0x36363636U ^ hPt[i];
+                        oPt[i] = 0x5c5c5c5cU ^ hPt[i];
                     }
                     for (int i = 8; i < 16; i++)
                     {
-                        iPt[i] = 0x36363636;
-                        oPt[i] = 0x5c5c5c5c;
+                        iPt[i] = 0x36363636U;
+                        oPt[i] = 0x5c5c5c5cU;
                     }
                 }
                 else
                 {
-                    InitPads(iPt, oPt);
-
                     byte[] temp = new byte[hashFunc.BlockByteSize];
                     Buffer.BlockCopy(key, 0, temp, 0, key.Length);
                     int kIndex = 0;
@@ -173,8 +158,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                         for (int i = 0; i < 16; i++, kIndex += 4)
                         {
                             uint val = (uint)((tPt[kIndex] << 24) | (tPt[kIndex + 1] << 16) | (tPt[kIndex + 2] << 8) | tPt[kIndex + 3]);
-                            iPt[i] ^= val;
-                            oPt[i] ^= val;
+                            iPt[i] = 0x36363636U ^ val;
+                            oPt[i] = 0x5c5c5c5cU ^ val;
                         }
                     }
                 }
@@ -190,7 +175,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 hashFunc.DoHash(data, data.Length + 64); // len + hashFunc.BlockByteSize
 
                 // 2. Compute SHA256(outer_pad | hash)
-                Buffer.BlockCopy(hashFunc.hashState, 0, hashFunc.w, 0, 32); // 32 byte is upto index 7
+                Buffer.MemoryCopy(hPt, wPt, 256, 32);
+                // Copied 32 byte is upto index 7
                 wPt[8] = 0b10000000_00000000_00000000_00000000U; // 1 followed by 0 bits to fill pad1
                 wPt[9] = 0;
                 wPt[10] = 0;

@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
-using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
@@ -129,18 +128,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void InitPads(ulong* i, ulong* o)
-        {
-            for (int j = 0; j < 16; j++)
-            {
-                i[j] = 0x3636363636363636U;
-                o[j] = 0x5c5c5c5c5c5c5c5cU;
-            }
-        }
-
-
-
         /// <summary>
         /// Computes the hash value for the specified byte array.
         /// </summary>
@@ -180,8 +167,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 }
                 else
                 {
-                    InitPads(iPt, oPt);
-
                     byte[] temp = new byte[hashFunc.BlockByteSize];
                     Buffer.BlockCopy(key, 0, temp, 0, key.Length);
                     int kIndex = 0;
@@ -199,8 +184,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                                 ((ulong)tPt[kIndex + 6] << 8) |
                                 tPt[kIndex + 7];
 
-                            iPt[i] ^= val;
-                            oPt[i] ^= val;
+                            iPt[i] = 0x3636363636363636U ^ val;
+                            oPt[i] = 0x5c5c5c5c5c5c5c5cU ^ val;
                         }
                     }
                 }
