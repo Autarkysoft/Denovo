@@ -26,12 +26,25 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// </summary>
         /// <param name="r">R value</param>
         /// <param name="s">S value</param>
-        /// <param name="v">Recovery ID</param>
+        /// <param name="v">[Default value = 0] Recovery ID, an optional byte created during signing process</param>
         public Signature(BigInteger r, BigInteger s, byte v = 0)
         {
             R = r;
             S = s;
             RecoveryId = v;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Signature"/> using the given parameters.
+        /// </summary>
+        /// <param name="r">R value</param>
+        /// <param name="s">S value</param>
+        /// <param name="sigHash">Signature hash type</param>
+        public Signature(BigInteger r, BigInteger s, SigHashType sigHash)
+        {
+            R = r;
+            S = s;
+            SigHash = sigHash;
         }
 
 
@@ -66,7 +79,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// Return value indicates success.
         /// </summary>
         /// <param name="derSig">Signature bytes encoded using DER encoding</param>
-        /// <param name="result">Resulting signature (empty in case of failure)</param>
+        /// <param name="result">Resulting signature (null in case of failure)</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if successful, otherwise false.</returns>
         public static bool TryReadLoose(byte[] derSig, out Signature result, out string error)
@@ -101,7 +114,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 return false;
             }
 
-            if (!stream.CheckRemaining(seqLen))
+            if (seqLen < 6 || !stream.CheckRemaining(seqLen + 1)) // +1 is the SigHash byte (at least 1 byte)
             {
                 error = "Invalid total length according to sequence length.";
                 return false;
@@ -143,6 +156,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 return false;
             }
 
+            // Make sure _at least_ one byte remains to be read
+            if (!stream.CheckRemaining(1))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
 
             result = new Signature()
             {
@@ -161,7 +180,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// Return value indicates success.
         /// </summary>
         /// <param name="derSig">Signature bytes encoded using DER encoding</param>
-        /// <param name="result">Resulting signature (empty in case of failure)</param>
+        /// <param name="result">Resulting signature (null in case of failure)</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if successful, otherwise false.</returns>
         public static bool TryReadStrict(byte[] derSig, out Signature result, out string error)
@@ -242,7 +261,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 return false;
             }
 
-            // +7 is 2 for seq+len, 2 for r_int+len, 2 for s_int+len, 1 for SigHash
+            // +7 is 2 for seqTag+len, 2 for r_intTag+len, 2 for s_intTag+len, 1 for SigHash
             if (rLen + sLen + 7 != derSig.Length)
             {
                 error = "Invalid data length according to second integer length.";
@@ -282,7 +301,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// used by Schnorr signatures. Return value indicates success.
         /// </summary>
         /// <param name="data">Signature bytes containing the signature</param>
-        /// <param name="result">Resulting signature (empty in case of failure)</param>
+        /// <param name="result">Resulting signature (null in case of failure)</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if successful, otherwise false.</returns>
         public static bool TryReadSchnorr(byte[] data, out Signature result, out string error)
@@ -314,10 +333,45 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             return true;
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Signature"/> by reading it from a fixed length byte array encoding
+        /// used by signatures with a recovery ID as their first byte. Return value indicates success.
+        /// </summary>
+        /// <param name="data">Signature bytes containing the signature</param>
+        /// <param name="result">Resulting signature (null in case of failure)</param>
+        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public static bool TryReadWithRecId(byte[] data, out Signature result, out string error)
+        {
+            if (data == null || data.Length == 0)
+            {
+                result = null;
+                error = "Byte array can not be null or empty.";
+                return false;
+            }
+
+            if (data.Length != 65)
+            {
+                result = null;
+                error = "Signatures with recovery ID must be fixed 65 bytes.";
+                return false;
+            }
+
+            result = new Signature()
+            {
+                R = new BigInteger(((ReadOnlySpan<byte>)data).Slice(1, 32), true, true),
+                S = new BigInteger(((ReadOnlySpan<byte>)data).Slice(33, 32), true, true),
+                RecoveryId = data[0]
+            };
+
+            error = null;
+            return true;
+        }
+
 
         /// <summary>
         /// Converts this instance to its byte array representation using DER encoding with the specified
-        /// <see cref="SigHashType"/> and returns the result.
+        /// <see cref="SigHashType"/> added to the end, and returns the result.
         /// </summary>
         /// <returns>A DER encoded signature bytes with <see cref="SigHashType"/></returns>
         public byte[] ToByteArray()
@@ -328,20 +382,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
 
         /// <summary>
-        /// Converts this instance to its byte array representation with the specified <see cref="SigHashType"/>
-        /// using a fixed length encoding used in Schnorr signatures and returns the result.
-        /// </summary>
-        /// <returns>A DER encoded signature bytes with <see cref="SigHashType"/></returns>
-        public byte[] ToByteArraySchnorr()
-        {
-            FastStream stream = new FastStream();
-            WriteToStreamSchnorr(stream);
-            return stream.ToByteArray();
-        }
-
-        /// <summary>
         /// Converts this instance to its byte array representation using DER encoding with the specified
-        /// <see cref="SigHashType"/> and writes the result to the given <see cref="FastStream"/>.
+        /// <see cref="SigHashType"/> added to the end and writes the result to the given <see cref="FastStream"/>.
         /// </summary>
         /// <param name="stream">Stream to use</param>
         public void WriteToStream(FastStream stream)
@@ -360,9 +402,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             stream.Write((byte)SigHash);
         }
 
+
         /// <summary>
         /// Converts this instance to its byte array representation with the specified <see cref="SigHashType"/>
-        /// using a fixed length encoding used in Schnorr signatures and writes the result to the given 
+        /// added to the end using a fixed length encoding used in Schnorr signatures and returns the result.
+        /// </summary>
+        /// <returns>A DER encoded signature bytes with <see cref="SigHashType"/></returns>
+        public byte[] ToByteArraySchnorr()
+        {
+            FastStream stream = new FastStream();
+            WriteToStreamSchnorr(stream);
+            return stream.ToByteArray();
+        }
+
+        /// <summary>
+        /// Converts this instance to its byte array representation with the specified <see cref="SigHashType"/>
+        /// added to the end using a fixed length encoding used in Schnorr signatures and writes the result to the given 
         /// <see cref="FastStream"/>.
         /// </summary>
         /// <param name="stream">Stream to use</param>
@@ -376,15 +431,43 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             stream.Write((byte)SigHash);
         }
 
+
         /// <summary>
-        /// Converts this instance to a fixed length (65) byte array with a starting recovery ID and
-        /// writes the result to the given <see cref="FastStream"/>.
+        /// Converts this instance to a fixed length (65) byte array with a starting recovery ID (without changing the 
+        /// already set value). This is useful when reporting message signatures and the result is usually encoded 
+        /// using Base-64 encoding.
+        /// </summary>
+        /// <returns>A fixed length encoded signature with a recovery ID</returns>
+        public byte[] ToByteArrayWithRecId()
+        {
+            FastStream stream = new FastStream();
+            WriteToStreamWithRecId(stream);
+            return stream.ToByteArray();
+        }
+
+        /// <summary>
+        /// Converts this instance to a fixed length (65) byte array with a starting recovery ID (changes the current value
+        /// based on <paramref name="isCompressed"/> parameter). This is useful when reporting message signatures and 
+        /// the result is usually encoded using Base-64 encoding.
+        /// </summary>
+        /// <param name="isCompressed">Indicates whether compressed public key was used for creation of the address</param>
+        /// <returns>A fixed length encoded signature with a recovery ID</returns>
+        public byte[] ToByteArrayWithRecId(bool isCompressed)
+        {
+            FastStream stream = new FastStream();
+            WriteToStreamWithRecId(stream, isCompressed);
+            return stream.ToByteArray();
+        }
+
+        /// <summary>
+        /// Converts this instance to a fixed length (65) byte array with a starting recovery ID (without changing the set
+        /// value) and writes the result to the given <see cref="FastStream"/>. This is useful when reporting message 
+        /// signatures and the result is usually encoded using Base-64 encoding.
         /// </summary>
         /// <param name="stream">Stream to use</param>
-        /// <param name="isCompressed">Indicates whether compressed public key was used for creation of the address</param>
-        public void WriteToStreamWithRecId(FastStream stream, bool isCompressed)
+        public void WriteToStreamWithRecId(FastStream stream)
         {
-            stream.Write((byte)(27 + RecoveryId + (isCompressed ? 4 : 0)));
+            stream.Write(RecoveryId);
 
             byte[] temp = R.ToByteArray(true, true);
             if (temp.Length == 32)
@@ -411,5 +494,17 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             }
         }
 
+        /// <summary>
+        /// Converts this instance to a fixed length (65) byte array with a starting recovery ID (changes the current value
+        /// based on <paramref name="isCompressed"/> parameter) and writes the result to the given <see cref="FastStream"/>.
+        /// This is useful when reporting message signatures and the result is usually encoded using Base-64 encoding.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        /// <param name="isCompressed">Indicates whether compressed public key was used for creation of the address</param>
+        public void WriteToStreamWithRecId(FastStream stream, bool isCompressed)
+        {
+            RecoveryId = (byte)(27 + RecoveryId + (isCompressed ? 4 : 0));
+            WriteToStreamWithRecId(stream);
+        }
     }
 }

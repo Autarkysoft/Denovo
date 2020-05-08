@@ -58,7 +58,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 null,
                 null,
                 true,
-                false, // after BIP-66
+                true, // after BIP-66
                 new byte[][] { new byte[0], KeyHelper.Pub1CompBytes },
                 OpTestCaseHelper.FalseBytes
             };
