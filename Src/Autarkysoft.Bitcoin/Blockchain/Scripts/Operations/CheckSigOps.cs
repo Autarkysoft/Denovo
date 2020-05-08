@@ -32,6 +32,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             byte[][] values = opData.Pop(2);
 
+            if (values[0].Length == 0)
+            {
+                error = null;
+                return false;
+            }
+
             Signature sig;
             if (opData.IsStrictDerSig)
             {

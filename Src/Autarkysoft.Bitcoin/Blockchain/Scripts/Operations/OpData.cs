@@ -130,6 +130,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             while (m > 0 && sigIndex >= 0 && pubIndex >= 0 && m <= pubIndex + 1)
             {
+                // Empty byte signature doesn't fail as being "invalid" signature with or without strict rules
+                // but it _IS_ invalid and signature verification fails so there is no need to perform verification
+                // and then fail, instead just skip it here.
+                if (sigs[sigIndex].Length == 0)
+                {
+                    sigIndex--;
+                    pubIndex--;
+                    continue;
+                }
+
                 Signature sig;
                 if (IsStrictDerSig)
                 {

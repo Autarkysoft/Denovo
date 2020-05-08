@@ -5,6 +5,8 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System.Collections.Generic;
 using Xunit;
 
@@ -12,71 +14,118 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
     public class CheckSigOpTests
     {
-        [Fact]
-        public void Run_CorrectSigTest()
+        public static IEnumerable<object[]> GetRunCases()
+        {
+            yield return new object[]
+            {
+                // Both sig and pubkey are correct and ECDSA verification (performed by dependancy) passes
+                Helper.ShortSig1, // Parsed signature
+                KeyHelper.Pub1, // Parsed pubkey
+                Helper.ShortSig1Bytes, // Same signature's byte array to be deleted from the executing script
+                true, // ECDSA verification result
+                true, // BIP-66
+                new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes }, // PopMulti data
+                OpTestCaseHelper.TrueBytes // Push data
+            };
+            yield return new object[]
+            {
+                // Same as above but ECDSA verification fails
+                Helper.ShortSig1,
+                KeyHelper.Pub1,
+                Helper.ShortSig1Bytes,
+                false,
+                true,
+                new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes },
+                OpTestCaseHelper.FalseBytes
+            };
+            yield return new object[]
+            {
+                // Signature bytes are invalid (empty bytes) but the execution must not fail
+                // Also the IOpData.Verify() should not be called since it is pointless (the 3 first nulls make sure of that).
+                // Instead the result (OP_False) should be pushed to the stack.
+                null,
+                null,
+                null,
+                true,
+                false, // pre BIP-66
+                new byte[][] { new byte[0], KeyHelper.Pub1CompBytes },
+                OpTestCaseHelper.FalseBytes
+            };
+            yield return new object[]
+            {
+                // Same as above but with strict DER encoding enforcement
+                null,
+                null,
+                null,
+                true,
+                false, // after BIP-66
+                new byte[][] { new byte[0], KeyHelper.Pub1CompBytes },
+                OpTestCaseHelper.FalseBytes
+            };
+            yield return new object[]
+            {
+                // Same as above but this time public key is invalid
+                null,
+                null,
+                null,
+                true,
+                false,
+                new byte[][] { Helper.ShortSig1Bytes, new byte[0] },
+                OpTestCaseHelper.FalseBytes
+            };
+            yield return new object[]
+            {
+                // Same as above but this time public key is invalid
+                null,
+                null,
+                null,
+                true,
+                true,
+                new byte[][] { Helper.ShortSig1Bytes, new byte[0] },
+                OpTestCaseHelper.FalseBytes
+            };
+            yield return new object[]
+            {
+                // Same as above but this time public key is invalid
+                null,
+                null,
+                null,
+                true,
+                false,
+                new byte[][] { Helper.ShortSig1Bytes, new byte[] { 1, 2, 3 } },
+                OpTestCaseHelper.FalseBytes
+            };
+            yield return new object[]
+            {
+                // Same as above but this time public key is invalid
+                null,
+                null,
+                null,
+                true,
+                true,
+                new byte[][] { Helper.ShortSig1Bytes, new byte[] { 1, 2, 3 } },
+                OpTestCaseHelper.FalseBytes
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetRunCases))]
+        public void RunTest(Signature expSig, PublicKey expPub, byte[] expSigBa, bool success, bool der, byte[][] pop, byte[] push)
         {
             MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.Push)
             {
                 _itemCount = 2,
-                expectedSig = Helper.ShortSig1,
-                expectedPubkey = KeyHelper.Pub1,
-                expectedSigBa = Helper.ShortSig1Bytes,
-                sigVerificationSuccess = true,
-                popCountData = new byte[][][] { new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes } },
-                pushData = new byte[][] { OpTestCaseHelper.TrueBytes }
+                expectedSig = expSig,
+                expectedPubkey = expPub,
+                expectedSigBa = expSigBa,
+                sigVerificationSuccess = success,
+                IsStrictDerSig = der,
+                popCountData = new byte[][][] { pop },
+                pushData = new byte[][] { push }
             };
 
             OpTestCaseHelper.RunTest<CheckSigOp>(data, OP.CheckSig);
         }
 
-        [Fact]
-        public void Run_WrongSigTest()
-        {
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.Push)
-            {
-                _itemCount = 2,
-                expectedSig = Helper.ShortSig1,
-                expectedPubkey = KeyHelper.Pub1,
-                expectedSigBa = Helper.ShortSig1Bytes,
-                sigVerificationSuccess = false,
-                popCountData = new byte[][][] { new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes } },
-                pushData = new byte[][] { OpTestCaseHelper.FalseBytes }
-            };
-
-            OpTestCaseHelper.RunTest<CheckSigOp>(data, OP.CheckSig);
-        }
-
-        [Fact]
-        public void Run_SpecialCase_SigTest()
-        {
-            // Signature bytes are invalid (empty bytes) but the execution must not fail (pre BIP-66)
-            // Also the IOpData.Verify() should not be called since it is pointless.
-            // Instead the result (OP_False) should be pushed to the stack
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.Push)
-            {
-                _itemCount = 2,
-                IsStrictDerSig = false,
-                popCountData = new byte[][][] { new byte[][] { new byte[0], KeyHelper.Pub1CompBytes } },
-                pushData = new byte[][] { OpTestCaseHelper.FalseBytes }
-            };
-
-            OpTestCaseHelper.RunTest<CheckSigOp>(data, OP.CheckSig);
-        }
-
-        [Fact]
-        public void Run_SpecialCase_PubkeyTest()
-        {
-            // Same as above with public key
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.Push)
-            {
-                _itemCount = 2,
-                IsStrictDerSig = false,
-                popCountData = new byte[][][] { new byte[][] { new byte[0], KeyHelper.Pub1CompBytes } },
-                pushData = new byte[][] { OpTestCaseHelper.FalseBytes }
-            };
-
-            OpTestCaseHelper.RunTest<CheckSigOp>(data, OP.CheckSig);
-        }
 
         public static IEnumerable<object[]> GetErrorCases()
         {
