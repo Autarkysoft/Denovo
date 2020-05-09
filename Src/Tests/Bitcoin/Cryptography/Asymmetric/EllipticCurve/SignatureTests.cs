@@ -14,7 +14,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     public class SignatureTests
     {
         [Fact]
-        public void ConstructorTest()
+        public void Constructor_RecIdTest()
         {
             Signature sig = new Signature(1, 2, 3);
             Assert.Equal(1, sig.R);
@@ -22,7 +22,193 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             Assert.Equal(3, sig.RecoveryId);
         }
 
-        public static IEnumerable<object[]> GetSigCases()
+        [Fact]
+        public void Constructor_SigHashTest()
+        {
+            Signature sig = new Signature(1, 2, SigHashType.None);
+            Assert.Equal(1, sig.R);
+            Assert.Equal(2, sig.S);
+            Assert.Equal(SigHashType.None, sig.SigHash);
+        }
+
+
+        public static IEnumerable<object[]> GetReadLooseCases()
+        {
+            yield return new object[]
+            {
+                // R has starting 0x00 while it shouldn't
+                Helper.HexToBytes("3007"+"02020001"+"020101"+"01"),
+                new BigInteger(1),
+                new BigInteger(1),
+                SigHashType.All
+            };
+            yield return new object[]
+            {
+                // Same as above but with s
+                Helper.HexToBytes("3007"+"020101"+"02020001"+"01"),
+                new BigInteger(1),
+                new BigInteger(1),
+                SigHashType.All
+            };
+            yield return new object[]
+            {
+                // R should have starting 0x00 but it doesn't
+                Helper.HexToBytes("3006"+"020180"+"020101"+"01"),
+                new BigInteger(128),
+                new BigInteger(1),
+                SigHashType.All
+            };
+            yield return new object[]
+            {
+                // Same as above but with s
+                Helper.HexToBytes("3006"+"020101"+"020180"+"81"),
+                new BigInteger(1),
+                new BigInteger(128),
+                SigHashType.All | SigHashType.AnyoneCanPay
+            };
+            yield return new object[]
+            {
+                // Correct DER encoded signature but SigHash has extra bytes
+                Helper.HexToBytes("3006"+"020101"+"020101"+"ff02"),
+                new BigInteger(1),
+                new BigInteger(1),
+                SigHashType.None
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetReadLooseCases))]
+        public void TryReadLooseTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
+        {
+            bool b = Signature.TryReadLoose(data, out Signature sig, out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Equal(expR, sig.R);
+            Assert.Equal(expS, sig.S);
+            Assert.Equal(expSH, sig.SigHash);
+        }
+        [Theory]
+        [MemberData(nameof(GetReadStrictCases))]
+        public void TryReadLoose_FromStrictCases_Test(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
+        {
+            // Reading with loose rules must still pass on strict cases
+            bool b = Signature.TryReadLoose(data, out Signature sig, out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Equal(expR, sig.R);
+            Assert.Equal(expS, sig.S);
+            Assert.Equal(expSH, sig.SigHash);
+        }
+
+
+        public static IEnumerable<object[]> GetReadLooseFailCases()
+        {
+            yield return new object[]
+            {
+                null,
+                "Byte array can not be null."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("30"+"02030405060708"),
+                "Invalid DER encoding length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3000"+"0102030405060708"),
+                "Invalid total length according to sequence length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("308a"+"0102030405060708"),
+                "Invalid sequence length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("30ff"+"0102030405060708"),
+                "Invalid sequence length."
+            };
+            yield return new object[]
+            {
+                // seq_len=8 covers the entire remaining bytes which means SigHash is missing
+                Helper.HexToBytes("3008"+"0102030405060708"),
+                "Invalid total length according to sequence length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"01"+"02030405060708"),
+                "First integer tag was not found in DER encoded signature."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"0200"+"02030405060708"),
+                "Invalid R length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"0200"+"0102030405060708"),
+                "Invalid R length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"028a"+"0102030405060708"),
+                "Invalid R length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"02ff"+"0102030405060708"),
+                "Invalid R length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"0209"+"0102030405060708"),
+                Err.EndOfStream
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"020101"+"0102030405060708"),
+                "Second integer tag was not found in DER encoded signature."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"020101"+"0200"+"010203040506"),
+                "Invalid S length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"020101"+"028a"+"010203040506"),
+                "Invalid S length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"020101"+"02ff"+"010203040506"),
+                "Invalid S length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"020101"+"0207"+"010203040506"),
+                Err.EndOfStream
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"020101"+"02020001"),
+                Err.EndOfStream
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetReadLooseFailCases))]
+        public void TryReadLoose_FailTest(byte[] data, string expErr)
+        {
+            bool b = Signature.TryReadLoose(data, out Signature sig, out string error);
+
+            Assert.False(b, error);
+            Assert.Null(sig);
+            Assert.Equal(expErr, error);
+        }
+
+
+        public static IEnumerable<object[]> GetReadStrictCases()
         {
             yield return new object[]
             {
@@ -70,7 +256,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             };
         }
         [Theory]
-        [MemberData(nameof(GetSigCases))]
+        [MemberData(nameof(GetReadStrictCases))]
         public void TryReadStrictTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
         {
             bool b = Signature.TryReadStrict(data, out Signature sig, out string error);
@@ -83,7 +269,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
 
 
-        public static IEnumerable<object[]> GetSigFailCases()
+        public static IEnumerable<object[]> GetReadStrictFailCases()
         {
             yield return new object[]
             {
@@ -112,12 +298,17 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             };
             yield return new object[]
             {
-                Helper.HexToBytes("30"+"07"+"03040506070809"),
+                Helper.HexToBytes("30"+"07"+"01020304050607"), // missing 1 byte (SigHash)
                 "Invalid data length according to sequence length."
             };
             yield return new object[]
             {
-                Helper.HexToBytes("3006"+"03"+"040506070809"),
+                Helper.HexToBytes("3006"+"020101"+"020101"+"ff01"), // SigHash is bigger than 1 byte
+                "Invalid data length according to sequence length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3006"+"03"+"020304050607"),
                 "First integer tag was not found in DER encoded signature."
             };
             yield return new object[]
@@ -162,7 +353,12 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             };
             yield return new object[]
             {
-                Helper.HexToBytes("3006"+"020101"+"02"+"0201"+"09"),
+                Helper.HexToBytes("3006"+"020101"+"02"+"0201"+"09"), // Doesn't have s itself if we consider last byte as SigHash
+                "Invalid data length according to second integer length."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3007"+"020101"+"020101"+"00"+"01"), // s has extra byte not covered by its length
                 "Invalid data length according to second integer length."
             };
             yield return new object[]
@@ -187,7 +383,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             };
         }
         [Theory]
-        [MemberData(nameof(GetSigFailCases))]
+        [MemberData(nameof(GetReadStrictFailCases))]
         public void TryReadStrict_FailTest(byte[] data, string expErr)
         {
             bool b = Signature.TryReadStrict(data, out Signature sig, out string error);
@@ -200,7 +396,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         // TODO: No Schnorr tests since the BIP is not final at this point
 
         [Theory]
-        [MemberData(nameof(GetSigCases))]
+        [MemberData(nameof(GetReadStrictCases))]
         public void ToByteArrayTest(byte[] expBytes, BigInteger r, BigInteger s, SigHashType sh)
         {
             Signature sig = new Signature()
@@ -248,6 +444,52 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
         [Theory]
         [MemberData(nameof(GetSigRecIdCases))]
+#pragma warning disable xUnit1026 // Theory methods should use all of their parameters
+        public void TryReadWithRecIdTest(BigInteger r, BigInteger s, byte v, bool isComp, byte[] toRead)
+#pragma warning restore xUnit1026
+        {
+            bool b = Signature.TryReadWithRecId(toRead, out Signature sig, out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Equal(r, sig.R);
+            Assert.Equal(s, sig.S);
+            Assert.Equal(toRead[0], sig.RecoveryId);
+        }
+
+        [Theory]
+        [InlineData(null, "Byte array can not be null or empty.")]
+        [InlineData(new byte[0], "Byte array can not be null or empty.")]
+        [InlineData(new byte[] { 1, 2, 3 }, "Signatures with recovery ID must be fixed 65 bytes.")]
+        public void TryReadWithRecId_FailTest(byte[] data, string expErr)
+        {
+            bool b = Signature.TryReadWithRecId(data, out Signature sig, out string error);
+            Assert.False(b);
+            Assert.Null(sig);
+            Assert.Equal(expErr, error);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetSigRecIdCases))]
+        public void ToByteArrayWithRecIdTest(BigInteger r, BigInteger s, byte v, bool isComp, byte[] expected)
+        {
+            Signature sig = new Signature(r, s, v);
+            byte[] actual = sig.ToByteArrayWithRecId(isComp);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ToByteArrayWithRecId_NochangeTest()
+        {
+            Signature sig = new Signature(1, 2, 164);
+            byte[] actual = sig.ToByteArrayWithRecId();
+            byte[] expected = Helper.HexToBytes("a4" + "0000000000000000000000000000000000000000000000000000000000000001" +
+                                                       "0000000000000000000000000000000000000000000000000000000000000002");
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetSigRecIdCases))]
         public void WriteToStreamWithRecIdTest(BigInteger r, BigInteger s, byte v, bool isComp, byte[] expected)
         {
             Signature sig = new Signature(r, s, v);
@@ -257,6 +499,17 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             byte[] actual = stream.ToByteArray();
 
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void WriteToStreamWithRecId_NochangeTest()
+        {
+            Signature sig = new Signature(1, 2, 164);
+            FastStream stream = new FastStream();
+            sig.WriteToStreamWithRecId(stream);
+            byte[] expected = Helper.HexToBytes("a4" + "0000000000000000000000000000000000000000000000000000000000000001" +
+                                                       "0000000000000000000000000000000000000000000000000000000000000002");
+            Assert.Equal(expected, stream.ToByteArray());
         }
 
     }
