@@ -64,19 +64,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if the given byte array could be encoded using an OP code instead</returns>
         protected bool HasNumOp(byte[] data)
         {
-            if (data.Length == 0)
-            {
-                return true;
-            }
-            else if (data.Length == 1)
-            {
-                if (data[0] == 0b10000001 /*-1*/ || data[0] >= 0 && data[0] <= 16)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return data.Length == 0 || TryConvertToLong(data, out long result, false) && result >= -1 && result <= 16;
         }
 
 
@@ -161,10 +149,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// True if the value is one of <see cref="OP._0"/>, <see cref="OP.Negative1"/> or from 
         /// <see cref="OP._1"/> to <see cref="OP._16"/>, false if otherwise.
         /// </returns>
-        protected bool IsNumberOp(OP val)
-        {
-            return !(val != OP._0 && val != OP.Negative1 && val < OP._1 || val > OP._16);
-        }
+        protected bool IsNumberOp(OP val) => !(val != OP._0 && val != OP.Negative1 && val < OP._1 || val > OP._16);
 
 
         /// <summary>
