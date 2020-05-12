@@ -49,7 +49,6 @@ namespace Tests.Bitcoin.Cryptography.Hashing
 
             // https://github.com/bitcoin/bitcoin/blob/376294cde6b1588cb17055d8fde567eaf5848c3c/src/test/hash_tests.cpp#L29-L43
             yield return new object[] { new byte[0], 0xfba4c795, 0x6a396f08U };
-            yield return new object[] { new byte[0], 0xffffffff, 0x81f16f39U };
             yield return new object[] { new byte[1], 0, 0x514e28b7U };
             yield return new object[] { new byte[1], 0xfba4c795, 0xea3f0b17U };
             yield return new object[] { new byte[] { 255 }, 0, 0xfd6cf10dU };
