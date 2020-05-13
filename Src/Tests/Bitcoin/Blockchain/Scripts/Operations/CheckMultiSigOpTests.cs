@@ -6,8 +6,6 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System.Collections.Generic;
 using Xunit;
 
@@ -94,7 +92,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 true,
-                null
+                null,
+                0
             };
             yield return new object[]
             {
@@ -107,7 +106,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 true,
-                null
+                null,
+                0
             };
             yield return new object[]
             {
@@ -120,7 +120,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 true,
-                null
+                null,
+                0
             };
             yield return new object[]
             {
@@ -133,12 +134,28 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 false,
-                "The extra item should be OP_0."
+                "The extra item should be OP_0.",
+                0
+            };
+            yield return new object[]
+            {
+                true,
+                new IOperation[]
+                {
+                    new PushDataOp(OP._0), // garbage
+                    new PushDataOp(OP._0), // m
+                    new PushDataOp(new byte[]{1,2,3}),
+                    new PushDataOp(OP._1), // n
+                    new CheckMultiSigOp(),
+                },
+                true,
+                null,
+                1
             };
         }
         [Theory]
         [MemberData(nameof(GetSpecialCase))]
-        public void Run_SpecialCaseTest(bool isStrict, IOperation[] operations, bool expBool, string expError)
+        public void Run_SpecialCaseTest(bool isStrict, IOperation[] operations, bool expBool, string expError, int expOpCount)
         {
             // 0of0 multisig => OP_0 [] OP_0 [] OP_0
             OpData data = new OpData()
@@ -146,7 +163,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 IsStrictMultiSigGarbage = isStrict
             };
 
-            // Run the first 3 PushOps
+            // Run all PushOps (all items in array except last)
             for (int i = 0; i < operations.Length - 1; i++)
             {
                 bool b1 = operations[i].Run(data, out string error1);
@@ -158,13 +175,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             bool b2 = operations[^1].Run(data, out string error2);
             Assert.Equal(expBool, b2);
             Assert.Equal(expError, error2);
-            Assert.Equal(0, data.OpCount);
-        }
-
-        [Fact]
-        public void Run_()
-        {
-
+            Assert.Equal(expOpCount, data.OpCount);
         }
 
 
@@ -217,6 +228,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     popData = new byte[1][] { OpTestCaseHelper.num2 }
                 },
                 Err.OpNotEnoughItems
+            };
+            yield return new object[]
+            {
+                new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex)
+                {
+                    _itemCount = 3,
+                    _opCountToReturn = 0,
+                    popData = new byte[1][] { new byte[5] { 1, 2, 3, 4, 5 } },
+                },
+                "Invalid number (n) format."
             };
             yield return new object[]
             {
