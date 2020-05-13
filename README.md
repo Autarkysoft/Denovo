@@ -44,12 +44,18 @@ Using .Net CLI:
   * RFC-6979: Optimized. Also an extra entropy is added so that signer can grind to find low R values to a fixed length (<32).
 * Implementation of improvement proposals, consensus related BIPs are part of the library and optional bips (eg. BIP-32)
 are in separate classes. Currently:
-  * BIPs: [16](https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki "Pay to Script Hash"), 
+  * BIPs: [11](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki "M-of-N Standard Transactions"), 
+  [13](https://github.com/bitcoin/bips/blob/master/bip-0013.mediawiki "Address Format for pay-to-script-hash"), 
+  [16](https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki "Pay to Script Hash"), 
+  [31](https://github.com/bitcoin/bips/blob/master/bip-0031.mediawiki "Pong message"), 
   [34](https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki "Block v2, Height in Coinbase"), 
+  [35](https://github.com/bitcoin/bips/blob/master/bip-0035.mediawiki "Mempool message"), 
   [65](https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki "OP_CheckLocktimeVerify"), 
   [66](https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki "Strict DER signatures"), 
   [68](https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki "Relative lock-time using consensus-enforced sequence numbers"), 
   [112](https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki "OP_CheckSequenceVerify"), 
+  [130](https://github.com/bitcoin/bips/blob/master/bip-0130.mediawiki "Sendheaders message"), 
+  [133](https://github.com/bitcoin/bips/blob/master/bip-0133.mediawiki "Feefilter message"), 
   [141](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki "Segregated Witness (Consensus layer)"), 
   [143](https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki "Transaction Signature Verification for Version 0 Witness Program"), 
   [144](https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki "Segregated Witness (Peer Services)"), 
@@ -58,6 +64,7 @@ are in separate classes. Currently:
   * [BIP-14](https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki "Protocol Version and User Agent")
   * [BIP-21](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki "URI Scheme")
   * [BIP-32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets")
+  * [BIP-38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki "Passphrase-protected private key")
   * [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys")
   * [BIP-178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF")
   * [BIP-340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
