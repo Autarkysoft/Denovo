@@ -85,7 +85,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public bool IsStrictMultiSigGarbage { get; set; }
 
         public bool ForceLowS { get; set; }
-        public bool ForceStrictPush { get; set; }
+
+        /// <inheritdoc/>
+        public bool StrictNumberEncoding { get; set; }
 
         /// <inheritdoc/>
         public int OpCount { get; set; }

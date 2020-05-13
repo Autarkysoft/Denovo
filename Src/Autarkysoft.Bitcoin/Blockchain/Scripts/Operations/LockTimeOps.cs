@@ -33,7 +33,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // For backward compatibility of the softfork, Run() Peeks at the top item of the stack instead of Poping it.
             byte[] data = opData.Peek();
 
-            if (!TryConvertToLong(data, out lt, opData.ForceStrictPush, 5))
+            if (!TryConvertToLong(data, out lt, opData.StrictNumberEncoding, 5))
             {
                 error = "Invalid number format.";
                 return false;

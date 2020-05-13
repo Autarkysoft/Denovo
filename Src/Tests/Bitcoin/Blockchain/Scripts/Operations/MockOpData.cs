@@ -28,7 +28,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         private int currentCallIndex;
 
 
-        public bool ForceStrictPush { get; set; }
+        public bool StrictNumberEncoding { get; set; }
 
         internal bool sigVerificationSuccess = true;
 

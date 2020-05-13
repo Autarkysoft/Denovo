@@ -165,6 +165,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 255, 128 }, true, 4, true, -255)]
         [InlineData(new byte[] { 1, 2, 3, 4, 5 }, false, 4, false, 0)] // Longer than maxLen
         [InlineData(new byte[] { 1, 2, 3, 4, 5 }, true, 4, false, 0)] // Longer than maxLen
+        [InlineData(null, true, 4, false, 0)]
         public void TryConvertToLongTest(byte[] data, bool strict, int maxLen, bool success, long expected)
         {
             bool b = TryConvertToLong(data, out long result, strict, maxLen);

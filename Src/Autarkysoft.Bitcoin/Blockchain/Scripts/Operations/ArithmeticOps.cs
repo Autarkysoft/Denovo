@@ -29,7 +29,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            if (!TryConvertToLong(opData.Pop(), out a, true))
+            if (!TryConvertToLong(opData.Pop(), out a, opData.StrictNumberEncoding))
             {
                 error = "Invalid number format.";
                 return false;
@@ -67,13 +67,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             // Stack is: a then b => pop b first
-            if (!TryConvertToLong(opData.Pop(), out b, true))
+            if (!TryConvertToLong(opData.Pop(), out b, opData.StrictNumberEncoding))
             {
                 error = "Invalid number format.";
                 return false;
             }
 
-            if (!TryConvertToLong(opData.Pop(), out a, true))
+            if (!TryConvertToLong(opData.Pop(), out a, opData.StrictNumberEncoding))
             {
                 error = "Invalid number format.";
                 return false;
@@ -695,19 +695,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             // Stack is: x then min then max => pop max first
-            if (!TryConvertToLong(opData.Pop(), out long max, true))
+            byte[][] numbers = opData.Pop(3);
+            if (!TryConvertToLong(numbers[2], out long max, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format.";
+                error = "Invalid number format (max).";
                 return false;
             }
-            if (!TryConvertToLong(opData.Pop(), out long min, true))
+            if (!TryConvertToLong(numbers[1], out long min, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format.";
+                error = "Invalid number format (min).";
                 return false;
             }
-            if (!TryConvertToLong(opData.Pop(), out long x, true))
+            if (!TryConvertToLong(numbers[0], out long x, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format.";
+                error = "Invalid number format (x).";
                 return false;
             }
 
@@ -718,5 +719,4 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return true;
         }
     }
-
 }

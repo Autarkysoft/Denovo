@@ -198,7 +198,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     TxInIndex = i,
 
                     ForceLowS = ForceLowS,
-                    ForceStrictPush = ForceStrictPush,
+                    StrictNumberEncoding = ForceStrictPush,
 
                     IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
                     IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),

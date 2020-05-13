@@ -48,7 +48,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <returns>True if the data was valid, otherwise false.</returns>
         bool CheckMultiSigGarbage(byte[] garbage);
 
-        bool ForceStrictPush { get; set; }
+        /// <summary>
+        /// Returns if numbers inside scripts (or the popped data from stack to be converted to numbers)
+        /// should be checked for strict and shortest encoding.
+        /// </summary>
+        bool StrictNumberEncoding { get; set; }
 
         /// <summary>
         /// Returns if BIP-65 has enabled <see cref="OP.CheckLocktimeVerify"/> OP code

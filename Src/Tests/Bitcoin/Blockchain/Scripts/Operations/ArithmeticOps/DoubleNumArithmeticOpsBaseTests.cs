@@ -81,6 +81,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
             MockOpData data = new MockOpData(FuncCallName.Pop)
             {
                 _itemCount = 2,
+                StrictNumberEncoding = true,
                 popData = new byte[][] { OpTestCaseHelper.num0, new byte[] { 0, 0 } },
             };
 
@@ -96,6 +97,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
             MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop)
             {
                 _itemCount = 2,
+                StrictNumberEncoding = true,
                 popData = new byte[][] { new byte[] { 0, 0 }, OpTestCaseHelper.num0 },
             };
 

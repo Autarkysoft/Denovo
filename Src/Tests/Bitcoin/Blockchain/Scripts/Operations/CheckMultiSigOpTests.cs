@@ -225,7 +225,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     _itemCount = 3,
                     _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
-                    popIndexData = new Dictionary<int, byte[]> { { 1, new byte[2] { 1, 2 } } },
+                    popIndexData = new Dictionary<int, byte[]> { { 1, new byte[5] { 1, 2, 3, 4, 5 } } },
                 },
                 "Invalid number (m) format."
             };

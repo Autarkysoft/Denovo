@@ -80,6 +80,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
             MockOpData data = new MockOpData(FuncCallName.Pop)
             {
                 _itemCount = 1,
+                StrictNumberEncoding = true,
                 popData = new byte[][] { new byte[] { 0, 0 } },
             };
 

@@ -159,7 +159,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             byte[] nBa = opData.Pop();
-            if (!TryConvertToLong(nBa, out long n, opData.ForceStrictPush, maxDataLength: 4))
+            if (!TryConvertToLong(nBa, out long n, opData.StrictNumberEncoding, maxDataLength: 4))
             {
                 error = "Invalid number (n) format.";
                 return false;
@@ -189,7 +189,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             byte[] mBa = opData.PopAtIndex((int)n);
-            if (!TryConvertToLong(mBa, out long m, opData.ForceStrictPush, 1))
+            if (!TryConvertToLong(mBa, out long m, opData.StrictNumberEncoding, maxDataLength: 4))
             {
                 error = "Invalid number (m) format.";
                 return false;
