@@ -60,13 +60,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         {
             if (script == null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
-
-            data = script.Data;
-            if (data.Length > Constants.MaxScriptItemLength)
+            if (script.Data.Length > Constants.MaxScriptItemLength)
             {
                 throw new ArgumentOutOfRangeException(nameof(script),
                     $"Script byte size to be pushed to the stack can not be bigger than {Constants.MaxScriptItemLength} bytes.");
             }
+
+            data = script.Data.CloneByteArray();
             StackInt size = new StackInt(data.Length);
             _opVal = size.GetOpCode();
         }
@@ -79,7 +79,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public PushDataOp(OP numOp)
         {
             if (!IsNumberOp(numOp))
-                throw new ArgumentException("OP is not a number OP.");
+                throw new ArgumentException("Given OP code is not a number OP.");
 
             data = null;
             _opVal = numOp;
@@ -154,7 +154,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
         /// <summary>
         /// If possible, will convert the data of this instance to a 64-bit signed integer. The return value indicates success. 
-        /// The main usage is in 
+        /// The main usage is in:
         /// <para/> ArithmeticOps -> 4 byte max, value between (-2^31 +1) and(2^31 -1) (0xffffff7f)
         /// <para/> Multisig for m and n values -> 1 byte max, value between 0 and 20
         /// <para/> Locktime -> 5 bytes max, value between 0 and(2^39-1) (0xffffffff7f)
@@ -172,19 +172,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 {
                     result = 0;
                 }
-                else if (OpValue == OP.Negative1)
-                {
-                    result = -1;
-                }
-                else if (OpValue >= OP._1 && OpValue <= OP._16)
-                {
-                    result = (byte)OpValue - 0x50;
-                }
                 else
                 {
-                    result = 0;
-                    error = "No data is available.";
-                    return false;
+                    result = (byte)OpValue - 0x50;
                 }
             }
             else
@@ -220,8 +210,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if (firstByte == (byte)OP._0 || firstByte == (byte)OP.Negative1 ||
                 (firstByte >= (byte)OP._1 && firstByte <= (byte)OP._16))
             {
-                // Move the index forward
-                _ = stream.TryReadByte(out _);
+                stream.SkipOneByte();
                 data = null;
             }
             else
@@ -231,8 +220,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     return false;
                 }
 
-                // Size check should only take place when "Running" the OP
-                // Only a quick check to prevent data loss while casting
+                // Size check should only take place when "Running" the OP.
+                // Only a quick check to prevent data loss while casting.
                 if (size > int.MaxValue)
                 {
                     error = "Data size is too big.";
@@ -271,8 +260,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if (firstByte == (byte)OP._0 || firstByte == (byte)OP.Negative1 ||
                 (firstByte >= (byte)OP._1 && firstByte <= (byte)OP._16))
             {
-                // Move the index forward
-                _ = stream.TryReadByte(out _);
+                stream.SkipOneByte();
                 _opVal = (OP)firstByte;
                 data = null;
             }
@@ -335,16 +323,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                CompactInt size = new CompactInt(data.Length);
-                size.WriteToStream(stream);
-                stream.Write(data);
+                stream.WriteWithCompactIntLength(data);
             }
         }
 
         /// <inheritdoc/>
         public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
         {
-            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
+            if (data == null)
             {
                 stream.Write((byte)OpValue);
             }

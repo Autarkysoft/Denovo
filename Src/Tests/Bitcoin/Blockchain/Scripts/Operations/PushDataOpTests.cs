@@ -33,7 +33,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             byte[] data = { 1, 2, 3 };
             PushDataOp op = new PushDataOp(data);
 
-            Helper.ComparePrivateField(op, "data", data);
+            // Make sure data is cloned
+            data[0] = 255;
+
+            Helper.ComparePrivateField(op, "data", new byte[] { 1, 2, 3 });
             Assert.Equal(3, (byte)op.OpValue);
         }
 
@@ -66,7 +69,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             MockSerializableScript scr = new MockSerializableScript(data, 255);
             PushDataOp op = new PushDataOp(scr);
 
-            Helper.ComparePrivateField(op, "data", data);
+            // Make sure data is cloned
+            scr.Data[0] = 255;
+
+            Helper.ComparePrivateField(op, "data", new byte[] { 1, 2, 3 });
             Assert.Equal(3, (byte)op.OpValue);
         }
 
@@ -288,7 +294,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
-        public static TheoryData GetReadCases()
+        public static IEnumerable<object[]> GetReadCases()
         {
             // 0x4c4d.... => script (0x4c4d = StackInt len) len-value=77
             // 0x4c4d.... => witness (0x4c = CompactInt len) len-value=76
@@ -300,25 +306,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             byte[] expWit77 = new byte[76];
             Buffer.BlockCopy(data77, 1, expWit77, 0, 76);
 
-            return new TheoryData<byte[], bool, byte[], OP>()
-            {
-                { new byte[1], true, null, OP._0 },
-                { new byte[1], false, null, OP._0 },
-                { new byte[] { 0x4f }, true, null, OP.Negative1 },
-                { new byte[] { 0x4f }, false, null, OP.Negative1 },
-                { new byte[] { 0x51 },  true, null, OP._1 },
-                { new byte[] { 0x51, 2 }, false, null, OP._1 },
-                { new byte[] { 0x60 }, true, null, OP._16 },
-                { new byte[] { 0x60 }, false, null, OP._16 },
+            yield return new object[] { new byte[1], true, null, OP._0 };
+            yield return new object[] { new byte[1], false, null, OP._0 };
+            yield return new object[] { new byte[] { 0x4f }, true, null, OP.Negative1 };
+            yield return new object[] { new byte[] { 0x4f }, false, null, OP.Negative1 };
+            yield return new object[] { new byte[] { 0x51 }, true, null, OP._1 };
+            yield return new object[] { new byte[] { 0x51, 2 }, false, null, OP._1 };
+            yield return new object[] { new byte[] { 0x60 }, true, null, OP._16 };
+            yield return new object[] { new byte[] { 0x60 }, false, null, OP._16 };
 
-                { new byte[] { 1, 0 }, true, new byte[1], (OP)1 }, // not strict
-                { new byte[] { 1, 0 },  false,  new byte[1], (OP)1 }, // not strict
-                { new byte[] { 1, 5 }, true, new byte[1] { 5 }, (OP)1 }, // not strict
-                { new byte[] { 1, 3, 4 }, false, new byte[1] { 3 }, (OP)1 }, // not strict
+            yield return new object[] { new byte[] { 1, 0 }, true, new byte[1], (OP)1 }; // not strict
+            yield return new object[] { new byte[] { 1, 0 }, false, new byte[1], (OP)1 }; // not strict
+            yield return new object[] { new byte[] { 1, 5 }, true, new byte[1] { 5 }, (OP)1 }; // not strict
+            yield return new object[] { new byte[] { 1, 3, 4 }, false, new byte[1] { 3 }, (OP)1 }; // not strict
 
-                { data77, true, expWit77, (OP)0x4c }, //0x4c=OP.PushData1=76
-                { data77, false, exp77, OP.PushData1 },
-            };
+            yield return new object[] { data77, true, expWit77, (OP)0x4c }; //0x4c=OP.PushData1=76
+            yield return new object[] { data77, false, exp77, OP.PushData1 };
         }
         [Theory]
         [MemberData(nameof(GetReadCases))]
@@ -388,6 +391,24 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 false,
                 Err.EndOfStream
             };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[] { (byte)OP.Reserved, 1 }),
+                false,
+                "Unknown OP_Push value."
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[] { 0x4e, 0xff, 0xff, 0xff, 0xff, 1 }), // StackInt(uint.max)
+                false,
+                "Data size is too big."
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[] { 0xfe, 0xff, 0xff, 0xff, 0xff, 1 }), // CompactInt(uint.max)
+                true,
+                "Data size is too big."
+            };
         }
         [Theory]
         [MemberData(nameof(GetReadFailCases))]
@@ -401,7 +422,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
-        public static TheoryData WriteToStreamCases()
+        public static IEnumerable<object[]> WriteToStreamCases()
         {
             byte[] data75 = Helper.GetBytes(75);
             byte[] exp75 = new byte[76];
@@ -431,33 +452,127 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             expWit253[2] = 0;
             Buffer.BlockCopy(data253, 0, expWit253, 3, data253.Length);
 
-            return new TheoryData<PushDataOp, byte[], byte[]>()
-            {
-                { new PushDataOp(-1), new byte[1] { 0x4f }, new byte[1] { 0x4f } },
-                { new PushDataOp(0L), new byte[1] { 0 }, new byte[1] { 0 } },
-                { new PushDataOp(1), new byte[1] { 0x51 }, new byte[1] { 0x51 } },
-                { new PushDataOp(2), new byte[1] { 0x52 }, new byte[1] { 0x52 } },
-                { new PushDataOp(16), new byte[1] { 0x60 }, new byte[1] { 0x60 } },
-                { new PushDataOp(17), new byte[2] { 1, 17 }, new byte[2] { 1, 17 } },
-                { new PushDataOp(data75), exp75, expWit75 },
-                { new PushDataOp(data76), exp76, expWit76 },
-                { new PushDataOp(data253), exp253, expWit253 },
-            };
+            yield return new object[] { new PushDataOp(-1), new byte[1] { 0x4f }, new byte[1] { 0x4f } };
+            yield return new object[] { new PushDataOp(0L), new byte[1] { 0 }, new byte[1] { 0 } };
+            yield return new object[] { new PushDataOp(1), new byte[1] { 0x51 }, new byte[1] { 0x51 } };
+            yield return new object[] { new PushDataOp(2), new byte[1] { 0x52 }, new byte[1] { 0x52 } };
+            yield return new object[] { new PushDataOp(16), new byte[1] { 0x60 }, new byte[1] { 0x60 } };
+            yield return new object[] { new PushDataOp(17), new byte[2] { 1, 17 }, new byte[2] { 1, 17 } };
+            yield return new object[] { new PushDataOp(data75), exp75, expWit75 };
+            yield return new object[] { new PushDataOp(data76), exp76, expWit76 };
+            yield return new object[] { new PushDataOp(data253), exp253, expWit253 };
         }
         [Theory]
         [MemberData(nameof(WriteToStreamCases))]
         public void WriteToStreamTest(PushDataOp op, byte[] expected, byte[] expectedWit)
         {
-            FastStream actualStream = new FastStream();
-            FastStream actualStreamWit = new FastStream();
-            op.WriteToStream(actualStream);
-            op.WriteToWitnessStream(actualStreamWit);
+            FastStream normalStream = new FastStream();
+            FastStream witnessStream = new FastStream();
+            FastStream witnessSignStream = new FastStream();
 
-            byte[] actual = actualStream.ToByteArray();
-            byte[] actualWit = actualStreamWit.ToByteArray();
+            op.WriteToStream(normalStream);
+            op.WriteToWitnessStream(witnessStream);
+            op.WriteToStreamForSigningSegWit(witnessSignStream);
+
+            byte[] actualNorm = normalStream.ToByteArray();
+            byte[] actualWit = witnessStream.ToByteArray();
+            byte[] actualWitSign = witnessSignStream.ToByteArray();
+
+            Assert.Equal(expected, actualNorm);
+            Assert.Equal(expectedWit, actualWit);
+            Assert.Equal(expectedWit, actualWitSign); // ForSigningSegWit doesn't change anything
+        }
+
+        public static IEnumerable<object[]> WriteToStreamSigningSingleCases()
+        {
+            byte[] data75 = Helper.GetBytes(75);
+            byte[] exp75 = new byte[76];
+            exp75[0] = 75;
+            Buffer.BlockCopy(data75, 0, exp75, 1, data75.Length);
+
+            byte[] data76 = Helper.GetBytes(76);
+            byte[] exp76 = new byte[78];
+            exp76[0] = 76;
+            exp76[1] = 76;
+            Buffer.BlockCopy(data76, 0, exp76, 2, data76.Length);
+
+            byte[] data253 = Helper.GetBytes(253);
+            byte[] exp253 = new byte[255]; // 253 = 0x4cfd <-- StackInt
+            exp253[0] = 0x4c;
+            exp253[1] = 0xfd;
+            Buffer.BlockCopy(data253, 0, exp253, 2, data253.Length);
+
+            byte[] sig = new byte[] { 10, 20, 30 };
+
+            yield return new object[] { new PushDataOp(OP._0), sig, new byte[1] };
+            yield return new object[] { new PushDataOp(OP.Negative1), sig, new byte[1] { (byte)OP.Negative1 } };
+            yield return new object[] { new PushDataOp(OP._1), sig, new byte[1] { (byte)OP._1 } };
+            yield return new object[] { new PushDataOp(OP._16), sig, new byte[1] { (byte)OP._16 } };
+            yield return new object[] { new PushDataOp(new byte[] { 255, 255, 255 }), sig, new byte[] { 3, 255, 255, 255 } };
+            yield return new object[] { new PushDataOp(data75), sig, exp75 };
+            yield return new object[] { new PushDataOp(data76), sig, exp76 };
+            yield return new object[] { new PushDataOp(data253), sig, exp253 };
+            yield return new object[] { new PushDataOp(new byte[] { 10, 20, 30 }), sig, new byte[0] };
+        }
+        [Theory]
+        [MemberData(nameof(WriteToStreamSigningSingleCases))]
+        public void WriteToStreamForSigning_SingleTest(PushDataOp op, byte[] sig, byte[] expected)
+        {
+            FastStream stream = new FastStream();
+            op.WriteToStreamForSigning(stream, sig);
+            byte[] actual = stream.ToByteArray();
 
             Assert.Equal(expected, actual);
-            Assert.Equal(expectedWit, actualWit);
+        }
+
+        public static IEnumerable<object[]> WriteToStreamSigningMultiCases()
+        {
+            byte[] data75 = Helper.GetBytes(75);
+            byte[] exp75 = new byte[76];
+            exp75[0] = 75;
+            Buffer.BlockCopy(data75, 0, exp75, 1, data75.Length);
+
+            byte[] data76 = Helper.GetBytes(76);
+            byte[] exp76 = new byte[78];
+            exp76[0] = 76;
+            exp76[1] = 76;
+            Buffer.BlockCopy(data76, 0, exp76, 2, data76.Length);
+
+            byte[] data253 = Helper.GetBytes(253);
+            byte[] exp253 = new byte[255]; // 253 = 0x4cfd <-- StackInt
+            exp253[0] = 0x4c;
+            exp253[1] = 0xfd;
+            Buffer.BlockCopy(data253, 0, exp253, 2, data253.Length);
+
+            byte[][] sigs = new byte[][]
+            {
+                new byte[] { 10, 20, 30 },
+                new byte[] { 40, 50, 60, 70 },
+                new byte[] { 110, 111, 112, 113, 114, 115 }
+            };
+
+            yield return new object[] { new PushDataOp(OP._0), sigs, new byte[1] };
+            yield return new object[] { new PushDataOp(OP.Negative1), sigs, new byte[1] { (byte)OP.Negative1 } };
+            yield return new object[] { new PushDataOp(OP._1), sigs, new byte[1] { (byte)OP._1 } };
+            yield return new object[] { new PushDataOp(OP._16), sigs, new byte[1] { (byte)OP._16 } };
+            yield return new object[] { new PushDataOp(new byte[] { 255, 255, 255 }), sigs, new byte[] { 3, 255, 255, 255 } };
+            yield return new object[] { new PushDataOp(data75), sigs, exp75 };
+            yield return new object[] { new PushDataOp(data76), sigs, exp76 };
+            yield return new object[] { new PushDataOp(data253), sigs, exp253 };
+            // Remove signature
+            yield return new object[] { new PushDataOp(new byte[] { 10, 20, 30 }), sigs, new byte[0] };
+            yield return new object[] { new PushDataOp(new byte[] { 40, 50, 60, 70 }), sigs, new byte[0] };
+            yield return new object[] { new PushDataOp(new byte[] { 110, 111, 112, 113, 114, 115 }), sigs, new byte[0] };
+        }
+        [Theory]
+        [MemberData(nameof(WriteToStreamSigningMultiCases))]
+        public void WriteToStreamForSigning_MultiTest(PushDataOp op, byte[][] sigs, byte[] expected)
+        {
+            FastStream stream = new FastStream();
+            op.WriteToStreamForSigning(stream, sigs);
+            byte[] actual = stream.ToByteArray();
+
+            Assert.Equal(expected, actual);
         }
 
 
