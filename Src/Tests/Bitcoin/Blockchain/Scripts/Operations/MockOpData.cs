@@ -76,6 +76,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             return garbageCheckResult;
         }
 
+        internal byte[] expectedConditionalBoolBytes;
+        internal bool conditionalBoolCheckResult = true;
+        public bool CheckConditionalOpBool(byte[] data)
+        {
+            Assert.Equal(expectedConditionalBoolBytes, data);
+            return conditionalBoolCheckResult;
+        }
 
         public bool IsStrictDerSig { get; set; } = true;
 

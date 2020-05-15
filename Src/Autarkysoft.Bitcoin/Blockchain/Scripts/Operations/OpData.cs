@@ -84,6 +84,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         public bool IsStrictMultiSigGarbage { get; set; }
 
+        // This is a standard rule not consensus rule
+        public bool IsStrictConditionalOpBool { get; set; }
+
         public bool ForceLowS { get; set; }
 
         /// <inheritdoc/>
@@ -189,6 +192,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public bool CheckMultiSigGarbage(byte[] garbage) => IsStrictMultiSigGarbage ? garbage.Length == 0 : true;
 
+        /// <inheritdoc/>
+        public bool CheckConditionalOpBool(byte[] data) => IsStrictConditionalOpBool ?
+                                                           (data.Length == 0 || (data.Length == 1 && data[0] == 1)) : 
+                                                           true;
 
         /// <inheritdoc/>
         public bool IsBip65Enabled { get; set; }

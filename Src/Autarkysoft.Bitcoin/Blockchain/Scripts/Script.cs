@@ -247,7 +247,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                     // Special case of IFs:
                     case OP.IF:
-                        IFOp ifop = new IFOp(false);
+                        IFOp ifop = new IFOp();
 
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out byte nextB))
@@ -322,7 +322,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
                     case OP.NotIf:
-                        NotIfOp notifOp = new NotIfOp(false);
+                        NotIfOp notifOp = new NotIfOp();
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out nextB))
                         {

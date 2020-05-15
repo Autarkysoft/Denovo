@@ -94,7 +94,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }),
                     new CodeSeparatorOp() { IsExecuted = false },
                     new CheckSigOp()
                 },
@@ -106,7 +106,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }),
                     new CodeSeparatorOp() { IsExecuted = false },
                     new CheckSigOp()
                 },
@@ -118,7 +118,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }),
                     new CodeSeparatorOp() { IsExecuted = false },
                     new CheckSigOp()
                 },
@@ -130,7 +130,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }),
                     new CodeSeparatorOp() { IsExecuted = true },
                     new CheckSigOp()
                 },
@@ -141,7 +141,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             {
                 new IOperation[]
                 {
-                    new IFOp(new IOperation[] { new PushDataOp(Helper.ShortSig1Bytes) }, null, false),
+                    new IFOp(new IOperation[] { new PushDataOp(Helper.ShortSig1Bytes) }, null),
                     new CheckSigOp()
                 },
                 Helper.ShortSig1Bytes,
@@ -152,7 +152,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = false }, new AddOp() },
-                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }, false),
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }),
                     new Hash160Op(),
                     new CheckMultiSigOp(),
                     new EqualOp()
@@ -169,7 +169,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = true }, new AddOp() },
-                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }, false),
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }),
                     new Hash160Op(),
                     new CheckMultiSigOp(),
                     new EqualOp()
@@ -186,7 +186,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = false }, new AddOp() },
-                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = true }, new IfDupOp() }, false),
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = true }, new IfDupOp() }),
                     new Hash160Op(),
                     new CheckMultiSigOp(),
                     new EqualOp()
@@ -203,7 +203,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = false }, new AddOp() },
-                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }, false),
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }),
                     new Hash160Op(),
                     new CodeSeparatorOp() { IsExecuted = true },
                     new CheckMultiSigOp(),
@@ -267,7 +267,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             {
                 new IOperation[]
                 {
-                    new IFOp(new IOperation[] { new PushDataOp(Helper.ShortSig1Bytes) }, null, false),
+                    new IFOp(new IOperation[] { new PushDataOp(Helper.ShortSig1Bytes) }, null),
                     new CheckSigOp()
                 },
                 new byte[][] { Helper.ShortSig1Bytes },
@@ -278,7 +278,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }),
                     new CodeSeparatorOp() { IsExecuted = false },
                     new CheckSigOp()
                 },
@@ -290,7 +290,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }),
                     new CodeSeparatorOp() { IsExecuted = false },
                     new CheckSigOp()
                 },
@@ -302,7 +302,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }),
                     new CodeSeparatorOp() { IsExecuted = false },
                     new CheckSigOp()
                 },
@@ -314,7 +314,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
-                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }, false),
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }),
                     new CodeSeparatorOp() { IsExecuted = true },
                     new CheckSigOp()
                 },

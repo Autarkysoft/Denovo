@@ -49,6 +49,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         bool CheckMultiSigGarbage(byte[] garbage);
 
         /// <summary>
+        /// Checks the item popped by the conditional OPs to be a strict true/false value as a standard rule.
+        /// </summary>
+        /// <param name="data">Top stack item that was popped by <see cref="OP.IF"/> or <see cref="OP.NotIf"/></param>
+        /// <returns>True if the item is strictly encoded; otherwise false.</returns>
+        bool CheckConditionalOpBool(byte[] data);
+
+        /// <summary>
         /// Returns if numbers inside scripts (or the popped data from stack to be converted to numbers)
         /// should be checked for strict and shortest encoding.
         /// </summary>

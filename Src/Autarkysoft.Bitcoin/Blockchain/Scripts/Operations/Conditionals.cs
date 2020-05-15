@@ -15,24 +15,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     public abstract class IfElseOpsBase : BaseOperation
     {
         /// <summary>
-        /// Each IF operation pops an item from the stack first and converts it to a boolean. 
-        /// <see cref="OP.IF"/> expressions run if that item was true while 
-        /// <see cref="OP.NotIf"/> expressions run if that item was false.
+        /// Each IF operation first pops an item from the stack and converts it to a boolean. 
+        /// <see cref="OP.IF"/> expressions run if that item was true, while
+        /// <see cref="OP.NotIf"/> expressions run if that item was false;
+        /// Otherwise the <see cref="OP.ELSE"/> expressions run if they exist.
         /// </summary>
         protected bool runWithTrue;
 
         /// <summary>
         /// The main operations under the <see cref="OP.IF"/> or <see cref="OP.NotIf"/> OP.
+        /// <para/>Note that this must never be null but it can be empty (constructor must set it correctly)
         /// </summary>
         protected internal IOperation[] mainOps;
         /// <summary>
         /// The "else" operations under the <see cref="OP.ELSE"/> op.
+        /// <para/>Note that this can be null but null and empty array have different meaning (null array won't write 
+        /// OP_ELSE to stream while empty array writes OP_ELSE and follows it up with OP_EndIf)
         /// </summary>
         protected internal IOperation[] elseOps;
-        /// <summary>
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
-        /// </summary>
-        protected internal bool isWitness;
 
 
         /// <summary>
@@ -54,9 +54,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // OP_NOTIF: runs if false
             byte[] topItem = opData.Pop();
 
-            if (isWitness && (topItem.Length > 1 || (topItem.Length == 1 && topItem[0] != 1)))
+            if (!opData.CheckConditionalOpBool(topItem))
             {
-                error = "True/False item popped by conditional OPs in a witness script must be strinct.";
+                error = "True/False item popped by conditional OPs must be strict.";
                 return false;
             }
 
@@ -87,7 +87,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <summary>
-        /// Returns number of <see cref="OP.CheckSig"/>, <see cref="OP.CheckSigVerify"/>, <see cref="OP.CheckMultiSig"/>
+        /// Returns accurate number of <see cref="OP.CheckSig"/>, <see cref="OP.CheckSigVerify"/>, <see cref="OP.CheckMultiSig"/>
         /// and <see cref="OP.CheckMultiSigVerify"/> operations in this instance without a full script evaluation.
         /// </summary>
         /// <returns>Number of "SigOps"</returns>
@@ -111,6 +111,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                         res += 20;
                     }
                 }
+                else if (mainOps[i] is IfElseOpsBase conditional)
+                {
+                    res += conditional.CountSigOps();
+                }
             }
             if (elseOps != null)
             {
@@ -131,6 +135,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                             res += 20;
                         }
                     }
+                    else if (elseOps[i] is IfElseOpsBase conditional)
+                    {
+                        res += conditional.CountSigOps();
+                    }
                 }
             }
 
@@ -149,12 +157,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 {
                     return true;
                 }
+                else if (op is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
+                {
+                    return true;
+                }
             }
             if (elseOps != null)
             {
                 foreach (var op in elseOps)
                 {
                     if (op is CodeSeparatorOp cs && cs.IsExecuted)
+                    {
+                        return true;
+                    }
+                    else if (op is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
                     {
                         return true;
                     }
@@ -188,45 +204,57 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
-        /// <inheritdoc/>
-        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
+        private int GetLastExecutedCSIndexMain()
         {
-            int lastExecutedElseCSep = -1;
+            for (int i = mainOps.Length - 1; i >= 0; i--)
+            {
+                if (mainOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
+                {
+                    return i;
+                }
+                else if (mainOps[i] is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        private int GetLastExecutedCSIndexElse()
+        {
             if (elseOps != null)
             {
                 for (int i = elseOps.Length - 1; i >= 0; i--)
                 {
                     if (elseOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
                     {
-                        lastExecutedElseCSep = i;
-                        break;
+                        return i;
+                    }
+                    else if (elseOps[i] is IfElseOpsBase conditional && conditional.HasExecutedCodeSeparator())
+                    {
+                        return i;
                     }
                 }
             }
-
-            if (lastExecutedElseCSep >= 0)
+            return -1;
+        }
+        /// <inheritdoc/>
+        public override void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig)
+        {
+            int elseCSep = GetLastExecutedCSIndexElse();
+            if (elseCSep >= 0)
             {
-                WriteElse(stream, lastExecutedElseCSep, sig);
+                WriteElseForSigning(stream, elseCSep, sig);
             }
             else
             {
-                int lastExecutedCSep = -1;
-                for (int i = mainOps.Length - 1; i >= 0; i--)
+                int mainCSep = GetLastExecutedCSIndexMain();
+                if (mainCSep >= 0)
                 {
-                    if (mainOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
-                    {
-                        lastExecutedCSep = i;
-                        break;
-                    }
-                }
-
-                if (lastExecutedCSep >= 0)
-                {
-                    WriteMain(stream, lastExecutedCSep, sig);
+                    WriteMainForSigning(stream, mainCSep, sig);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        WriteElse(stream, 0, sig);
+                        WriteElseForSigning(stream, 0, sig);
                     }
                 }
                 else
@@ -234,21 +262,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     // This branch is when there is either no OP_CodeSeparator or they weren't executed
                     // (eg. the whole IF/ELSE be in unexecuted branch of another IF/ELSE)
                     stream.Write((byte)OpValue);
-                    WriteMain(stream, 0, sig);
+                    WriteMainForSigning(stream, 0, sig);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        WriteElse(stream, 0, sig);
+                        WriteElseForSigning(stream, 0, sig);
                     }
                 }
             }
 
-            // End with OP_EndIf
+            // Always end with OP_EndIf
             stream.Write((byte)OP.EndIf);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteMain(FastStream stream, int start, ReadOnlySpan<byte> sig)
+        private void WriteMainForSigning(FastStream stream, int start, ReadOnlySpan<byte> sig)
         {
             for (int i = start; i < mainOps.Length; i++)
             {
@@ -257,7 +285,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteElse(FastStream stream, int start, ReadOnlySpan<byte> sig)
+        private void WriteElseForSigning(FastStream stream, int start, ReadOnlySpan<byte> sig)
         {
             for (int i = start; i < elseOps.Length; i++)
             {
@@ -269,42 +297,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public override void WriteToStreamForSigning(FastStream stream, byte[][] sigs)
         {
-            int lastExecutedElseCSep = -1;
-            if (elseOps != null)
+            int elseCSep = GetLastExecutedCSIndexElse();
+            if (elseCSep >= 0)
             {
-                for (int i = elseOps.Length - 1; i >= 0; i--)
-                {
-                    if (elseOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
-                    {
-                        lastExecutedElseCSep = i;
-                        break;
-                    }
-                }
-            }
-
-            if (lastExecutedElseCSep >= 0)
-            {
-                WriteElse(stream, lastExecutedElseCSep, sigs);
+                WriteElseForSigning(stream, elseCSep, sigs);
             }
             else
             {
-                int lastExecutedCSep = -1;
-                for (int i = mainOps.Length - 1; i >= 0; i--)
+                int mainCSep = GetLastExecutedCSIndexMain();
+                if (mainCSep >= 0)
                 {
-                    if (mainOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
-                    {
-                        lastExecutedCSep = i;
-                        break;
-                    }
-                }
-
-                if (lastExecutedCSep >= 0)
-                {
-                    WriteMain(stream, lastExecutedCSep, sigs);
+                    WriteMainForSigning(stream, mainCSep, sigs);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        WriteElse(stream, 0, sigs);
+                        WriteElseForSigning(stream, 0, sigs);
                     }
                 }
                 else
@@ -312,21 +319,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     // This branch is when there is either no OP_CodeSeparator or they weren't executed
                     // (eg. the whole IF/ELSE be in unexecuted branch of another IF/ELSE)
                     stream.Write((byte)OpValue);
-                    WriteMain(stream, 0, sigs);
+                    WriteMainForSigning(stream, 0, sigs);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        WriteElse(stream, 0, sigs);
+                        WriteElseForSigning(stream, 0, sigs);
                     }
                 }
             }
 
-            // End with OP_EndIf
+            // Always end with OP_EndIf
             stream.Write((byte)OP.EndIf);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteMain(FastStream stream, int start, byte[][] sigs)
+        private void WriteMainForSigning(FastStream stream, int start, byte[][] sigs)
         {
             for (int i = start; i < mainOps.Length; i++)
             {
@@ -335,7 +342,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteElse(FastStream stream, int start, byte[][] sigs)
+        private void WriteElseForSigning(FastStream stream, int start, byte[][] sigs)
         {
             for (int i = start; i < elseOps.Length; i++)
             {
@@ -347,51 +354,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public override void WriteToStreamForSigningSegWit(FastStream stream)
         {
-            int lastExecutedElseCSep = -1;
-            if (elseOps != null)
+            int elseCSep = GetLastExecutedCSIndexElse();
+            if (elseCSep >= 0)
             {
-                for (int i = elseOps.Length - 1; i >= 0; i--)
-                {
-                    if (elseOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
-                    {
-                        lastExecutedElseCSep = i;
-                        break;
-                    }
-                }
-            }
-
-            if (lastExecutedElseCSep >= 0)
-            {
-                for (int i = lastExecutedElseCSep; i < elseOps.Length; i++)
-                {
-                    elseOps[i].WriteToStreamForSigningSegWit(stream);
-                }
+                WriteElseForSigningSegWit(stream, elseCSep);
             }
             else
             {
-                int lastExecutedCSep = -1;
-                for (int i = mainOps.Length - 1; i >= 0; i--)
+                int mainCSep = GetLastExecutedCSIndexMain();
+                if (mainCSep >= 0)
                 {
-                    if (mainOps[i] is CodeSeparatorOp cs && cs.IsExecuted)
-                    {
-                        lastExecutedCSep = i;
-                        break;
-                    }
-                }
-
-                if (lastExecutedCSep >= 0)
-                {
-                    for (int i = lastExecutedCSep; i < mainOps.Length; i++)
-                    {
-                        mainOps[i].WriteToStreamForSigningSegWit(stream);
-                    }
+                    WriteMainForSigningSegWit(stream, mainCSep);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        for (int i = 0; i < elseOps.Length; i++)
-                        {
-                            elseOps[i].WriteToStreamForSigningSegWit(stream);
-                        }
+                        WriteElseForSigningSegWit(stream, 0);
                     }
                 }
                 else
@@ -399,23 +376,35 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     // This branch is when there is either no OP_CodeSeparator or they weren't executed
                     // (eg. the whole IF/ELSE be in unexecuted branch of another IF/ELSE)
                     stream.Write((byte)OpValue);
-                    for (int i = 0; i < mainOps.Length; i++)
-                    {
-                        mainOps[i].WriteToStreamForSigningSegWit(stream);
-                    }
+                    WriteMainForSigningSegWit(stream, 0);
                     if (elseOps != null)
                     {
                         stream.Write((byte)OP.ELSE);
-                        for (int i = 0; i < elseOps.Length; i++)
-                        {
-                            elseOps[i].WriteToStreamForSigningSegWit(stream);
-                        }
+                        WriteElseForSigningSegWit(stream, 0);
                     }
                 }
             }
 
             // End with OP_EndIf
             stream.Write((byte)OP.EndIf);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteMainForSigningSegWit(FastStream stream, int start)
+        {
+            for (int i = start; i < mainOps.Length; i++)
+            {
+                mainOps[i].WriteToStreamForSigningSegWit(stream);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteElseForSigningSegWit(FastStream stream, int start)
+        {
+            for (int i = start; i < elseOps.Length; i++)
+            {
+                elseOps[i].WriteToStreamForSigningSegWit(stream);
+            }
         }
 
 
@@ -502,13 +491,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <summary>
         /// Initializes a new instance of <see cref="IFOp"/> for internal use
         /// </summary>
-        /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
-        /// </param>
-        internal IFOp(bool isWit)
+        internal IFOp()
         {
             runWithTrue = true;
-            isWitness = isWit;
         }
 
         /// <summary>
@@ -516,13 +501,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <param name="ifBlockOps">The main array of operations to run after <see cref="OP.IF"/></param>
         /// <param name="elseBlockOps">The alternative set of operations to run if the previous expresions didn't run.</param>
-        /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
-        /// </param>
-        public IFOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps, bool isWit)
+        public IFOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps)
         {
             runWithTrue = true;
-            isWitness = isWit;
             mainOps = ifBlockOps ?? new IOperation[0];
             elseOps = elseBlockOps;
         }
@@ -540,13 +521,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <summary>
         /// Initializes a new instance of <see cref="NotIfOp"/> for internal use
         /// </summary>
-        /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
-        /// </param>
-        internal NotIfOp(bool isWit)
+        internal NotIfOp()
         {
             runWithTrue = false;
-            isWitness = isWit;
         }
 
         /// <summary>
@@ -554,13 +531,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <param name="ifBlockOps">The main array of operations to run after <see cref="OP.IF"/></param>
         /// <param name="elseBlockOps">The alternative set of operations to run if the previous expresions didn't run.</param>
-        /// <param name="isWit">
-        /// Indicates whether this <see cref="IOperation"/> is inside a <see cref="IWitness"/>.
-        /// </param>
-        public NotIfOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps, bool isWit)
+        public NotIfOp(IOperation[] ifBlockOps, IOperation[] elseBlockOps)
         {
             runWithTrue = false;
-            isWitness = isWit;
             mainOps = ifBlockOps ?? new IOperation[0];
             elseOps = elseBlockOps;
         }

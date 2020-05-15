@@ -15,10 +15,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [Fact]
         public void ConstructorTest()
         {
-            NotIfOp op = new NotIfOp(null, null, true);
+            NotIfOp op = new NotIfOp(null, null);
 
             Assert.Equal(OP.NotIf, op.OpValue);
-            Helper.ComparePrivateField(op, "isWitness", true);
             Helper.ComparePrivateField(op, "runWithTrue", false);
         }
 
@@ -30,16 +29,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[] { new MockOp(false, "This should not have been run!") },
                 new IOperation[] { new MockOp(true, null) },
                 OpTestCaseHelper.TrueBytes,
-                false, // isWit
+                true, // checkRes
                 true, // runRes
-                null
+                null // error
             };
             yield return new object[]
             {
                 new IOperation[] { new MockOp(false, "This should not have been run!") },
                 new IOperation[] { new MockOp(false, "Foo") },
                 OpTestCaseHelper.TrueBytes,
-                false, // isWit
+                true, // checkRes
                 false, // runRes
                 "Foo"
             };
@@ -48,7 +47,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[] { new MockOp(true, null) },
                 new IOperation[] { new MockOp(false, "This should not have been run!") },
                 OpTestCaseHelper.FalseBytes,
-                false, // isWit
+                true, // checkRes
                 true, // runRes
                 null
             };
@@ -57,134 +56,44 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[] { new MockOp(false, "Foo") },
                 new IOperation[] { new MockOp(false, "This should not have been run!") },
                 OpTestCaseHelper.FalseBytes,
-                false, // isWit
+                true, // checkRes
                 false, // runRes
                 "Foo"
             };
-            // Change the popData
+            // Fail on checking the popped data
             yield return new object[]
             {
                 new IOperation[] { new MockOp(false, "This should not have been run!") },
-                new IOperation[] { new MockOp(true, null) },
+                new IOperation[] { new MockOp(false, "This should not have been run!") },
                 OpTestCaseHelper.b7,
-                false, // isWit
-                true, // runRes
-                null
-            };
-            // All the above for Witnesses
-            yield return new object[]
-            {
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                new IOperation[] { new MockOp(true, null) },
-                OpTestCaseHelper.TrueBytes,
-                true, // isWit
-                true, // runRes
-                null
-            };
-            yield return new object[]
-            {
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                new IOperation[] { new MockOp(false, "Foo") },
-                OpTestCaseHelper.TrueBytes,
-                true, // isWit
+                false, // checkRes
                 false, // runRes
-                "Foo"
-            };
-            yield return new object[]
-            {
-                new IOperation[] { new MockOp(true, null) },
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                OpTestCaseHelper.FalseBytes,
-                true, // isWit
-                true, // runRes
-                null
-            };
-            yield return new object[]
-            {
-                new IOperation[] { new MockOp(false, "Foo") },
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                OpTestCaseHelper.FalseBytes,
-                true, // isWit
-                false, // runRes
-                "Foo"
-            };
-            // Change the popData
-            yield return new object[]
-            {
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                new IOperation[] { new MockOp(true, null) },
-                OpTestCaseHelper.b7,
-                true, // isWit
-                false, // runRes
-                "True/False item popped by conditional OPs in a witness script must be strinct."
-            };
-            // Null operation lists
-            yield return new object[]
-            {
-                null,
-                null,
-                OpTestCaseHelper.TrueBytes,
-                false, // isWit
-                true, // runRes
-                null
-            };
-            yield return new object[]
-            {
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                null,
-                OpTestCaseHelper.TrueBytes,
-                true, // isWit
-                true, // runRes
-                null
-            };
-            yield return new object[]
-            {
-                null,
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                OpTestCaseHelper.FalseBytes,
-                false, // isWit
-                true, // runRes
-                null
-            };
-            yield return new object[]
-            {
-                null,
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                OpTestCaseHelper.FalseBytes,
-                true, // isWit
-                true, // runRes
-                null
+                "True/False item popped by conditional OPs must be strict."
             };
         }
         [Theory]
         [MemberData(nameof(GetRunCases))]
-        public void RunTest(IOperation[] main, IOperation[] other, byte[] popData, bool isWit, bool runResult, string expErr)
+        public void RunTest(IOperation[] main, IOperation[] other, byte[] popData, bool checkRes, bool runResult, string expErr)
         {
             MockOpData data = new MockOpData(FuncCallName.Pop)
             {
                 _itemCount = 1,
+                conditionalBoolCheckResult = checkRes,
+                expectedConditionalBoolBytes = popData,
                 popData = new byte[][] { popData }
             };
 
-            NotIfOp op = new NotIfOp(main, other, isWit);
+            NotIfOp op = new NotIfOp(main, other);
             bool b = op.Run(data, out string error);
 
-            if (runResult)
-            {
-                Assert.True(b, error);
-                Assert.Null(error);
-            }
-            else
-            {
-                Assert.False(b);
-                Assert.Equal(expErr, error);
-            }
+            Assert.Equal(runResult, b);
+            Assert.Equal(expErr, error);
         }
 
         [Fact]
         public void Run_FailTest()
         {
-            NotIfOp op = new NotIfOp(null, null, true);
+            NotIfOp op = new NotIfOp(null, null);
             MockOpData data = new MockOpData()
             {
                 _itemCount = 0
