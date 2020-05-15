@@ -228,7 +228,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            opData.Push(IntToByteArray((a == 0) ? 1 : 0));
+            opData.Push(a == 0);
 
             error = null;
             return true;
@@ -258,7 +258,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            opData.Push(IntToByteArray((a == 0) ? 0 : 1));
+            opData.Push(a != 0);
 
             error = null;
             return true;
@@ -346,8 +346,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a != 0 && b != 0) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a != 0 && b != 0);
 
             error = null;
             return true;
@@ -377,8 +376,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a != 0 || b != 0) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a != 0 || b != 0);
 
             error = null;
             return true;
@@ -408,8 +406,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a == b) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a == b);
 
             error = null;
             return true;
@@ -475,8 +472,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a != b) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a != b);
 
             error = null;
             return true;
@@ -506,8 +502,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a < b) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a < b);
 
             error = null;
             return true;
@@ -537,8 +532,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a > b) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a > b);
 
             error = null;
             return true;
@@ -568,8 +562,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a <= b) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a <= b);
 
             error = null;
             return true;
@@ -599,8 +592,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (a >= b) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(a >= b);
 
             error = null;
             return true;
@@ -712,8 +704,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            int c = (x >= min && x < max) ? 1 : 0;
-            opData.Push(IntToByteArray(c));
+            opData.Push(x >= min && x < max);
 
             error = null;
             return true;

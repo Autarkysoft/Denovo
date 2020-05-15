@@ -17,11 +17,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 1 }, new byte[] { 1, 2 })]
         public void Run_NotEqual_Test(byte[] ba1, byte[] ba2)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { ba1, ba2 },
-                pushData = new byte[][] { OpTestCaseHelper.FalseBytes },
+                pushBool = false
             };
 
             OpTestCaseHelper.RunTest<EqualOp>(data, OP.EQUAL);
@@ -33,11 +33,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 1, 2 }, new byte[] { 1, 2 })]
         public void Run_Equal_Test(byte[] ba1, byte[] ba2)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { ba1, ba2 },
-                pushData = new byte[][] { OpTestCaseHelper.TrueBytes },
+                pushBool = true
             };
 
             OpTestCaseHelper.RunTest<EqualOp>(data, OP.EQUAL);

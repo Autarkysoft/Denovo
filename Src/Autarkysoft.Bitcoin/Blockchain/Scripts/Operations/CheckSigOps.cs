@@ -86,7 +86,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             bool b = ExtractAndVerify(opData, out error);
             if (error is null)
             {
-                opData.Push(b ? new byte[] { 1 } : new byte[0]);
+                opData.Push(b);
                 return true;
             }
             else
@@ -264,7 +264,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             bool b = ExtractAndVerify(opData, out error);
             if (error is null)
             {
-                opData.Push(b ? new byte[] { 1 } : new byte[0]);
+                opData.Push(b);
                 return true;
             }
             else

@@ -9,8 +9,6 @@ using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
-    // TODO: add a new method: Push(bool)
-
     /// <summary>
     /// Defines a last-in-first-out (LIFO) collection (similar to <see cref="System.Collections.Stack"/>)
     /// to be used with <see cref="IOperation"/>s as their data provider.
@@ -145,6 +143,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="index"></param>
         /// <returns>The byte array removed from the specified intex</returns>
         byte[] PopAtIndex(int index);
+
+        /// <summary>
+        /// Pushes (or inserts) byte array equivalant of the given boolean at the top of the stack.
+        /// </summary>
+        /// <param name="b">Boolean value to push</param>
+        void Push(bool b);
 
         /// <summary>
         /// Pushes (or inserts) an item at the top of the stack.

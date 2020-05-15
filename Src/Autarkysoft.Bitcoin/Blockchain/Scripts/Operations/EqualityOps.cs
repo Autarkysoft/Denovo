@@ -33,14 +33,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             ReadOnlySpan<byte> item1 = opData.Pop();
             ReadOnlySpan<byte> item2 = opData.Pop();
 
-            if (item1.SequenceEqual(item2))
-            {
-                opData.Push(new byte[] { 1 });
-            }
-            else
-            {
-                opData.Push(new byte[0]);
-            }
+            opData.Push(item1.SequenceEqual(item2));
 
             error = null;
             return true;

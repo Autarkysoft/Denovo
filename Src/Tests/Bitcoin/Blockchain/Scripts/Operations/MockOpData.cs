@@ -344,6 +344,21 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        internal bool? pushBool;
+        public void Push(bool b)
+        {
+            CheckCall(FuncCallName.PushBool);
+            if (pushBool == null)
+            {
+                Assert.True(false, "Unexpected bool was pushed to stack.");
+            }
+            else
+            {
+                Assert.Equal((bool)pushBool, b);
+            }
+        }
+
+
         internal byte[][] pushData;
         private int pushDataIndex;
         public void Push(byte[] data)

@@ -108,20 +108,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetNotCases()
         {
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.numNeg1, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.maxInt, OpTestCaseHelper.num0 };
+            yield return new object[] { OpTestCaseHelper.num0, true };
+            yield return new object[] { OpTestCaseHelper.num1, false };
+            yield return new object[] { OpTestCaseHelper.numNeg1, false };
+            yield return new object[] { OpTestCaseHelper.maxInt, false };
         }
         [Theory]
         [MemberData(nameof(GetNotCases))]
-        public void NOTOpTest(byte[] toPop, byte[] toPush)
+        public void NOTOpTest(byte[] toPop, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 1,
+                pushBool = expBool,
                 popData = new byte[][] { toPop },
-                pushData = new byte[][] { toPush },
             };
 
             OpTestCaseHelper.RunTest<NOTOp>(data, OP.NOT);
@@ -136,20 +136,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetNotEq0Cases()
         {
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.numNeg1, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
+            yield return new object[] { OpTestCaseHelper.num0, false };
+            yield return new object[] { OpTestCaseHelper.num1, true };
+            yield return new object[] { OpTestCaseHelper.numNeg1, true };
+            yield return new object[] { OpTestCaseHelper.num2, true };
         }
         [Theory]
         [MemberData(nameof(GetNotEq0Cases))]
-        public void NotEqual0OpTest(byte[] toPop, byte[] toPush)
+        public void NotEqual0OpTest(byte[] toPop, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 1,
                 popData = new byte[][] { toPop },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool
             };
 
             OpTestCaseHelper.RunTest<NotEqual0Op>(data, OP.NotEqual0);
@@ -231,21 +231,21 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetBoolAndCases()
         {
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.numNeg1, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num4, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.maxInt, OpTestCaseHelper.num0, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, OpTestCaseHelper.num0 };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, true };
+            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.numNeg1, true };
+            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num4, false };
+            yield return new object[] { OpTestCaseHelper.maxInt, OpTestCaseHelper.num0, false };
+            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, false };
         }
         [Theory]
         [MemberData(nameof(GetBoolAndCases))]
-        public void BoolAndOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void BoolAndOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush }
+                pushBool = expBool
             };
 
             OpTestCaseHelper.RunTest<BoolAndOp>(data, OP.BoolAnd);
@@ -260,21 +260,21 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetBoolOrCases()
         {
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.numNeg1, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num4, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.maxInt, OpTestCaseHelper.num0, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, OpTestCaseHelper.num0 };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, true };
+            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.numNeg1, true };
+            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num4, true };
+            yield return new object[] { OpTestCaseHelper.maxInt, OpTestCaseHelper.num0, true };
+            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, false };
         }
         [Theory]
         [MemberData(nameof(GetBoolOrCases))]
-        public void BoolOrOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void BoolOrOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool
             };
 
             OpTestCaseHelper.RunTest<BoolOrOp>(data, OP.BoolOr);
@@ -289,20 +289,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetNumEqualCases()
         {
-            yield return new object[] { OpTestCaseHelper.num2, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.numNeg1, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.numNeg1, OpTestCaseHelper.numNeg1, OpTestCaseHelper.num1 };
+            yield return new object[] { OpTestCaseHelper.num2, OpTestCaseHelper.num2, true };
+            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.numNeg1, false };
+            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, true };
+            yield return new object[] { OpTestCaseHelper.numNeg1, OpTestCaseHelper.numNeg1, true };
         }
         [Theory]
         [MemberData(nameof(GetNumEqualCases))]
-        public void NumEqualOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void NumEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool
             };
 
             OpTestCaseHelper.RunTest<NumEqualOp>(data, OP.NumEqual);
@@ -350,19 +350,19 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetNumNotEqualCases()
         {
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, OpTestCaseHelper.num0 };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, true };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, false };
+            yield return new object[] { OpTestCaseHelper.num0, OpTestCaseHelper.num0, false };
         }
         [Theory]
         [MemberData(nameof(GetNumNotEqualCases))]
-        public void NumNotEqualOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void NumNotEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool,
             };
 
             OpTestCaseHelper.RunTest<NumNotEqualOp>(data, OP.NumNotEqual);
@@ -377,19 +377,19 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetLessThanCases()
         {
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, OpTestCaseHelper.num0 };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, true };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, false };
+            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, false };
         }
         [Theory]
         [MemberData(nameof(GetLessThanCases))]
-        public void LessThanOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void LessThanOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool,
             };
 
             OpTestCaseHelper.RunTest<LessThanOp>(data, OP.LessThan);
@@ -404,19 +404,19 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetGreaterThanCases()
         {
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, false };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, false };
+            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, true };
         }
         [Theory]
         [MemberData(nameof(GetGreaterThanCases))]
-        public void GreaterThanOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void GreaterThanOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool,
             };
 
             OpTestCaseHelper.RunTest<GreaterThanOp>(data, OP.GreaterThan);
@@ -431,19 +431,19 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetLessThanOrEqualCases()
         {
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, OpTestCaseHelper.num0 };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, true };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, true };
+            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, false };
         }
         [Theory]
         [MemberData(nameof(GetLessThanOrEqualCases))]
-        public void LessThanOrEqualOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void LessThanOrEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool,
             };
 
             OpTestCaseHelper.RunTest<LessThanOrEqualOp>(data, OP.LessThanOrEqual);
@@ -458,19 +458,19 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetGreaterThanOrEqualCases()
         {
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, OpTestCaseHelper.num0 };
-            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, OpTestCaseHelper.num1 };
-            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, OpTestCaseHelper.num1 };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num2, false };
+            yield return new object[] { OpTestCaseHelper.num1, OpTestCaseHelper.num1, true };
+            yield return new object[] { OpTestCaseHelper.num3, OpTestCaseHelper.num2, true };
         }
         [Theory]
         [MemberData(nameof(GetGreaterThanOrEqualCases))]
-        public void GreaterThanOrEqualOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
+        public void GreaterThanOrEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool
             };
 
             OpTestCaseHelper.RunTest<GreaterThanOrEqualOp>(data, OP.GreaterThanOrEqual);
@@ -542,38 +542,38 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
             yield return new object[]
             {
                 OpTestCaseHelper.num2, OpTestCaseHelper.num0, OpTestCaseHelper.num3,
-                OpTestCaseHelper.num1
+                true
             };
             yield return new object[]
             {
                 OpTestCaseHelper.num2, OpTestCaseHelper.num2, OpTestCaseHelper.num3,
-                OpTestCaseHelper.num1
+                true
             };
             yield return new object[]
             {
                 OpTestCaseHelper.num2, OpTestCaseHelper.num3, OpTestCaseHelper.num3,
-                OpTestCaseHelper.num0
+                false
             };
             yield return new object[]
             {
                 OpTestCaseHelper.num2, OpTestCaseHelper.num0, OpTestCaseHelper.num2,
-                OpTestCaseHelper.num0
+                false
             };
             yield return new object[]
             {
                 OpTestCaseHelper.num2, OpTestCaseHelper.num3, OpTestCaseHelper.num1,
-                OpTestCaseHelper.num0
+                false
             };
         }
         [Theory]
         [MemberData(nameof(GetWITHINCases))]
-        public void WITHINOpTest(byte[] toPop1, byte[] toPop2, byte[] toPop3, byte[] toPush)
+        public void WITHINOpTest(byte[] toPop1, byte[] toPop2, byte[] toPop3, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.PushBool)
             {
                 _itemCount = 3,
                 popCountData = new byte[][][] { new byte[][] { toPop1, toPop2, toPop3 } },
-                pushData = new byte[][] { toPush },
+                pushBool = expBool
             };
 
             OpTestCaseHelper.RunTest<WITHINOp>(data, OP.WITHIN);

@@ -355,6 +355,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <inheritdoc/>
+        public void Push(bool b) => Push(b ? new byte[] { 1 } : new byte[0]);
+
+        /// <inheritdoc/>
         public void Push(byte[] data)
         {
             if (ItemCount == holder.Length)

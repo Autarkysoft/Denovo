@@ -25,7 +25,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 true, // ECDSA verification result
                 true, // BIP-66
                 new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes }, // PopMulti data
-                OpTestCaseHelper.TrueBytes // Push data
+                true // Push result
             };
             yield return new object[]
             {
@@ -36,7 +36,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 false,
                 true,
                 new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes },
-                OpTestCaseHelper.FalseBytes
+                false
             };
             yield return new object[]
             {
@@ -49,7 +49,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 true,
                 false, // pre BIP-66
                 new byte[][] { new byte[0], KeyHelper.Pub1CompBytes },
-                OpTestCaseHelper.FalseBytes
+                false
             };
             yield return new object[]
             {
@@ -60,7 +60,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 true,
                 true, // after BIP-66
                 new byte[][] { new byte[0], KeyHelper.Pub1CompBytes },
-                OpTestCaseHelper.FalseBytes
+                false
             };
             yield return new object[]
             {
@@ -71,7 +71,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 true,
                 false,
                 new byte[][] { Helper.ShortSig1Bytes, new byte[0] },
-                OpTestCaseHelper.FalseBytes
+                false
             };
             yield return new object[]
             {
@@ -82,7 +82,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 true,
                 true,
                 new byte[][] { Helper.ShortSig1Bytes, new byte[0] },
-                OpTestCaseHelper.FalseBytes
+                false
             };
             yield return new object[]
             {
@@ -93,7 +93,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 true,
                 false,
                 new byte[][] { Helper.ShortSig1Bytes, new byte[] { 1, 2, 3 } },
-                OpTestCaseHelper.FalseBytes
+                false
             };
             yield return new object[]
             {
@@ -104,14 +104,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 true,
                 true,
                 new byte[][] { Helper.ShortSig1Bytes, new byte[] { 1, 2, 3 } },
-                OpTestCaseHelper.FalseBytes
+                false
             };
         }
         [Theory]
         [MemberData(nameof(GetRunCases))]
-        public void RunTest(Signature expSig, PublicKey expPub, byte[] expSigBa, bool success, bool der, byte[][] pop, byte[] push)
+        public void RunTest(Signature expSig, PublicKey expPub, byte[] expSigBa, bool success, bool der, byte[][] pop, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.Push)
+            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 expectedSig = expSig,
@@ -120,7 +120,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 sigVerificationSuccess = success,
                 IsStrictDerSig = der,
                 popCountData = new byte[][][] { pop },
-                pushData = new byte[][] { push }
+                pushBool = expBool
             };
 
             OpTestCaseHelper.RunTest<CheckSigOp>(data, OP.CheckSig);

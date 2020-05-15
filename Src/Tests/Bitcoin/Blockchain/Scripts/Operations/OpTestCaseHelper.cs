@@ -19,6 +19,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         PopIndex,
         Push,
         PushMulti,
+        PushBool,
         Insert,
         InsertMulti,
         AltPop,

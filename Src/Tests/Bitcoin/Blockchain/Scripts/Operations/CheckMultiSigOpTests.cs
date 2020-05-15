@@ -18,7 +18,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex,
                                              FuncCallName.PopCount, FuncCallName.PopCount,
-                                             FuncCallName.Pop, FuncCallName.Push)
+                                             FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 8,
                 _opCountToReturn = 1,
@@ -39,7 +39,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 expectedPubkeys = new byte[][] { KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = true,
-                pushData = new byte[][] { OpTestCaseHelper.TrueBytes }
+                pushBool = true
             };
 
             OpTestCaseHelper.RunTest<CheckMultiSigOp>(data, OP.CheckMultiSig);
@@ -51,7 +51,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex,
                                              FuncCallName.PopCount, FuncCallName.PopCount,
-                                             FuncCallName.Pop, FuncCallName.Push)
+                                             FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 8,
                 _opCountToReturn = 5,
@@ -72,7 +72,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 expectedPubkeys = new byte[][] { KeyHelper.Pub1CompBytes, KeyHelper.Pub2CompBytes, KeyHelper.Pub3CompBytes },
                 expectedMultiSigGarbage = OpTestCaseHelper.b7,
                 sigVerificationSuccess = false,
-                pushData = new byte[][] { OpTestCaseHelper.FalseBytes }
+                pushBool = false
             };
 
             OpTestCaseHelper.RunTest<CheckMultiSigOp>(data, OP.CheckMultiSig);

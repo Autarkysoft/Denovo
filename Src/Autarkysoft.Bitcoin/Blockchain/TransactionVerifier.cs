@@ -384,7 +384,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                                 byte[] spendScr = scrSer.ConvertP2wpkh(redeemOps);
                                 byte[] dataToSign = tx.SerializeForSigningSegWit(spendScr, i, prevOutput.Amount, sig.SigHash);
                                 bool b = calc.Verify(dataToSign, sig, pub, ForceLowS);
-                                stack.Push(b ? new byte[] { 1 } : new byte[0]);
+                                stack.Push(b);
                             }
                         }
                         else if (rdmType == RedeemScriptSpecialType.P2SH_P2WSH)
@@ -504,7 +504,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         byte[] spendScr = scrSer.ConvertP2wpkh(pubOps);
                         byte[] dataToSign = tx.SerializeForSigningSegWit(spendScr, i, prevOutput.Amount, sig.SigHash);
                         bool b = calc.Verify(dataToSign, sig, pub, ForceLowS);
-                        stack.Push(b ? new byte[] { 1 } : new byte[0]);
+                        stack.Push(b);
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2WSH)
