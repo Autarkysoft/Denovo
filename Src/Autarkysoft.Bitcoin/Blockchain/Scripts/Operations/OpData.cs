@@ -38,8 +38,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 cap = DefaultCapacity;
             }
             holder = new byte[cap][];
-
-            calc = new EllipticCurveCalculator();
         }
 
         /// <summary>
@@ -59,8 +57,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 ItemCount = dataToPush.Length;
                 Array.Copy(dataToPush, holder, dataToPush.Length);
             }
-
-            calc = new EllipticCurveCalculator();
         }
 
 
@@ -69,34 +65,54 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         // Don't rename (used by test through reflection).
         private byte[][] holder;
 
-        // TODO: complete the code for signing part + tests
-        public ITransaction Tx { get; set; }
-        public IOperation[] ExecutingScript { get; set; }
-        public int TxInIndex { get; set; }
-        public ulong AmountBeingSpent { get; set; }
-        public bool IsSegWit { get; set; }
-
+        private readonly EllipticCurveCalculator calc = new EllipticCurveCalculator();
+        private readonly ScriptSerializer scriptSer = new ScriptSerializer();
 
         /// <summary>
-        /// [Default value = true]
-        /// If true it will enforce the extra item popped by <see cref="OP.CheckMultiSig"/> to be <see cref="OP._0"/>,
-        /// otherwise it can be anything.
+        /// Transaction being verified
         /// </summary>
-        public bool IsStrictMultiSigGarbage { get; set; }
+        public ITransaction Tx { get; set; }
+        /// <summary>
+        /// Index of the input script (in a <see cref="TxIn"/> instance) being verified
+        /// </summary>
+        public int TxInIndex { get; set; }
+        /// <summary>
+        /// An array of operations taken from the script being executed (eg. pubkey script, redeem script,...)
+        /// </summary>
+        public IOperation[] ExecutingScript { get; set; }
+        /// <inheritdoc/>
+        public int OpCount { get; set; }
+        /// <summary>
+        /// Amount of coins in satoshi being spent. Used in SegWit transaction verifications only
+        /// </summary>
+        public ulong AmountBeingSpent { get; set; }
+        /// <summary>
+        /// Gets or sets if this stack is used for witness script evaluation
+        /// </summary>
+        public bool IsSegWit { get; set; }
 
-        // This is a standard rule not consensus rule
+        /// <summary>
+        /// If true only strict encoding of true/false is accepted for conditional operations. This is a standard rule.
+        /// </summary>
         public bool IsStrictConditionalOpBool { get; set; }
-
+        /// <summary>
+        /// If true will only accept low s values in signatures. This is a standard rule.
+        /// </summary>
         public bool ForceLowS { get; set; }
-
         /// <inheritdoc/>
         public bool StrictNumberEncoding { get; set; }
 
         /// <inheritdoc/>
-        public int OpCount { get; set; }
-
-        private readonly EllipticCurveCalculator calc;
-        private readonly ScriptSerializer scriptSer = new ScriptSerializer();
+        public bool IsBip65Enabled { get; set; }
+        /// <inheritdoc/>
+        public bool IsStrictDerSig { get; set; }
+        /// <inheritdoc/>
+        public bool IsBip112Enabled { get; set; }
+        /// <summary>
+        /// If true it will enforce the extra item popped by <see cref="OP.CheckMultiSig"/> to be <see cref="OP._0"/>,
+        /// otherwise it can be anything.
+        /// </summary>
+        public bool IsBip147Enabled { get; set; }
 
 
         /// <inheritdoc/>
@@ -190,21 +206,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public bool CheckMultiSigGarbage(byte[] garbage) => IsStrictMultiSigGarbage ? garbage.Length == 0 : true;
+        public bool CheckMultiSigGarbage(byte[] garbage) => IsBip147Enabled ? garbage.Length == 0 : true;
 
         /// <inheritdoc/>
         public bool CheckConditionalOpBool(byte[] data) => IsStrictConditionalOpBool ?
-                                                           (data.Length == 0 || (data.Length == 1 && data[0] == 1)) : 
+                                                           (data.Length == 0 || (data.Length == 1 && data[0] == 1)) :
                                                            true;
-
-        /// <inheritdoc/>
-        public bool IsBip65Enabled { get; set; }
-
-        /// <inheritdoc/>
-        public bool IsBip112Enabled { get; set; }
-
-        /// <inheritdoc/>
-        public bool IsStrictDerSig { get; set; }
 
         /// <inheritdoc/>
         public bool CompareLocktimes(long other, out string error)
@@ -291,7 +298,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
         /// <inheritdoc/>
         public int ItemCount { get; private set; }
-
 
 
         /// <inheritdoc/>

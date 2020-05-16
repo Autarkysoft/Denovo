@@ -18,6 +18,34 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     public interface IOpData
     {
         /// <summary>
+        /// Returns if numbers inside scripts (or the popped data from stack to be converted to numbers)
+        /// should be checked for strict and shortest encoding. This is a standard rule.
+        /// </summary>
+        bool StrictNumberEncoding { get; set; }
+
+        /// <summary>
+        /// Returns if BIP-65 has enabled <see cref="OP.CheckLocktimeVerify"/> OP code
+        /// </summary>
+        bool IsBip65Enabled { get; set; }
+
+        /// <summary>
+        /// Returns if BIP-66 is enabled to enforce strict DER encoding for signatures.
+        /// </summary>
+        bool IsStrictDerSig { get; set; }
+
+        /// <summary>
+        /// Returns if BIP-112 has enabled <see cref="OP.CheckSequenceVerify"/> OP code
+        /// </summary>
+        bool IsBip112Enabled { get; set; }
+
+        /// <summary>
+        /// Number of OPs in the script that is being evaluated.
+        /// Must be reset for each script and be updated by 
+        /// <see cref="CheckMultiSigOp"/> and <see cref="CheckMultiSigVerifyOp"/> operations.
+        /// </summary>
+        int OpCount { get; set; }
+
+        /// <summary>
         /// Verifies correctness of the given signature with the given public key using
         /// the transaction and scripts set in constructor.
         /// </summary>
@@ -52,34 +80,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="data">Top stack item that was popped by <see cref="OP.IF"/> or <see cref="OP.NotIf"/></param>
         /// <returns>True if the item is strictly encoded; otherwise false.</returns>
         bool CheckConditionalOpBool(byte[] data);
-
-        /// <summary>
-        /// Returns if numbers inside scripts (or the popped data from stack to be converted to numbers)
-        /// should be checked for strict and shortest encoding.
-        /// </summary>
-        bool StrictNumberEncoding { get; set; }
-
-        /// <summary>
-        /// Returns if BIP-65 has enabled <see cref="OP.CheckLocktimeVerify"/> OP code
-        /// </summary>
-        bool IsBip65Enabled { get; set; }
-
-        /// <summary>
-        /// Returns if BIP-112 has enabled <see cref="OP.CheckSequenceVerify"/> OP code
-        /// </summary>
-        bool IsBip112Enabled { get; set; }
-
-        /// <summary>
-        /// Returns if BIP-66 is enabled to enforce strict DER encoding for signatures.
-        /// </summary>
-        bool IsStrictDerSig { get; set; }
-
-        /// <summary>
-        /// Number of OPs in the script that is being evaluated.
-        /// Must be reset for each script and be updated by 
-        /// <see cref="CheckMultiSigOp"/> and <see cref="CheckMultiSigVerifyOp"/> operations.
-        /// </summary>
-        int OpCount { get; set; }
 
         /// <summary>
         /// Compares locktime for a <see cref="OP.CheckLocktimeVerify"/> operation.

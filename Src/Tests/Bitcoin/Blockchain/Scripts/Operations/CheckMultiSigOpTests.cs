@@ -160,7 +160,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             // 0of0 multisig => OP_0 [] OP_0 [] OP_0
             OpData data = new OpData()
             {
-                IsStrictMultiSigGarbage = isStrict
+                IsBip147Enabled = isStrict
             };
 
             // Run all PushOps (all items in array except last)

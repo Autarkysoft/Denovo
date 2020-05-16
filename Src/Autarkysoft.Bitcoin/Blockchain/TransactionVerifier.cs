@@ -59,9 +59,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public int TotalSigOpCount { get; set; }
         /// <inheritdoc/>
         public ulong TotalFee { get; set; }
-
+        /// <summary>
+        /// If true will only accept low s values in signatures. This is a standard rule.
+        /// </summary>
         public bool ForceLowS { get; set; }
-        public bool ForceStrictPush { get; set; }
+        /// <summary>
+        /// Returns if numbers inside scripts (or the popped data from stack to be converted to numbers)
+        /// should be checked for strict and shortest encoding. This is a standard rule.
+        /// </summary>
+        public bool StrictNumberEncoding { get; set; }
 
         /// <inheritdoc/>
         public bool VerifyCoinbasePrimary(ITransaction transaction, out string error)
@@ -198,12 +204,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     TxInIndex = i,
 
                     ForceLowS = ForceLowS,
-                    StrictNumberEncoding = ForceStrictPush,
+                    StrictNumberEncoding = StrictNumberEncoding,
 
                     IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
                     IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
                     IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
-                    IsStrictMultiSigGarbage = consensus.IsBip147Enabled(BlockHeight),
+                    IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
                 };
 
                 // TODO: add Is*Enabled bool to below GetSpecialType() method
