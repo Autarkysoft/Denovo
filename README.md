@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/Autarkysoft/Denovo.svg?branch=master)](https://travis-ci.org/Autarkysoft/Denovo)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Autarkysoft/Denovo/blob/master/License)
-[![NuGet](https://img.shields.io/nuget/v/Autarkysoft.Bitcoin.svg)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Autarkysoft/Denovo/blob/master/License)  
+[![NuGet](https://img.shields.io/nuget/v/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
+[![NuGet](https://img.shields.io/nuget/dt/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
 
 <p align="center"><b>The Revolution Will Not Be Centralized</b></p>
 
@@ -16,9 +17,8 @@ for more information).
 The backbone of Denovo, Bitcoin.net is a stand alone bitcoin library written completely in C# and from scratch (no code translating)
 with no dependencies. 
 It is released as a different project so that it could be used by any other third party projects.  
-Current version is `0.1.0.0` (check the [versioning convention](https://github.com/Autarkysoft/Conventions/blob/master/Versioning.md)
-for more information). This is first release of the library. The implementation is covering almost the entire bitcoin protocol,
-there may be some missing parts or some bugs.  
+Check out releases for the current version ([versioning convention](https://github.com/Autarkysoft/Conventions/blob/master/Versioning.md)
+). The current implementation is covering almost the entire bitcoin protocol, there may be some missing parts or some bugs.  
 Please report any problems that you encounter or any feedback that you may have.    
 
 ### Bitcoin.Net can be downloaded from Nuget:  
@@ -44,7 +44,7 @@ Using .Net CLI:
   * RFC-6979: Optimized. Also an extra entropy is added so that signer can grind to find low R values to a fixed length (<32).
 * Implementation of improvement proposals, consensus related BIPs are part of the library and optional bips (eg. BIP-32)
 are in separate classes. Currently:
-  * BIPs: [11](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki "M-of-N Standard Transactions"), 
+  * Mandatory: [11](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki "M-of-N Standard Transactions"), 
   [13](https://github.com/bitcoin/bips/blob/master/bip-0013.mediawiki "Address Format for pay-to-script-hash"), 
   [16](https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki "Pay to Script Hash"), 
   [31](https://github.com/bitcoin/bips/blob/master/bip-0031.mediawiki "Pong message"), 
@@ -61,13 +61,13 @@ are in separate classes. Currently:
   [144](https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki "Segregated Witness (Peer Services)"), 
   [147](https://github.com/bitcoin/bips/blob/master/bip-0147.mediawiki "Dealing with dummy stack element malleability"), 
   [173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki "Base32 address format for native v0-16 witness outputs")
-  * [BIP-14](https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki "Protocol Version and User Agent")
-  * [BIP-21](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki "URI Scheme")
-  * [BIP-32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets")
-  * [BIP-38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki "Passphrase-protected private key")
-  * [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys")
-  * [BIP-178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF")
-  * [BIP-340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
+  * Optional: [14](https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki "Protocol Version and User Agent"),
+  [21](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki "URI Scheme"),
+  [32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets"),
+  [38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki "Passphrase-protected private key"),
+  [39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys"),
+  [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF"),
+  [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
 
 ### Future plans
 * Optimization of the libray
