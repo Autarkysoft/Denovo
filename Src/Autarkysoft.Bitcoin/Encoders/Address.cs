@@ -151,6 +151,34 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
+        /// Return the pay to script hash address from the given <see cref="IScript"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="redeem">Redeem script to use</param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public string GetP2sh(IScript redeem, NetworkType netType = NetworkType.MainNet)
+        {
+            if (redeem is null)
+                throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null.");
+
+            byte ver = netType switch
+            {
+                NetworkType.MainNet => P2shVerMainNet,
+                NetworkType.TestNet => P2shVerTestNet,
+                NetworkType.RegTest => P2shVerRegTest,
+                _ => throw new ArgumentException(Err.InvalidNetwork)
+            };
+
+            using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
+            byte[] data = hashFunc.ComputeHash(redeem.Data).AppendToBeginning(ver);
+
+            return b58Encoder.EncodeWithCheckSum(data);
+        }
+
+
+        /// <summary>
         /// Return the pay to witness public key hash address from the given <see cref="PublicKey"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -183,6 +211,91 @@ namespace Autarkysoft.Bitcoin.Encoders
             byte[] hash160 = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed));
 
             return b32Encoder.Encode(hash160, witVer, hrp);
+        }
+
+
+        /// <summary>
+        /// Return the pay to witness public key hash address from the given <see cref="PublicKey"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="pubk">Public key to use</param>
+        /// <param name="witVer">Witness version to use</param>
+        /// <param name="useCompressed">
+        /// [Default value = true]
+        /// Indicates wheter to use compressed or compressed public key to generate the address
+        /// <para/> Note: using uncompressed public keys makes the output non-standard and can lead to money loss.
+        /// </param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public string GetP2sh_P2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true,
+                                     NetworkType netType = NetworkType.MainNet)
+        {
+            if (pubk is null)
+                throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
+            if (witVer != 0)
+                throw new ArgumentException("Currently only address version 0 is defined for P2WPKH.", nameof(witVer));
+            if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
+                throw new ArgumentException(Err.InvalidNetwork);
+
+            RedeemScript rdm = new RedeemScript();
+            rdm.SetToP2SH_P2WPKH(pubk, useCompressed);
+            return GetP2sh(rdm, netType);
+        }
+
+
+        /// <summary>
+        /// Return the pay to witness script hash address from the given <see cref="IScript"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="script">Script to use</param>
+        /// <param name="witVer">Witness version to use</param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public string GetP2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
+        {
+            if (script is null)
+                throw new ArgumentNullException(nameof(script), "Script can not be null.");
+            if (witVer != 0)
+                throw new ArgumentException("Currently only address version 0 is defined for P2WSH.", nameof(witVer));
+
+            string hrp = netType switch
+            {
+                NetworkType.MainNet => HrpMainNet,
+                NetworkType.TestNet => HrpTestNet,
+                NetworkType.RegTest => HrpRegTest,
+                _ => throw new ArgumentException(Err.InvalidNetwork),
+            };
+
+            using Sha256 witHashFunc = new Sha256();
+            byte[] hash = witHashFunc.ComputeHash(script.Data);
+
+            return b32Encoder.Encode(hash, witVer, hrp);
+        }
+
+
+        /// <summary>
+        /// Return the pay to witness script hash wrapped in a pay to script hash address from the given <see cref="IScript"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="script">Public key to use</param>
+        /// <param name="witVer">Witness version to use</param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public string GetP2sh_P2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
+        {
+            if (script is null)
+                throw new ArgumentNullException(nameof(script), "Script can not be null.");
+            if (witVer != 0)
+                throw new ArgumentException("Currently only address version 0 is defined for P2WSH-P2SH.", nameof(witVer));
+            if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
+                throw new ArgumentException(Err.InvalidNetwork);
+
+            RedeemScript rdm = new RedeemScript();
+            rdm.SetToP2SH_P2WSH(script);
+            return GetP2sh(rdm, netType);
         }
 
 

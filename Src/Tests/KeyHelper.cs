@@ -37,7 +37,8 @@ namespace Tests
         internal static string Pub1BechAddrHexUncomp => "b716d8e4a05af9161dcaf0d62ce87475c863ef72";
         internal static string Pub1NestedSegwit => "39vipRmsscHCg3sT7FHfqSUmCoNZroCygq";
         internal static string Pub1NestedSegwitHex => "5a588d0320647b22b6b70ad345dbfbc488380cf0";
-        internal static string Pub1NestedSegwitHexUncomp => "958fccf9de503092f161d7432890574aef62a965";
+        internal static string Pub1NestedSegwitUncomp => "3FKpsaDGW6CnAn3eotAefJL12z6u5ihp8P";
+        internal static string Pub1NestedSegwitUncompHex => "958fccf9de503092f161d7432890574aef62a965";
 
 
 

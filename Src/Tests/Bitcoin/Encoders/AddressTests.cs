@@ -9,6 +9,7 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.Collections.Generic;
+using Tests.Bitcoin.Blockchain;
 using Xunit;
 
 namespace Tests.Bitcoin.Encoders
@@ -109,6 +110,46 @@ namespace Tests.Bitcoin.Encoders
         }
 
 
+        public static IEnumerable<object[]> GetP2shCases()
+        {
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                NetworkType.MainNet,
+                "3Fte5yfJErKGBSVMHpf93sdF6RmtSbTmL1"
+            };
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                NetworkType.TestNet,
+                "2N7Sr9ibKrJpcPE7txxH1fpcWJmz4FdhJiU"
+            };
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                NetworkType.RegTest,
+                "3Fte5yfJErKGBSVMHpf93sdF6RmtSbTmL1"
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetP2shCases))]
+        public void GetP2shTest(IScript script, NetworkType netType, string expected)
+        {
+            Address addr = new Address();
+            string actual = addr.GetP2sh(script, netType);
+            Assert.Equal(actual, expected);
+        }
+
+        [Fact]
+        public void GetP2sh_ExceptionTest()
+        {
+            Address addr = new Address();
+
+            Assert.Throws<ArgumentNullException>(() => addr.GetP2sh(null));
+            Assert.Throws<ArgumentException>(() => addr.GetP2sh(new MockSerializableRedeemScript(new byte[0], 0), (NetworkType)100));
+        }
+
+
         public static IEnumerable<object[]> GetP2wpkhCases()
         {
             yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.MainNet, KeyHelper.Pub1BechAddr };
@@ -134,7 +175,7 @@ namespace Tests.Bitcoin.Encoders
         }
 
         [Fact]
-        public void GetP2wpkhTest_ExceptionTest()
+        public void GetP2wpkh_ExceptionTest()
         {
             Address addr = new Address();
             Assert.Throws<ArgumentNullException>(() => addr.GetP2wpkh(null, 0));
@@ -144,6 +185,137 @@ namespace Tests.Bitcoin.Encoders
 
             ex = Assert.Throws<ArgumentException>(() => addr.GetP2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
             Assert.Contains(Err.InvalidNetwork, ex.Message);
+        }
+
+
+        public static IEnumerable<object[]> GetP2sh_P2wpkhCases()
+        {
+            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.MainNet, KeyHelper.Pub1NestedSegwit };
+            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.MainNet, KeyHelper.Pub1NestedSegwitUncomp };
+            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.RegTest, KeyHelper.Pub1NestedSegwit };
+            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.RegTest, KeyHelper.Pub1NestedSegwitUncomp };
+            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.TestNet, "2N1UvtAhuV4nYsqVznNuYTPU2R9ajf49xaV" };
+            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.TestNet, "2N6t2wK9J7Yi8NZgCV1nXHFKGFLK4xyDkQe" };
+
+        }
+        [Theory]
+        [MemberData(nameof(GetP2sh_P2wpkhCases))]
+        public void GetP2sh_P2wpkhTest(PublicKey pub, byte ver, bool comp, NetworkType netType, string expected)
+        {
+            Address addr = new Address();
+            string actual = addr.GetP2sh_P2wpkh(pub, ver, comp, netType);
+            Assert.Equal(actual, expected);
+        }
+
+        [Fact]
+        public void GetP2sh_P2wpkh_ExceptionTest()
+        {
+            Address addr = new Address();
+            Assert.Throws<ArgumentNullException>(() => addr.GetP2sh_P2wpkh(null, 0));
+
+            Exception ex = Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wpkh(KeyHelper.Pub1, 1, netType: (NetworkType)100));
+            Assert.Contains("witVer", ex.Message);
+
+            ex = Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
+            Assert.Contains(Err.InvalidNetwork, ex.Message);
+        }
+
+
+        public static IEnumerable<object[]> GetP2wshCases()
+        {
+            yield return new object[]
+            {
+                // https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki#examples
+                new MockSerializableRedeemScript(Helper.HexToBytes("210279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798ac"), 255),
+                0, NetworkType.MainNet,
+                "bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3"
+            };
+            yield return new object[]
+            {
+                // https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki#examples
+                new MockSerializableRedeemScript(Helper.HexToBytes("210279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798ac"), 255),
+                0, NetworkType.TestNet,
+                "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7"
+            };
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                0, NetworkType.MainNet,
+                "bc1qqwg933hjcr95jtzn8v9y6980wlxq779ten8d22rasjs6yqgulwqs2z4mcu"
+            };
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                0, NetworkType.TestNet,
+                "tb1qqwg933hjcr95jtzn8v9y6980wlxq779ten8d22rasjs6yqgulwqsa2r5zn"
+            };
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                0, NetworkType.RegTest,
+                "bcrt1qqwg933hjcr95jtzn8v9y6980wlxq779ten8d22rasjs6yqgulwqssnfjhf"
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetP2wshCases))]
+        public void GetP2wshTest(IScript script, byte witVer, NetworkType netType, string expected)
+        {
+            Address addr = new Address();
+            string actual = addr.GetP2wsh(script, witVer, netType);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void GetP2wsh_ExceptionTest()
+        {
+            Address addr = new Address();
+            var scr = new MockSerializableRedeemScript(new byte[0], 0);
+
+            Assert.Throws<ArgumentNullException>(() => addr.GetP2wsh(null, 0));
+            Assert.Throws<ArgumentException>(() => addr.GetP2wsh(scr, 1));
+            Assert.Throws<ArgumentException>(() => addr.GetP2wsh(scr, 0, (NetworkType)100));
+        }
+
+
+        public static IEnumerable<object[]> GetP2sh_P2wshCases()
+        {
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                0, NetworkType.MainNet,
+                "3DrYxHaW5vdirRa74yaLDaes3S2cghg7V4"
+            };
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                0, NetworkType.TestNet,
+                "2N5Qm22WXhP954DCek7CCqXe8FnEnVjZqZK"
+            };
+            yield return new object[]
+            {
+                new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
+                0, NetworkType.MainNet,
+                "3DrYxHaW5vdirRa74yaLDaes3S2cghg7V4"
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetP2sh_P2wshCases))]
+        public void GetP2sh_P2wshTest(IScript script, byte witVer, NetworkType netType, string expected)
+        {
+            Address addr = new Address();
+            string actual = addr.GetP2sh_P2wsh(script, witVer, netType);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void GetP2sh_P2wsh_ExceptionTest()
+        {
+            Address addr = new Address();
+            var scr = new MockSerializableRedeemScript(new byte[0], 0);
+
+            Assert.Throws<ArgumentNullException>(() => addr.GetP2sh_P2wsh(null, 0));
+            Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wsh(scr, 1));
+            Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wsh(scr, 0, (NetworkType)100));
         }
 
 

@@ -286,7 +286,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             };
             yield return new object[]
             {
-                KeyHelper.Pub1, false, Helper.HexToBytes($"a914{KeyHelper.Pub1NestedSegwitHexUncomp}87")
+                KeyHelper.Pub1, false, Helper.HexToBytes($"a914{KeyHelper.Pub1NestedSegwitUncompHex}87")
             };
         }
         [Theory]
