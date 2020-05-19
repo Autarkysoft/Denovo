@@ -39,6 +39,11 @@ namespace Tests
         internal static string Pub1NestedSegwitHex => "5a588d0320647b22b6b70ad345dbfbc488380cf0";
         internal static string Pub1NestedSegwitUncomp => "3FKpsaDGW6CnAn3eotAefJL12z6u5ihp8P";
         internal static string Pub1NestedSegwitUncompHex => "958fccf9de503092f161d7432890574aef62a965";
+        internal static string Msg1ToSign => "The quick brown fox jumps over the lazy dog";
+        /// <summary>
+        /// Signature r and s without the starting byte (recId)
+        /// </summary>
+        internal static string Msg1Sig => "4125023df3abc0cbf0bdf5edcd1b1055834e9477ae89d5c54fb002e74e2529644c50c6b30c1cf2b5d35b2679844f25736bf5b7eefd4b83db70e451b537402e6b";
 
 
 
