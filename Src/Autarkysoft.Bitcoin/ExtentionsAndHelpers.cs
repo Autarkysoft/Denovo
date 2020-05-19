@@ -251,10 +251,7 @@ namespace Autarkysoft.Bitcoin
         /// <exception cref="ArgumentNullException"/>
         /// <param name="ba">The array of bytes to convert.</param>
         /// <returns>Base-16 (Hexadecimal) encoded string.</returns>
-        public static string ToBase16(this byte[] ba)
-        {
-            return Base16.Encode(ba);
-        }
+        public static string ToBase16(this byte[] ba) => Base16.Encode(ba);
 
 
         /// <summary>
@@ -263,10 +260,7 @@ namespace Autarkysoft.Bitcoin
         /// <exception cref="ArgumentNullException"/>
         /// <param name="ba">The array of bytes to convert.</param>
         /// <returns>Base-64 encoded string.</returns>
-        public static string ToBase64(this byte[] ba)
-        {
-            return Convert.ToBase64String(ba);
-        }
+        public static string ToBase64(this byte[] ba) => Convert.ToBase64String(ba);
 
 
         /// <summary>
