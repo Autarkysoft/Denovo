@@ -87,23 +87,20 @@ namespace Autarkysoft.Bitcoin
         public void SkipOneByte() => position++;
 
 
-        public byte[] GetReadBytes(int startIndex)
-        {
-            byte[] result = new byte[position - startIndex];
-            Buffer.BlockCopy(data, startIndex, result, 0, position - startIndex);
-            return result;
-        }
-
+        /// <summary>
+        /// Compares the given byte array with a sub array of buffer from current position and equal to given bytes length.
+        /// <para/>Buffer: {1,2,3,4,5} &#38; pos=1 &#38; other={2,3} => true
+        /// <para/>Buffer: {1,2,3,4,5} &#38; pos=1 &#38; other={4,5} => false
+        /// <para/>Buffer: {1,2,3,4,5} &#38; pos=2 &#38; other={4,5} => true
+        /// </summary>
+        /// <remarks>
+        /// This method is useful for finding magic bytes inside a buffer without moving the index or actuall reading bytes.
+        /// </remarks>
+        /// <param name="other">Bytes to compare</param>
+        /// <returns>True if equal; otherwise false.</returns>
         public bool CompareBytes(byte[] other)
         {
-            if (CheckRemaining(other.Length))
-            {
-                return ((ReadOnlySpan<byte>)data).Slice(position, other.Length).SequenceEqual(other);
-            }
-            else
-            {
-                return false;
-            }
+            return CheckRemaining(other.Length) && ((ReadOnlySpan<byte>)data).Slice(position, other.Length).SequenceEqual(other);
         }
 
 
@@ -393,9 +390,9 @@ namespace Autarkysoft.Bitcoin
                     if (TryReadByteArray(b & 0b0111_1111, out byte[] temp))
                     {
                         len = 0;
-                        for (int i = 0, j = (temp.Length - 1) * 8; i < temp.Length; i++, j -= 8)
+                        for (int i = temp.Length - 1, j = 0; i >= 0; i--, j += 8)
                         {
-                            len |= temp[i + 1] << j;
+                            len |= temp[i] << j;
                         }
                         return true;
                     }

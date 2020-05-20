@@ -12,6 +12,28 @@ namespace Tests.Bitcoin
     public class FastStreamReaderTests
     {
         [Fact]
+        public void ConstructorTest()
+        {
+            byte[] data = { 1, 2, 3 };
+            var stream = new FastStreamReader(data);
+            // Make sure data is copied/cloned
+            data[0] = 255;
+
+            Helper.ComparePrivateField(stream, "data", new byte[] { 1, 2, 3 });
+            Helper.ComparePrivateField(stream, "position", 0);
+        }
+
+        [Fact]
+        public void Constructor_SubArrayTest()
+        {
+            byte[] data = { 1, 2, 3, 4, 5 };
+            var stream = new FastStreamReader(data, 1, 3);
+
+            Helper.ComparePrivateField(stream, "data", new byte[] { 2, 3, 4 });
+            Helper.ComparePrivateField(stream, "position", 0);
+        }
+
+        [Fact]
         public void Constructor_ExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => new FastStreamReader(null));
@@ -71,6 +93,26 @@ namespace Tests.Bitcoin
 
             stream.SkipOneByte();
             Assert.Equal(2, stream.GetCurrentIndex());
+        }
+
+        [Theory]
+        [InlineData(new byte[] { 1 }, new byte[] { 1 }, false, true)]
+        [InlineData(new byte[] { 1 }, new byte[] { 2 }, false, false)]
+        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3 }, false, true)]
+        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2 }, false, true)]
+        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3, 4 }, false, false)]
+        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 2, 3 }, false, false)]
+        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 2, 3 }, true, true)]
+        [InlineData(new byte[] { 2, 3 }, new byte[] { 2, 3 }, true, false)]
+        public void CompareBytes(byte[] data, byte[] other, bool skip, bool expected)
+        {
+            var stream = new FastStreamReader(data);
+            if (skip)
+            {
+                stream.SkipOneByte();
+            }
+            bool actual = stream.CompareBytes(other);
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
@@ -360,6 +402,27 @@ namespace Tests.Bitcoin
             var stream = new FastStreamReader(new byte[7]);
             bool b = stream.TryReadUInt64(out ulong _);
             Assert.False(b);
+        }
+
+        [Theory]
+        [InlineData(new byte[] { }, false, 0, 0)]
+        [InlineData(new byte[] { 0, 255, 255 }, true, 0, 1)]
+        [InlineData(new byte[] { 1, 255, 255 }, true, 1, 1)]
+        [InlineData(new byte[] { 127, 255, 255 }, true, 127, 1)] // 127=0b01111111
+        [InlineData(new byte[] { 128, 255, 255 }, true, 128, 1)] // 128=0b10000000
+        [InlineData(new byte[] { 129, 5, 255, 255 }, true, 5, 2)] // 129=0b10000001
+        [InlineData(new byte[] { 129, 129, 255, 255 }, true, 129, 2)]
+        [InlineData(new byte[] { 130, 0, 2, 255 }, true, 2, 3)] // 130=0b10000010
+        [InlineData(new byte[] { 130, 26, 50, 255 }, true, 6706, 3)]
+        [InlineData(new byte[] { 131, 82, 13, 10, 255 }, true, 5377290, 4)] // 131=0b10000011
+        public void TryReadDerLengthTest(byte[] data, bool success, int expected, int expPos)
+        {
+            var stream = new FastStreamReader(data);
+            bool b = stream.TryReadDerLength(out int actual);
+
+            Assert.Equal(success, b);
+            Assert.Equal(expected, actual);
+            Helper.ComparePrivateField(stream, "position", expPos);
         }
     }
 }
