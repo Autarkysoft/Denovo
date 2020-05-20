@@ -70,6 +70,26 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 false, // runRes
                 "True/False item popped by conditional OPs must be strict."
             };
+            // Null ElseOps
+            yield return new object[]
+            {
+                new IOperation[] { new MockOp(true, null) },
+                null,
+                OpTestCaseHelper.TrueBytes,
+                true, // checkRes
+                true, // runRes
+                null
+            };
+            // Null ElseOps (trying to run ElseOps
+            yield return new object[]
+            {
+                new IOperation[] { new MockOp(false, "This should not have been run!") },
+                null,
+                OpTestCaseHelper.FalseBytes,
+                true, // checkRes
+                true, // runRes
+                null
+            };
         }
         [Theory]
         [MemberData(nameof(GetRunCases))]

@@ -70,7 +70,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     }
                 }
             }
-            else if (elseOps != null && elseOps.Length != 0)
+            else if (elseOps != null)
             {
                 foreach (var op in elseOps)
                 {
