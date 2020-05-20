@@ -164,7 +164,7 @@ namespace Tests.Bitcoin.ValueTypesTests
 
         [Theory]
         [MemberData(nameof(GetReadCases))]
-        public void ToByteArrayTest(byte[] data, int finalOffset, ulong val)
+        public void WriteToStreamTest(byte[] data, int finalOffset, ulong val)
         {
             CompactInt ci = new CompactInt(val);
             FastStream stream = new FastStream(10);

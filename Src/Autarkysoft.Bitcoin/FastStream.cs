@@ -183,6 +183,12 @@ namespace Autarkysoft.Bitcoin
             position += data.Length;
         }
 
+        /// <summary>
+        /// Writes the given byte array to stream startring from the given index.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="count"></param>
         public void Write(byte[] data, int startIndex, int count)
         {
             CheckAndResize(count);
@@ -210,11 +216,21 @@ namespace Autarkysoft.Bitcoin
         /// <param name="data">The data to write</param>
         public void WriteWithCompactIntLength(byte[] data)
         {
-            if (data.Length <= 252)
+            if (data.Length <= 252) // CompactInt is 1 Byte long
             {
-                Write((byte)data.Length);
-                CheckAndResize(data.Length);
-                Write(data);
+                CheckAndResize(data.Length + 1);
+                buffer[position] = (byte)data.Length;
+                Buffer.BlockCopy(data, 0, buffer, position + 1, data.Length);
+                position += data.Length + 1;
+            }
+            else if (data.Length <= 0xffff) // CompactInt is 1 + 2 Byte long
+            {
+                CheckAndResize(data.Length + 3);
+                buffer[position] = 0xfd;
+                buffer[position + 1] = (byte)data.Length;
+                buffer[position + 2] = (byte)(data.Length >> 8);
+                Buffer.BlockCopy(data, 0, buffer, position + 3, data.Length);
+                position += data.Length + 3;
             }
             else
             {

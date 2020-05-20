@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Tests.Bitcoin
@@ -211,6 +212,18 @@ namespace Tests.Bitcoin
         }
 
         [Fact]
+        public void Write_bytesFromIndex_test()
+        {
+            FastStream stream = new FastStream();
+            byte[] data = new byte[] { 1, 2, 3, 4, 5 };
+            stream.Write(data, 1, 3);
+            byte[] expBuffer = new byte[] { 2, 3, 4 };
+
+            Assert.Equal(expBuffer, stream.ToByteArray());
+            Helper.ComparePrivateField(stream, "position", expBuffer.Length);
+        }
+
+        [Fact]
         public void Write_bytes_withLenTest()
         {
             FastStream stream = new FastStream();
@@ -225,6 +238,50 @@ namespace Tests.Bitcoin
             Assert.Equal(expBytes, stream.ToByteArray());
             Helper.ComparePrivateField(stream, "buffer", expBuffer);
             Helper.ComparePrivateField(stream, "position", len);
+        }
+
+        public static IEnumerable<object[]> GetWriteCompactIntCases()
+        {
+            Random rng = new Random(17);
+            byte[] big = new byte[17059];
+            byte[] usmax = new byte[ushort.MaxValue];
+            byte[] veryBig = new byte[ushort.MaxValue + 1];
+            rng.NextBytes(big);
+            rng.NextBytes(usmax);
+            rng.NextBytes(veryBig);
+
+            yield return new object[] { new byte[0], new byte[1], 1 };
+            yield return new object[] { new byte[] { 10 }, new byte[] { 1, 10 }, 2 };
+            yield return new object[]
+            {
+                Helper.GetBytes(252), Helper.ConcatBytes(253, new byte[] { 252 }, Helper.GetBytes(252)), 253
+            };
+            yield return new object[]
+            {
+                Helper.GetBytes(253), Helper.ConcatBytes(256, new byte[] { 253, 253, 0 }, Helper.GetBytes(253)), 256
+            };
+            yield return new object[]
+            {
+                big, Helper.ConcatBytes(17059 + 3, new byte[] { 253, 163, 66 }, big), 17059 + 3
+            };
+            yield return new object[]
+            {
+                usmax, Helper.ConcatBytes(ushort.MaxValue + 3, new byte[] { 253, 255, 255 }, usmax), ushort.MaxValue + 3
+            };
+            yield return new object[]
+            {
+                veryBig, Helper.ConcatBytes(veryBig.Length + 5, new byte[] { 254, 0, 0, 1, 0 }, veryBig), veryBig.Length + 5
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetWriteCompactIntCases))]
+        public void WriteWithCompactIntLength(byte[] data, byte[] expBuffer, int expPos)
+        {
+            FastStream stream = new FastStream();
+            stream.WriteWithCompactIntLength(data);
+
+            Assert.Equal(expBuffer, stream.ToByteArray());
+            Helper.ComparePrivateField(stream, "position", expPos);
         }
 
         [Fact]
