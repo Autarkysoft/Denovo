@@ -72,7 +72,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 return false;
             }
 
-            // TODO: set a better value for comparison
+            // A quick check to avoid data loss during cast below
             if (count > int.MaxValue)
             {
                 error = "Item count is too big.";

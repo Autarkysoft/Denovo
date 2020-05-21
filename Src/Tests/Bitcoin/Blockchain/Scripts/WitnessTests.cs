@@ -36,6 +36,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetSerCases()
         {
+            yield return new object[] { null, new byte[1] };
+            yield return new object[] { new PushDataOp[0], new byte[1] };
             yield return new object[]
             {
                 new PushDataOp[] { new PushDataOp(OP._0), new PushDataOp(new byte[] { 1, 2, 3 }), new PushDataOp(OP._3) },
@@ -91,11 +93,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
             Assert.True(b, error);
             Assert.Null(error);
-            Assert.Equal(expected, wit.Items);
+            Assert.Equal(expected ?? new PushDataOp[0], wit.Items);
         }
 
         public static IEnumerable<object[]> GetSerFailCases()
         {
+            yield return new object[] { new byte[] { 253 }, "First byte 253 needs to be followed by at least 2 byte." };
+            yield return new object[] { new byte[] { 0xfe, 0x00, 0x00, 0x00, 0x80 }, "Item count is too big." };
             yield return new object[] { new byte[] { 1 }, Err.EndOfStream };
         }
         [Theory]
