@@ -65,7 +65,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Sets this instance to a P2SH-P2WPKH script using the given public key.
         /// </summary>
         /// <param name="pubKey">Public key to use</param>
-        void SetToP2SH_P2WPKH(PublicKey pubKey);
+        /// <param name="useCompressed">
+        /// [Default value = true]
+        /// Indicates whether to use compressed or uncompressed public key in the redeem script.
+        /// <para/> * Note that uncompressed public keys are non-standard and can lead to funds being lost.
+        /// </param>
+        void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed);
 
         /// <summary>
         /// Sets this instance to a P2SH-P2WSH script using the given redeem script.

@@ -31,7 +31,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="data">Data to use</param>
         public SignatureScript(byte[] data)
         {
-            Data = data;
+            Data = data.CloneByteArray();
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <summary>
         /// Initializes a new instance of <see cref="SignatureScript"/> using the given block height
-        /// (used for creating a coinbase transaction's script).
+        /// (used for creating the signature script of the coinbase transactions).
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="height">Block height</param>
@@ -58,20 +58,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (height < 0)
                 throw new ArgumentOutOfRangeException(nameof(height), "Block height can not be negative.");
-            if (extraData.Length > Constants.MaxCoinbaseScriptLength - 4) // 1 byte push + 3 byte height byte
-            {
-                throw new ArgumentOutOfRangeException(nameof(extraData.Length),
-                    $"Coinbase script can not be bigger than {Constants.MaxCoinbaseScriptLength}");
-            }
 
-            PushDataOp push = new PushDataOp(height);
-            if (extraData != null)
+            PushDataOp hPush = new PushDataOp(height);
+            if (extraData == null)
             {
-                SetData(new IOperation[] { push, new PushDataOp(extraData) });
+                SetData(new IOperation[] { hPush });
             }
             else
             {
-                SetData(new IOperation[] { push });
+                // No need for a min length check since with any height >= 1 it will be at least 2 bytes
+                if (extraData.Length > Constants.MaxCoinbaseScriptLength - 4) // 1 byte push + 3 byte height byte
+                {
+                    throw new ArgumentOutOfRangeException(nameof(extraData.Length),
+                          $"Coinbase script can not be bigger than {Constants.MaxCoinbaseScriptLength}");
+                }
+                SetData(new IOperation[] { hPush, new PushDataOp(extraData) });
             }
         }
 
@@ -88,7 +89,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (consensus.IsBip34Enabled(height))
             {
                 PushDataOp op = new PushDataOp();
-                return op.TryRead(new FastStreamReader(Data), out _) && op.TryGetNumber(out long h, out _, true, 4) && h == height;
+                return op.TryRead(new FastStreamReader(Data), out _) && op.TryGetNumber(out long h, out _, true, 5) && h == height;
             }
             else
             {
@@ -97,21 +98,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public void SetToEmpty()
-        {
-            Data = new byte[0];
-        }
-
-
-        private byte[] ConvertToBytes(params PushDataOp[] pushOps)
-        {
-            FastStream stream = new FastStream();
-            foreach (var op in pushOps)
-            {
-                op.WriteToStream(stream);
-            }
-            return stream.ToByteArray();
-        }
+        public void SetToEmpty() => Data = new byte[0];
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>
@@ -321,13 +308,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>
-        public void SetToP2SH_P2WPKH(PublicKey pubKey)
+        public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed)
         {
             if (pubKey is null)
                 throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
 
             RedeemScript redeemBuilder = new RedeemScript();
-            redeemBuilder.SetToP2SH_P2WPKH(pubKey);
+            redeemBuilder.SetToP2SH_P2WPKH(pubKey, useCompressed);
             SetData(new IOperation[] { new PushDataOp(redeemBuilder.Data) });
         }
 
@@ -341,10 +328,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (redeem.GetRedeemScriptType() != RedeemScriptType.P2SH_P2WSH)
                 throw new ArgumentException("Invalid redeem script type.");
 
-            Data = ConvertToBytes(new PushDataOp(redeem.Data));
+            SetData(new IOperation[] { new PushDataOp(redeem.Data) });
         }
 
         /// <inheritdoc/>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem)
         {
             if (sig is null)

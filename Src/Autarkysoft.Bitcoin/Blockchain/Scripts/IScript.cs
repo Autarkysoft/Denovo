@@ -14,7 +14,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     public interface IScript : IDeserializable
     {
         /// <summary>
-        /// This script's content as an array of bytes (can be null for empty scripts)
+        /// This script's content as an array of bytes (must never be null, set to byte[0] instead)
         /// </summary>
         byte[] Data { get; set; }
 
