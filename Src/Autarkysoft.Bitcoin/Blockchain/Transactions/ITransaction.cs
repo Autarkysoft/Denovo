@@ -77,9 +77,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         string GetWitnessTransactionId();
 
         /// <summary>
-        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
+        /// A special serialization done with the given spending script bytes and based on the <see cref="SigHashType"/>
         /// used in signing operations. Return result is the hash result.
         /// </summary>
+        /// <remarks>
+        /// This method is mainly for internal use (transaction verification,...) and it covers all possible cases,
+        /// with extra care while creating the <paramref name="spendScript"/> it could be used for special cases that the 
+        /// strict <see cref="GetBytesToSign(ITransaction, int, SigHashType, IRedeemScript, IRedeemScript)"/>
+        /// method doesn't support.
+        /// </remarks>
         /// <param name="spendScript">Serialization of the script being spent</param>
         /// <param name="inputIndex">Index of the input being signed</param>
         /// <param name="sht">Signature hash type</param>
@@ -87,9 +93,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         byte[] SerializeForSigning(byte[] spendScript, int inputIndex, SigHashType sht);
 
         /// <summary>
-        /// A special serialization done with the given <see cref="IScript"/> and based on the <see cref="SigHashType"/>
+        /// A special serialization done with the given spending script bytes and based on the <see cref="SigHashType"/>
         /// used in signing operations for SegWit transactions. Return result is the hash result.
         /// </summary>
+        /// <remarks>
+        /// Same as <see cref="SerializeForSigning(byte[], int, SigHashType)"/>
+        /// </remarks>
         /// <param name="spendScript">Script bytes used in signing SegWit outputs (aka scriptCode)</param>
         /// <param name="inputIndex">Index of the input being signed</param>
         /// <param name="amount">The amount in satoshi that is being spent</param>
@@ -99,7 +108,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
         /// <summary>
         /// Returns the hash result that needs to be signed with the private key. 
-        /// <para/>This method should only used by wallets to sign predefined (standard) transactions.
+        /// <para/>This method is very strict and should only used by wallets to sign predefined (standard) transactions.
         /// For verification of already signed transactions use <see cref="TransactionVerifier"/> which calls
         /// <see cref="SerializeForSigning(byte[], int, SigHashType)"/> and
         /// <see cref="SerializeForSigningSegWit(byte[], int, ulong, SigHashType)"/> methods.
@@ -108,12 +117,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="inputIndex">Index of the input in <see cref="TxInList"/> to be signed</param>
         /// <param name="sht">Signature hash type</param>
         /// <param name="redeem">Redeem script for spending pay-to-script outputs (can be null)</param>
-        /// <returns>Byte array to use for signin</returns>
-        byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeem);
+        /// <param name="witRedeem">Redeem script for spending pay-to-witness-script outputs (can be null)</param>
+        /// <returns>Byte array to use for signing</returns>
+        byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeem, IRedeemScript witRedeem);
 
         /// <summary>
         /// Sets the <see cref="SignatureScript"/> of the <see cref="TxIn"/> at the given <paramref name="inputIndex"/> 
         /// to the given <see cref="Signature"/>.
+        /// <para/>Similar to <see cref="GetBytesToSign(ITransaction, int, SigHashType, IRedeemScript, IRedeemScript)"/>,
+        /// this method is also strict and should only be used for predefined (standard) transactions.
         /// </summary>
         /// <param name="sig">Signature</param>
         /// <param name="pubKey">Public key</param>

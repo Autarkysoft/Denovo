@@ -11,6 +11,7 @@ namespace Autarkysoft.Bitcoin
         internal const string EndOfStream = "Reached end of stream.";
         internal const string OpNotEnoughItems = "Not enough items left in the stack.";
         internal const string OpStackItemOverflow = "Stack item count limit exceeded.";
+        internal const string OpCountOverflow = "Number of OPs in this script exceeds the allowed number.";
         internal const string BadRNG = "The provided RNG is broken.";
     }
 }

@@ -308,7 +308,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         /// <param name="index">Index of the input to sign</param>
         /// <param name="sht">[Default value =<see cref="SigHashType.All"/>] Signature hash type</param>
         /// <param name="redeem">[Default value = null] Redeem script required only for spending pay-to-script outputs</param>
-        public void Sign(ITransaction tx, ITransaction txToSpend, int index, SigHashType sht = SigHashType.All, IRedeemScript redeem = null)
+        /// <param name="witRedeem">[Default value = null] Redeem script for spending pay-to-witness-script outputs</param>
+        public void Sign(ITransaction tx, ITransaction txToSpend, int index, SigHashType sht = SigHashType.All,
+                         IRedeemScript redeem = null, IRedeemScript witRedeem = null)
         {
             CheckDisposed();
             if (tx == null)
@@ -318,7 +320,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
             // TODO: change ITransaction.Sign so that it takes public key and does the initial checks 
             // such as correct txout being spent.
-            Signature sig = calc.Sign(tx.GetBytesToSign(txToSpend, index, sht, redeem), keyBytes);
+            Signature sig = calc.Sign(tx.GetBytesToSign(txToSpend, index, sht, redeem, witRedeem), keyBytes);
             sig.SigHash = sht;
             tx.WriteScriptSig(sig, ToPublicKey(), txToSpend, index, redeem);
         }

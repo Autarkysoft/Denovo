@@ -129,6 +129,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             {
                 // Multi-sig redeem scripts can be as simple as a single CheckMultiSigOp OP (pointless script that anyone can spend)
                 // to the usual multi-sig scripts with (OP_m <n*pubkeys> OP_n OP_CheckMultiSig) script up to 15 pubkeys
+                for (int i = 0; i < OperationList.Length - 1; i++)
+                {
+                    if (!(OperationList[i] is PushDataOp))
+                    {
+                        return RedeemScriptType.Unknown;
+                    }
+                }
                 return RedeemScriptType.MultiSig;
             }
 

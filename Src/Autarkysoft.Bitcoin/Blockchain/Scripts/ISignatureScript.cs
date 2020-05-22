@@ -46,14 +46,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Sets this script to a multi-signature script using the given parameters. 
         /// This method can be called subsequently with other signatures as they are created.
+        /// The implementation has to check if the script is set already otherwise reset the script to have only 1 (the given)
+        /// signature.
         /// </summary>
         /// <param name="sig">Signature to use</param>
-        /// <param name="pub">Public key of the key used to create the signature</param>
         /// <param name="redeem">Redeem script</param>
         /// <param name="tx"></param>
-        /// <param name="prevTx"></param>
         /// <param name="inputIndex"></param>
-        void SetToMultiSig(Signature sig, PublicKey pub, IRedeemScript redeem, ITransaction tx, ITransaction prevTx, int inputIndex);
+        void SetToMultiSig(Signature sig, IRedeemScript redeem, ITransaction tx, int inputIndex);
 
         /// <summary>
         /// Sets this instance to a P2SH-P2WPKH script using the given redeem script.

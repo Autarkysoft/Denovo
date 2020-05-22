@@ -425,69 +425,125 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeem = null)
+        public byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht,
+                                     IRedeemScript redeem = null, IRedeemScript witRedeem = null)
         {
             CheckSht(sht);
             if (prvTx is null)
                 throw new ArgumentNullException(nameof(prvTx), "Previous transaction (to spend) can not be null.");
-            if (inputIndex < 0)
-                throw new ArgumentException("Index can not be negative.");
-            if (inputIndex >= TxInList.Length)
-                throw new ArgumentOutOfRangeException(nameof(inputIndex), "Not enough TxIns.");
+            if (inputIndex < 0 || inputIndex >= TxInList.Length)
+                throw new ArgumentException("Invalid input index.", nameof(inputIndex));
             if (!((ReadOnlySpan<byte>)TxInList[inputIndex].TxHash).SequenceEqual(prvTx.GetTransactionHash()))
                 throw new ArgumentException("Wrong previous transaction or index.");
-            if (!prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.TryEvaluate(out IOperation[] prevPubOps, out int opCount, out string error))
+            var prvScr = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript;
+            if (!prvScr.TryEvaluate(out IOperation[] prevPubOps, out int opCount, out string error))
                 throw new ArgumentException($"Previous transaction pubkey script can not be evaluated: {error}.");
             if (opCount > Constants.MaxScriptOpCount)
-                throw new ArgumentOutOfRangeException(nameof(opCount), "Number of OPs in this script exceeds the allowed number.");
+                throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
 
 
-            PubkeyScriptType scrType = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType();
-            if (scrType == PubkeyScriptType.P2PKH || scrType == PubkeyScriptType.P2PK)
+            PubkeyScriptType pubScrType = prvScr.GetPublicScriptType();
+            if (pubScrType == PubkeyScriptType.P2PKH || pubScrType == PubkeyScriptType.P2PK ||
+                pubScrType == PubkeyScriptType.CheckLocktimeVerify)
             {
-                return SerializeForSigning(prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data, inputIndex, sht);
+                return SerializeForSigning(prvScr.Data, inputIndex, sht);
             }
-            else if (scrType == PubkeyScriptType.P2SH)
+            else if (pubScrType == PubkeyScriptType.P2SH)
             {
                 if (redeem is null)
                     throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
                 if (!redeem.TryEvaluate(out IOperation[] rdmOps, out opCount, out error))
                     throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
                 if (opCount > Constants.MaxScriptOpCount)
-                    throw new ArgumentOutOfRangeException(nameof(opCount), "Number of OPs in this script exceeds the allowed number.");
+                    throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
 
                 ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.Data);
-                ReadOnlySpan<byte> actHash = ((ReadOnlySpan<byte>)prvTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(2, 20);
+                // Previous is OP_HASH160 PushData(20) OP_EQUAL
+                ReadOnlySpan<byte> actHash = ((ReadOnlySpan<byte>)prvScr.Data).Slice(2, 20);
                 if (!expHash.SequenceEqual(actHash))
+                {
                     throw new ArgumentException("Wrong previous transaction or index.");
-                // TODO: write a GetType method for redeems and only accept the known type scripts
+                }
 
-                return SerializeForSigning(redeem.Data, inputIndex, sht);
+                RedeemScriptType rdmScrType = redeem.GetRedeemScriptType();
+                if (rdmScrType == RedeemScriptType.MultiSig || rdmScrType == RedeemScriptType.CheckLocktimeVerify)
+                {
+                    return SerializeForSigning(redeem.Data, inputIndex, sht);
+                }
+                else if (rdmScrType == RedeemScriptType.P2SH_P2WPKH)
+                {
+                    ScriptSerializer scrSer = new ScriptSerializer();
+                    byte[] spendScr = scrSer.ConvertP2wpkh(rdmOps);
+                    return SerializeForSigningSegWit(spendScr, inputIndex, prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
+                }
+                else if (rdmScrType == RedeemScriptType.P2SH_P2WSH)
+                {
+                    if (witRedeem is null)
+                    {
+                        throw new ArgumentNullException(nameof(witRedeem), "To spend a P2SH-P2WSH output, a witness redeem script is needed.");
+                    }
+                    if (!witRedeem.TryEvaluate(out IOperation[] witRdmOps, out opCount, out error))
+                        throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
+                    if (opCount > Constants.MaxScriptOpCount)
+                        throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
+
+                    RedeemScriptType witRdmType = witRedeem.GetRedeemScriptType();
+                    if (witRdmType == RedeemScriptType.MultiSig || witRdmType == RedeemScriptType.CheckLocktimeVerify)
+                    {
+                        ScriptSerializer scrSer = new ScriptSerializer();
+                        byte[] spendScr = scrSer.ConvertWitness(witRdmOps);
+                        return SerializeForSigningSegWit(spendScr, inputIndex, prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Witness redeem script type is not defined.");
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException("Redeem script type is not defined.");
+                }
             }
-            else if (scrType == PubkeyScriptType.P2WPKH)
+            else if (pubScrType == PubkeyScriptType.P2WPKH)
             {
                 ScriptSerializer scrSer = new ScriptSerializer();
                 byte[] spendScr = scrSer.ConvertP2wpkh(prevPubOps);
                 return SerializeForSigningSegWit(spendScr, inputIndex, prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
             }
-            else if (scrType == PubkeyScriptType.P2WSH)
+            else if (pubScrType == PubkeyScriptType.P2WSH)
             {
-                throw new NotImplementedException(); // TODO: implement this!
-            }
-            else if (scrType == PubkeyScriptType.CheckLocktimeVerify)
-            {
-                throw new NotImplementedException(); // TODO: implement this!
-            }
+                if (witRedeem is null)
+                {
+                    throw new ArgumentNullException(nameof(witRedeem), "To spend a P2WSH output, a witness redeem script is needed.");
+                }
+                if (!witRedeem.TryEvaluate(out IOperation[] witRdmOps, out opCount, out error))
+                    throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
+                if (opCount > Constants.MaxScriptOpCount)
+                    throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
 
-            switch (scrType)
+                RedeemScriptType witRdmType = witRedeem.GetRedeemScriptType();
+                if (witRdmType == RedeemScriptType.MultiSig || witRdmType == RedeemScriptType.CheckLocktimeVerify)
+                {
+                    ScriptSerializer scrSer = new ScriptSerializer();
+                    byte[] spendScr = scrSer.ConvertWitness(witRdmOps);
+                    return SerializeForSigningSegWit(spendScr, inputIndex, prvTx.TxOutList[TxInList[inputIndex].Index].Amount, sht);
+                }
+                else
+                {
+                    throw new ArgumentException("Witness redeem script type is not defined.");
+                }
+            }
+            else if (pubScrType == PubkeyScriptType.Empty)
             {
-                case PubkeyScriptType.Empty:
-                    throw new ArgumentException($"Previous transaction's PubkeyScript at index {inputIndex} needs to be set first.");
-                case PubkeyScriptType.RETURN:
-                    throw new ArgumentException("Can not spend OP_RETURN outputs.");
-                case PubkeyScriptType.Unknown:
-                default:
-                    throw new ArgumentException("Previous transaction's PubkeyScript type is not defined.");
+                throw new ArgumentException($"Previous transaction's PubkeyScript at index {inputIndex} needs to be set first.");
+            }
+            else if (pubScrType == PubkeyScriptType.RETURN)
+            {
+                throw new ArgumentException("Can not spend OP_RETURN outputs.");
+            }
+            else
+            {
+                throw new ArgumentException("Previous transaction's PubkeyScript type is not defined.");
             }
         }
 
@@ -549,7 +605,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         throw new ArgumentException("Wrong previous transaction or index.");
                     }
 
-                    TxInList[inputIndex].SigScript.SetToMultiSig(sig, pubKey, redeem, this, prevTx, inputIndex);
+                    TxInList[inputIndex].SigScript.SetToMultiSig(sig, redeem, this, inputIndex);
                     break;
 
                 case PubkeyScriptType.CheckLocktimeVerify:
