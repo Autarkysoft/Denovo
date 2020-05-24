@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -339,6 +340,176 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             byte[] actual = ser.ConvertP2wpkh(ops);
             byte[] expected = Helper.HexToBytes($"76a914{Helper.GetBytesHex(20)}88ac");
 
+            Assert.Equal(expected, actual);
+        }
+
+
+        public static IEnumerable<object[]> GetWitCases()
+        {
+            byte cs = (byte)OP.CodeSeparator;
+            // 76 byte length is good since it is the smallest byte with a different StackInt than CompactInt
+            byte[] data76 = Helper.GetBytes(76);
+            byte[] expWit76 = new byte[77];
+            expWit76[0] = 76;
+            Buffer.BlockCopy(data76, 0, expWit76, 1, data76.Length);
+
+            yield return new object[] { new IOperation[0], new byte[0] };
+            yield return new object[]
+            {
+                new IOperation[] { new AddOp(), new DUP3Op() },
+                new byte[] { (byte)OP.ADD, (byte)OP.DUP3 }
+            };
+            yield return new object[]
+            {
+                new IOperation[] { new PushDataOp(data76), new  PushDataOp(OP._5) },
+                Helper.ConcatBytes(78, expWit76, new byte[] { (byte)OP._5 })
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new DUPOp(),
+                    new CodeSeparatorOp() { IsExecuted = false },
+                    new PushDataOp(Helper.GetBytes(10)),
+                    new CheckSigOp()
+                },
+                Helper.ConcatBytes(14, new byte[] { (byte)OP.DUP, cs, 10 }, Helper.GetBytes(10), new byte[] { (byte)OP.CheckSig })
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new DUPOp(),
+                    new CodeSeparatorOp() { IsExecuted = true },
+                    new PushDataOp(Helper.GetBytes(10)),
+                    new CheckSigOp()
+                },
+                Helper.ConcatBytes(12, new byte[] { 10 }, Helper.GetBytes(10), new byte[] { (byte)OP.CheckSig })
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }),
+                    new CodeSeparatorOp() { IsExecuted = false },
+                    new CheckSigOp()
+                },
+                new byte[] { (byte)OP.IF, cs, (byte)OP.ELSE, cs, (byte)OP.EndIf, cs, (byte)OP.CheckSig }
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } },
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } }),
+                    new CodeSeparatorOp() { IsExecuted = false },
+                    new CheckSigOp()
+                },
+                new byte[] { (byte)OP.ELSE, cs, (byte)OP.EndIf, cs, (byte)OP.CheckSig }
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }),
+                    new CodeSeparatorOp() { IsExecuted = false },
+                    new CheckSigOp()
+                },
+                new byte[] { (byte)OP.EndIf, cs, (byte)OP.CheckSig }
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new CodeSeparatorOp() { IsExecuted = false } },
+                             new IOperation[] { new CodeSeparatorOp() { IsExecuted = true } }),
+                    new CodeSeparatorOp() { IsExecuted = true },
+                    new CheckSigOp()
+                },
+                new byte[] { (byte)OP.CheckSig }
+            };
+            yield return new object[]
+            {
+                // There is no signature removal for SegWit
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new PushDataOp(Helper.ShortSig1Bytes) }, null),
+                    new CheckSigOp()
+                },
+                Helper.ConcatBytes(13, new byte[] { (byte)OP.IF, 9 }, Helper.ShortSig1Bytes,
+                                      new byte[] { (byte)OP.EndIf, (byte)OP.CheckSig })
+
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = false }, new AddOp() },
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }),
+                    new Hash160Op(),
+                    new CheckMultiSigOp(),
+                    new EqualOp()
+                },
+                new byte[]
+                {
+                    (byte)OP.IF, (byte)OP.ROLL, cs, (byte)OP.ADD, (byte)OP.ELSE, (byte)OP.SUB1, cs, (byte)OP.IfDup, (byte)OP.EndIf,
+                    (byte)OP.HASH160, (byte)OP.CheckMultiSig, (byte)OP.EQUAL
+                }
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = true }, new AddOp() },
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }),
+                    new Hash160Op(),
+                    new CheckMultiSigOp(),
+                    new EqualOp()
+                },
+                new byte[]
+                {
+                    (byte)OP.ADD, (byte)OP.ELSE, (byte)OP.SUB1, cs, (byte)OP.IfDup, (byte)OP.EndIf,
+                    (byte)OP.HASH160, (byte)OP.CheckMultiSig, (byte)OP.EQUAL
+                }
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = false }, new AddOp() },
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = true }, new IfDupOp() }),
+                    new Hash160Op(),
+                    new CheckMultiSigOp(),
+                    new EqualOp()
+                },
+                new byte[]
+                {
+                    (byte)OP.IfDup, (byte)OP.EndIf,
+                    (byte)OP.HASH160, (byte)OP.CheckMultiSig, (byte)OP.EQUAL
+                }
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new IFOp(new IOperation[] { new ROLLOp(), new CodeSeparatorOp() { IsExecuted = false }, new AddOp() },
+                             new IOperation[] { new SUB1Op(), new CodeSeparatorOp() { IsExecuted = false }, new IfDupOp() }),
+                    new Hash160Op(),
+                    new CodeSeparatorOp() { IsExecuted = true },
+                    new CheckMultiSigOp(),
+                    new EqualOp()
+                },
+                new byte[] { (byte)OP.CheckMultiSig, (byte)OP.EQUAL }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetWitCases))]
+        public void ConvertWitnessTest(IOperation[] ops, byte[] expected)
+        {
+            ScriptSerializer ser = new ScriptSerializer();
+            byte[] actual = ser.ConvertWitness(ops);
             Assert.Equal(expected, actual);
         }
     }

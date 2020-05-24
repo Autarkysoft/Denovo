@@ -100,6 +100,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <summary>
         /// Converts the given witness script operations to the byte array used in serialization for signing.
+        /// <para/>Note: witness script is basically the <see cref="IRedeemScript"/> used by P2WSH types, not to be confused
+        /// with a P2WPKH script (OP_0 Push&#60;20byte&#62;)
         /// </summary>
         /// <param name="ops">Arra of <see cref="IOperation"/>s inside the script to be converted</param>
         /// <returns>An array of bytes</returns>
