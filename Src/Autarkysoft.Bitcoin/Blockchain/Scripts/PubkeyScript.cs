@@ -69,7 +69,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             {
                 return PubkeyScriptType.Unknown;
             }
-            else if (OperationList == null || OperationList.Length == 0)
+            else if (OperationList.Length == 0)
             {
                 return PubkeyScriptType.Empty;
             }

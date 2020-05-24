@@ -52,6 +52,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             Assert.Equal(new byte[0], scr.Data);
         }
 
+        [Fact]
+        public void Constructor_NullOpsTest()
+        {
+            IOperation[] ops = null;
+            Assert.Throws<ArgumentNullException>(() => new PubkeyScript(ops));
+        }
+
         public static IEnumerable<object[]> GetSerCases()
         {
             yield return new object[] { new byte[0], new byte[1] };
@@ -125,6 +132,36 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             PubkeyScript scr = new PubkeyScript(data);
             Assert.Equal(expected, scr.IsUnspendable());
+        }
+
+        public static IEnumerable<object[]> GetTypeCases()
+        {
+            yield return new object[] { Helper.HexToBytes("00"), PubkeyScriptType.Unknown };
+            yield return new object[] { Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}"), PubkeyScriptType.P2WPKH };
+            yield return new object[] { Helper.HexToBytes($"0020{Helper.GetBytesHex(32)}"), PubkeyScriptType.P2WSH };
+            yield return new object[] { Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87"), PubkeyScriptType.P2SH };
+            // Different from "special types"
+            yield return new object[] { Helper.HexToBytes("ff"), PubkeyScriptType.Unknown };
+            yield return new object[] { new byte[0], PubkeyScriptType.Empty };
+            yield return new object[] { Helper.HexToBytes("6a"), PubkeyScriptType.RETURN };
+            yield return new object[] { Helper.HexToBytes("6a123456"), PubkeyScriptType.RETURN };
+            yield return new object[] { Helper.HexToBytes($"21{Helper.GetBytesHex(33)}ac"), PubkeyScriptType.P2PK };
+            yield return new object[] { Helper.HexToBytes($"51ac"), PubkeyScriptType.Unknown };
+            yield return new object[] { Helper.HexToBytes($"41{Helper.GetBytesHex(65)}ac"), PubkeyScriptType.P2PK };
+            yield return new object[] { Helper.HexToBytes($"76a914{Helper.GetBytesHex(20)}88ac"), PubkeyScriptType.P2PKH };
+            yield return new object[] { Helper.HexToBytes($"76a910{Helper.GetBytesHex(16)}88ac"), PubkeyScriptType.Unknown };
+            yield return new object[] { Helper.HexToBytes($"76a95188ac"), PubkeyScriptType.Unknown }; // Push is OP_1
+            yield return new object[] { Helper.HexToBytes($"a915{Helper.GetBytesHex(21)}87"), PubkeyScriptType.Unknown };
+            yield return new object[] { Helper.HexToBytes($"a95187"), PubkeyScriptType.Unknown }; // Push is OP_1
+            yield return new object[] { Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"), PubkeyScriptType.Unknown };
+            yield return new object[] { Helper.HexToBytes($"0051"), PubkeyScriptType.Unknown };
+        }
+        [Theory]
+        [MemberData(nameof(GetTypeCases))]
+        public void GetPublicScriptTypeTest(byte[] data, PubkeyScriptType expected)
+        {
+            PubkeyScript scr = new PubkeyScript(data);
+            Assert.Equal(expected, scr.GetPublicScriptType());
         }
 
         public static IEnumerable<object[]> GetSpecialTypeCases()
