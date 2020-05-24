@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 
 namespace Tests
@@ -45,6 +46,9 @@ namespace Tests
         /// </summary>
         internal static string Msg1Sig => "4125023df3abc0cbf0bdf5edcd1b1055834e9477ae89d5c54fb002e74e2529644c50c6b30c1cf2b5d35b2679844f25736bf5b7eefd4b83db70e451b537402e6b";
 
+        internal static string VerifiableDataToSign => "d2f695caacb36e93e5f8f9db4d2b74c9ea6f4a3dbb23ca245401eaaa8eabb07e";
+        internal static string VerifiableSignature1 => "3045022100a62707bee4f57823844b6401f1acc655f5d1008c2d1cc256b82dd4e4c39406d0022037fe2afbc588e06f7e7523010b9f321a53b240c63af370fa139d953dd4e1d94101";
+
 
 
         internal static PrivateKey Prv2 => new PrivateKey("KxWSVSkSv3gGs2AmCF3qRCc6MqAikTL3n4wwMJjsfQikMU61ZQkL");
@@ -68,6 +72,8 @@ namespace Tests
         internal static string Pub2NestedSegwit => "3HuNV2HoYAdUspE7utaXQoTgHvR5Fk33f2";
         internal static string Pub2NestedSegwitHex => "b1d82aac8ec0d0f0841547bdfbce08a80826bc96";
 
+        internal static string VerifiableSignature2 => "3045022100ea759d88b199b7ccb4cfe5e15c878816d5663ee6f50621419f8c6e7c6b002c7102207727cb77ed15ce49beba2969fb358b0e9811f19c713a1c369c750f80ef60d49d01";
+
 
 
         internal static PrivateKey Prv3 => new PrivateKey("KwToaM89oezgBF1TNjws2BC6Uo7nt57iWkFeqZQGibLBLgoYy2QT");
@@ -90,5 +96,7 @@ namespace Tests
         internal static string Pub3BechAddr => "bc1qvhwc7h87gpxkjx048hj0n753x7x0k97xue29t8";
         internal static string Pub3NestedSegwit => "32HGWhsh8oUCReuBs7HHFtNtf7LktbHrjv";
         internal static string Pub3NestedSegwitHex => "067a522bdae6b12e7a45fa816fd388a2af4744c0";
+
+        internal static string VerifiableSignature3 => "304402203ed6e9d41a3f66478266616eaa0eb565afebc7596005de9bf0cca09f56f5784402204702a3010158d7771a06525285a727b1e06844b5bb5e3d6c94f25d1827eee4a201";
     }
 }

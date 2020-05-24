@@ -177,4 +177,42 @@ namespace Tests.Bitcoin.Blockchain
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
         public bool VerifyCoinbase(int height, IConsensus consensus) => throw new NotImplementedException();
     }
+
+
+
+    public class MockEvaluatableRedeemScript : MockSerializableScript, IRedeemScript
+    {
+        public MockEvaluatableRedeemScript(RedeemScriptType typeRes, IOperation[] ops, int opCount)
+            : base(new byte[] { 1, 2, 3 }, 255)
+        {
+            typeToReturn = typeRes;
+            opsToReturn = ops;
+            count = opCount;
+        }
+
+        private readonly RedeemScriptType typeToReturn;
+        private readonly IOperation[] opsToReturn;
+        private readonly int count;
+
+        public RedeemScriptType GetRedeemScriptType() => typeToReturn;
+        public override bool TryEvaluate(out IOperation[] result, out int opCount, out string error)
+        {
+            result = opsToReturn;
+            opCount = count;
+
+            if (opsToReturn is null)
+            {
+                error = "Foo";
+                return false;
+            }
+            else
+            {
+                error = null;
+                return true;
+            }
+        }
+
+        public RedeemScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public int CountSigOps(IOperation[] ops) => throw new NotImplementedException();
+    }
 }

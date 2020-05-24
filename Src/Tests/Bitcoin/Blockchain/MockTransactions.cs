@@ -18,7 +18,7 @@ namespace Tests.Bitcoin.Blockchain
     public abstract class MockTxBase : ITransaction
     {
         public virtual int Version { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual TxIn[] TxInList { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual TxIn[] TxInList { get; set; }
         public virtual TxOut[] TxOutList { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual IWitness[] WitnessList
         {
@@ -26,8 +26,8 @@ namespace Tests.Bitcoin.Blockchain
             set => throw new NotImplementedException();
         }
         public virtual LockTime LockTime { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public bool IsVerified { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public int SigOpCount { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual bool IsVerified { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual int SigOpCount { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public virtual byte[] GetTransactionHash() => throw new NotImplementedException();
         public virtual string GetTransactionId() => throw new NotImplementedException();
@@ -35,8 +35,8 @@ namespace Tests.Bitcoin.Blockchain
         public virtual string GetWitnessTransactionId() => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
-        public byte[] SerializeForSigning(byte[] spendScr, int inputIndex, SigHashType sht) => throw new NotImplementedException();
-        public byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht)
+        public virtual byte[] SerializeForSigning(byte[] spendScr, int inputIndex, SigHashType sht) => throw new NotImplementedException();
+        public virtual byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht)
             => throw new NotImplementedException();
         public virtual byte[] GetBytesToSign(ITransaction prvTx, int inputIndex, SigHashType sht, IRedeemScript redeemScript, IRedeemScript witRedeem)
             => throw new NotImplementedException();
@@ -131,6 +131,16 @@ namespace Tests.Bitcoin.Blockchain
         {
             stream.Write(ba);
         }
+    }
+
+
+    public class MockSignableTx : MockTxBase
+    {
+        public MockSignableTx(byte[] returnResult) => result = returnResult;
+
+        private readonly byte[] result;
+
+        public override byte[] SerializeForSigning(byte[] spendScr, int inputIndex, SigHashType sht) => result;
     }
 
 

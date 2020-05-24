@@ -141,13 +141,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (tx is null)
                 throw new ArgumentNullException(nameof(tx), "Transaction can not be null.");
             if (inputIndex < 0 || inputIndex >= tx.TxInList.Length)
-                throw new ArgumentException("Invalid input index.", nameof(inputIndex));
+                throw new ArgumentOutOfRangeException(nameof(inputIndex), "Invalid input index.");
             if (redeem.Data.Length > Constants.MaxScriptItemLength)
                 throw new ArgumentOutOfRangeException(nameof(redeem), "Redeem script is bigger than allowed length.");
             if (redeem.GetRedeemScriptType() != RedeemScriptType.MultiSig)
                 throw new ArgumentException("Invalid redeem script type.");
             if (!redeem.TryEvaluate(out IOperation[] rdmOps, out _, out string error))
-                throw new ArgumentException($"Can not evaluate redeem script: {error}.");
+                throw new ArgumentException($"Can not evaluate redeem script: {error}");
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
             if (!((PushDataOp)rdmOps[0]).TryGetNumber(out long m, out error))
                 throw new ArgumentException($"Invalid m ({error}).");
@@ -159,6 +159,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 throw new ArgumentException($"Invalid n ({error}).");
             if (n < 0)
                 throw new ArgumentOutOfRangeException(nameof(n), "N can not be negative.");
+            if (n == 0)
+                throw new ArgumentOutOfRangeException(nameof(n), "N value zero is not allowed to prevent funds being stolen.");
             if (m > n)
                 throw new ArgumentOutOfRangeException(nameof(n), "M can not be bigger than N.");
 
@@ -184,9 +186,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             bool didSetSig = false;
             // OP_0 sig1 | sig2 | sig_m | redeem
             List<PushDataOp> pushOps = sigOps.Cast<PushDataOp>().ToList();
-            int sigIndex = pushOps.Count - 2;
+            int insertIndex = pushOps.Count - 1;
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
-            for (int i = rdmOps.Length - 2; i >= 1; i--)
+            for (int i = rdmOps.Length - 3; i >= 1; i--)
             {
                 if (!PublicKey.TryRead(((PushDataOp)rdmOps[i]).data, out PublicKey pubK))
                 {
@@ -196,20 +198,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                 if (calc.Verify(dataToSign, sig, pubK))
                 {
-                    pushOps.Insert(sigIndex, new PushDataOp(sig.ToByteArray()));
+                    pushOps.Insert(insertIndex, new PushDataOp(sig.ToByteArray()));
                     didSetSig = true;
-                    m--;
                     break;
                 }
 
-                if (!Signature.TryReadStrict(pushOps[sigIndex].data, out Signature tempSig, out _))
+                if (!Signature.TryReadStrict(pushOps[insertIndex - 1].data, out Signature tempSig, out _))
                 {
                     throw new ArgumentException("Invalid signature found in this script.");
                 }
                 if (calc.Verify(dataToSign, tempSig, pubK))
                 {
-                    sigIndex--;
-                    m--;
+                    insertIndex--;
                 }
             }
 
@@ -218,18 +218,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 throw new ArgumentException("Invalid signature was given.");
             }
 
-            while (m < 0)
+            ReadOnlySpan<byte> sigBa = sig.ToByteArray();
+            // Prevent infinite loop while keeping the signature that was set intact for only 1 round
+            bool remove = false;
+            while (pushOps.Count > m + 2)
             {
-                ReadOnlySpan<byte> sigBa = sig.ToByteArray();
-                foreach (var item in pushOps)
+                for (int i = 1; i < pushOps.Count - 1; i++)
                 {
-                    if (!sigBa.SequenceEqual(item.data))
+                    if (remove || !sigBa.SequenceEqual(pushOps[i].data))
                     {
-                        pushOps.Remove(item);
-                        m++;
+                        pushOps.Remove(pushOps[i]);
                         break;
                     }
                 }
+                remove = true;
             }
 
             SetData(pushOps.ToArray());
