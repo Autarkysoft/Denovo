@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Tests.Bitcoin
@@ -147,6 +148,61 @@ namespace Tests.Bitcoin
             Assert.False(b);
             Assert.Null(actual);
         }
+
+
+        public static IEnumerable<object[]> GetCompactReadCases()
+        {
+            yield return new object[] { new byte[1], new byte[0] };
+            yield return new object[] { new byte[] { 1, 255 }, new byte[] { 255 } };
+            yield return new object[] { new byte[] { 2, 10, 20 }, new byte[] { 10, 20 } };
+
+            byte[] b252 = Helper.GetBytes(252);
+            yield return new object[] { Helper.ConcatBytes(253, new byte[] { 252 }, b252), b252 };
+
+            byte[] b253 = Helper.GetBytes(253);
+            yield return new object[] { Helper.ConcatBytes(256, new byte[] { 253, 253, 0 }, b253), b253 };
+
+            byte[] big = new byte[ushort.MaxValue + 6];
+            big[0] = 254;
+            big[3] = 1;
+            big[5] = 250; // To make sure this byte is not read as part of length
+            big[^1] = 251; // to Mark the end
+            byte[] expBig = new byte[ushort.MaxValue + 1];
+            expBig[0] = 250;
+            expBig[^1] = 251;
+            yield return new object[] { big, expBig };
+        }
+        [Theory]
+        [MemberData(nameof(GetCompactReadCases))]
+        public void TryReadByteArrayCompactIntTest(byte[] ba, byte[] expected)
+        {
+            var stream = new FastStreamReader(ba);
+            bool b = stream.TryReadByteArrayCompactInt(out byte[] actual);
+
+            Assert.True(b);
+            Assert.Equal(expected, actual);
+        }
+        [Theory]
+        [InlineData(new byte[] { })]
+        [InlineData(new byte[] { 1 })]
+        [InlineData(new byte[] { 2, 10 })]
+        [InlineData(new byte[] { 253, 1 })]
+        [InlineData(new byte[] { 253, 1, 0, 10 })] // Len = 1 is using wrong encoding
+        [InlineData(new byte[] { 253, 0, 1, 10 })] // Len = 256 not enough bytes remain to read
+        [InlineData(new byte[] { 254, 1 })]
+        [InlineData(new byte[] { 254, 1, 0, 0, 0 })] // Len = 1 is using wrong encoding
+        [InlineData(new byte[] { 254, 255, 255, 0, 0 })] // same as above
+        [InlineData(new byte[] { 254, 255, 255, 0, 128 })] // Huge UInt32 (negative int)
+        [InlineData(new byte[] { 255, 1, 1, 1, 1, 1, 1, 1, 1 })] // Too huge
+        public void TryReadByteArrayCompactInt_FailTest(byte[] ba)
+        {
+            var stream = new FastStreamReader(ba);
+            bool b = stream.TryReadByteArrayCompactInt(out byte[] actual);
+
+            Assert.False(b);
+            Assert.Null(actual);
+        }
+
 
         [Fact]
         public void TryPeekByteTest()

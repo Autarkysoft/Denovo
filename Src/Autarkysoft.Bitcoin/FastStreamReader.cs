@@ -139,6 +139,73 @@ namespace Autarkysoft.Bitcoin
         }
 
         /// <summary>
+        /// Reads the <see cref="CompactInt"/> length first and returns the respective length of bytes from the buffer.
+        /// Return value indicates success.
+        /// <para/>This method simplyfies reading data structures from the stream that start with a <see cref="CompactInt"/>
+        /// and works for small lengths that fit in an <see cref="int"/> and will fail for anything bigger.
+        /// </summary>
+        /// <param name="result">Result (null if failed)</param>
+        /// <returns>True if bytes were read; otherwise false.</returns>
+        public bool TryReadByteArrayCompactInt(out byte[] result)
+        {
+            if (!TryReadByte(out byte firstByte))
+            {
+                result = null;
+                return false;
+            }
+
+            if (firstByte <= 252)
+            {
+                return TryReadByteArray(firstByte, out result);
+            }
+            else if (firstByte == 253) // 0xfd-XX-XX
+            {
+                if (!CheckRemaining(sizeof(ushort)))
+                {
+                    result = null;
+                    return false;
+                }
+
+                // Read ushort but there is no need for cast since it will be cast back to int soon
+                int val = data[position] | (data[position + 1] << 8);
+                position += sizeof(ushort);
+                if (val <= 252)
+                {
+                    result = null;
+                    return false;
+                }
+
+                return TryReadByteArray(val, out result);
+            }
+            else if (firstByte == 254) // 0xfe-XX-XX-XX-XX
+            {
+                if (!CheckRemaining(sizeof(uint)))
+                {
+                    result = null;
+                    return false;
+                }
+
+                // Read uint but as int to avoid casting, bigger than max size will be negative and rejected 
+                // (that's 2.1 billion/giga bytes).
+                int val = data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24);
+                position += sizeof(uint);
+
+                if (val <= ushort.MaxValue) // Also rejects negative (ie. too big a UInt32)
+                {
+                    result = null;
+                    return false;
+                }
+                return TryReadByteArray(val, out result);
+            }
+            else // Also (firstByte == 255) that is length at least = uint.MaxValue which is rejected here
+            {
+                result = null;
+                return false;
+            }
+        }
+
+
+        /// <summary>
         /// Reads and returns a single byte without moving the index forward. Return value indicates success
         /// </summary>
         /// <param name="b">A signle byte</param>
