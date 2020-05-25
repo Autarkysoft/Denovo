@@ -97,7 +97,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             {
                 return RedeemScriptType.Unknown;
             }
-            else if (OperationList == null || OperationList.Length == 0)
+            else if (OperationList.Length == 0)
             {
                 return RedeemScriptType.Empty;
             }

@@ -13,7 +13,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     public interface IRedeemScript : IScript
     {
         /// <summary>
-        /// Returns type of this redeem script instance.
+        /// Returns type of this redeem script instance (used to get pre-defined type for signing transactions so that signer
+        /// knows how to sign and set the signature).
         /// </summary>
         /// <returns><see cref="RedeemScriptType"/> enum</returns>
         RedeemScriptType GetRedeemScriptType();

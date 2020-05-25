@@ -17,13 +17,51 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void ConstructorTest()
         {
-            RedeemScript scr = new RedeemScript();
+            var scr = new RedeemScript();
             Assert.Empty(scr.Data);
+        }
+
+        [Fact]
+        public void Constructor_WithNullBytesTest()
+        {
+            byte[] data = null;
+            var scr = new RedeemScript(data);
+            Assert.Empty(scr.Data); // NotNull
+        }
+
+        [Fact]
+        public void Constructor_WithBytesTest()
+        {
+            byte[] data = Helper.GetBytes(10);
+            var scr = new RedeemScript(data);
+            Assert.Equal(data, scr.Data);
+        }
+
+        [Fact]
+        public void Constructor_OpsTest()
+        {
+            var scr = new RedeemScript(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
+            Assert.Equal(new byte[] { (byte)OP.DUP, 3, 10, 20, 30 }, scr.Data);
+        }
+
+        [Fact]
+        public void Constructor_EmptyOpsTest()
+        {
+            var scr = new RedeemScript(new IOperation[0]);
+            Assert.Equal(new byte[0], scr.Data);
+        }
+
+        [Fact]
+        public void Constructor_NullOpsTest()
+        {
+            IOperation[] ops = null;
+            Assert.Throws<ArgumentNullException>(() => new RedeemScript(ops));
         }
 
         public static IEnumerable<object[]> GetScrTypeCases()
         {
             yield return new object[] { new RedeemScript(), RedeemScriptType.Empty };
+            yield return new object[] { new RedeemScript(new byte[] { 255 }), RedeemScriptType.Unknown };
             yield return new object[]
             {
                 new RedeemScript(new IOperation[] { new DUPOp() }),
@@ -134,12 +172,106 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new RedeemScript(new IOperation[] { new CheckMultiSigOp() }),
                 RedeemScriptType.MultiSig
             };
+            yield return new object[]
+            {
+                new RedeemScript(new IOperation[] { new PushDataOp(OP._1), new AddOp(), new CheckMultiSigOp() }),
+                RedeemScriptType.Unknown
+            };
         }
         [Theory]
         [MemberData(nameof(GetScrTypeCases))]
         public void GetRedeemScriptTypeTest(IRedeemScript scr, RedeemScriptType expected)
         {
             RedeemScriptType actual = scr.GetRedeemScriptType();
+            Assert.Equal(expected, actual);
+        }
+
+        public static IEnumerable<object[]> GetSpecialScrTypeCases()
+        {
+            yield return new object[] { null, RedeemScriptSpecialType.None };
+            yield return new object[] { new byte[22], RedeemScriptSpecialType.None };
+            // The following 2 are from https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki
+            yield return new object[]
+            {
+                Helper.HexToBytes("001479091972186c449eb1ded22b78e40d009bdf0089"),
+                RedeemScriptSpecialType.P2SH_P2WPKH
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0020a16b5755f7f6f96dbd65f5f0d6ab9418b89af4b1f14a1bb8a09062c35f0dcb54"),
+                RedeemScriptSpecialType.P2SH_P2WSH
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetSpecialScrTypeCases))]
+        public void RedeemScriptSpecialTypeTest(byte[] data, RedeemScriptSpecialType expected)
+        {
+            var scr = new RedeemScript(data);
+            RedeemScriptSpecialType actual = scr.GetSpecialType();
+            Assert.Equal(expected, actual);
+        }
+
+        public static IEnumerable<object[]> GetSigOpCountCases()
+        {
+            yield return new object[] { new IOperation[0], 0 };
+            yield return new object[] { new IOperation[] { new DUPOp(), new Hash160Op(), new Sha1Op() }, 0 };
+            yield return new object[] { new IOperation[] { new ADD1Op(), new CheckSigOp(), new CheckSigVerifyOp() }, 2 };
+            yield return new object[]
+            {
+                new IOperation[] { new CheckMultiSigOp() },
+                20
+            };
+            yield return new object[]
+            {
+                new IOperation[] { new DUPOp(), new CheckMultiSigOp() },
+                20
+            };
+            yield return new object[]
+            {
+                new IOperation[] { new PushDataOp(OP.Negative1), new CheckMultiSigOp() },
+                20
+            };
+            yield return new object[]
+            {
+                new IOperation[] { new PushDataOp(OP._1), new CheckMultiSigOp() },
+                1
+            };
+            yield return new object[]
+            {
+                // Core counts 0 as 20 sigops!
+                // https://github.com/bitcoin/bitcoin/blob/24f70290642c9c5108d3dc62dbe055f5d1bcff9d/src/script/script.cpp#L162-L165
+                new IOperation[] { new PushDataOp(OP._0), new CheckMultiSigOp() },
+                20
+            };
+            yield return new object[]
+            {
+                new IOperation[] { new PushDataOp(OP._5), new CheckMultiSigOp(), new PushDataOp(OP._6), new CheckMultiSigOp() },
+                11
+            };
+            yield return new object[]
+            {
+                new IOperation[]
+                {
+                    new PushDataOp(OP._5), new PushDataOp(OP._1), new IFOp(new IOperation[] { new CheckMultiSigOp() }, null)
+                },
+                20
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetSigOpCountCases))]
+        public void CountSigOpsTest(IOperation[] ops, int expected)
+        {
+            var scr = new RedeemScript();
+            int actual = scr.CountSigOps(ops);
+            Assert.Equal(expected, actual);
+        }
+        [Theory]
+        [MemberData(nameof(GetSigOpCountCases))]
+        public void CountSigOps_OverrideMethodTest(IOperation[] ops, int expected)
+        {
+            // Make sure the default sigop counter is overriden
+            var scr = new RedeemScript(ops);
+            int actual = scr.CountSigOps();
             Assert.Equal(expected, actual);
         }
 
