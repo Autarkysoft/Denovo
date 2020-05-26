@@ -106,8 +106,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[] { new byte[] { 1, (byte)OP.CheckSig }, 0 }; // SigOp is the single byte to be pushed
             yield return new object[] { new byte[] { 1, 1, (byte)OP.CheckSig }, 1 }; // Doesn't cover SigOp
             yield return new object[] { new byte[] { 2, (byte)OP.CheckSig }, 0 }; // Not enough bytes
+            yield return new object[] { new byte[] { 1, (byte)OP.CheckSig, (byte)OP.CheckSig, (byte)OP.CheckSig }, 2 };
             yield return new object[] { new byte[] { 2, (byte)OP.CheckSig, (byte)OP.CheckSig, (byte)OP.CheckSig }, 1 };
-            yield return new object[] { new byte[] { 2, (byte)OP.CheckSig, (byte)OP.CheckSig, (byte)OP.CheckSig }, 1 };
+            yield return new object[] { new byte[] { 3, (byte)OP.CheckSig, (byte)OP.CheckSig, (byte)OP.CheckSig }, 0 };
 
             // OP_PushData1
             yield return new object[] { new byte[] { 0x4c }, 0 }; // Fail
