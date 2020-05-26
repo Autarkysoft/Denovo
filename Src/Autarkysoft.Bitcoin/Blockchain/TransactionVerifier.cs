@@ -95,10 +95,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            TotalSigOpCount += transaction.TxInList[0].SigScript.CountSigOps();
+            TotalSigOpCount += transaction.TxInList[0].SigScript.CountSigOps() * Constants.WitnessScaleFactor;
             foreach (var tout in transaction.TxOutList)
             {
-                TotalSigOpCount += tout.PubScript.CountSigOps();
+                TotalSigOpCount += tout.PubScript.CountSigOps() * Constants.WitnessScaleFactor;
             }
 
             error = null;
@@ -231,7 +231,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                 if (pubType == PubkeyScriptSpecialType.None)
                 {
-                    TotalSigOpCount += prevOutput.PubScript.CountSigOps() + currentInput.SigScript.CountSigOps();
+                    TotalSigOpCount += (prevOutput.PubScript.CountSigOps() + currentInput.SigScript.CountSigOps())
+                                       * Constants.WitnessScaleFactor;
 
                     if ((tx.WitnessList != null && tx.WitnessList.Length != 0) &&
                         (tx.WitnessList[i].Items.Length != 0))
@@ -332,7 +333,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                                 return false;
                             }
 
-                            TotalSigOpCount += redeem.CountSigOps(redeemOps);
+                            TotalSigOpCount += redeem.CountSigOps(redeemOps) * Constants.WitnessScaleFactor;
 
                             stack.ExecutingScript = redeemOps;
                             stack.OpCount = redeemOpCount;
@@ -412,6 +413,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                                 return false;
                             }
 
+                            // Note that there is no *Constants.WitnessScaleFactor here anymore
                             TotalSigOpCount += witRdm.CountSigOps(witRdmOps);
 
                             foreach (var op in tx.WitnessList[i].Items)
@@ -532,6 +534,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
+                    // Note that there is no *Constants.WitnessScaleFactor here anymore
                     TotalSigOpCount += redeem.CountSigOps(redeemOps);
 
                     foreach (var op in tx.WitnessList[i].Items)
