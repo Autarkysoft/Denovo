@@ -130,5 +130,42 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
             Assert.Equal(expected, actual);
         }
+
+        [Fact]
+        public void EqualsTest()
+        {
+            IOperation r1_1 = new ReturnOp();
+            IOperation r1_2 = new ReturnOp();
+            IOperation r2_1 = new ReturnOp(new byte[] { 1, 2 }, false);
+            IOperation r2_2 = new ReturnOp(new byte[] { 1, 2 }, false);
+            IOperation r2_3 = new ReturnOp(new byte[] { 1, 2 }, true);
+            IOperation r2_4 = new PushDataOp(new byte[] { 1, 2 });
+            string diff = "ReturnOp";
+
+            Assert.True(r1_1.Equals(r1_1));
+            Assert.True(r1_1.Equals(r1_2));
+            Assert.False(r1_1.Equals(r2_1));
+
+            Assert.True(r2_1.Equals(r2_1));
+            Assert.True(r2_1.Equals(r2_2));
+            Assert.False(r2_1.Equals(r2_3));
+            Assert.False(r2_1.Equals(r2_4));
+            Assert.False(r2_1.Equals(diff));
+        }
+
+        [Fact]
+        public void GetHashCodeTest()
+        {
+            var r1 = new ReturnOp(new byte[] { 1, 2 });
+            var r2 = new ReturnOp(new byte[] { 1, 2 });
+            var r3 = new ReturnOp(new byte[] { 1, 2, 3 });
+
+            int h1 = r1.GetHashCode();
+            int h2 = r2.GetHashCode();
+            int h3 = r3.GetHashCode();
+
+            Assert.Equal(h1, h2);
+            Assert.NotEqual(h1, h3);
+        }
     }
 }

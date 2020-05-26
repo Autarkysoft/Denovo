@@ -152,5 +152,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
         /// <inheritdoc/>
         public override void WriteToStreamForSigningSegWit(FastStream stream) => stream.Write(data);
+
+        /// <inheritdoc/>
+        public override bool Equals(object obj) => obj is ReturnOp op && ((ReadOnlySpan<byte>)op.data).SequenceEqual(data);
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            int hash = 17;
+            foreach (var b in data)
+            {
+                hash = hash * 31 + b;
+            }
+            return hash;
+        }
     }
 }
