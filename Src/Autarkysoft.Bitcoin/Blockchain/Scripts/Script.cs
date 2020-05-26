@@ -36,6 +36,22 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             Data = stream.ToByteArray();
         }
 
+        /// <inheritdoc/>
+        public virtual void Serialize(FastStream stream) => stream.WriteWithCompactIntLength(Data);
+
+        /// <inheritdoc/>
+        public virtual bool TryDeserialize(FastStreamReader stream, out string error)
+        {
+            if (!stream.TryReadByteArrayCompactInt(out _scrData))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
+
 
         /// <inheritdoc/>
         public virtual int CountSigOps()
@@ -73,7 +89,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         {
                             break;
                         }
-                        uint val = (uint)(Data[index] | (Data[index + 1] << 8) | (Data[index + 2] << 16) | (Data[index + 3] << 24));
+                        uint val = (uint)(Data[index + 1] |
+                                         (Data[index + 2] << 8) |
+                                         (Data[index + 3] << 16) |
+                                         (Data[index + 4] << 24));
                         index += val + 5;
                     }
                 }
@@ -131,45 +150,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             }
         }
 
-
-        /// <inheritdoc/>
-        public virtual void Serialize(FastStream stream)
-        {
-            CompactInt length = new CompactInt(Data.Length);
-            length.WriteToStream(stream);
-            stream.Write(Data);
-        }
-
-        /// <inheritdoc/>
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error)
-        {
-            if (!CompactInt.TryRead(stream, out CompactInt length, out error))
-            {
-                return false;
-            }
-
-            // We are going to cast length so an initial check should take place here
-            if (length > int.MaxValue)
-            {
-                error = "Script length is too big.";
-                return false;
-            }
-
-            if (!stream.TryReadByteArray((int)length, out _scrData))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
-
-            error = null;
-            return true;
-        }
-
-
-        private bool IsPushOp(byte b)
-        {
-            return b >= 0 && b <= (byte)OP._16 && b != (byte)OP.Reserved;
-        }
+        /// <summary>
+        /// Returns if the given byte indicates a Push operation (covers number Ops and Push Ops)
+        /// </summary>
+        /// <param name="b">Byte to check</param>
+        /// <returns>True if the byte is a push Op; otherwise false.</returns>
+        protected bool IsPushOp(byte b) => b >= 0 && b <= (byte)OP._16 && b != (byte)OP.Reserved;
 
         /// <summary>
         /// Reads a single <see cref="IOperation"/> from the given the given stream and adds the result to the given list.
@@ -202,7 +188,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
             if (firstByte != (byte)OP.Reserved && ++opCount > Constants.MaxScriptOpCount)
             {
-                error = "Number of OPs in this script exceeds the allowed number.";
+                error = Err.OpCountOverflow;
                 return false;
             }
 
@@ -217,7 +203,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             }
             else
             {
-                _ = stream.TryReadByte(out firstByte);
+                stream.SkipOneByte();
                 switch ((OP)firstByte)
                 {
                     // Invalid OPs:
@@ -281,6 +267,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB == (byte)OP.ELSE)
                             {
+                                // Count OP_ELSE
+                                opCount++;
                                 if (!stream.TryPeekByte(out nextB))
                                 {
                                     error = Err.EndOfStream;
@@ -304,6 +292,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                                 _ = stream.TryReadByte(out currentB);
                             }
+
+                            // Count OP_EndIf
+                            opCount++;
 
                             if (currentB != (byte)OP.EndIf)
                             {
@@ -355,6 +346,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB == (byte)OP.ELSE)
                             {
+                                // Count OP_ELSE
+                                opCount++;
                                 if (!stream.TryPeekByte(out nextB))
                                 {
                                     error = Err.EndOfStream;
@@ -378,6 +371,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                                 _ = stream.TryReadByte(out currentB);
                             }
+
+                            // Count OP_EndIf
+                            opCount++;
 
                             if (currentB != (byte)OP.EndIf)
                             {
