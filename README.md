@@ -17,8 +17,8 @@ for more information).
 The backbone of Denovo, Bitcoin.net is a stand alone bitcoin library written completely in C# and from scratch (no code translating)
 with no dependencies. 
 It is released as a different project so that it could be used by any other third party projects.  
-Check out releases for the current version ([versioning convention](https://github.com/Autarkysoft/Conventions/blob/master/Versioning.md)
-). The current implementation is covering almost the entire bitcoin protocol, there may be some missing parts or some bugs.  
+Check out releases for the current version ([versioning convention](https://github.com/Autarkysoft/Conventions/blob/master/Versioning.md)).
+The current implementation is covering almost the entire bitcoin protocol, there may be some missing parts or some bugs.  
 Please report any problems that you encounter or any feedback that you may have.    
 
 ### Bitcoin.Net can be downloaded from Nuget:  
@@ -66,6 +66,7 @@ are in separate classes. Currently:
   [32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets"),
   [38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki "Passphrase-protected private key"),
   [39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys"),
+  [137](https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki "Signatures of Messages using Private Keys")
   [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF"),
   [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
 
