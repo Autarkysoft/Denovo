@@ -27,5 +27,23 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         {
             Assert.Equal(expectedBytes, val.ToByteArray(bigEndian));
         }
+
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(-1, -1)] // -1 is 0xffffffff
+        [InlineData(0x12345678, 0x78563412)]
+        public void SwapEndian_IntTest(int val, int expected)
+        {
+            Assert.Equal(expected, val.SwapEndian());
+        }
+
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(0xffffffff, 0xffffffff)]
+        [InlineData(0x12345678, 0x78563412)]
+        public void SwapEndian_UIntTest(uint val, uint expected)
+        {
+            Assert.Equal(expected, val.SwapEndian());
+        }
     }
 }

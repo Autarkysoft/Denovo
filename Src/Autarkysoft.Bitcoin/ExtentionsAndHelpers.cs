@@ -387,6 +387,20 @@ namespace Autarkysoft.Bitcoin
                 }
             }
         }
+
+        /// <summary>
+        /// Changes endianness of the given 32-bit signed integer (from big to little endian and vice versa)
+        /// </summary>
+        /// <param name="i">The 32-bit signed integer to reverse</param>
+        /// <returns>The 32-bit signed integer result with reverse endianness</returns>
+        public static int SwapEndian(this int i) => (i >> 24) | (i << 24) | ((i >> 8) & 0xff00) | ((i << 8) & 0xff0000);
+
+        /// <summary>
+        /// Changes endianness of the given 32-bit unsigned integer (from big to little endian and vice versa)
+        /// </summary>
+        /// <param name="i">The 32-bit unsigned integer to reverse</param>
+        /// <returns>The 32-bit signed uninteger result with reverse endianness</returns>
+        public static uint SwapEndian(this uint i) => (i >> 24) | (i << 24) | ((i >> 8) & 0xff00) | ((i << 8) & 0xff0000);
     }
 
 
