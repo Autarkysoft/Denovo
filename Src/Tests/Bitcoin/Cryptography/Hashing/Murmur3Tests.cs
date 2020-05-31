@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
@@ -69,6 +70,13 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             Murmur3 hasher = new Murmur3();
             uint actual = hasher.ComputeHash32(data, seed);
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeHash32_ExceptionTest()
+        {
+            Murmur3 hasher = new Murmur3();
+            Assert.Throws<ArgumentNullException>(() => hasher.ComputeHash32(null, 0));
         }
     }
 }

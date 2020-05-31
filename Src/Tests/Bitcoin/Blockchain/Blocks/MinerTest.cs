@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
-using Autarkysoft.Bitcoin.Encoders;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Blocks
@@ -17,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         {
             Block blk = new Block();
             // TestNet block #1,670,926
-            blk.TryDeserializeHeader(new FastStreamReader(Base16.Decode("00e0ff3ff79fa236e509c35d006c58546db4f27c4874e6dfa4dd5b30b01b1b000000000034310adae6b8d3cca58e56a42eb55ab3c17599cc696b133afe0e4c2c49ecfa2cb5b1795eb334011aabf54a10")), out _);
+            blk.TryDeserializeHeader(new FastStreamReader(Helper.HexToBytes("00e0ff3ff79fa236e509c35d006c58546db4f27c4874e6dfa4dd5b30b01b1b000000000034310adae6b8d3cca58e56a42eb55ab3c17599cc696b133afe0e4c2c49ecfa2cb5b1795eb334011aabf54a10")), out _);
             uint expected = 424342955;
             Assert.NotEqual(expected, blk.Nonce);
 

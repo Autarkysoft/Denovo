@@ -15,6 +15,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Computes 32-bit hash of the given data.
         /// </summary>
+        /// <exception cref="ArgumentNullException"/>
         /// <param name="data">Data to hash</param>
         /// <param name="seed">Seed to use</param>
         /// <returns>32-bit unsigned integer (hash result)</returns>
