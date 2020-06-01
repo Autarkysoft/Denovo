@@ -103,6 +103,28 @@ namespace Autarkysoft.Bitcoin
             return CheckRemaining(other.Length) && ((ReadOnlySpan<byte>)data).Slice(position, other.Length).SequenceEqual(other);
         }
 
+        /// <summary>
+        /// Search for the given byte array inside this stream while moving the position to the index where the other
+        /// byte array starts. Useful for finding magic bytes inside a stream.
+        /// </summary>
+        /// <param name="other">The byte array to search for</param>
+        /// <returns>True if the other byte array was found inside this stream; otherwise false.</returns>
+        public bool FindAndSkip(byte[] other)
+        {
+            while (data.Length - position >= other.Length)
+            {
+                if (((ReadOnlySpan<byte>)data).Slice(position, other.Length).SequenceEqual(other))
+                {
+                    return true;
+                }
+                else
+                {
+                    position++;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Reads and returns 32 bytes from this stream.

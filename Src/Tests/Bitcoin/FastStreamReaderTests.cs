@@ -105,7 +105,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 2, 3 }, false, false)]
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 2, 3 }, true, true)]
         [InlineData(new byte[] { 2, 3 }, new byte[] { 2, 3 }, true, false)]
-        public void CompareBytes(byte[] data, byte[] other, bool skip, bool expected)
+        public void CompareBytesTest(byte[] data, byte[] other, bool skip, bool expected)
         {
             var stream = new FastStreamReader(data);
             if (skip)
@@ -114,6 +114,20 @@ namespace Tests.Bitcoin
             }
             bool actual = stream.CompareBytes(other);
             Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(new byte[] { 1 }, new byte[] { 1 }, true, 0)]
+        [InlineData(new byte[] { 1 }, new byte[] { 2 }, false, 1)]
+        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3 }, true, 0)]
+        [InlineData(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, new byte[] { 4, 5, 6, 7 }, true, 4)]
+        [InlineData(new byte[] { 0, 1, 2, 3 }, new byte[] { 10, 20 }, false, 3)]
+        public void FindAndSkipTest(byte[] data, byte[] other, bool expected, int expPos)
+        {
+            var stream = new FastStreamReader(data);
+            bool actual = stream.FindAndSkip(other);
+            Assert.Equal(expected, actual);
+            Helper.ComparePrivateField(stream, "position", expPos);
         }
 
         [Fact]
