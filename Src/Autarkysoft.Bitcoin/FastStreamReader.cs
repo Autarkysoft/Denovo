@@ -212,7 +212,8 @@ namespace Autarkysoft.Bitcoin
                 int val = data[position] | (data[position + 1] << 8) | (data[position + 2] << 16) | (data[position + 3] << 24);
                 position += sizeof(uint);
 
-                if (val <= ushort.MaxValue) // Also rejects negative (ie. too big a UInt32)
+                if (val <= ushort.MaxValue || // Also rejects negative (ie. too big a UInt32)
+                    val > 0x02000000) // https://github.com/bitcoin/bitcoin/blob/5879bfa9a541576100d939d329a2639b79d9e4f9/src/serialize.h#L334
                 {
                     result = null;
                     return false;
