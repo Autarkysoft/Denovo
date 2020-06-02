@@ -56,7 +56,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         private const int CheckSumSize = 4;
         private const int CommandNameSize = 12;
 
-        private readonly Sha256 hash = new Sha256(true);
 
         private byte[] _magic;
         /// <summary>
@@ -79,7 +78,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         }
 
         internal uint payloadSize;
-        private byte[] checkSum;
+        internal byte[] checkSum;
 
         private IMessagePayload _payload;
         /// <summary>
@@ -136,7 +135,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
         private byte[] CalculateChecksum(byte[] data)
         {
+            Sha256 hash = new Sha256(true);
             return hash.ComputeHash(data).SubArray(0, CheckSumSize);
+        }
+
+        public bool VerifyChecksum()
+        {
+            return !(Payload is null) && checkSum != null && ((ReadOnlySpan<byte>)checkSum).SequenceEqual(Payload.GetChecksum());
         }
 
 
