@@ -52,7 +52,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// 4 magic + 12 command + 4 payloadSize + 4 checksum + 0 empty payload
         /// </summary>
         public const int MinSize = 24;
-        private const uint MaxPayloadSize = 32 * 1024 * 1024; // 32 MiB
+        // https://github.com/bitcoin/bitcoin/blob/5879bfa9a541576100d939d329a2639b79d9e4f9/src/net.h#L55-L56
+        private const uint MaxPayloadSize = 4 * 1000 * 1000;
         private const int CheckSumSize = 4;
         private const int CommandNameSize = 12;
 
@@ -135,7 +136,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
         private byte[] CalculateChecksum(byte[] data)
         {
-            Sha256 hash = new Sha256(true);
+            using Sha256 hash = new Sha256(true);
             return hash.ComputeHash(data).SubArray(0, CheckSumSize);
         }
 
@@ -208,7 +209,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 error = "Invalid message magic.";
                 return false;
             }
-            
+
             if (!stream.TryReadByteArray(CommandNameSize, out byte[] cmd))
             {
                 error = Err.EndOfStream;
