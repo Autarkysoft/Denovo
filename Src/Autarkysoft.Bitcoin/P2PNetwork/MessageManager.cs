@@ -20,24 +20,31 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Initializes a new instance of <see cref="MessageManager"/> using the given parameters.
         /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="bufferLength">Size of the buffer used for each <see cref="SocketAsyncEventArgs"/> object</param>
         /// <param name="versionMessage">Version message (used for initiating handshake)</param>
+        /// <param name="repMan">A reply manager to create appropriate response to a given message</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
-        public MessageManager(int bufferLength, Message versionMessage, NetworkType netType = NetworkType.MainNet)
+        public MessageManager(int bufferLength, Message versionMessage, IReplyManager repMan,
+                              NetworkType netType = NetworkType.MainNet)
         {
             if (bufferLength <= 0)
                 throw new ArgumentOutOfRangeException(nameof(bufferLength), "Buffer length can not be negative or zero.");
+            if (repMan is null)
+                throw new ArgumentNullException(nameof(repMan), "Reply manager can not be null.");
 
             magicBytes = netType switch
             {
                 NetworkType.MainNet => Base16.Decode(Constants.MainNetMagic),
                 NetworkType.TestNet => Base16.Decode(Constants.TestNetMagic),
                 NetworkType.RegTest => Base16.Decode(Constants.RegTestMagic),
-                _ => throw new ArgumentException("Network type is not defined.", nameof(netType))
+                _ => throw new ArgumentException(Err.InvalidNetwork)
             };
             this.netType = netType;
 
             verMsg = versionMessage;
+            replyManager = repMan;
 
             buffLen = bufferLength;
             Init();
@@ -45,12 +52,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
 
-        private const int HeaderLength = 24;
+        private const int HeaderLength = Message.MinSize;
 
         private readonly int buffLen;
         private readonly NetworkType netType;
         private readonly byte[] magicBytes;
         private readonly Message verMsg;
+        private readonly IReplyManager replyManager;
 
         private byte[] _sendData;
         /// <summary>
@@ -140,107 +148,95 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
-        private bool TryGetReply(Message msg, out Message reply)
-        {
-            reply = msg.Payload.PayloadType switch
-            {
-                PayloadType.Ping => new Message(new PongPayload(((PingPayload)msg.Payload).Nonce), netType),
-                PayloadType.Version => new Message(new VerackPayload(), netType),
-                _ => null,
-            };
-            return !(reply is null);
-        }
-
-
         private void SetRejectMessage(PayloadType plt, string error)
         {
-            RejectPayload pl = new RejectPayload()
-            {
-                Code = RejectCode.FailedToDecodeMessage,
-                RejectedMessage = 0,
-                Reason = error
-            };
-            Message rej = new Message(pl, netType);
+            // TODO: set a bool to turn Reject response on/off
+            Message rej = replyManager.GetReject(plt, error);
             toSendQueue.Enqueue(rej);
             IsReceiveCompleted = true;
         }
 
         private void ProcessData(FastStreamReader stream)
         {
+            // This method is only called when magic bytes are already found and stream size is at least header size. 
+            // Deserialize header and payload separately.
             Message msg = new Message(netType);
             if (msg.TryDeserializeHeader(stream, out string error))
             {
-                if (stream.GetRemainingBytesCount() >= msg.payloadSize)
+                if (stream.GetRemainingBytesCount() < msg.payloadSize)
                 {
-                    if (msg.Payload.TryDeserialize(stream, out error))
+                    // Receive is not finished
+                    tempHolder = new byte[HeaderLength + stream.GetRemainingBytesCount()];
+                    Buffer.BlockCopy(msg.SerializeHeader(), 0, tempHolder, 0, HeaderLength);
+                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out byte[] remBa);
+                    Buffer.BlockCopy(remBa, 0, tempHolder, HeaderLength, remBa.Length);
+                    IsReceiveCompleted = false;
+                }
+                else if (msg.Payload.TryDeserialize(stream, out error) && msg.VerifyChecksum())
+                {
+                    Message reply = replyManager.GetReply(msg);
+                    if (!(reply is null))
                     {
-                        // TODO: deseraializing this way doesn't validate the checksum
-                        if (TryGetReply(msg, out Message reply))
-                        {
-                            toSendQueue.Enqueue(reply);
-                        }
+                        toSendQueue.Enqueue(reply);
+                    }
 
-                        // TODO: handle received message here. eg. write received block to disk,...
+                    // TODO: handle received message here. eg. write received block to disk,...
 
-                        // Handle remaining data
-                        if (stream.GetRemainingBytesCount() > 0)
-                        {
-                            IsReceiveCompleted = false;
-                            stream.TryReadByteArray(stream.GetRemainingBytesCount(), out tempHolder);
-                        }
-                        else
-                        {
-                            IsReceiveCompleted = true;
-                            tempHolder = null;
-                        }
+                    // Handle remaining data
+                    if (stream.GetRemainingBytesCount() > 0)
+                    {
+                        IsReceiveCompleted = false;
+                        _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out tempHolder);
                     }
                     else
                     {
                         IsReceiveCompleted = true;
                         tempHolder = null;
-                        SetRejectMessage(msg.Payload.PayloadType, error);
                     }
                 }
-                else
+                else // There were enough bytes for payload but something failed => reject the message
                 {
-                    byte[] temp = new byte[HeaderLength + stream.GetRemainingBytesCount()];
-                    Buffer.BlockCopy(msg.SerializeHeader(), 0, temp, 0, HeaderLength);
-                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out byte[] rem);
-                    Buffer.BlockCopy(rem, 0, temp, HeaderLength, rem.Length);
-                    tempHolder = temp;
-                    IsReceiveCompleted = false;
+                    IsReceiveCompleted = true;
+                    tempHolder = null;
+                    SetRejectMessage(msg.Payload.PayloadType, error);
                 }
             }
             else
             {
+                IsReceiveCompleted = true;
+                tempHolder = null;
                 SetRejectMessage(msg.Payload?.PayloadType ?? 0, error);
             }
         }
 
 
+        /// <summary>
+        /// Reads and processes the given bytes from the given buffer and provided length.
+        /// </summary>
+        /// <param name="buffer">Buffer containing the received bytes</param>
+        /// <param name="len">Number of bytes received</param>
         public void ReadBytes(byte[] buffer, int len)
         {
-            if (len != 0)
+            if (len > 0 && buffer != null)
             {
                 if (IsReceiveCompleted)
                 {
-                    // Try to find magic inside the received buffer
                     FastStreamReader stream = new FastStreamReader(buffer, 0, len);
-                    int index = 0;
-                    while (index < len - 4 && !stream.CompareBytes(magicBytes))
+                    if (stream.FindAndSkip(magicBytes))
                     {
-                        _ = stream.TryReadByte(out _);
+                        int rem = stream.GetRemainingBytesCount();
+                        if (rem >= HeaderLength)
+                        {
+                            ProcessData(stream);
+                        }
+                        else if (rem != 0)
+                        {
+                            stream.TryReadByteArray(rem, out tempHolder);
+                            IsReceiveCompleted = false;
+                        }
                     }
-
-                    if (len - index >= HeaderLength)
-                    {
-                        ProcessData(stream);
-                    }
-                    else if (len - index != 0)
-                    {
-                        stream.TryReadByteArray(len - index, out tempHolder);
-                        IsReceiveCompleted = false;
-                    }
+                    // TODO: some sort of point system is needed to give negative points to malicious nodes
+                    //       eg. sending garbage bytes which is what is caught in the "else" part of the "if" above
                 }
                 else
                 {
@@ -251,16 +247,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                     if (tempHolder.Length >= HeaderLength)
                     {
-                        FastStreamReader stream = new FastStreamReader(tempHolder);
-                        ProcessData(stream);
+                        IsReceiveCompleted = true;
+                        ReadBytes(tempHolder, tempHolder.Length);
                     }
                 }
             }
         }
 
-        public void ReadBytes(SocketAsyncEventArgs recEventArgs)
-        {
-            ReadBytes(recEventArgs.Buffer, recEventArgs.BytesTransferred);
-        }
+        /// <summary>
+        /// Reads and processes the bytes that were received on this <see cref="SocketAsyncEventArgs"/>.
+        /// </summary>
+        /// <param name="recEventArgs"><see cref="SocketAsyncEventArgs"/> to use</param>
+        public void ReadBytes(SocketAsyncEventArgs recEventArgs) => ReadBytes(recEventArgs.Buffer, recEventArgs.BytesTransferred);
     }
 }

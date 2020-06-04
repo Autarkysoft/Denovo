@@ -77,7 +77,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                 buffMan.SetBuffer(sArg);
                 sArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-                sArg.UserToken = new MessageManager(bytesPerSaea, verMsg, netType);
+                sArg.UserToken = new MessageManager(bytesPerSaea, verMsg, repMan, netType);
 
                 sendReceivePool.Push(sArg);
             }
@@ -93,6 +93,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly SocketAsyncEventArgsPool connectPool;
         private readonly SocketAsyncEventArgsPool sendReceivePool;
         private readonly BufferManager buffMan;
+        private readonly IReplyManager repMan = new ReplyManager();
 
 
 

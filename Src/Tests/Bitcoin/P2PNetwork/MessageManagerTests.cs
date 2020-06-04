@@ -20,7 +20,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void ConstructorTest()
         {
-            MessageManager man = new MessageManager(20, null, NetworkType.MainNet);
+            MessageManager man = new MessageManager(20, null, new MockReplyManager(), NetworkType.MainNet);
 
             Assert.False(man.IsHandShakeComplete);
             Assert.True(man.IsReceiveCompleted);
@@ -31,7 +31,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void DataToSendTest()
         {
-            MessageManager man = new MessageManager(20, null, NetworkType.MainNet)
+            MessageManager man = new MessageManager(20, null, new MockReplyManager(), NetworkType.MainNet)
             {
                 DataToSend = null
             };
@@ -95,7 +95,7 @@ namespace Tests.Bitcoin.P2PNetwork
         public void SetSendBufferTest(int buffLen, byte[] toSend, byte[] expecBuffer1, byte[] expecBuffer2,
                                       int sendLen1, int sendLen2)
         {
-            MessageManager man = new MessageManager(buffLen, null, NetworkType.MainNet)
+            MessageManager man = new MessageManager(buffLen, null, new MockReplyManager(), NetworkType.MainNet)
             {
                 DataToSend = toSend
             };
@@ -138,7 +138,7 @@ namespace Tests.Bitcoin.P2PNetwork
             var pl = new MockSerializableMessagePayload(PayloadType.Version, new byte[3] { 1, 2, 3 });
             Message msg = new Message(pl, NetworkType.MainNet);
             byte[] msgSer = Helper.HexToBytes("f9beb4d976657273696f6e00000000000300000019c6197e010203");
-            MessageManager man = new MessageManager(30, msg, NetworkType.MainNet);
+            MessageManager man = new MessageManager(30, msg, new MockReplyManager(), NetworkType.MainNet);
             using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
             sarg.SetBuffer(new byte[30], 0, 30);
 
@@ -156,19 +156,51 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.True(man.IsReceiveCompleted);
         }
 
-        [Fact]
-        public void ReadBytesTest()
+        public static IEnumerable<object[]> GetReadBytesCases()
         {
-            MessageManager man = new MessageManager(30, null, NetworkType.MainNet);
-            string hex = "f9beb4d976657273696f6e0000000000650000005f1a69d2" +
+            var mockPlt = (PayloadType)10000;
+            var mockMsg = new Message(new MockSerializableMessagePayload(mockPlt, new byte[] { 1, 2, 3 }), NetworkType.MainNet);
+
+            yield return new object[]
+            {
+                new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
+                Helper.HexToBytes("f9beb4d976657261636b000000000000000000005df6e0e2"),
+                24,
+                false
+            };
+            yield return new object[]
+            {
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack },
+                    expRejectType = PayloadType.Verack
+                },
+                Helper.HexToBytes("f9beb4d976657261636b000000000000000000005df6e0e1"),
+                24,
+                true
+            };
+            yield return new object[]
+            {
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Version },
+                    toReply = new Message[] { mockMsg }
+                },
+                Helper.HexToBytes("f9beb4d976657273696f6e0000000000650000005f1a69d2" +
                 "721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d" +
                 "010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e" +
-                "392e332fcf05050001";
-            byte[] msgBa = Helper.HexToBytes(hex);
-
-            Assert.False(man.HasDataToSend);
-            man.ReadBytes(msgBa, msgBa.Length);
-            Assert.True(man.HasDataToSend);
+                "392e332fcf05050001"),
+                125,
+                true
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetReadBytesCases))]
+        public void ReadBytesTest(IReplyManager repMan, byte[] buffer, int buffLen, bool hasSend)
+        {
+            MessageManager man = new MessageManager(30, null, repMan);
+            man.ReadBytes(buffer, buffLen);
+            Assert.Equal(hasSend, man.HasDataToSend);
         }
     }
 }
