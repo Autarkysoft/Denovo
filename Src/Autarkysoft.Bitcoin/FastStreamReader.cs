@@ -127,6 +127,18 @@ namespace Autarkysoft.Bitcoin
         }
 
         /// <summary>
+        /// Reads and returns specified number of bytes from this stream.
+        /// </summary>
+        /// <returns>An array of bytes</returns>
+        public byte[] ReadByteArrayChecked(int len)
+        {
+            byte[] result = new byte[len];
+            Buffer.BlockCopy(data, position, result, 0, len);
+            position += len;
+            return result;
+        }
+
+        /// <summary>
         /// Reads and returns 32 bytes from this stream.
         /// </summary>
         /// <returns>A 32 byte long array</returns>

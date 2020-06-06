@@ -131,6 +131,32 @@ namespace Tests.Bitcoin
         }
 
         [Fact]
+        public void ReadByteArrayCheckedTest()
+        {
+            var stream = new FastStreamReader(new byte[] { 1, 2, 3, 4, 5, 6 });
+
+            byte[] actual = stream.ReadByteArrayChecked(0);
+            byte[] expected = new byte[0];
+            Assert.Equal(expected, actual);
+            Helper.ComparePrivateField(stream, "position", 0);
+
+            actual = stream.ReadByteArrayChecked(2);
+            expected = new byte[] { 1, 2 };
+            Assert.Equal(expected, actual);
+            Helper.ComparePrivateField(stream, "position", 2);
+
+            actual = stream.ReadByteArrayChecked(3);
+            expected = new byte[] { 3, 4, 5 };
+            Assert.Equal(expected, actual);
+            Helper.ComparePrivateField(stream, "position", 5);
+
+            actual = stream.ReadByteArrayChecked(1);
+            expected = new byte[] { 6 };
+            Assert.Equal(expected, actual);
+            Helper.ComparePrivateField(stream, "position", 6);
+        }
+
+        [Fact]
         public void ReadByteArray32CheckedTest()
         {
             var stream = new FastStreamReader(Helper.GetBytes(35));
