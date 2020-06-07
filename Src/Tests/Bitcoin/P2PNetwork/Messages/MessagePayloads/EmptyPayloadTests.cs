@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
@@ -16,47 +15,22 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
     {
         public static IEnumerable<object[]> GetSerCases()
         {
-            yield return new object[]
-            {
-                new Message(new FilterClearPayload(), NetworkType.MainNet),
-                Helper.HexToBytes("f9beb4d9"+"66696c746572636c65617200"+"00000000"+"5df6e0e2"),
-                PayloadType.FilterClear
-            };
-            yield return new object[]
-            {
-                new Message(new GetAddrPayload(), NetworkType.MainNet),
-                Helper.HexToBytes("f9beb4d9"+"676574616464720000000000"+"00000000"+"5df6e0e2"),
-                PayloadType.GetAddr
-            };
-            yield return new object[]
-            {
-                new Message(new MemPoolPayload(), NetworkType.MainNet),
-                Helper.HexToBytes("f9beb4d9"+"6d656d706f6f6c0000000000"+"00000000"+"5df6e0e2"),
-                PayloadType.MemPool
-            };
-            yield return new object[]
-            {
-                new Message(new SendHeadersPayload(), NetworkType.MainNet),
-                Helper.HexToBytes("f9beb4d9"+"73656e646865616465727300"+"00000000"+"5df6e0e2"),
-                PayloadType.SendHeaders
-            };
-            yield return new object[]
-            {
-                new Message(new VerackPayload(), NetworkType.MainNet),
-                Helper.HexToBytes("f9beb4d9"+"76657261636b000000000000"+"00000000"+"5df6e0e2"),
-                PayloadType.Verack
-            };
+            yield return new object[] { new FilterClearPayload(), PayloadType.FilterClear };
+            yield return new object[] { new GetAddrPayload(), PayloadType.GetAddr };
+            yield return new object[] { new MemPoolPayload(), PayloadType.MemPool };
+            yield return new object[] { new SendHeadersPayload(), PayloadType.SendHeaders };
+            yield return new object[] { new VerackPayload(), PayloadType.Verack };
         }
         [Theory]
         [MemberData(nameof(GetSerCases))]
-        public void PayloadTest(Message msg, byte[] expSer, PayloadType expPlType)
+        public void PayloadTest(IMessagePayload payload, PayloadType expPlType)
         {
-            FastStream stream = new FastStream();
-            msg.Serialize(stream);
-            byte[] actualSer = stream.ToByteArray();
+            var stream = new FastStream();
+            payload.Serialize(stream);
 
-            Assert.Equal(expSer, actualSer);
-            Assert.Equal(expPlType, msg.Payload.PayloadType);
+            Assert.Empty(stream.ToByteArray());
+            Assert.Equal(expPlType, payload.PayloadType);
+            Assert.Equal(new byte[] { 0x5d, 0xf6, 0xe0, 0xe2 }, payload.GetChecksum());
         }
 
         internal class MockEmptyPayload : EmptyPayloadBase

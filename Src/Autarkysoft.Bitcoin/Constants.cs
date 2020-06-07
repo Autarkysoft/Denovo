@@ -103,12 +103,23 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const string TestNetMagic = "0b110907";
         /// <summary>
-        /// 4 byte "magic" value used in P2P message headers for reg-test (same value as main-net)
+        /// 4 byte "magic" value used in P2P message headers for reg-test
         /// </summary>
-        public const string RegTestMagic = "f9beb4d9";
+        public const string RegTestMagic = "fabfb5da";
         /// <summary>
         /// The latest P2P protocol version supported by this library
         /// </summary>
         public const int P2PProtocolVersion = 70015;
+        /// <summary>
+        /// Length of P2P message headers (4 magic + 12 command + 4 payloadSize + 4 checksum)
+        /// </summary>
+        public const int MessageHeaderSize = 24;
+        /// <summary>
+        /// Maximum allowed P2P message payload size (4 MB)
+        /// </summary>
+        /// <remarks>
+        /// https://github.com/bitcoin/bitcoin/blob/5879bfa9a541576100d939d329a2639b79d9e4f9/src/net.h#L55-L56
+        /// </remarks>
+        public const int MaxPayloadSize = 4 * 1000 * 1000;
     }
 }

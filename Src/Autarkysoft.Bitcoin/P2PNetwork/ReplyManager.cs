@@ -5,6 +5,8 @@
 
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
+using System;
+using System.Text;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -18,34 +20,77 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly NetworkType netType;
 
         /// <inheritdoc/>
-        public Message GetReject(PayloadType plt, string error)
-        {
-            return new Message(netType)
-            {
-                Payload = new RejectPayload()
-                {
-                    Code = RejectCode.FailedToDecodeMessage,
-                    RejectedMessage = plt,
-                    Reason = error
-                }
-            };
-        }
-
-        /// <inheritdoc/>
         public Message GetReply(Message msg)
         {
-            if (!(msg.Payload is null))
+            if (Enum.TryParse(Encoding.ASCII.GetString(msg.PayloadName.TrimEnd()), ignoreCase: true, out PayloadType plt))
             {
-                // TODO: add all cases
-                if (msg.Payload is PingPayload ping)
+                switch (plt)
                 {
-                    return new Message(new PongPayload(ping.Nonce), netType);
-                }
-                else if (msg.Payload is VersionPayload)
-                {
-                    return new Message(new VerackPayload(), netType);
+                    case PayloadType.Addr:
+                        break;
+                    case PayloadType.Alert:
+                        break;
+                    case PayloadType.Block:
+                        break;
+                    case PayloadType.BlockTxn:
+                        break;
+                    case PayloadType.CmpctBlock:
+                        break;
+                    case PayloadType.FeeFilter:
+                        break;
+                    case PayloadType.FilterAdd:
+                        break;
+                    case PayloadType.FilterClear:
+                        break;
+                    case PayloadType.FilterLoad:
+                        break;
+                    case PayloadType.GetAddr:
+                        break;
+                    case PayloadType.GetBlocks:
+                        break;
+                    case PayloadType.GetBlockTxn:
+                        break;
+                    case PayloadType.GetData:
+                        break;
+                    case PayloadType.GetHeaders:
+                        break;
+                    case PayloadType.Headers:
+                        break;
+                    case PayloadType.Inv:
+                        break;
+                    case PayloadType.MemPool:
+                        break;
+                    case PayloadType.MerkleBlock:
+                        break;
+                    case PayloadType.NotFound:
+                        break;
+                    case PayloadType.Ping:
+                        var ping = new PingPayload();
+                        ping.TryDeserialize(new FastStreamReader(msg.PayloadData), out _);
+                        return new Message(new PongPayload(ping.Nonce), netType);
+                    case PayloadType.Pong:
+                        break;
+                    case PayloadType.Reject:
+                        break;
+                    case PayloadType.SendCmpct:
+                        break;
+                    case PayloadType.SendHeaders:
+                        break;
+                    case PayloadType.Tx:
+                        break;
+                    case PayloadType.Verack:
+                        break;
+                    case PayloadType.Version:
+                        break;
+                    default:
+                        break;
                 }
             }
+            else
+            {
+                // TODO: add violation
+            }
+
 
             return null;
         }

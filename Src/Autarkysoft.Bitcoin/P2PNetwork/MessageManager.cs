@@ -51,9 +51,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
-
-        private const int HeaderLength = Message.MinSize;
-
         private readonly int buffLen;
         private readonly NetworkType netType;
         private readonly byte[] magicBytes;
@@ -113,7 +110,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             if (remainSend == 0)
             {
                 Message msg = toSendQueue.Dequeue();
-                FastStream stream = new FastStream((int)msg.payloadSize + HeaderLength);
+                FastStream stream = new FastStream(Constants.MessageHeaderSize + msg.PayloadData.Length);
                 msg.Serialize(stream);
                 DataToSend = stream.ToByteArray();
             }
@@ -148,68 +145,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
-        private void SetRejectMessage(PayloadType plt, string error)
-        {
-            // TODO: set a bool to turn Reject response on/off
-            Message rej = replyManager.GetReject(plt, error);
-            toSendQueue.Enqueue(rej);
-            IsReceiveCompleted = true;
-        }
-
-        private void ProcessData(FastStreamReader stream)
-        {
-            // This method is only called when magic bytes are already found and stream size is at least header size. 
-            // Deserialize header and payload separately.
-            Message msg = new Message(netType);
-            if (msg.TryDeserializeHeader(stream, out string error))
-            {
-                if (stream.GetRemainingBytesCount() < msg.payloadSize)
-                {
-                    // Receive is not finished
-                    tempHolder = new byte[HeaderLength + stream.GetRemainingBytesCount()];
-                    Buffer.BlockCopy(msg.SerializeHeader(), 0, tempHolder, 0, HeaderLength);
-                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out byte[] remBa);
-                    Buffer.BlockCopy(remBa, 0, tempHolder, HeaderLength, remBa.Length);
-                    IsReceiveCompleted = false;
-                }
-                else if (msg.Payload.TryDeserialize(stream, out error) && msg.VerifyChecksum())
-                {
-                    Message reply = replyManager.GetReply(msg);
-                    if (!(reply is null))
-                    {
-                        toSendQueue.Enqueue(reply);
-                    }
-
-                    // TODO: handle received message here. eg. write received block to disk,...
-
-                    // Handle remaining data
-                    if (stream.GetRemainingBytesCount() > 0)
-                    {
-                        IsReceiveCompleted = false;
-                        _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out tempHolder);
-                    }
-                    else
-                    {
-                        IsReceiveCompleted = true;
-                        tempHolder = null;
-                    }
-                }
-                else // There were enough bytes for payload but something failed => reject the message
-                {
-                    IsReceiveCompleted = true;
-                    tempHolder = null;
-                    SetRejectMessage(msg.Payload.PayloadType, error);
-                }
-            }
-            else
-            {
-                IsReceiveCompleted = true;
-                tempHolder = null;
-                SetRejectMessage(msg.Payload?.PayloadType ?? 0, error);
-            }
-        }
-
-
         /// <summary>
         /// Reads and processes the given bytes from the given buffer and provided length.
         /// </summary>
@@ -219,15 +154,49 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (len > 0 && buffer != null)
             {
-                if (IsReceiveCompleted)
+                if (IsReceiveCompleted && len >= Constants.MessageHeaderSize)
                 {
                     FastStreamReader stream = new FastStreamReader(buffer, 0, len);
                     if (stream.FindAndSkip(magicBytes))
                     {
                         int rem = stream.GetRemainingBytesCount();
-                        if (rem >= HeaderLength)
+                        if (rem >= Constants.MessageHeaderSize)
                         {
-                            ProcessData(stream);
+                            var msg = new Message(netType);
+                            Message.ReadResult res = msg.Read(stream);
+                            if (res == Message.ReadResult.Success)
+                            {
+                                IsReceiveCompleted = true;
+
+                                Message reply = replyManager.GetReply(msg);
+                                if (!(reply is null))
+                                {
+                                    toSendQueue.Enqueue(reply);
+                                }
+
+                                // TODO: handle received message here. eg. write received block to disk,...
+
+                                // Handle remaining data
+                                if (stream.GetRemainingBytesCount() > 0)
+                                {
+                                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out tempHolder);
+                                    ReadBytes(tempHolder, tempHolder.Length);
+                                }
+                                else
+                                {
+                                    tempHolder = null;
+                                }
+                            }
+                            else if (res == Message.ReadResult.NotEnoughBytes)
+                            {
+                                IsReceiveCompleted = false;
+                                tempHolder = new byte[len];
+                                Buffer.BlockCopy(buffer, 0, tempHolder, 0, len);
+                            }
+                            else // TODO: add violation (invalid message)
+                            {
+
+                            }
                         }
                         else if (rem != 0)
                         {
@@ -235,20 +204,36 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             IsReceiveCompleted = false;
                         }
                     }
+                    else // TODO: add violation (No magic was found)
+                    {
+
+                    }
                     // TODO: some sort of point system is needed to give negative points to malicious nodes
                     //       eg. sending garbage bytes which is what is caught in the "else" part of the "if" above
                 }
                 else
                 {
-                    byte[] temp = new byte[tempHolder.Length + len];
-                    Buffer.BlockCopy(tempHolder, 0, temp, 0, tempHolder.Length);
-                    Buffer.BlockCopy(buffer, 0, temp, tempHolder.Length, len);
-                    tempHolder = temp;
+                    if (tempHolder == null)
+                    {
+                        tempHolder = new byte[len];
+                        Buffer.BlockCopy(buffer, 0, tempHolder, 0, len);
+                    }
+                    else
+                    {
+                        byte[] temp = new byte[tempHolder.Length + len];
+                        Buffer.BlockCopy(tempHolder, 0, temp, 0, tempHolder.Length);
+                        Buffer.BlockCopy(buffer, 0, temp, tempHolder.Length, len);
+                        tempHolder = temp;
+                    }
 
-                    if (tempHolder.Length >= HeaderLength)
+                    if (tempHolder.Length >= Constants.MessageHeaderSize)
                     {
                         IsReceiveCompleted = true;
                         ReadBytes(tempHolder, tempHolder.Length);
+                    }
+                    else
+                    {
+                        IsReceiveCompleted = false;
                     }
                 }
             }

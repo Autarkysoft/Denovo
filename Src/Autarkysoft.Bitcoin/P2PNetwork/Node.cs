@@ -48,11 +48,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             int sendReceiveSaeaCount = 10;
             int totalBytes = bytesPerSaea * sendReceiveSaeaCount;
 
-            Message verMsg = new Message(netType)
-            {
-                Payload = new VersionPayload(protocolVersion, servs, blockchain.Height, relay)
-            };
-
+            var verPl = new VersionPayload(protocolVersion, servs, blockchain.Height, relay);
+            Message verMsg = new Message(verPl, netType);
 
             maxConnectionEnforcer = new Semaphore(MaxConnections, MaxConnections);
 

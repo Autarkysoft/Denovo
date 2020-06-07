@@ -7,21 +7,14 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
+using System;
+using System.Text;
 using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
 {
     public class MockReplyManager : IReplyManager
     {
-        public PayloadType expRejectType;
-
-        public Message GetReject(PayloadType plt, string error)
-        {
-            Assert.Equal(expRejectType, plt);
-            return new Message(new RejectPayload(), NetworkType.MainNet);
-        }
-
-
         private int index;
         public PayloadType[] toReceive;
         public Message[] toReply;
@@ -33,7 +26,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 Assert.True(false, "Unexpected message was received.");
             }
 
-            if (msg.Payload.PayloadType != toReceive[index])
+            if (!Enum.TryParse(Encoding.ASCII.GetString(msg.PayloadName.TrimEnd()), ignoreCase: true, out PayloadType plt) ||
+                plt != toReceive[index])
             {
                 Assert.True(false, "A different message was received.");
             }

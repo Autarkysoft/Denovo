@@ -24,8 +24,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <param name="netType">Network type</param>
         public Message(NetworkType netType)
         {
-            Magic = netType switch
+            networkMagic = netType switch
             {
+                // https://github.com/bitcoin/bitcoin/blob/b1b173994406158e5faa3c83b113da9d971ac104/src/chainparams.cpp
+                // (pchMessageStart)
                 NetworkType.MainNet => new byte[] { 0xf9, 0xbe, 0xb4, 0xd9 },
                 NetworkType.TestNet => new byte[] { 0x0b, 0x11, 0x09, 0x07 },
                 NetworkType.RegTest => new byte[] { 0xfa, 0xbf, 0xb5, 0xda },
@@ -39,62 +41,57 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// </summary>
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="payload">Message payload</param>
         /// <param name="netType">Network type</param>
         public Message(IMessagePayload payload, NetworkType netType) : this(netType)
         {
-            Payload = payload;
+            if (payload is null)
+                throw new ArgumentNullException(nameof(payload), "Payload can not be null.");
+
+            byte[] temp = Encoding.ASCII.GetBytes(payload.PayloadType.ToString().ToLower());
+            if (temp.Length > CommandNameSize)
+            {
+                throw new ArgumentOutOfRangeException(nameof(payload.PayloadType),
+                                                      $"Payload name can not be longer than {CommandNameSize}.");
+            }
+
+            PayloadName = new byte[CommandNameSize];
+            Buffer.BlockCopy(temp, 0, PayloadName, 0, temp.Length);
+
+            var stream = new FastStream();
+            payload.Serialize(stream);
+            PayloadData = stream.ToByteArray();
         }
 
 
-
-        /// <summary>
-        /// 4 magic + 12 command + 4 payloadSize + 4 checksum + 0 empty payload
-        /// </summary>
-        public const int MinSize = 24;
-        // https://github.com/bitcoin/bitcoin/blob/5879bfa9a541576100d939d329a2639b79d9e4f9/src/net.h#L55-L56
-        private const uint MaxPayloadSize = 4 * 1000 * 1000;
         private const int CheckSumSize = 4;
         private const int CommandNameSize = 12;
 
+        private readonly byte[] networkMagic;
 
-        private byte[] _magic;
         /// <summary>
-        /// Network magi bytes (must be 4 bytes). Use the constructor to set this based on <see cref="NetworkType"/>.
+        /// ASCII bytes of the payload type name with null padding to a fixed length of 12.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
+        public byte[] PayloadName { get; private set; }
+
+        private byte[] _plData = new byte[0];
+        /// <summary>
+        /// The payload bytes (can be null)
+        /// </summary>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] Magic
+        public byte[] PayloadData
         {
-            get => _magic;
+            get => _plData;
             set
             {
-                if (value == null)
-                    throw new ArgumentNullException(nameof(Magic), "Magic bytes can not be null.");
-                if (value.Length != 4)
-                    throw new ArgumentOutOfRangeException(nameof(Magic), "Magic bytes must be 4 bytes.");
+                if (value.Length > Constants.MaxPayloadSize)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(PayloadData),
+                              $"Payload length can not be bigger than {Constants.MaxPayloadSize} bytes.");
+                }
 
-                _magic = value;
-            }
-        }
-
-        internal uint payloadSize;
-        internal byte[] checkSum;
-
-        private IMessagePayload _payload;
-        /// <summary>
-        /// Message payload
-        /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        public IMessagePayload Payload
-        {
-            get => _payload;
-            set
-            {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(Payload), "Payload can not be null.");
-
-                _payload = value;
+                _plData = value ?? new byte[0];
             }
         }
 
@@ -102,36 +99,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
-            byte[] commandName = Encoding.ASCII.GetBytes(Payload.PayloadType.ToString().ToLower());
-
-            FastStream temp = new FastStream();
-            Payload.Serialize(temp);
-            byte[] plBa = temp.ToByteArray();
-
-            byte[] checksum = CalculateChecksum(plBa);
-
-            stream.Write(Magic);
-            stream.Write(commandName, CommandNameSize);
-            stream.Write(plBa.Length);
-            stream.Write(checksum);
-            stream.Write(plBa);
-        }
-
-        public void SerializeHeader(FastStream stream)
-        {
-            byte[] commandName = Encoding.ASCII.GetBytes(Payload.PayloadType.ToString().ToLower());
-
-            stream.Write(Magic);
-            stream.Write(commandName, CommandNameSize);
-            stream.Write(payloadSize);
-            stream.Write(checkSum);
-        }
-
-        public byte[] SerializeHeader()
-        {
-            FastStream stream = new FastStream(MinSize);
-            SerializeHeader(stream);
-            return stream.ToByteArray();
+            stream.Write(networkMagic);
+            stream.Write(PayloadName);
+            stream.Write(PayloadData.Length);
+            stream.Write(CalculateChecksum(PayloadData));
+            stream.Write(PayloadData);
         }
 
         private byte[] CalculateChecksum(byte[] data)
@@ -140,163 +112,100 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             return hash.ComputeHash(data).SubArray(0, CheckSumSize);
         }
 
-        public bool VerifyChecksum()
+        /// <summary>
+        /// Result returned by <see cref="Read(FastStreamReader)"/> method.
+        /// </summary>
+        public enum ReadResult
         {
-            return !(Payload is null) && checkSum != null && ((ReadOnlySpan<byte>)checkSum).SequenceEqual(Payload.GetChecksum());
+            /// <summary>
+            /// Reading message bytes was successful
+            /// </summary>
+            Success,
+            /// <summary>
+            /// There was not enough bytes to read (either smaller than fixed header size or smaller based on
+            /// the payload size in header)
+            /// </summary>
+            NotEnoughBytes,
+            /// <summary>
+            /// The payload size is bigger than <see cref="Constants.MaxPayloadSize"/>
+            /// </summary>
+            PayloadOverflow,
+            /// <summary>
+            /// Network magic is different from what this instance expects
+            /// </summary>
+            InvalidNetwork,
+            /// <summary>
+            /// Header has an invalid checksum
+            /// </summary>
+            InvalidChecksum
         }
-
-
-        private bool TrySetPayload(PayloadType plt)
-        {
-            Payload = plt switch
-            {
-                PayloadType.Addr => new AddrPayload(),
-                PayloadType.Block => new BlockPayload(),
-                PayloadType.BlockTxn => new BlockTxnPayload(),
-                PayloadType.CmpctBlock => new CmpctBlockPayload(),
-                PayloadType.FeeFilter => new FeeFilterPayload(),
-                PayloadType.FilterAdd => new FilterAddPayload(),
-                PayloadType.FilterClear => new FilterClearPayload(),
-                PayloadType.FilterLoad => new FilterLoadPayload(),
-                PayloadType.GetAddr => new GetAddrPayload(),
-                PayloadType.GetBlocks => new GetBlocksPayload(),
-                PayloadType.GetBlockTxn => new GetBlockTxnPayload(),
-                PayloadType.GetData => new GetDataPayload(),
-                PayloadType.GetHeaders => new GetHeadersPayload(),
-                PayloadType.Headers => new HeadersPayload(),
-                PayloadType.Inv => new InvPayload(),
-                PayloadType.MemPool => new MemPoolPayload(),
-                PayloadType.MerkleBlock => new MerkleBlockPayload(),
-                PayloadType.NotFound => new NotFoundPayload(),
-                PayloadType.Ping => new PingPayload(),
-                PayloadType.Pong => new PongPayload(),
-                PayloadType.Reject => new RejectPayload(),
-                PayloadType.SendCmpct => new SendCmpctPayload(),
-                PayloadType.SendHeaders => new SendHeadersPayload(),
-                PayloadType.Tx => new TxPayload(),
-                PayloadType.Verack => new VerackPayload(),
-                PayloadType.Version => new VersionPayload(),
-                _ => null,
-            };
-
-            return Payload != null;
-        }
-
 
         /// <summary>
-        /// Only deserializs header from the given stream. Return value indicates success.
+        /// Reads the message from the given stream and returns an enum rerporting the result.
         /// </summary>
         /// <param name="stream">Stream to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
-        /// <returns>True if reading was successful, false if otherwise.</returns>
-        public bool TryDeserializeHeader(FastStreamReader stream, out string error)
+        /// <returns>Result of reading process</returns>
+        public ReadResult Read(FastStreamReader stream)
         {
-            if (stream is null)
+            if (!stream.CheckRemaining(Constants.MessageHeaderSize))
             {
-                error = "Stream can not be null.";
-                return false;
-            }
-
-            if (!stream.TryReadByteArray(4, out byte[] actualMagic))
-            {
-                error = Err.EndOfStream;
-                return false;
+                return ReadResult.NotEnoughBytes;
             }
 
             // Magic is set in constructor based on network type and should be checked here (instead of setting it)
-            if (!((Span<byte>)actualMagic).SequenceEqual(Magic))
+            if (!((ReadOnlySpan<byte>)networkMagic).SequenceEqual(stream.ReadByteArrayChecked(4)))
             {
-                error = "Invalid message magic.";
-                return false;
+                return ReadResult.InvalidNetwork;
             }
 
-            if (!stream.TryReadByteArray(CommandNameSize, out byte[] cmd))
+            PayloadName = stream.ReadByteArrayChecked(CommandNameSize);
+
+            uint plSize = stream.ReadUInt32Checked();
+            if (plSize > Constants.MaxPayloadSize)
             {
-                error = Err.EndOfStream;
-                return false;
+                return ReadResult.PayloadOverflow;
             }
 
-            if (!Enum.TryParse(Encoding.ASCII.GetString(cmd.TrimEnd()), ignoreCase: true, out PayloadType plt))
-            {
-                error = "Invalid command name.";
-                return false;
-            }
+            ReadOnlySpan<byte> expectedCS = stream.ReadByteArrayChecked(CheckSumSize);
 
-            if (!TrySetPayload(plt))
+            if (plSize == 0)
             {
-                error = "Undefined payload.";
-                return false;
-            }
-
-            if (!stream.TryReadUInt32(out payloadSize))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
-
-            if (Payload is EmptyPayloadBase)
-            {
-                if (payloadSize != 0)
+                if (!new ReadOnlySpan<byte>(new byte[4] { 0x5d, 0xf6, 0xe0, 0xe2 }).SequenceEqual(expectedCS))
                 {
-                    error = "Payload size for empty payload types must be zero.";
-                    return false;
+                    return ReadResult.InvalidChecksum;
                 }
             }
-            else if (payloadSize == 0)
+            else
             {
-                error = "Payload size for none empty payload types can not be zero.";
-                return false;
+                if (!stream.TryReadByteArray((int)plSize, out _plData))
+                {
+                    return ReadResult.NotEnoughBytes;
+                }
+                else if (!expectedCS.SequenceEqual(CalculateChecksum(_plData)))
+                {
+                    return ReadResult.InvalidChecksum;
+                }
             }
 
-
-            if (payloadSize > MaxPayloadSize)
-            {
-                error = $"Payload size is bigger than allowed size ({MaxPayloadSize}).";
-                return false;
-            }
-
-            if (!stream.TryReadByteArray(CheckSumSize, out checkSum))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
-
-            error = null;
-            return true;
+            return ReadResult.Success;
         }
+
 
         /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out string error)
         {
-            if (!TryDeserializeHeader(stream, out error))
+            ReadResult res = Read(stream);
+            error = res switch
             {
-                return false;
-            }
+                ReadResult.Success => null,
+                ReadResult.NotEnoughBytes => Err.EndOfStream,
+                ReadResult.PayloadOverflow => $"Payload size is bigger than allowed size ({Constants.MaxPayloadSize}).",
+                ReadResult.InvalidNetwork => "Invalid message magic.",
+                ReadResult.InvalidChecksum => "Invalid checksum",
+                _ => "Underfined error."
+            };
 
-            int startOfPayLoad = stream.GetCurrentIndex();
-            int expectedEnd = startOfPayLoad + (int)payloadSize;
-
-            if (!Payload.TryDeserialize(stream, out error))
-            {
-                return false;
-            }
-
-            byte[] actualChecksum = Payload.GetChecksum();
-
-            if (!((Span<byte>)actualChecksum).SequenceEqual(checkSum))
-            {
-                error = "Invalid checksum.";
-                return false;
-            }
-
-            if (stream.GetCurrentIndex() != expectedEnd)
-            {
-                error = "Invalid payload length in header.";
-                return false;
-            }
-
-            error = null;
-            return true;
+            return res == ReadResult.Success;
         }
     }
 }

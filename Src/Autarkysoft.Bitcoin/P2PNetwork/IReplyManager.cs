@@ -14,14 +14,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public interface IReplyManager
     {
         /// <summary>
-        /// Builds and returns a new <see cref="Message"/> with a <see cref="RejectPayload"/>.
-        /// </summary>
-        /// <param name="plt">Message type being rejected</param>
-        /// <param name="error">Error message (reason for rejection)</param>
-        /// <returns>A new reject message</returns>
-        Message GetReject(PayloadType plt, string error);
-
-        /// <summary>
         /// Builds and returns the appropriate response to the given <see cref="Message"/>.
         /// In case there is no response null should be returned.
         /// </summary>
