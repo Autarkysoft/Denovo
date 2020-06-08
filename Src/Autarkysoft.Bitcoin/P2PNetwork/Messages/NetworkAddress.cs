@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using System;
 using System.Net;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
@@ -42,7 +41,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
         private IPAddress _ip = IPAddress.Loopback;
         /// <summary>
-        /// [Default value =  Loopback IP (127.0.0.1)]
+        /// [Default value = Loopback IP (127.0.0.1)]
         /// Node's IP address
         /// </summary>
         public IPAddress NodeIP
@@ -51,16 +50,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             set => _ip = (value is null) ? IPAddress.Loopback : value;
         }
 
-        private ushort _port = Constants.MainNetPort;
         /// <summary>
         /// [Default value = MainNetPort (8333)] 
         /// Node's port
         /// </summary>
-        public ushort NodePort
-        {
-            get => _port;
-            set => _port = value;
-        }
+        public ushort NodePort { get; set; } = Constants.MainNetPort;
 
 
         /// <inheritdoc/>
@@ -81,7 +75,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
-            if (!stream.TryReadUInt64(out ulong servs))
+            if (!stream.CheckRemaining(8 + 16 + 2))
             {
                 error = Err.EndOfStream;
                 return false;
@@ -89,31 +83,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
             // For the sake of forward compatibility, service flag is not strict (undefined enums are also accepted)
             // the caller can decide which bits they understand or support.
-            NodeServices = (NodeServiceFlags)servs;
-
-            if (!stream.TryReadByteArray(16, out byte[] ipBytes))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
+            NodeServices = (NodeServiceFlags)stream.ReadUInt64Checked();
 
             // IPAddress constructor throws 2 exceptions: 
             //    1. ArgumentNullException -> if the byte[] is null
             //    2. ArgumentException -> if byte[].Length != 4 && != 16
             // As a result there is no need for try/catch block
             // https://github.com/microsoft/referencesource/blob/17b97365645da62cf8a49444d979f94a59bbb155/System/net/System/Net/IPAddress.cs#L114-L135
-            NodeIP = new IPAddress(ipBytes);
+            NodeIP = new IPAddress(stream.ReadByteArrayChecked(16));
 
             if (NodeIP.IsIPv4MappedToIPv6)
             {
                 NodeIP = NodeIP.MapToIPv4();
             }
 
-            if (!stream.TryReadUInt16BigEndian(out _port))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
+            NodePort = stream.ReadUInt16BigEndianChecked();
 
             error = null;
             return true;

@@ -14,6 +14,13 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
     public class NetworkAddressTests
     {
         [Fact]
+        public void Constructor_NullIpTest()
+        {
+            NetworkAddress addr = new NetworkAddress(NodeServiceFlags.NodeNetwork, null, 8333);
+            Assert.Equal(IPAddress.Loopback, addr.NodeIP);
+        }
+
+        [Fact]
         public void SerializeTest()
         {
             NetworkAddress addr = new NetworkAddress(NodeServiceFlags.NodeNetwork, IPAddress.Parse("192.0.2.51"), 8333);
