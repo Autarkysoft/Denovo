@@ -5,8 +5,6 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Hashing;
-using System;
 using System.Text;
 using Xunit;
 
@@ -14,24 +12,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
     public class CryptoOpsTests
     {
-        internal class MockCryptoOpBase : CryptoOpBase
-        {
-            public override OP OpValue => throw new NotImplementedException();
-            protected override IHashFunction Hash => throw new NotImplementedException();
-        }
-
-        [Fact]
-        public void Run_FailTest()
-        {
-            MockOpData data = new MockOpData()
-            {
-                _itemCount = 0
-            };
-
-            OpTestCaseHelper.RunFailTest<MockCryptoOpBase>(data, Err.OpNotEnoughItems);
-        }
-
-
         private readonly byte[] message = Encoding.UTF8.GetBytes("message digest");
         private readonly byte[] expRipeMd = Helper.HexToBytes("5d0689ef49d2fae572b881b123a85ffa21595f36");
         private readonly byte[] expSha1 = Helper.HexToBytes("c12252ceda8be8994d5fa0290a47231c1d16aae3");
@@ -53,6 +33,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             OpTestCaseHelper.RunTest<RipeMd160Op>(data, OP.RIPEMD160);
         }
 
+        [Fact]
+        public void RipeMd160Op_FailTest()
+        {
+            MockOpData data = new MockOpData() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<RipeMd160Op>(data, Err.OpNotEnoughItems);
+        }
+
 
         [Fact]
         public void Sha1OpTest()
@@ -65,6 +52,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             };
 
             OpTestCaseHelper.RunTest<Sha1Op>(data, OP.SHA1);
+        }
+
+        [Fact]
+        public void Sha1Op_FailTest()
+        {
+            MockOpData data = new MockOpData() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<Sha1Op>(data, Err.OpNotEnoughItems);
         }
 
 
@@ -81,6 +75,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             OpTestCaseHelper.RunTest<Sha256Op>(data, OP.SHA256);
         }
 
+        [Fact]
+        public void Sha256Op_FailTest()
+        {
+            MockOpData data = new MockOpData() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<Sha256Op>(data, Err.OpNotEnoughItems);
+        }
+
 
         [Fact]
         public void Hash160OpTest()
@@ -95,6 +96,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             OpTestCaseHelper.RunTest<Hash160Op>(data, OP.HASH160);
         }
 
+        [Fact]
+        public void Hash160Op_FailTest()
+        {
+            MockOpData data = new MockOpData() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<Hash160Op>(data, Err.OpNotEnoughItems);
+        }
+
 
         [Fact]
         public void Hash256OpTest()
@@ -107,6 +115,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             };
 
             OpTestCaseHelper.RunTest<Hash256Op>(data, OP.HASH256);
+        }
+
+        [Fact]
+        public void Hash256OpOp_FailTest()
+        {
+            MockOpData data = new MockOpData() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<Hash256Op>(data, Err.OpNotEnoughItems);
         }
     }
 }
