@@ -85,10 +85,32 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
             Init();
-
             DoHash(data, data.Length);
-
             return GetBytes();
+        }
+
+
+        /// <summary>
+        /// Computes double hash of the given data and returns the first 4 bytes of the result as checksum.
+        /// </summary>
+        /// <param name="data">Data to hash</param>
+        /// <returns>First 4 bytes of the hash result</returns>
+        public unsafe byte[] ComputeChecksum(byte[] data)
+        {
+            if (disposedValue)
+                throw new ObjectDisposedException("Instance was disposed.");
+            if (data == null)
+                throw new ArgumentNullException(nameof(data), "Data can not be null.");
+
+            fixed (byte* dPt = data)
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                Init(hPt);
+                CompressData(dPt, data.Length, data.Length, hPt, wPt);
+                ComputeSecondHash(hPt, wPt);
+
+                return new byte[4] { (byte)(hPt[0] >> 24), (byte)(hPt[0] >> 16), (byte)(hPt[0] >> 8), (byte)hPt[0] };
+            }
         }
 
 
@@ -356,15 +378,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
         internal unsafe void DoHash(byte[] data, int len)
         {
-            byte[] finalBlock = new byte[64];
-
             // If data.Length == 0 => &data[0] will throw an exception
-            fixed (byte* dPt = data, fPt = &finalBlock[0])
+            fixed (byte* dPt = data)
             fixed (uint* hPt = &hashState[0], wPt = &w[0])
             {
-                int remainingBytes = data.Length;
+                CompressData(dPt, data.Length, len, hPt, wPt);
+
+                if (IsDouble)
+                {
+                    ComputeSecondHash(hPt, wPt);
+                }
+            }
+        }
+
+        internal unsafe void CompressData(byte* dPt, int dataLen, int totalLen, uint* hPt, uint* wPt)
+        {
+            Span<byte> finalBlock = new byte[64];
+
+            fixed (byte* fPt = &finalBlock[0])
+            {
                 int dIndex = 0;
-                while (remainingBytes >= BlockByteSize)
+                while (dataLen >= BlockByteSize)
                 {
                     for (int i = 0; i < 16; i++, dIndex += 4)
                     {
@@ -373,16 +407,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
                     CompressBlock(hPt, wPt);
 
-                    remainingBytes -= BlockByteSize;
+                    dataLen -= BlockByteSize;
                 }
 
                 // Copy the reamaining bytes into a blockSize length buffer so that we can loop through it easily:
-                Buffer.BlockCopy(data, data.Length - remainingBytes, finalBlock, 0, remainingBytes);
+                Buffer.MemoryCopy(dPt + dIndex, fPt, finalBlock.Length, dataLen);
 
                 // Append 1 bit followed by zeros. Since we only work with bytes, this is 1 whole byte
-                fPt[remainingBytes] = 0b1000_0000;
+                fPt[dataLen] = 0b1000_0000;
 
-                if (remainingBytes >= 56) // blockSize - pad2.Len = 64 - 8
+                if (dataLen >= 56) // blockSize - pad2.Len = 64 - 8
                 {
                     // This means we have an additional block to compress, which we do it here:
 
@@ -394,19 +428,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     CompressBlock(hPt, wPt);
 
                     // Zero out all the items in FinalBlock so it can be reused
-                    for (int i = 0; i < 8; i++)
-                    {
-                        ((ulong*)fPt)[i] = 0;
-                    }
+                    finalBlock.Clear();
                 }
 
                 // Add length in bits as the last 8 bytes of final block in big-endian order
                 // See MessageLengthTest in Test project to understand what the following shifts are
-                fPt[63] = (byte)(len << 3);
-                fPt[62] = (byte)(len >> 5);
-                fPt[61] = (byte)(len >> 13);
-                fPt[60] = (byte)(len >> 21);
-                fPt[59] = (byte)(len >> 29);
+                fPt[63] = (byte)(totalLen << 3);
+                fPt[62] = (byte)(totalLen >> 5);
+                fPt[61] = (byte)(totalLen >> 13);
+                fPt[60] = (byte)(totalLen >> 21);
+                fPt[59] = (byte)(totalLen >> 29);
                 // The remainig 3 bytes are always zero
                 // The remaining 56 bytes are already set
 
@@ -416,12 +447,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 }
 
                 CompressBlock(hPt, wPt);
-
-
-                if (IsDouble)
-                {
-                    DoSecondHash(hPt, wPt);
-                }
             }
         }
 
@@ -516,7 +541,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             CompressBlock_WithWSet(hPt, wPt);
 
             // Round 2, block 3
-            DoSecondHash(hPt, wPt);
+            ComputeSecondHash(hPt, wPt);
 
             // Write result
             for (int i = 0, j = 0; i < 32; i += 4, j++)
@@ -529,7 +554,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual unsafe void DoSecondHash(uint* hPt, uint* wPt)
+        internal virtual unsafe void ComputeSecondHash(uint* hPt, uint* wPt)
         {
             // Result of previous hash (hashState[]) is now our new block. So copy it here:
             wPt[0] = hPt[0];
@@ -552,11 +577,60 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             wPt[14] = 0;
             wPt[15] = 256;
 
+            wPt[16] = SSIG0(wPt[1]) + wPt[0];
+            wPt[17] = 10485760 + SSIG0(wPt[2]) + wPt[1];
+            wPt[18] = SSIG1(wPt[16]) + SSIG0(wPt[3]) + wPt[2];
+            wPt[19] = SSIG1(wPt[17]) + SSIG0(wPt[4]) + wPt[3];
+            wPt[20] = SSIG1(wPt[18]) + SSIG0(wPt[5]) + wPt[4];
+            wPt[21] = SSIG1(wPt[19]) + SSIG0(wPt[6]) + wPt[5];
+            wPt[22] = SSIG1(wPt[20]) + 256 + SSIG0(wPt[7]) + wPt[6];
+            wPt[23] = SSIG1(wPt[21]) + wPt[16] + 285220864 + wPt[7];
+            wPt[24] = SSIG1(wPt[22]) + wPt[17] + 2147483648;
+            wPt[25] = SSIG1(wPt[23]) + wPt[18];
+            wPt[26] = SSIG1(wPt[24]) + wPt[19];
+            wPt[27] = SSIG1(wPt[25]) + wPt[20];
+            wPt[28] = SSIG1(wPt[26]) + wPt[21];
+            wPt[29] = SSIG1(wPt[27]) + wPt[22];
+            wPt[30] = SSIG1(wPt[28]) + wPt[23] + 4194338;
+            wPt[31] = SSIG1(wPt[29]) + wPt[24] + SSIG0(wPt[16]) + 256;
+            wPt[32] = SSIG1(wPt[30]) + wPt[25] + SSIG0(wPt[17]) + wPt[16];
+            wPt[33] = SSIG1(wPt[31]) + wPt[26] + SSIG0(wPt[18]) + wPt[17];
+            wPt[34] = SSIG1(wPt[32]) + wPt[27] + SSIG0(wPt[19]) + wPt[18];
+            wPt[35] = SSIG1(wPt[33]) + wPt[28] + SSIG0(wPt[20]) + wPt[19];
+            wPt[36] = SSIG1(wPt[34]) + wPt[29] + SSIG0(wPt[21]) + wPt[20];
+            wPt[37] = SSIG1(wPt[35]) + wPt[30] + SSIG0(wPt[22]) + wPt[21];
+            wPt[38] = SSIG1(wPt[36]) + wPt[31] + SSIG0(wPt[23]) + wPt[22];
+            wPt[39] = SSIG1(wPt[37]) + wPt[32] + SSIG0(wPt[24]) + wPt[23];
+            wPt[40] = SSIG1(wPt[38]) + wPt[33] + SSIG0(wPt[25]) + wPt[24];
+            wPt[41] = SSIG1(wPt[39]) + wPt[34] + SSIG0(wPt[26]) + wPt[25];
+            wPt[42] = SSIG1(wPt[40]) + wPt[35] + SSIG0(wPt[27]) + wPt[26];
+            wPt[43] = SSIG1(wPt[41]) + wPt[36] + SSIG0(wPt[28]) + wPt[27];
+            wPt[44] = SSIG1(wPt[42]) + wPt[37] + SSIG0(wPt[29]) + wPt[28];
+            wPt[45] = SSIG1(wPt[43]) + wPt[38] + SSIG0(wPt[30]) + wPt[29];
+            wPt[46] = SSIG1(wPt[44]) + wPt[39] + SSIG0(wPt[31]) + wPt[30];
+            wPt[47] = SSIG1(wPt[45]) + wPt[40] + SSIG0(wPt[32]) + wPt[31];
+            wPt[48] = SSIG1(wPt[46]) + wPt[41] + SSIG0(wPt[33]) + wPt[32];
+            wPt[49] = SSIG1(wPt[47]) + wPt[42] + SSIG0(wPt[34]) + wPt[33];
+            wPt[50] = SSIG1(wPt[48]) + wPt[43] + SSIG0(wPt[35]) + wPt[34];
+            wPt[51] = SSIG1(wPt[49]) + wPt[44] + SSIG0(wPt[36]) + wPt[35];
+            wPt[52] = SSIG1(wPt[50]) + wPt[45] + SSIG0(wPt[37]) + wPt[36];
+            wPt[53] = SSIG1(wPt[51]) + wPt[46] + SSIG0(wPt[38]) + wPt[37];
+            wPt[54] = SSIG1(wPt[52]) + wPt[47] + SSIG0(wPt[39]) + wPt[38];
+            wPt[55] = SSIG1(wPt[53]) + wPt[48] + SSIG0(wPt[40]) + wPt[39];
+            wPt[56] = SSIG1(wPt[54]) + wPt[49] + SSIG0(wPt[41]) + wPt[40];
+            wPt[57] = SSIG1(wPt[55]) + wPt[50] + SSIG0(wPt[42]) + wPt[41];
+            wPt[58] = SSIG1(wPt[56]) + wPt[51] + SSIG0(wPt[43]) + wPt[42];
+            wPt[59] = SSIG1(wPt[57]) + wPt[52] + SSIG0(wPt[44]) + wPt[43];
+            wPt[60] = SSIG1(wPt[58]) + wPt[53] + SSIG0(wPt[45]) + wPt[44];
+            wPt[61] = SSIG1(wPt[59]) + wPt[54] + SSIG0(wPt[46]) + wPt[45];
+            wPt[62] = SSIG1(wPt[60]) + wPt[55] + SSIG0(wPt[47]) + wPt[46];
+            wPt[63] = SSIG1(wPt[61]) + wPt[56] + SSIG0(wPt[48]) + wPt[47];
+
             // Now initialize hashState to compute next round, since this is a new hash
             Init(hPt);
 
             // We only have 1 block so there is no need for a loop.
-            CompressBlock(hPt, wPt);
+            CompressBlock_WithWSet(hPt, wPt);
         }
 
 

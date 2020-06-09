@@ -14,6 +14,36 @@ namespace Tests.Bitcoin.Cryptography.Hashing
 {
     public class Sha256Tests
     {
+        public static IEnumerable<object[]> GetChecksumCases()
+        {
+            yield return new object[] { new byte[0], new byte[4] { 0x5d, 0xf6, 0xe0, 0xe2 } };
+            yield return new object[] { new byte[1], new byte[4] { 0x14, 0x06, 0xe0, 0x58 } };
+            // From Sha256NistTestData.json file but hashed twice
+            yield return new object[]
+            {
+                Helper.HexToBytes("6dd6efd6f6caa63b729aa8186e308bc1bda06307c05a2c0ae5a3684e6e460811748690dc2b58775967cfcc645fd82064b1279fdca771803db9dca0ff53"),
+                new byte[4] { 0xea, 0x90, 0x88, 0xf2 }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("5a86b737eaea8ee976a0a24da63e7ed7eefad18a101c1211e2b3650c5187c2a8a650547208251f6d4237e661c7bf4c77f335390394c37fa1a9f9be836ac28509"),
+                new byte[4] { 0x3c, 0x10, 0xd5, 0xfe }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("451101250ec6f26652249d59dc974b7361d571a8101cdfd36aba3b5854d3ae086b5fdd4597721b66e3c0dc5d8c606d9657d0e323283a5217d1f53f2f284f57b85c8a61ac8924711f895c5ed90ef17745ed2d728abd22a5f7a13479a462d71b56c19a74a40b655c58edfe0a188ad2cf46cbf30524f65d423c837dd1ff2bf462ac4198007345bb44dbb7b1c861298cdf61982a833afc728fae1eda2f87aa2c9480858bec"),
+                new byte[4] { 0x5e, 0x28, 0x7b, 0x15 }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetChecksumCases))]
+        public void ComputeChecksumTest(byte[] data, byte[] expected)
+        {
+            using Sha256 sha = new Sha256();
+            byte[] actual = sha.ComputeChecksum(data);
+            Assert.Equal(expected, actual);
+        }
+
         [Theory]
         [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHashTest(byte[] message, byte[] expectedHash)
