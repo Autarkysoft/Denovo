@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
@@ -12,44 +13,26 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// <para/> This is more optimized and a lot faster than using .Net functions individually 
     /// specially when computing hash for small byte arrays such as 33 bytes (bitcoin public keys used in P2PKH scripts)
     /// </summary>
-    public class Ripemd160Sha256 : IHashFunction
+    public class Ripemd160Sha256 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Ripemd160Sha256"/>.
         /// </summary>
         public Ripemd160Sha256()
         {
-            rip = new Ripemd160(false);
-            sha = new Sha256(false);
+            rip = new Ripemd160();
+            sha = new Sha256();
         }
 
-
-
-        /// <summary>
-        /// Indicates whether the hash function should be performed twice on message.
-        /// <para/> * Can not be true for this class.
-        /// </summary>
-        /// <exception cref="NotImplementedException"/>
-        public bool IsDouble
-        {
-            get => false;
-            set { if (value == true) throw new NotImplementedException(); }
-        }
 
         /// <summary>
         /// Size of the hash result in bytes.
         /// </summary>
-        public int HashByteSize => 20;
+        public const int HashByteSize = 20;
 
-        /// <summary>
-        /// This is not a stand alone hash function so it can't have "block size"!
-        /// </summary>
-        /// <exception cref="NotImplementedException"/>
-        public int BlockByteSize => throw new NotImplementedException();
 
         private Ripemd160 rip;
         private Sha256 sha;
-
 
 
         /// <summary>
@@ -62,19 +45,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <returns>The computed hash</returns>
         public unsafe byte[] ComputeHash(byte[] data)
         {
-            if (disposedValue)
+            if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
 
-            // Since HASH160 is used in bitcoin and for 99% of cases it is performed on a public key
-            // and public keys are 33 byte compressed or 65 bytes uncompressed, we write these special cases:
+            // Since HASH160 in 99% of cases is performed on a public key which is
+            // 33 byte compressed (most of the times) or 65 bytes uncompressed, 2 special cases are added:
             fixed (byte* dPt = data)
             fixed (uint* rip_blkPt = &rip.block[0], rip_hPt = &rip.hashState[0], sh_wPt = &sha.w[0])
             {
-                // Step 1: compute SHA256 of data then copy result of hash (HashState) into RIPEMD160 block
-                // so we just pass RIPEMD160 block as HashState of SHA256
+                // Step 1: compute SHA256 of data then copy the result (HashState) into RIPEMD160 block.
+                // To skip the copy we just pass RIPEMD160 block as HashState of SHA256
                 sha.Init(rip_blkPt);
 
                 // Depending on the data length SHA256 can be different but the rest is similar
@@ -83,19 +66,71 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     int dIndex = 0;
                     for (int i = 0; i < 8; i++, dIndex += 4)
                     {
-                        sh_wPt[i] = (uint)((dPt[dIndex] << 24) | (dPt[dIndex + 1] << 16) | (dPt[dIndex + 2] << 8) | dPt[dIndex + 3]);
+                        sh_wPt[i] = (uint)((dPt[dIndex] << 24) |
+                                           (dPt[dIndex + 1] << 16) |
+                                           (dPt[dIndex + 2] << 8) |
+                                            dPt[dIndex + 3]);
                     }
                     sh_wPt[8] = (uint)((dPt[dIndex] << 24) | 0b00000000_10000000_00000000_00000000U);
+                    // Note that the following items MUST be set to keep the class reusable
                     sh_wPt[9] = 0;
                     sh_wPt[10] = 0;
                     sh_wPt[11] = 0;
                     sh_wPt[12] = 0;
                     sh_wPt[13] = 0;
+                    sh_wPt[14] = 0;
+                    sh_wPt[15] = 264; // 33*8 = 264
 
-                    sh_wPt[14] = 0; // Message length for pad2, 33 byte or 264 bits
-                    sh_wPt[15] = 264;
+                    sh_wPt[16] = SSIG0(sh_wPt[1]) + sh_wPt[0];
+                    sh_wPt[17] = 10813440 + 0 + SSIG0(sh_wPt[2]) + sh_wPt[1];
+                    sh_wPt[18] = SSIG1(sh_wPt[16]) + SSIG0(sh_wPt[3]) + sh_wPt[2];
+                    sh_wPt[19] = SSIG1(sh_wPt[17]) + SSIG0(sh_wPt[4]) + sh_wPt[3];
+                    sh_wPt[20] = SSIG1(sh_wPt[18]) + SSIG0(sh_wPt[5]) + sh_wPt[4];
+                    sh_wPt[21] = SSIG1(sh_wPt[19]) + SSIG0(sh_wPt[6]) + sh_wPt[5];
+                    sh_wPt[22] = SSIG1(sh_wPt[20]) + 264 + SSIG0(sh_wPt[7]) + sh_wPt[6];
+                    sh_wPt[23] = SSIG1(sh_wPt[21]) + sh_wPt[16] + SSIG0(sh_wPt[8]) + sh_wPt[7];
+                    sh_wPt[24] = SSIG1(sh_wPt[22]) + sh_wPt[17] + sh_wPt[8];
+                    sh_wPt[25] = SSIG1(sh_wPt[23]) + sh_wPt[18];
+                    sh_wPt[26] = SSIG1(sh_wPt[24]) + sh_wPt[19];
+                    sh_wPt[27] = SSIG1(sh_wPt[25]) + sh_wPt[20];
+                    sh_wPt[28] = SSIG1(sh_wPt[26]) + sh_wPt[21];
+                    sh_wPt[29] = SSIG1(sh_wPt[27]) + sh_wPt[22];
+                    sh_wPt[30] = SSIG1(sh_wPt[28]) + sh_wPt[23] + 272760867;
+                    sh_wPt[31] = SSIG1(sh_wPt[29]) + sh_wPt[24] + SSIG0(sh_wPt[16]) + 264;
+                    sh_wPt[32] = SSIG1(sh_wPt[30]) + sh_wPt[25] + SSIG0(sh_wPt[17]) + sh_wPt[16];
+                    sh_wPt[33] = SSIG1(sh_wPt[31]) + sh_wPt[26] + SSIG0(sh_wPt[18]) + sh_wPt[17];
+                    sh_wPt[34] = SSIG1(sh_wPt[32]) + sh_wPt[27] + SSIG0(sh_wPt[19]) + sh_wPt[18];
+                    sh_wPt[35] = SSIG1(sh_wPt[33]) + sh_wPt[28] + SSIG0(sh_wPt[20]) + sh_wPt[19];
+                    sh_wPt[36] = SSIG1(sh_wPt[34]) + sh_wPt[29] + SSIG0(sh_wPt[21]) + sh_wPt[20];
+                    sh_wPt[37] = SSIG1(sh_wPt[35]) + sh_wPt[30] + SSIG0(sh_wPt[22]) + sh_wPt[21];
+                    sh_wPt[38] = SSIG1(sh_wPt[36]) + sh_wPt[31] + SSIG0(sh_wPt[23]) + sh_wPt[22];
+                    sh_wPt[39] = SSIG1(sh_wPt[37]) + sh_wPt[32] + SSIG0(sh_wPt[24]) + sh_wPt[23];
+                    sh_wPt[40] = SSIG1(sh_wPt[38]) + sh_wPt[33] + SSIG0(sh_wPt[25]) + sh_wPt[24];
+                    sh_wPt[41] = SSIG1(sh_wPt[39]) + sh_wPt[34] + SSIG0(sh_wPt[26]) + sh_wPt[25];
+                    sh_wPt[42] = SSIG1(sh_wPt[40]) + sh_wPt[35] + SSIG0(sh_wPt[27]) + sh_wPt[26];
+                    sh_wPt[43] = SSIG1(sh_wPt[41]) + sh_wPt[36] + SSIG0(sh_wPt[28]) + sh_wPt[27];
+                    sh_wPt[44] = SSIG1(sh_wPt[42]) + sh_wPt[37] + SSIG0(sh_wPt[29]) + sh_wPt[28];
+                    sh_wPt[45] = SSIG1(sh_wPt[43]) + sh_wPt[38] + SSIG0(sh_wPt[30]) + sh_wPt[29];
+                    sh_wPt[46] = SSIG1(sh_wPt[44]) + sh_wPt[39] + SSIG0(sh_wPt[31]) + sh_wPt[30];
+                    sh_wPt[47] = SSIG1(sh_wPt[45]) + sh_wPt[40] + SSIG0(sh_wPt[32]) + sh_wPt[31];
+                    sh_wPt[48] = SSIG1(sh_wPt[46]) + sh_wPt[41] + SSIG0(sh_wPt[33]) + sh_wPt[32];
+                    sh_wPt[49] = SSIG1(sh_wPt[47]) + sh_wPt[42] + SSIG0(sh_wPt[34]) + sh_wPt[33];
+                    sh_wPt[50] = SSIG1(sh_wPt[48]) + sh_wPt[43] + SSIG0(sh_wPt[35]) + sh_wPt[34];
+                    sh_wPt[51] = SSIG1(sh_wPt[49]) + sh_wPt[44] + SSIG0(sh_wPt[36]) + sh_wPt[35];
+                    sh_wPt[52] = SSIG1(sh_wPt[50]) + sh_wPt[45] + SSIG0(sh_wPt[37]) + sh_wPt[36];
+                    sh_wPt[53] = SSIG1(sh_wPt[51]) + sh_wPt[46] + SSIG0(sh_wPt[38]) + sh_wPt[37];
+                    sh_wPt[54] = SSIG1(sh_wPt[52]) + sh_wPt[47] + SSIG0(sh_wPt[39]) + sh_wPt[38];
+                    sh_wPt[55] = SSIG1(sh_wPt[53]) + sh_wPt[48] + SSIG0(sh_wPt[40]) + sh_wPt[39];
+                    sh_wPt[56] = SSIG1(sh_wPt[54]) + sh_wPt[49] + SSIG0(sh_wPt[41]) + sh_wPt[40];
+                    sh_wPt[57] = SSIG1(sh_wPt[55]) + sh_wPt[50] + SSIG0(sh_wPt[42]) + sh_wPt[41];
+                    sh_wPt[58] = SSIG1(sh_wPt[56]) + sh_wPt[51] + SSIG0(sh_wPt[43]) + sh_wPt[42];
+                    sh_wPt[59] = SSIG1(sh_wPt[57]) + sh_wPt[52] + SSIG0(sh_wPt[44]) + sh_wPt[43];
+                    sh_wPt[60] = SSIG1(sh_wPt[58]) + sh_wPt[53] + SSIG0(sh_wPt[45]) + sh_wPt[44];
+                    sh_wPt[61] = SSIG1(sh_wPt[59]) + sh_wPt[54] + SSIG0(sh_wPt[46]) + sh_wPt[45];
+                    sh_wPt[62] = SSIG1(sh_wPt[60]) + sh_wPt[55] + SSIG0(sh_wPt[47]) + sh_wPt[46];
+                    sh_wPt[63] = SSIG1(sh_wPt[61]) + sh_wPt[56] + SSIG0(sh_wPt[48]) + sh_wPt[47];
 
-                    sha.CompressBlock(rip_blkPt, sh_wPt);
+                    sha.CompressBlock_WithWSet(hPt: rip_blkPt, wPt: sh_wPt);
                 }
                 else if (data.Length == 65)
                 {
@@ -103,11 +138,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     int dIndex = 0;
                     for (int i = 0; i < 16; i++, dIndex += 4)
                     {
-                        sh_wPt[i] = (uint)((dPt[dIndex] << 24) | (dPt[dIndex + 1] << 16) | (dPt[dIndex + 2] << 8) | dPt[dIndex + 3]);
+                        sh_wPt[i] = (uint)((dPt[dIndex] << 24) |
+                                           (dPt[dIndex + 1] << 16) |
+                                           (dPt[dIndex + 2] << 8) |
+                                           dPt[dIndex + 3]);
                     }
                     sha.CompressBlock(rip_blkPt, sh_wPt);
 
                     sh_wPt[0] = (uint)((dPt[dIndex] << 24) | 0b00000000_10000000_00000000_00000000U);
+                    // Same as above, these MUST be set
                     sh_wPt[1] = 0;
                     sh_wPt[2] = 0;
                     sh_wPt[3] = 0;
@@ -121,26 +160,71 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     sh_wPt[11] = 0;
                     sh_wPt[12] = 0;
                     sh_wPt[13] = 0;
+                    sh_wPt[14] = 0;
+                    sh_wPt[15] = 520; // 65*8 = 520
 
-                    sh_wPt[14] = 0; // Message length for pad2, 65 byte or 520 bits
-                    sh_wPt[15] = 520;
+                    sh_wPt[16] = sh_wPt[0];
+                    sh_wPt[17] = 21299200;
+                    sh_wPt[18] = SSIG1(sh_wPt[16]);
+                    sh_wPt[19] = SSIG1(sh_wPt[17]);
+                    sh_wPt[20] = SSIG1(sh_wPt[18]);
+                    sh_wPt[21] = SSIG1(sh_wPt[19]);
+                    sh_wPt[22] = SSIG1(sh_wPt[20]) + 520;
+                    sh_wPt[23] = SSIG1(sh_wPt[21]) + sh_wPt[16];
+                    sh_wPt[24] = SSIG1(sh_wPt[22]) + sh_wPt[17];
+                    sh_wPt[25] = SSIG1(sh_wPt[23]) + sh_wPt[18];
+                    sh_wPt[26] = SSIG1(sh_wPt[24]) + sh_wPt[19];
+                    sh_wPt[27] = SSIG1(sh_wPt[25]) + sh_wPt[20];
+                    sh_wPt[28] = SSIG1(sh_wPt[26]) + sh_wPt[21];
+                    sh_wPt[29] = SSIG1(sh_wPt[27]) + sh_wPt[22];
+                    sh_wPt[30] = SSIG1(sh_wPt[28]) + sh_wPt[23] + 276955205;
+                    sh_wPt[31] = SSIG1(sh_wPt[29]) + sh_wPt[24] + SSIG0(sh_wPt[16]) + 520;
+                    sh_wPt[32] = SSIG1(sh_wPt[30]) + sh_wPt[25] + SSIG0(sh_wPt[17]) + sh_wPt[16];
+                    sh_wPt[33] = SSIG1(sh_wPt[31]) + sh_wPt[26] + SSIG0(sh_wPt[18]) + sh_wPt[17];
+                    sh_wPt[34] = SSIG1(sh_wPt[32]) + sh_wPt[27] + SSIG0(sh_wPt[19]) + sh_wPt[18];
+                    sh_wPt[35] = SSIG1(sh_wPt[33]) + sh_wPt[28] + SSIG0(sh_wPt[20]) + sh_wPt[19];
+                    sh_wPt[36] = SSIG1(sh_wPt[34]) + sh_wPt[29] + SSIG0(sh_wPt[21]) + sh_wPt[20];
+                    sh_wPt[37] = SSIG1(sh_wPt[35]) + sh_wPt[30] + SSIG0(sh_wPt[22]) + sh_wPt[21];
+                    sh_wPt[38] = SSIG1(sh_wPt[36]) + sh_wPt[31] + SSIG0(sh_wPt[23]) + sh_wPt[22];
+                    sh_wPt[39] = SSIG1(sh_wPt[37]) + sh_wPt[32] + SSIG0(sh_wPt[24]) + sh_wPt[23];
+                    sh_wPt[40] = SSIG1(sh_wPt[38]) + sh_wPt[33] + SSIG0(sh_wPt[25]) + sh_wPt[24];
+                    sh_wPt[41] = SSIG1(sh_wPt[39]) + sh_wPt[34] + SSIG0(sh_wPt[26]) + sh_wPt[25];
+                    sh_wPt[42] = SSIG1(sh_wPt[40]) + sh_wPt[35] + SSIG0(sh_wPt[27]) + sh_wPt[26];
+                    sh_wPt[43] = SSIG1(sh_wPt[41]) + sh_wPt[36] + SSIG0(sh_wPt[28]) + sh_wPt[27];
+                    sh_wPt[44] = SSIG1(sh_wPt[42]) + sh_wPt[37] + SSIG0(sh_wPt[29]) + sh_wPt[28];
+                    sh_wPt[45] = SSIG1(sh_wPt[43]) + sh_wPt[38] + SSIG0(sh_wPt[30]) + sh_wPt[29];
+                    sh_wPt[46] = SSIG1(sh_wPt[44]) + sh_wPt[39] + SSIG0(sh_wPt[31]) + sh_wPt[30];
+                    sh_wPt[47] = SSIG1(sh_wPt[45]) + sh_wPt[40] + SSIG0(sh_wPt[32]) + sh_wPt[31];
+                    sh_wPt[48] = SSIG1(sh_wPt[46]) + sh_wPt[41] + SSIG0(sh_wPt[33]) + sh_wPt[32];
+                    sh_wPt[49] = SSIG1(sh_wPt[47]) + sh_wPt[42] + SSIG0(sh_wPt[34]) + sh_wPt[33];
+                    sh_wPt[50] = SSIG1(sh_wPt[48]) + sh_wPt[43] + SSIG0(sh_wPt[35]) + sh_wPt[34];
+                    sh_wPt[51] = SSIG1(sh_wPt[49]) + sh_wPt[44] + SSIG0(sh_wPt[36]) + sh_wPt[35];
+                    sh_wPt[52] = SSIG1(sh_wPt[50]) + sh_wPt[45] + SSIG0(sh_wPt[37]) + sh_wPt[36];
+                    sh_wPt[53] = SSIG1(sh_wPt[51]) + sh_wPt[46] + SSIG0(sh_wPt[38]) + sh_wPt[37];
+                    sh_wPt[54] = SSIG1(sh_wPt[52]) + sh_wPt[47] + SSIG0(sh_wPt[39]) + sh_wPt[38];
+                    sh_wPt[55] = SSIG1(sh_wPt[53]) + sh_wPt[48] + SSIG0(sh_wPt[40]) + sh_wPt[39];
+                    sh_wPt[56] = SSIG1(sh_wPt[54]) + sh_wPt[49] + SSIG0(sh_wPt[41]) + sh_wPt[40];
+                    sh_wPt[57] = SSIG1(sh_wPt[55]) + sh_wPt[50] + SSIG0(sh_wPt[42]) + sh_wPt[41];
+                    sh_wPt[58] = SSIG1(sh_wPt[56]) + sh_wPt[51] + SSIG0(sh_wPt[43]) + sh_wPt[42];
+                    sh_wPt[59] = SSIG1(sh_wPt[57]) + sh_wPt[52] + SSIG0(sh_wPt[44]) + sh_wPt[43];
+                    sh_wPt[60] = SSIG1(sh_wPt[58]) + sh_wPt[53] + SSIG0(sh_wPt[45]) + sh_wPt[44];
+                    sh_wPt[61] = SSIG1(sh_wPt[59]) + sh_wPt[54] + SSIG0(sh_wPt[46]) + sh_wPt[45];
+                    sh_wPt[62] = SSIG1(sh_wPt[60]) + sh_wPt[55] + SSIG0(sh_wPt[47]) + sh_wPt[46];
+                    sh_wPt[63] = SSIG1(sh_wPt[61]) + sh_wPt[56] + SSIG0(sh_wPt[48]) + sh_wPt[47];
 
-                    sha.CompressBlock(rip_blkPt, sh_wPt);
+                    sha.CompressBlock_WithWSet(rip_blkPt, sh_wPt);
                 }
-                else
+                else // Any length but 33 or 65
                 {
                     // Perform SHA256:
-                    sha.Init(); // init must be called since DoHash uses SHA256 HashState
-                    sha.DoHash(data, data.Length);
-
-                    // Copy SHA256 hash result into RIPEMD160 block:
-                    Buffer.BlockCopy(sha.hashState, 0, rip.block, 0, sha.hashState.Length * 4); // 32 bytes copied
+                    // Init() is already called using rip_block
+                    sha.CompressData(dPt, data.Length, data.Length, hPt: rip_blkPt, wPt: sh_wPt);
                 }
 
                 // SHA256 compression is over and the result is already inside RIPEMD160 Block
                 // But SHA256 endianness is reverse of RIPEMD160, so we have to do an endian swap
 
-                // 32 byte or 8 uint items coming from SHA256
+                // Only 32 byte or 8 uint items coming from SHA256
                 for (int i = 0; i < 8; i++)
                 {
                     // RIPEMD160 uses little-endian while SHA256 uses big-endian
@@ -156,10 +240,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
                 rip.Init(rip_hPt);
                 rip.CompressBlock(rip_blkPt, rip_hPt);
+
+                return rip.GetBytes(rip_hPt);
             }
-
-
-            return rip.GetBytes();
         }
 
         /// <summary>
@@ -173,15 +256,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash</returns>
-        public byte[] ComputeHash(byte[] buffer, int offset, int count)
-        {
-            //return ComputeHash(buffer.SubArray(offset, count));
-            throw new NotImplementedException();
-        }
+        public byte[] ComputeHash(byte[] buffer, int offset, int count) => ComputeHash(buffer.SubArray(offset, count));
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint SSIG0(uint x) => (x >> 7 | x << 25) ^ (x >> 18 | x << 14) ^ (x >> 3);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint SSIG1(uint x) => (x >> 17 | x << 15) ^ (x >> 19 | x << 13) ^ (x >> 10);
 
 
 
-        private bool disposedValue = false;
+        private bool isDisposed = false;
 
         /// <summary>
         /// Releases the resources used by the <see cref="Ripemd160Sha256"/> class.
@@ -191,7 +277,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!isDisposed)
             {
                 if (disposing)
                 {
@@ -204,17 +290,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     sha = null;
                 }
 
-                disposedValue = true;
+                isDisposed = true;
             }
         }
-
 
         /// <summary>
         /// Releases all resources used by the current instance of the <see cref="Ripemd160Sha256"/> class.
         /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
     }
 }
