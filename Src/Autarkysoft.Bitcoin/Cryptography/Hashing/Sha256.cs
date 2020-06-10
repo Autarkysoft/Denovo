@@ -93,6 +93,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Computes double hash of the given data and returns the first 4 bytes of the result as checksum.
         /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">Data to hash</param>
         /// <returns>First 4 bytes of the hash result</returns>
         public unsafe byte[] ComputeChecksum(byte[] data)

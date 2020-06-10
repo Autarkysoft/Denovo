@@ -44,6 +44,15 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             Assert.Equal(expected, actual);
         }
 
+        [Fact]
+        public void ComputeChecksum_ExceptionTest()
+        {
+            Sha256 sha = new Sha256();
+            Assert.Throws<ArgumentNullException>(() => sha.ComputeChecksum(null));
+            sha.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => sha.ComputeChecksum(new byte[0]));
+        }
+
         [Theory]
         [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHashTest(byte[] message, byte[] expectedHash)
