@@ -26,8 +26,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
             else
             {
-                using Sha256 hash = new Sha256(true);
-                return hash.ComputeHash(data).SubArray(0, 4);
+                using Sha256 hash = new Sha256();
+                return hash.ComputeChecksum(data);
             }
         }
 

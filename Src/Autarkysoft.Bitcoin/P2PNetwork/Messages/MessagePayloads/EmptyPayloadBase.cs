@@ -24,16 +24,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <inheritdoc/>
         public override bool TryDeserialize(FastStreamReader stream, out string error)
         {
-            if (stream is null)
-            {
-                error = "Stream can not be null.";
-                return false;
-            }
-            else
-            {
-                error = null;
-                return true;
-            }
+            error = null;
+            return true;
         }
     }
 }
