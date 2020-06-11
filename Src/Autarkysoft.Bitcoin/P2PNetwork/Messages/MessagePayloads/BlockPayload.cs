@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using System;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
@@ -23,6 +24,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <summary>
         /// Initializes a new instance of <see cref="BlockPayload"/> with the given <see cref="Block"/>.
         /// </summary>
+        /// <exception cref="ArgumentNullException"/>
         /// <param name="block">The block to send</param>
         public BlockPayload(IBlock block)
         {
@@ -34,10 +36,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <summary>
         /// The block to send
         /// </summary>
+        /// <exception cref="ArgumentNullException"/>
         public IBlock BlockData
         {
             get => _block;
-            set => _block = (value is null) ? new Block() : value;
+            set
+            {
+                if (value is null)
+                    throw new ArgumentNullException(nameof(BlockData), "Block can not be null.");
+
+                _block = value;
+            }
         }
 
         /// <inheritdoc/>
@@ -45,15 +54,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
-        public override void Serialize(FastStream stream)
-        {
-            BlockData.Serialize(stream);
-        }
+        public override void Serialize(FastStream stream) => BlockData.Serialize(stream);
 
         /// <inheritdoc/>
         public override bool TryDeserialize(FastStreamReader stream, out string error)
-        {
-            return BlockData.TryDeserialize(stream, out error);
-        }
+                              => BlockData.TryDeserialize(stream, out error);
     }
 }
