@@ -92,10 +92,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            // TODO: Since NetworkAddressWithTime has a fixed length 
-            //       there can be a check here to see if the stream length is enough
+            int c = (int)count;
+            if (!stream.CheckRemaining(c * (8 + 16 + 2 + 4)))
+            {
+                error = Err.EndOfStream;
+                return false;
+            }
 
-            Addresses = new NetworkAddressWithTime[(int)count];
+            Addresses = new NetworkAddressWithTime[c];
             for (int i = 0; i < Addresses.Length; i++)
             {
                 var temp = new NetworkAddressWithTime();

@@ -83,6 +83,16 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 new FastStreamReader(new byte[] { 2 }),
                 Err.EndOfStream
             };
+            yield return new object[]
+            {
+                new FastStreamReader(Helper.HexToBytes("01d91f4854010000000000000000000000000000000000ffffc000023320")),
+                Err.EndOfStream
+            };
+            yield return new object[]
+            {
+                new FastStreamReader(Helper.HexToBytes("02d91f4854010000000000000000000000000000000000ffffc0000233208d1a70425e1f0400000000000000000000000000000000ffff7b2d435926")),
+                Err.EndOfStream
+            };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
