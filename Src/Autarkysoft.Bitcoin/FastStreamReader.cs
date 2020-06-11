@@ -241,6 +241,12 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Reads and returns an 8-bit unsigned integer.
+        /// </summary>
+        /// <returns>8-bit unsigned integer</returns>
+        public byte ReadByteChecked() => data[position++];
+
+        /// <summary>
         /// Reads and returns a single byte without moving the index forward. Return value indicates success
         /// </summary>
         /// <param name="b">A signle byte</param>

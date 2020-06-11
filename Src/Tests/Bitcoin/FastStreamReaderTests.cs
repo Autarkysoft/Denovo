@@ -245,6 +245,25 @@ namespace Tests.Bitcoin
 
 
         [Fact]
+        public void ReadByteCheckedTest()
+        {
+            var stream = new FastStreamReader(new byte[] { 10, 20, 30 });
+            Helper.ComparePrivateField(stream, "position", 0);
+
+            byte b1 = stream.ReadByteChecked();
+            Assert.Equal(10, b1);
+            Helper.ComparePrivateField(stream, "position", 1);
+
+            byte b2 = stream.ReadByteChecked();
+            Assert.Equal(20, b2);
+            Helper.ComparePrivateField(stream, "position", 2);
+
+            byte b3 = stream.ReadByteChecked();
+            Assert.Equal(30, b3);
+            Helper.ComparePrivateField(stream, "position", 3);
+        }
+
+        [Fact]
         public void TryPeekByteTest()
         {
             var stream = new FastStreamReader(new byte[3] { 10, 20, 30 });
