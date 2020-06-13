@@ -10,7 +10,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     /// <summary>
     /// A message payload containing an array of transactions from a block. (BIP-152)
-    /// <para/> Sent: ???
+    /// <para/> Sent: in response to <see cref="GetBlockTxnPayload"/>
     /// </summary>
     /// <remarks>
     /// https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki
@@ -119,7 +119,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            Transactions = new Transaction[count];
+            _txs = new Transaction[count];
             for (int i = 0; i < (int)count; i++)
             {
                 Transaction temp = new Transaction();
@@ -127,12 +127,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 {
                     return false;
                 }
-                Transactions[i] = temp;
+                _txs[i] = temp;
             }
 
             error = null;
             return true;
         }
-
     }
 }

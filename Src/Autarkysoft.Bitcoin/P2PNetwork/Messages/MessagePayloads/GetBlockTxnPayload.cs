@@ -1,7 +1,10 @@
-﻿using Autarkysoft.Bitcoin.Blockchain.Transactions;
+﻿// Autarkysoft.Bitcoin
+// Copyright (c) 2020 Autarkysoft
+// Distributed under the MIT software license, see the accompanying
+// file LICENCE or http://www.opensource.org/licenses/mit-license.php.
+
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
@@ -13,8 +16,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             get => _blkHash;
             set
             {
-                if (value == null || value.Length == 0)
-                    throw new ArgumentNullException(nameof(BlockHash), "Block hash can not be null or empty.");
+                if (value == null)
+                    throw new ArgumentNullException(nameof(BlockHash), "Block hash can not be null.");
                 if (value.Length != 32)
                     throw new ArgumentOutOfRangeException(nameof(BlockHash), "Block hash must be 32 bytes.");
 

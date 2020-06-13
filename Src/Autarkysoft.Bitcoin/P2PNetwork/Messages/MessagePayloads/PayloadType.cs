@@ -23,7 +23,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         Block,
         /// <summary>
-        /// Contains an array of transactions from a certain block
+        /// Contains an array of transactions from a certain block and is sent in response to <see cref="GetBlockTxn"/> (BIP-152)
         /// </summary>
         BlockTxn,
         /// <summary>
@@ -100,7 +100,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         Reject,
         /// <summary>
-        /// 
+        /// Requests blocks to be sent in compact form
         /// </summary>
         SendCmpct,
         /// <summary>
