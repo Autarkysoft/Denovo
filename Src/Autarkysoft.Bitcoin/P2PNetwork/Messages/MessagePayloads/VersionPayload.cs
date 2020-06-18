@@ -23,30 +23,50 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="VersionPayload"/> with the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="ver">Protocol version</param>
+        /// <param name="time">The current Unix epoch time according to the transmitting node’s clock</param>
+        /// <param name="rcvAddr">Receiving node's network address</param>
+        /// <param name="trsAddr">Transmitting node's network address (<see cref="Services"/> will be set based on this)</param>
+        /// <param name="nonce">A random 64-bit nonce</param>
+        /// <param name="userAgent">User agent</param>
+        /// <param name="height">Highest block height that this node has</param>
+        /// <param name="relay">
+        /// Indicates whether <see cref="PayloadType.Inv"/> or <see cref="PayloadType.Tx"/> messages should be sent
+        /// to this node
+        /// </param>
+        public VersionPayload(int ver, long time, NetworkAddress rcvAddr, NetworkAddress trsAddr, ulong nonce,
+                              string userAgent, int height, bool relay)
+        {
+            Version = ver;
+            Services = trsAddr.NodeServices;
+            Timestamp = time;
+            ReceivingNodeNetworkAddress = rcvAddr;
+            TransmittingNodeNetworkAddress = trsAddr;
+            Nonce = nonce;
+            UserAgent = userAgent;
+            StartHeight = height;
+            Relay = relay;
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="VersionPayload"/> with the given parameters and sets the rest to
         /// default values.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <param name="protoVer">Protocol version</param>
+        /// <param name="ver">Protocol version</param>
         /// <param name="servs">Services supported by this node</param>
         /// <param name="height">Highest block height that this node has</param>
         /// <param name="relay">
         /// Indicates whether <see cref="PayloadType.Inv"/> or <see cref="PayloadType.Tx"/> messages should be sent
         /// to this node
         /// </param>
-        public VersionPayload(int protoVer, NodeServiceFlags servs, int height, bool relay)
+        public VersionPayload(int ver, NodeServiceFlags servs, int height, bool relay) :
+            this(ver, UnixTimeStamp.GetEpochUtcNow(), new NetworkAddress(), new NetworkAddress() { NodeServices = servs },
+                 0, new BIP0014("Bitcoin.Net", new Version(0, 0, 0)).ToString(), height, relay)
         {
-            Version = protoVer;
-            Services = servs;
-            Timestamp = UnixTimeStamp.GetEpochNow();
-            ReceivingNodeNetworkAddress = new NetworkAddress();
-            TransmittingNodeNetworkAddress = new NetworkAddress()
-            {
-                NodeServices = Services
-            };
-            UserAgent = new BIP0014("Bitcoin.Net", new Version(0, 0, 0)).ToString();
-            StartHeight = height;
-            Relay = relay;
         }
 
 
@@ -73,17 +93,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         public NodeServiceFlags Services { get; set; }
 
-        private long _time;
         /// <summary>
         /// The current Unix epoch time according to the transmitting node's clock.
         /// </summary>
-        public long Timestamp
-        {
-            get => _time;
-            set => _time = value;
-        }
+        public long Timestamp { get; set; }
 
+        /// <summary>
+        /// Receiving node's network address
+        /// </summary>
         public NetworkAddress ReceivingNodeNetworkAddress { get; set; }
+
+        /// <summary>
+        /// Transmitting node's network address
+        /// </summary>
         public NetworkAddress TransmittingNodeNetworkAddress { get; set; }
 
         private ulong _nonce;
@@ -124,8 +146,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public bool Relay { get; set; }
 
 
-        // TODO: investigate what value is best to set here.
-        private const int UserAgentMaxSize = 100;
+        // https://github.com/bitcoin/bitcoin/blob/b3091b2be7d1e5ab86d7380a884d4f23a5e9c9b7/src/net.h#L58
+        private const int UserAgentMaxSize = 256;
 
 
         /// <inheritdoc/>
@@ -160,28 +182,20 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-
-            if (!stream.TryReadInt32(out _ver))
+            if (!stream.CheckRemaining(4 + 8 + 8))
             {
                 error = Err.EndOfStream;
                 return false;
             }
+
+            _ver = stream.ReadInt32Checked();
             // TODO: using version decide which fields should exist (according to protocol version).
 
-            if (!stream.TryReadUInt64(out ulong serv))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
             // For the sake of forward compatibility, service flag is not strict (undefined enums are also accepted)
             // the caller can decide which bits they understand or support.
-            Services = (NodeServiceFlags)serv;
+            Services = (NodeServiceFlags)stream.ReadUInt64Checked();
 
-            if (!stream.TryReadInt64(out _time))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
+            Timestamp = stream.ReadInt64Checked();
 
             ReceivingNodeNetworkAddress = new NetworkAddress();
             if (!ReceivingNodeNetworkAddress.TryDeserialize(stream, out error))
@@ -218,17 +232,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
             UserAgent = Encoding.UTF8.GetString(ua);
 
-            if (!stream.TryReadInt32(out _sHeight))
+            if (!stream.CheckRemaining(4 + 1))
             {
                 error = Err.EndOfStream;
                 return false;
             }
 
-            if (!stream.TryReadByte(out byte b))
-            {
-                Relay = true;
-            }
-            else if (b == 0)
+            _sHeight = stream.ReadInt32Checked();
+            byte b = stream.ReadByteChecked();
+            if (b == 0)
             {
                 Relay = false;
             }
