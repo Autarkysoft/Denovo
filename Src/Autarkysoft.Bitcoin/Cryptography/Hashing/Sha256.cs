@@ -37,7 +37,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Size of the hash result in bytes (=32 bytes).
         /// </summary>
-        public virtual int HashByteSize => 32;
+        public int HashByteSize => 32;
 
         /// <summary>
         /// Size of the blocks used in each round (=64 bytes).
@@ -79,7 +79,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <returns>The computed hash</returns>
         public byte[] ComputeHash(byte[] data)
         {
-            if (disposedValue)
+            if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
@@ -99,7 +99,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <returns>First 4 bytes of the hash result</returns>
         public unsafe byte[] ComputeChecksum(byte[] data)
         {
-            if (disposedValue)
+            if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
@@ -119,7 +119,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
         public unsafe byte[] ComputeShortIdKey(byte[] header, ulong nonce)
         {
-            if (disposedValue)
+            if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
             if (header == null)
                 throw new ArgumentNullException(nameof(header), "Header can not be null.");
@@ -438,7 +438,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 
-        internal virtual unsafe void Init()
+        internal unsafe void Init()
         {
             fixed (uint* hPt = &hashState[0])
             {
@@ -447,7 +447,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual unsafe void Init(uint* hPt)
+        internal unsafe void Init(uint* hPt)
         {
             hPt[0] = 0x6a09e667U;
             hPt[1] = 0xbb67ae85U;
@@ -662,7 +662,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual unsafe void ComputeSecondHash(uint* hPt, uint* wPt)
+        internal unsafe void ComputeSecondHash(uint* hPt, uint* wPt)
         {
             // Result of previous hash (hashState[]) is now our new block. So copy it here:
             wPt[0] = hPt[0];
@@ -931,7 +931,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 
-        private bool disposedValue = false;
+        private bool isDisposed = false;
 
         /// <summary>
         /// Releases the resources used by the <see cref="Sha256"/> class.
@@ -941,7 +941,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!isDisposed)
             {
                 if (disposing)
                 {
@@ -954,7 +954,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     w = null;
                 }
 
-                disposedValue = true;
+                isDisposed = true;
             }
         }
 
