@@ -209,5 +209,28 @@ namespace Tests.Bitcoin.ImprovementProposals
             Assert.Equal(expMnemonic.Normalize(NormalizationForm.FormKD), actMnemonic);
             Assert.Equal(expXprv, actXprv);
         }
+
+        [Theory]
+        [InlineData(BIP0039.WordLists.English, "abandon")]
+        [InlineData(BIP0039.WordLists.ChineseSimplified, "的")]
+        [InlineData(BIP0039.WordLists.ChineseTraditional, "的")]
+        [InlineData(BIP0039.WordLists.French, "abaisser")]
+        [InlineData(BIP0039.WordLists.Italian, "abaco")]
+        [InlineData(BIP0039.WordLists.Japanese, "あいこくしん")]
+        [InlineData(BIP0039.WordLists.Korean, "가격")]
+        [InlineData(BIP0039.WordLists.Spanish, "ábaco")]
+        public void GetAllWordsTest(BIP0039.WordLists wl, string first)
+        {
+            string[] actual = BIP0039.GetAllWords(wl);
+            Assert.NotNull(actual);
+            Assert.Equal(2048, actual.Length);
+            Assert.Equal(first, actual[0]);
+        }
+
+        [Fact]
+        public void GetAllWords_ExceptionTest()
+        {
+            Assert.Throws<ArgumentException>(() => BIP0039.GetAllWords((BIP0039.WordLists)100));
+        }
     }
 }

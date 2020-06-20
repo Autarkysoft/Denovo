@@ -38,7 +38,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (!allowedEntropyLengths.Contains(entropy.Length))
                 throw new ArgumentOutOfRangeException(nameof(entropy), "Entropy must be 16 or 20 or 24 or 28 or 32 bytes.");
 
-            SetWordList(wl);
+            allWords = GetAllWords(wl);
             SetWordsFromEntropy(entropy);
             SetBip32(passPhrase);
         }
@@ -68,7 +68,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (!allowedEntropyLengths.Contains(entropySize))
                 throw new ArgumentOutOfRangeException(nameof(entropySize), "Entropy must be 16 or 20 or 24 or 28 or 32 bytes.");
 
-            SetWordList(wl);
+            allWords = GetAllWords(wl);
 
             byte[] entropy = new byte[entropySize];
             rng.GetBytes(entropy);
@@ -93,8 +93,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         {
             if (string.IsNullOrWhiteSpace(mnemonic))
                 throw new ArgumentNullException(nameof(mnemonic), "Seed can not be null or empty!");
-            SetWordList(wl);
-
+            allWords = GetAllWords(wl);
 
             string[] words = mnemonic.Normalize(NormalizationForm.FormKD)
                                      .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -294,28 +293,35 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
         }
 
+        /// <summary>
+        /// Returns all the 2048 words found in the given word-list.
+        /// </summary>
         /// <exception cref="ArgumentException"/>
-        private void SetWordList(WordLists wl)
+        /// <param name="wl">Word list to use</param>
+        /// <returns>An array of 2048 strings</returns>
+        public static string[] GetAllWords(WordLists wl)
         {
             if (!Enum.IsDefined(typeof(WordLists), wl))
                 throw new ArgumentException("Given word list is not defined.");
 
-            string path = $"Autarkysoft.Bitcoin.ImprovementProposals.BIP0039WordLists.{wl.ToString()}.txt";
+            string path = $"Autarkysoft.Bitcoin.ImprovementProposals.BIP0039WordLists.{wl}.txt";
             Assembly asm = Assembly.GetExecutingAssembly();
             using Stream stream = asm.GetManifestResourceStream(path);
             if (stream != null)
             {
                 using StreamReader reader = new StreamReader(stream);
                 int i = 0;
-                allWords = new string[2048];
+                string[] result = new string[2048];
                 while (!reader.EndOfStream)
                 {
-                    allWords[i++] = reader.ReadLine();
+                    result[i++] = reader.ReadLine();
                 }
                 if (i != 2048)
                 {
                     throw new ArgumentException("There is something wrong with the embeded word list.");
                 }
+
+                return result;
             }
             else
             {
@@ -339,22 +345,21 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <summary>
         /// Returns mnemonic (seed words)
         /// </summary>
+        /// <exception cref="ObjectDisposedException"/>
         /// <returns>mnemonic (seed words)</returns>
         public string ToMnemonic()
         {
             if (wordIndexes == null)
                 throw new ObjectDisposedException(nameof(BIP0039));
 
-
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < wordIndexes.Length - 1; i++)
+            StringBuilder sb = new StringBuilder(wordIndexes.Length * 8);
+            for (int i = 0; i < wordIndexes.Length; i++)
             {
                 sb.Append($"{allWords[wordIndexes[i]]} ");
             }
 
             // no space at the end.
-            sb.Append($"{allWords[wordIndexes[^1]]}");
-
+            sb.Length--;
             return sb.ToString();
         }
 
