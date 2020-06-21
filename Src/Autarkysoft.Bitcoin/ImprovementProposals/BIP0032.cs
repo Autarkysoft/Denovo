@@ -250,7 +250,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             byte[] tempLeft;
             foreach (var index in path.Indexes)
             {
-                FastStream stream = new FastStream(33);
+                FastStream stream = new FastStream(33 + 4);
                 if (IsHardendedIndex(index))
                 {
                     stream.Write((byte)0);
