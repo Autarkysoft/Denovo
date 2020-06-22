@@ -84,6 +84,19 @@ namespace Tests.Bitcoin.ImprovementProposals
             Assert.Contains("Depth can not be bigger than 1 byte.", ex.Message);
         }
 
+        [Fact]
+        public void AddTest()
+        {
+            var path = new BIP0032Path(1, 0x12345678, 3);
+            Assert.Equal(new uint[] { 1, 0x12345678, 3 }, path.Indexes);
+
+            path.Add(5);
+            Assert.Equal(new uint[] { 1, 0x12345678, 3, 5 }, path.Indexes);
+
+            path.Add(Hard);
+            Assert.Equal(new uint[] { 1, 0x12345678, 3, 5, Hard }, path.Indexes);
+        }
+
         [Theory]
         [InlineData(new uint[0], "m")]
         [InlineData(new uint[] { 0 }, "m/0")]

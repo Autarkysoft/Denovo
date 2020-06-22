@@ -92,6 +92,18 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
         /// <summary>
+        /// Adds the given index to the end of the index array (expands the array by one item).
+        /// </summary>
+        /// <param name="index">Index to add</param>
+        public void Add(uint index)
+        {
+            uint[] temp = new uint[Indexes.Length + 1];
+            Buffer.BlockCopy(Indexes, 0, temp, 0, Indexes.Length * 4);
+            temp[^1] = index;
+            Indexes = temp;
+        }
+
+        /// <summary>
         /// Converts this instance to its string representation.
         /// </summary>
         /// <returns>A string starting with 'm' indicating master followed by each index</returns>
