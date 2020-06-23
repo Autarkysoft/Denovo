@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
-using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
