@@ -1,5 +1,14 @@
 ### Release ?.?.? (Next release)
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.3.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.0.0...master)
+
+### Release 0.4.0 (2020-06-23)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.3.0.0...B0.4.0.0)
+* Improvements in P2PNetwork namespace
+* New BIP: Compact Block Relay: SendCmpct, CmpctBlock, GetBlockTxn (BIP-152)
+* New hash algorithm: SipHash
+* Add a miner with limited functionality to add the option to mine a block if needed (will be improved in the future)
+* BIP-39 now lets caller get the entire 2048 words from its wordlists
+* Various code improvements and additional tests
 
 ### Release 0.3.0 (2020-05-27)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.2.0.0...B0.3.0.0)

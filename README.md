@@ -3,7 +3,12 @@
 [![NuGet](https://img.shields.io/nuget/v/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
 [![NuGet](https://img.shields.io/nuget/dt/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
 
-<p align="center"><b>The Revolution Will Not Be Centralized</b></p>
+<p align="center">
+    <b>The Revolution Will Not Be Centralized</b>
+</p>
+<p align="center">
+    <img src="../master/PackageIcon.png" alt="logo"/>
+</p>
 
 # Denovo
 Denovo is a stand alone bitcoin client written completely in C# and from scratch and with only one dependency for GUI. Using the latest 
@@ -66,7 +71,8 @@ are in separate classes. Currently:
   [32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets"),
   [38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki "Passphrase-protected private key"),
   [39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys"),
-  [137](https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki "Signatures of Messages using Private Keys")
+  [137](https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki "Signatures of Messages using Private Keys"),
+  [152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki "Compact Block Relay"),
   [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF"),
   [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
 
