@@ -90,18 +90,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe byte[] GetBytes(uint* hPt)
         {
-            byte[] res = new byte[HashByteSize];
-            fixed (byte* bPt = &res[0])
+            return new byte[20]
             {
-                for (int i = 0, j = 0; i < res.Length; i += 4, j++)
-                {
-                    bPt[i] = (byte)hPt[j];
-                    bPt[i + 1] = (byte)(hPt[j] >> 8);
-                    bPt[i + 2] = (byte)(hPt[j] >> 16);
-                    bPt[i + 3] = (byte)(hPt[j] >> 24);
-                }
-            }
-            return res;
+                (byte)hPt[0], (byte)(hPt[0] >> 8), (byte)(hPt[0] >> 16), (byte)(hPt[0] >> 24),
+                (byte)hPt[1], (byte)(hPt[1] >> 8), (byte)(hPt[1] >> 16), (byte)(hPt[1] >> 24),
+                (byte)hPt[2], (byte)(hPt[2] >> 8), (byte)(hPt[2] >> 16), (byte)(hPt[2] >> 24),
+                (byte)hPt[3], (byte)(hPt[3] >> 8), (byte)(hPt[3] >> 16), (byte)(hPt[3] >> 24),
+                (byte)hPt[4], (byte)(hPt[4] >> 8), (byte)(hPt[4] >> 16), (byte)(hPt[4] >> 24),
+            };
         }
 
 
