@@ -169,20 +169,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 {
                     byte[] temp = new byte[hashFunc.BlockByteSize];
                     Buffer.BlockCopy(key, 0, temp, 0, key.Length);
-                    int kIndex = 0;
                     fixed (byte* tPt = &temp[0])
                     {
-                        for (int i = 0; i < 16; i++, kIndex += 8)
+                        for (int i = 0, j = 0; i < 16; i++, j += 8)
                         {
                             ulong val =
-                                ((ulong)tPt[kIndex] << 56) |
-                                ((ulong)tPt[kIndex + 1] << 48) |
-                                ((ulong)tPt[kIndex + 2] << 40) |
-                                ((ulong)tPt[kIndex + 3] << 32) |
-                                ((ulong)tPt[kIndex + 4] << 24) |
-                                ((ulong)tPt[kIndex + 5] << 16) |
-                                ((ulong)tPt[kIndex + 6] << 8) |
-                                tPt[kIndex + 7];
+                                ((ulong)tPt[j] << 56) |
+                                ((ulong)tPt[j + 1] << 48) |
+                                ((ulong)tPt[j + 2] << 40) |
+                                ((ulong)tPt[j + 3] << 32) |
+                                ((ulong)tPt[j + 4] << 24) |
+                                ((ulong)tPt[j + 5] << 16) |
+                                ((ulong)tPt[j + 6] << 8) |
+                                tPt[j + 7];
 
                             iPt[i] = 0x3636363636363636U ^ val;
                             oPt[i] = 0x5c5c5c5c5c5c5c5cU ^ val;
@@ -216,9 +215,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, oPt);
                 hashFunc.CompressBlock(hPt, wPt);
-            }
 
-            return hashFunc.GetBytes();
+                return hashFunc.GetBytes(hPt);
+            }
         }
 
 
@@ -266,9 +265,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, oPt);
                 hashFunc.CompressBlock(hPt, wPt);
-            }
 
-            return hashFunc.GetBytes();
+                return hashFunc.GetBytes(hPt);
+            }
         }
 
 

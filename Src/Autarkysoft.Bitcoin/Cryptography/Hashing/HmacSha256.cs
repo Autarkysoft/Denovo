@@ -82,27 +82,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     byte[] ipadB = new byte[hashFunc.BlockByteSize];
 
                     // Note (kp = _keyValue) can't assign to first item because key might be empty array which will throw an excpetion
-                    fixed (byte* kp = _keyValue, temp_opB = &opadB[0], temp_ipB = &ipadB[0])
+                    fixed (byte* kp = _keyValue, tOpB = &opadB[0], tIpB = &ipadB[0])
                     fixed (uint* op = &opad[0], ip = &ipad[0])
                     {
                         for (int i = 0; i < _keyValue.Length; i++)
                         {
-                            temp_opB[i] = (byte)(kp[i] ^ 0x5c);
-                            temp_ipB[i] = (byte)(kp[i] ^ 0x36);
+                            tOpB[i] = (byte)(kp[i] ^ 0x5c);
+                            tIpB[i] = (byte)(kp[i] ^ 0x36);
                         }
 
                         for (int i = _keyValue.Length; i < opadB.Length; i++)
                         {
-                            temp_opB[i] = 0 ^ 0x5c;
-                            temp_ipB[i] = 0 ^ 0x36;
+                            tOpB[i] = 0 ^ 0x5c;
+                            tIpB[i] = 0 ^ 0x36;
                         }
 
                         // Now copy the temp pad bytes into real pad UInt[]
                         // There are 16 items inside of a pad (Hash.BlockSize = 64 byte /4 = 16 uint)
                         for (int i = 0, j = 0; i < 16; i++, j += 4)
                         {
-                            op[i] = (uint)((temp_opB[j] << 24) | (temp_opB[j + 1] << 16) | (temp_opB[j + 2] << 8) | temp_opB[j + 3]);
-                            ip[i] = (uint)((temp_ipB[j] << 24) | (temp_ipB[j + 1] << 16) | (temp_ipB[j + 2] << 8) | temp_ipB[j + 3]);
+                            op[i] = (uint)((tOpB[j] << 24) | (tOpB[j + 1] << 16) | (tOpB[j + 2] << 8) | tOpB[j + 3]);
+                            ip[i] = (uint)((tIpB[j] << 24) | (tIpB[j + 1] << 16) | (tIpB[j + 2] << 8) | tIpB[j + 3]);
                         }
                     }
                 }
@@ -152,12 +152,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 {
                     byte[] temp = new byte[hashFunc.BlockByteSize];
                     Buffer.BlockCopy(key, 0, temp, 0, key.Length);
-                    int kIndex = 0;
                     fixed (byte* tPt = &temp[0])
                     {
-                        for (int i = 0; i < 16; i++, kIndex += 4)
+                        for (int i = 0, j = 0; i < 16; i++, j += 4)
                         {
-                            uint val = (uint)((tPt[kIndex] << 24) | (tPt[kIndex + 1] << 16) | (tPt[kIndex + 2] << 8) | tPt[kIndex + 3]);
+                            uint val = (uint)((tPt[j] << 24) | (tPt[j + 1] << 16) | (tPt[j + 2] << 8) | tPt[j + 3]);
                             iPt[i] = 0x36363636U ^ val;
                             oPt[i] = 0x5c5c5c5cU ^ val;
                         }
@@ -191,9 +190,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, oPt);
                 hashFunc.CompressBlock(hPt, wPt);
-            }
 
-            return hashFunc.GetBytes();
+                return hashFunc.GetBytes(hPt);
+            }
         }
 
 
@@ -241,9 +240,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, oPt);
                 hashFunc.CompressBlock(hPt, wPt);
-            }
 
-            return hashFunc.GetBytes();
+                return hashFunc.GetBytes(hPt);
+            }
         }
 
 
