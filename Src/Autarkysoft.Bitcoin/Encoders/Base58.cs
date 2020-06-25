@@ -28,7 +28,6 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
 
-        private const int CheckSumSize = 4;
         /// <summary>
         /// The 58 characters that are used in this encoding. Derived classes like <see cref="Base43"/> 
         /// should change this and <see cref="baseValue"/> and <see cref="logBaseValue"/>.
@@ -50,10 +49,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </summary>
         /// <param name="encoded">String to check.</param>
         /// <returns>True if input was a valid base-58 encoded string with checksum, false if otherwise.</returns>
-        public bool IsValid(string encoded)
-        {
-            return HasValidChars(encoded) && HasValidCheckSum(encoded);
-        }
+        public bool IsValid(string encoded) => HasValidChars(encoded) && HasValidCheckSum(encoded);
 
 
         /// <summary>
@@ -80,25 +76,22 @@ namespace Autarkysoft.Bitcoin.Encoders
         private bool HasValidCheckSum(string val)
         {
             byte[] data = DecodeWithoutValidation(val);
-            if (data.Length < CheckSumSize)
+            if (data.Length < Constants.CheckSumSize)
             {
                 return false;
             }
 
-            byte[] dataWithoutCheckSum = data.SubArray(0, data.Length - CheckSumSize);
-            byte[] checkSum = data.SubArrayFromEnd(CheckSumSize);
-            byte[] calculatedCheckSum = CalculateCheckSum(dataWithoutCheckSum);
+            byte[] dataWithoutCheckSum = data.SubArray(0, data.Length - Constants.CheckSumSize);
+            ReadOnlySpan<byte> checkSum = data.SubArrayFromEnd(Constants.CheckSumSize);
+            ReadOnlySpan<byte> calculatedCheckSum = CalculateCheckSum(dataWithoutCheckSum);
 
-            return checkSum[0] == calculatedCheckSum[0]
-                && checkSum[1] == calculatedCheckSum[1]
-                && checkSum[2] == calculatedCheckSum[2]
-                && checkSum[3] == calculatedCheckSum[3];
+            return checkSum.SequenceEqual(calculatedCheckSum);
         }
 
         private byte[] CalculateCheckSum(byte[] data)
         {
-            using Sha256 hash = new Sha256(true);
-            return hash.ComputeHash(data).SubArray(0, CheckSumSize);
+            using Sha256 hash = new Sha256();
+            return hash.ComputeChecksum(data);
         }
 
 
@@ -174,13 +167,13 @@ namespace Autarkysoft.Bitcoin.Encoders
             }
 
             byte[] data = DecodeWithoutValidation(b58EncodedStringWithCheckSum);
-            if (data.Length < CheckSumSize)
+            if (data.Length < Constants.CheckSumSize)
             {
                 throw new FormatException($"Input is not a valid base-{baseValue} encoded string.");
             }
 
-            byte[] dataWithoutCheckSum = data.SubArray(0, data.Length - CheckSumSize);
-            byte[] checkSum = data.SubArrayFromEnd(CheckSumSize);
+            byte[] dataWithoutCheckSum = data.SubArray(0, data.Length - Constants.CheckSumSize);
+            byte[] checkSum = data.SubArrayFromEnd(Constants.CheckSumSize);
             byte[] calculatedCheckSum = CalculateCheckSum(dataWithoutCheckSum);
 
             if (!((ReadOnlySpan<byte>)checkSum).SequenceEqual(calculatedCheckSum))
@@ -239,10 +232,8 @@ namespace Autarkysoft.Bitcoin.Encoders
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Input can not be null!");
 
-
             byte[] checkSum = CalculateCheckSum(data);
             return Encode(data.ConcatFast(checkSum));
         }
-
     }
 }

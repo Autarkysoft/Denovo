@@ -38,6 +38,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int UncompressedPubkeyLen = 65;
         /// <summary>
+        /// Number of bytes in a checksum (first 4 bytes of double SHA256 of data)
+        /// </summary>
+        public const int CheckSumSize = 4;
+        /// <summary>
         /// Byte length of <see cref="Cryptography.Hashing.Ripemd160Sha256"/> hash result
         /// </summary>
         public const int Hash160Length = 20;
