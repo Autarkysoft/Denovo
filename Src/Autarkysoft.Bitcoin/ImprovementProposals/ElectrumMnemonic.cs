@@ -167,19 +167,19 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             {
                 // Treat the given 136 bits of entropy as 132 by ignoring first 4 bits and split it to 11-bit parts
                 wordIndexes = new int[WordLen]
-                {                                                                          // bits used   -> leftover
-                    (entropy[0]  & 0b00001111) << 7  | entropy[1]  >> 1,                   // 4 + 7       -> 1
-                    (entropy[1]  & 0b00000001) << 10 | entropy[2]  << 2 | entropy[3]  >> 6,// 1 + 8 + 2   -> 6
-                    (entropy[3]  & 0b00111111) << 5  | entropy[4]  >> 3,                   // 6 + 5       -> 3
-                    (entropy[4]  & 0b00000111) << 8  | entropy[5],                         // 3 + 8       -> 0
-                     entropy[6]                << 3  | entropy[7]  >> 5,                   // 8 + 3       -> 5
-                    (entropy[7]  & 0b00011111) << 6  | entropy[8]  >> 2,                   // 5 + 6       -> 2
-                    (entropy[8]  & 0b00000011) << 9  | entropy[9]  << 1 | entropy[10] >> 7,// 2 + 8 + 1   -> 7
-                    (entropy[10] & 0b01111111) << 4  | entropy[11] >> 4,                   // 7 + 4       -> 4
-                    (entropy[11] & 0b00001111) << 7  | entropy[12] >> 1,                   // 4 + 7       -> 1
-                    (entropy[12] & 0b00000001) << 10 | entropy[13] << 2 | entropy[14] >> 6,// 1 + 8 + 2   -> 6
-                    (entropy[14] & 0b00111111) << 5  | entropy[15] >> 3,                   // 6 + 5       -> 3
-                    (entropy[15] & 0b00000111) << 8  | entropy[16],                        // 3 + 8       -> 0
+                {                                                                           // bits used (leftover)
+                    (entropy[15] & 0b00000111) << 8  | entropy[16],                         // 3(5) + 8
+                    (entropy[14] & 0b00111111) << 5  | entropy[15] >> 3,                    // 6(2) + 5
+                    (entropy[12] & 0b00000001) << 10 | entropy[13] << 2 | entropy[14] >> 6, // 1(7) + 8 + 2
+                    (entropy[11] & 0b00001111) << 7  | entropy[12] >> 1,                    // 4(4) + 7
+                    (entropy[10] & 0b01111111) << 4  | entropy[11] >> 4,                    // 7(1) + 4
+                    (entropy[8]  & 0b00000011) << 9  | entropy[9]  << 1 | entropy[10] >> 7, // 2(6) + 8 + 1
+                    (entropy[7]  & 0b00011111) << 6  | entropy[8]  >> 2,                    // 5(3) + 6
+                     entropy[6]                << 3  | entropy[7]  >> 5,                    // 8(0) + 3
+                    (entropy[4]  & 0b00000111) << 8  | entropy[5],                          // 3(5) + 8
+                    (entropy[3]  & 0b00111111) << 5  | entropy[4]  >> 3,                    // 6(2) + 5
+                    (entropy[1]  & 0b00000001) << 10 | entropy[2]  << 2 | entropy[3] >> 6,  // 1(7) + 8 + 2
+                    (entropy[0]  & 0b00001111) << 7  | entropy[1]  >> 1,                    // 4 + 7
                 };
 
                 if (GetMnomonicType(Normalize(ToMnemonic())) == MnType)
@@ -233,7 +233,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
         private bool IsCJK(char c)
         {
-            int val = char.ConvertToUtf32($"{c}", 0);
+            int val = c;
             foreach (var item in CJK_INTERVALS)
             {
                 if (val >= item[0] && val <= item[1])
@@ -244,30 +244,26 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             return false;
         }
 
-        private string RemoveDiacritics(string mn)
+        private string RemoveDiacritics(string text)
         {
-            var temp = new StringBuilder();
-            foreach (char c in mn)
-            {
-                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-                {
-                    temp.Append(c);
-                }
-            }
-            return temp.ToString().Normalize(NormalizationForm.FormC);
+            return new string(
+                text.Normalize(System.Text.NormalizationForm.FormD)
+                    .ToCharArray()
+                    .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                    .ToArray());
         }
 
-        // Input must have removed extra spaces and checked validity of each word to be in the word-list
-        private string Normalize(string mnemonic)
+        private string Normalize(string text)
         {
-            string mn = RemoveDiacritics(mnemonic.Normalize(NormalizationForm.FormKD));
+            string norm = RemoveDiacritics(text.Normalize(NormalizationForm.FormKD).ToLower());
+            norm = string.Join(' ', norm.Split(" ", StringSplitOptions.RemoveEmptyEntries));
             // Remove whitespaces between CJK
             var temp = new StringBuilder();
-            for (int i = 0; i < mn.Length; i++)
+            for (int i = 0; i < norm.Length; i++)
             {
-                if (!(char.IsWhiteSpace(mn[i]) && IsCJK(mn[i - 1]) && IsCJK(mn[i + 1])))
+                if (!(char.IsWhiteSpace(norm[i]) && IsCJK(norm[i - 1]) && IsCJK(norm[i + 1])))
                 {
-                    temp.Append(mn[i]);
+                    temp.Append(norm[i]);
                 }
             }
             return temp.ToString();
@@ -305,8 +301,9 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
         private void SetBip32(string passPhrase)
         {
-            byte[] password = Encoding.UTF8.GetBytes(ToMnemonic());
-            byte[] salt = Encoding.UTF8.GetBytes($"mnemonic{passPhrase?.Normalize(NormalizationForm.FormKD)}");
+            byte[] password = Encoding.UTF8.GetBytes(Normalize(ToMnemonic()));
+            string pass = passPhrase == null ? "" : Normalize(passPhrase);
+            byte[] salt = Encoding.UTF8.GetBytes($"electrum{pass}");
 
             using PBKDF2 kdf = new PBKDF2(2048, new HmacSha512());
             byte[] bytes = kdf.GetBytes(password, salt, 64);
