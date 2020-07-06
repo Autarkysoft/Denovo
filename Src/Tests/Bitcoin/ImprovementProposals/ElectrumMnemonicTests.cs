@@ -3,7 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.ImprovementProposals;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Xunit;
@@ -110,16 +112,16 @@ namespace Tests.Bitcoin.ImprovementProposals
         }
         [Theory]
         [MemberData(nameof(GetCtorByteCases))]
-        public void Constructor_FromBytes_Test(BIP0039.WordLists wl, string mnemonic, byte[] entropy,
+        public void ConstructorTest(BIP0039.WordLists wl, string mnemonic, byte[] entropy,
                                                ElectrumMnemonic.MnemonicType mnType, string pass, byte[] bip32Seed)
         {
-            var elmn = new ElectrumMnemonic(mnemonic, wl, pass);
+            using var elmn = new ElectrumMnemonic(mnemonic, wl, pass);
             Assert.Equal(mnType, elmn.MnType);
             Assert.Equal(mnemonic, elmn.ToMnemonic());
 
             if (entropy != null)
             {
-                var fromEntropy = new ElectrumMnemonic(entropy, mnType, wl, pass);
+                using var fromEntropy = new ElectrumMnemonic(entropy, mnType, wl, pass);
                 Assert.Equal(mnType, fromEntropy.MnType);
                 Assert.Equal(mnemonic, fromEntropy.ToMnemonic());
             }
@@ -132,5 +134,69 @@ namespace Tests.Bitcoin.ImprovementProposals
             }
         }
 
+        [Fact]
+        public void Constructor_FromByte_IncrementTest()
+        {
+            byte[] ent = Helper.HexToBytes("0a0fecede9bf8a975eb6b4ef75bb799f00");
+            using var elmn = new ElectrumMnemonic(ent, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
+
+            string actual = elmn.ToMnemonic();
+            string expected = "almíbar tibio superar vencer hacha peatón príncipe matar consejo polen vehículo odisea";
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void Constructor_FromRngTest()
+        {
+            var rng = new MockRng(BigInteger.Parse("3423992296655289706780599506247192518735").ToByteArray(true, true));
+            using var elmn = new ElectrumMnemonic(rng, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
+
+            string actual = elmn.ToMnemonic();
+            string expected = "almíbar tibio superar vencer hacha peatón príncipe matar consejo polen vehículo odisea";
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void Constructor_ExceptionTest()
+        {
+            byte[] nba = null;
+            string nstr = null;
+            IRandomNumberGenerator nrng = null;
+            var mnt = ElectrumMnemonic.MnemonicType.Standard;
+            var mntBad1 = ElectrumMnemonic.MnemonicType.Undefined;
+            var mntBad2 = (ElectrumMnemonic.MnemonicType)100;
+
+            Assert.Throws<ArgumentNullException>(() => new ElectrumMnemonic(nstr));
+            Assert.Throws<ArgumentNullException>(() => new ElectrumMnemonic(" "));
+            Assert.Throws<ArgumentNullException>(() => new ElectrumMnemonic(nba, mnt));
+            Assert.Throws<ArgumentNullException>(() => new ElectrumMnemonic(nrng, mnt));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => new ElectrumMnemonic(new byte[16], mnt));
+            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new byte[17], mntBad1));
+            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new byte[17], mntBad2));
+            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new MockRng(new byte[0]), mntBad1));
+            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new MockRng(new byte[0]), mntBad2));
+        }
+
+        [Theory]
+        [InlineData("wild father tree among universe such mobile favorite target dynamic credit identify identify")]
+        [InlineData("wild father foo among universe such mobile favorite target dynamic credit identify")]
+        [InlineData("wild father tree among universe such mobile favorite target dynamic credit credit")]
+        public void Constructor_FormatExceptionTest(string mn)
+        {
+            Assert.Throws<FormatException>(() => new ElectrumMnemonic(mn));
+        }
+
+        [Fact]
+        public void ToMnemonic_DisoisedExceptionTest()
+        {
+            byte[] ent = Helper.HexToBytes("0a0fecede9bf8a975eb6b4ef75bb799f00");
+            var elmn = new ElectrumMnemonic(ent, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
+            elmn.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() => elmn.ToMnemonic());
+        }
     }
 }

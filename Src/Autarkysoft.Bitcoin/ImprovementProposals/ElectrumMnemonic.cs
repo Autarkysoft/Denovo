@@ -104,7 +104,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
             if (!words.All(x => allWords.Contains(x)))
             {
-                throw new ArgumentException(nameof(mnemonic), "Seed has invalid words.");
+                throw new FormatException("Mnemonic has invalid words.");
             }
 
             wordIndexes = new int[words.Length];
