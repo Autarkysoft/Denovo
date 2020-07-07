@@ -20,13 +20,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         private Stack<SocketAsyncEventArgs> pool;
+        private readonly object lockObj = new object();
 
 
         internal int Count => pool.Count;
 
         internal SocketAsyncEventArgs Pop()
         {
-            lock (pool)
+            lock (lockObj)
             {
                 return pool.Pop();
             }
@@ -35,7 +36,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         internal void Push(SocketAsyncEventArgs item)
         {
-            lock (pool)
+            lock (lockObj)
             {
                 pool.Push(item);
             }
