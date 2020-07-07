@@ -9,7 +9,6 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -39,9 +38,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             // TODO: the following values are for testing, they should be set by the caller
             // they need more checks for correct and optimal values
-            int MaxConnections = 3;
-            backlog = 3;
-            int MaxAcceptOps = 10;
             int MaxConnectOps = 10;
             buffLen = 200;
             int bytesPerSaea = buffLen;
@@ -50,14 +46,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             var verPl = new VersionPayload(protocolVersion, servs, blockchain.Height, relay);
             Message verMsg = new Message(verPl, netType);
-
-            maxConnectionEnforcer = new Semaphore(MaxConnections, MaxConnections);
-
-            acceptPool = new SocketAsyncEventArgsPool(MaxAcceptOps);
-            for (int i = 0; i < MaxAcceptOps; i++)
-            {
-                acceptPool.Push(CreateNewAcceptSaea());
-            }
 
             connectPool = new SocketAsyncEventArgsPool(MaxConnectOps);
             for (int i = 0; i < MaxConnectOps; i++)
@@ -83,12 +71,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         private readonly int buffLen;
-        private Socket listenSocket;
-        private readonly Semaphore maxConnectionEnforcer;
-        private readonly int backlog;
-        private readonly SocketAsyncEventArgsPool acceptPool;
         private readonly SocketAsyncEventArgsPool connectPool;
-        private readonly SocketAsyncEventArgsPool sendReceivePool;
+        internal readonly SocketAsyncEventArgsPool sendReceivePool;
         private readonly BufferManager buffMan;
         private readonly IReplyManager repMan = new ReplyManager();
 
@@ -109,67 +93,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
         }
 
-        private SocketAsyncEventArgs CreateNewAcceptSaea()
-        {
-            SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
-            acceptEventArg.Completed += new EventHandler<SocketAsyncEventArgs>((sender, e) => ProcessAccept(e));
-
-            return acceptEventArg;
-        }
 
         private SocketAsyncEventArgs CreateNewConnectSaea()
         {
             SocketAsyncEventArgs connectEventArg = new SocketAsyncEventArgs();
             connectEventArg.Completed += new EventHandler<SocketAsyncEventArgs>((sender, e) => ProcessConnect(e));
             return connectEventArg;
-        }
-
-
-        /// <summary>
-        /// Starts listening for new connections on the given <see cref="EndPoint"/>.
-        /// </summary>
-        /// <param name="ep"><see cref="EndPoint"/> to use</param>
-        public void StartListen(EndPoint ep)
-        {
-            listenSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-            listenSocket.Bind(ep);
-            listenSocket.Listen(backlog);
-            StartAccept();
-        }
-
-        private void StartAccept()
-        {
-            SocketAsyncEventArgs acceptEventArg = acceptPool.Count > 0 ? acceptPool.Pop() : CreateNewAcceptSaea();
-            maxConnectionEnforcer.WaitOne();
-
-            if (!listenSocket.AcceptAsync(acceptEventArg))
-            {
-                ProcessAccept(acceptEventArg);
-            }
-        }
-
-        private void ProcessAccept(SocketAsyncEventArgs acceptEventArgs)
-        {
-            if (acceptEventArgs.SocketError == SocketError.Success)
-            {
-                SocketAsyncEventArgs srEventArgs = sendReceivePool.Pop();
-
-                // Pass the socket from the "accept" SAEA to "send/receive" SAEA.
-                srEventArgs.AcceptSocket = acceptEventArgs.AcceptSocket;
-                StartReceive(srEventArgs);
-
-                // Remove "accept" SAEA socket and put it back in pool to be used for the next accept operation.
-                acceptEventArgs.AcceptSocket = null;
-                acceptPool.Push(acceptEventArgs);
-                StartAccept();
-            }
-            else
-            {
-                acceptEventArgs.AcceptSocket.Close();
-                acceptPool.Push(acceptEventArgs);
-                maxConnectionEnforcer.Release();
-                StartAccept();
-            }
         }
 
 
@@ -188,7 +117,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void StartConnect(SocketAsyncEventArgs connectEventArgs)
         {
-            maxConnectionEnforcer.WaitOne();
             if (!connectEventArgs.AcceptSocket.ConnectAsync(connectEventArgs))
             {
                 ProcessConnect(connectEventArgs);
@@ -217,12 +145,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 connectEventArgs.AcceptSocket.Close();
                 connectPool.Push(connectEventArgs);
-                maxConnectionEnforcer.Release();
             }
         }
 
 
-        private void StartReceive(SocketAsyncEventArgs recEventArgs)
+        internal void StartReceive(SocketAsyncEventArgs recEventArgs)
         {
             if (!recEventArgs.AcceptSocket.ReceiveAsync(recEventArgs))
             {
@@ -302,8 +229,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             msgMan.Init();
 
             sendReceivePool.Push(srEventArgs);
-
-            maxConnectionEnforcer.Release();
         }
     }
 }
