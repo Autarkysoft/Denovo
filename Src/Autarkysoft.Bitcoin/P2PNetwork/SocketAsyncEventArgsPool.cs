@@ -46,38 +46,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private bool isDisposed = false;
 
         /// <summary>
-        /// Releases the resources used by this class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(pool is null))
-                    {
-                        foreach (var item in pool)
-                        {
-                            item.Dispose();
-                        }
-                    }
-
-                    pool = null;
-                }
-
-                isDisposed = true;
-            }
-        }
-
-        /// <summary>
         /// Releases all resources used by the current instance of this class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!isDisposed)
+            {
+                if (!(pool is null))
+                {
+                    foreach (var item in pool)
+                    {
+                        item?.Dispose();
+                    }
+                }
+
+                pool = null;
+            }
+
+            isDisposed = true;
         }
     }
 }
