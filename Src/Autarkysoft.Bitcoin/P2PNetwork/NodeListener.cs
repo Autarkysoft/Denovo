@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -19,9 +20,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Initializes a new instance of the <see cref="NodeListener"/> using the given parameters.
         /// </summary>
+        /// <param name="peerList">List of peers (is used to add the connected node to)</param>
         /// <param name="blockchain">Blockchain database to use</param>
-        public NodeListener(IBlockchain blockchain)
+        public NodeListener(ICollection<Node> peerList, IBlockchain blockchain)
         {
+            peers = peerList;
             this.blockchain = blockchain;
 
             int MaxConnections = 3;
@@ -43,6 +46,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private Semaphore maxConnectionEnforcer;
         private readonly int backlog;
         private SocketAsyncEventArgsPool acceptPool;
+        private ICollection<Node> peers;
         private readonly IBlockchain blockchain;
 
         /// <summary>
@@ -72,6 +76,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             if (acceptEventArgs.SocketError == SocketError.Success)
             {
                 Node node = new Node(blockchain);
+                peers.Add(node);
                 SocketAsyncEventArgs srEventArgs = node.sendReceivePool.Pop();
 
                 // Pass the socket from the "accept" SAEA to "send/receive" SAEA.
@@ -118,6 +123,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     if (!(acceptPool is null))
                         acceptPool.Dispose();
                     acceptPool = null;
+
+                    peers = null;
                 }
 
                 isDisposed = true;
