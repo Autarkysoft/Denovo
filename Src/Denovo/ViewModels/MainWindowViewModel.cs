@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Denovo.Services;
 using System;
+using System.Collections.ObjectModel;
 using System.Net;
 using System.Reflection;
 
@@ -18,6 +19,7 @@ namespace Denovo.ViewModels
         public MainWindowViewModel()
         {
             WinMan = new WindowManager();
+            node = new NodeConnector(AllNodes, new MockBlockChain());
         }
 
 
@@ -32,7 +34,8 @@ namespace Denovo.ViewModels
             public Target GetTarget(int height) => throw new NotImplementedException();
         }
 
-        private readonly Node node = new Node(new MockBlockChain());
+        public ObservableCollection<Node> AllNodes { get; set; } = new ObservableCollection<Node>();
+        private readonly NodeConnector node;
 
 
         private string _ip;

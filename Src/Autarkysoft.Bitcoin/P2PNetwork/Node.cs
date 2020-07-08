@@ -7,7 +7,6 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
-using System.Net;
 using System.Net.Sockets;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -15,7 +14,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// <summary>
     /// Node handles communications between each bitcoin node on peer to peer network.
     /// </summary>
-    public class Node
+    public class Node : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of <see cref="Node"/> for <see cref="NetworkType.MainNet"/> using the default parameters.
@@ -38,7 +37,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             // TODO: the following values are for testing, they should be set by the caller
             // they need more checks for correct and optimal values
-            int MaxConnectOps = 10;
             buffLen = 200;
             int bytesPerSaea = buffLen;
             int sendReceiveSaeaCount = 10;
@@ -46,12 +44,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             var verPl = new VersionPayload(protocolVersion, servs, blockchain.Height, relay);
             Message verMsg = new Message(verPl, netType);
-
-            connectPool = new SocketAsyncEventArgsPool(MaxConnectOps);
-            for (int i = 0; i < MaxConnectOps; i++)
-            {
-                connectPool.Push(CreateNewConnectSaea());
-            }
 
             buffMan = new BufferManager(totalBytes, bytesPerSaea);
 
@@ -71,8 +63,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         private readonly int buffLen;
-        private readonly SocketAsyncEventArgsPool connectPool;
-        internal readonly SocketAsyncEventArgsPool sendReceivePool;
+        internal SocketAsyncEventArgsPool sendReceivePool;
         private readonly BufferManager buffMan;
         private readonly IReplyManager repMan = new ReplyManager();
 
@@ -90,61 +81,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     break;
                 default:
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
-            }
-        }
-
-
-        private SocketAsyncEventArgs CreateNewConnectSaea()
-        {
-            SocketAsyncEventArgs connectEventArg = new SocketAsyncEventArgs();
-            connectEventArg.Completed += new EventHandler<SocketAsyncEventArgs>((sender, e) => ProcessConnect(e));
-            return connectEventArg;
-        }
-
-
-        /// <summary>
-        /// Connects to a node by using the given <see cref="EndPoint"/>.
-        /// </summary>
-        /// <param name="ep"><see cref="EndPoint"/> to use</param>
-        public void StartConnect(EndPoint ep)
-        {
-            SocketAsyncEventArgs connectEventArgs = connectPool.Count > 0 ? connectPool.Pop() : CreateNewConnectSaea();
-            connectEventArgs.RemoteEndPoint = ep;
-            connectEventArgs.AcceptSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-            StartConnect(connectEventArgs);
-        }
-
-        private void StartConnect(SocketAsyncEventArgs connectEventArgs)
-        {
-            if (!connectEventArgs.AcceptSocket.ConnectAsync(connectEventArgs))
-            {
-                ProcessConnect(connectEventArgs);
-            }
-        }
-
-        private void ProcessConnect(SocketAsyncEventArgs connectEventArgs)
-        {
-            if (connectEventArgs.SocketError == SocketError.Success)
-            {
-                SocketAsyncEventArgs srEventArgs = sendReceivePool.Pop();
-
-                // Pass the socket from the "connect" SAEA to "send/receive" SAEA.
-                srEventArgs.AcceptSocket = connectEventArgs.AcceptSocket;
-
-                MessageManager msgMan = srEventArgs.UserToken as MessageManager;
-                msgMan.StartHandShake(srEventArgs);
-
-                StartSend(srEventArgs);
-
-                // Remove "connect" SAEA socket and put it back in pool to be used for the next connect operation.
-                connectEventArgs.AcceptSocket = null;
-                connectPool.Push(connectEventArgs);
-            }
-            else
-            {
-                connectEventArgs.AcceptSocket.Close();
-                connectPool.Push(connectEventArgs);
             }
         }
 
@@ -182,7 +118,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
-        private void StartSend(SocketAsyncEventArgs sendEventArgs)
+        internal void StartSend(SocketAsyncEventArgs sendEventArgs)
         {
             if (!sendEventArgs.AcceptSocket.SendAsync(sendEventArgs))
             {
@@ -230,5 +166,34 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             sendReceivePool.Push(srEventArgs);
         }
+
+
+        private bool isDisposed = false;
+
+        /// <summary>
+        /// Releases the resources used by this instance.
+        /// </summary>
+        /// <param name="disposing">
+        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!isDisposed)
+            {
+                if (disposing)
+                {
+                    if (!(sendReceivePool is null))
+                        sendReceivePool.Dispose();
+                    sendReceivePool = null;
+                }
+
+                isDisposed = true;
+            }
+        }
+
+        /// <summary>
+        /// Releases all resources used by this instance.
+        /// </summary>
+        public void Dispose() => Dispose(true);
     }
 }
