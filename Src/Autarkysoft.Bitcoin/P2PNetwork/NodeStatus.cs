@@ -7,6 +7,9 @@ using System;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
+    /// <summary>
+    /// Used in each <see cref="Node"/> to show its status at all times.
+    /// </summary>
     public class NodeStatus : INodeStatus
     {
         private int violation;
@@ -22,6 +25,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public bool ShouldDisconnect => violation > DisconnectThreshold;
         /// <inheritdoc/>
         public DateTime LastSeen { get; private set; }
+        /// <inheritdoc/>
+        public HandShakeState HandShake { get; set; } = HandShakeState.None;
 
         /// <inheritdoc/>
         public void UpdateTime() => LastSeen = DateTime.Now;
