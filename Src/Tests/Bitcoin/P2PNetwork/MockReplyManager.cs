@@ -17,9 +17,9 @@ namespace Tests.Bitcoin.P2PNetwork
     {
         private int index;
         public PayloadType[] toReceive;
-        public Message[] toReply;
+        public Message[][] toReply;
 
-        public Message GetReply(Message msg)
+        public Message[] GetReply(Message msg)
         {
             if (toReceive == null || index >= toReceive.Length)
             {
@@ -32,7 +32,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 Assert.True(false, "A different message was received.");
             }
 
-            Message reply = toReply?[index];
+            Message[] reply = toReply?[index];
             index++;
             return reply;
         }

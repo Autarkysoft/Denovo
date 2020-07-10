@@ -24,8 +24,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="bufferLength">Size of the buffer used for each <see cref="SocketAsyncEventArgs"/> object</param>
         /// <param name="versionMessage">Version message (used for initiating handshake)</param>
         /// <param name="repMan">A reply manager to create appropriate response to a given message</param>
+        /// <param name="ns">Node status</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
-        public MessageManager(int bufferLength, Message versionMessage, IReplyManager repMan,
+        public MessageManager(int bufferLength, Message versionMessage, IReplyManager repMan, INodeStatus ns,
                               NetworkType netType = NetworkType.MainNet)
         {
             if (bufferLength <= 0)
@@ -44,6 +45,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             verMsg = versionMessage;
             replyManager = repMan;
+            NodeStatus = ns;
 
             buffLen = bufferLength;
             Init();
@@ -81,10 +83,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Indicates whether there is any data to send
         /// </summary>
         public bool HasDataToSend => remainSend > 0 || toSendQueue.Count > 0;
+
         /// <summary>
-        /// Indicates whether the handshake process between two nodes is already performed and succeeded
+        /// Contains the node's current state
         /// </summary>
-        public bool IsHandShakeComplete { get; private set; }
+        public INodeStatus NodeStatus { get; set; }
 
         private byte[] tempHolder;
 
@@ -95,7 +98,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             DataToSend = null;
             toSendQueue.Clear();
-            IsHandShakeComplete = false;
+            NodeStatus.HandShake = HandShakeState.None;
             IsReceiveCompleted = true;
         }
 
@@ -133,14 +136,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         /// <summary>
-        /// Starts the handshake process (called must check <see cref="IsHandShakeComplete"/> before calling this).
+        /// Starts the handshake process by enqueueing a version message to be sent
         /// </summary>
         /// <param name="srEventArgs">Socket arg to use</param>
         public void StartHandShake(SocketAsyncEventArgs srEventArgs)
         {
             toSendQueue.Enqueue(verMsg);
             SetSendBuffer(srEventArgs);
-            IsHandShakeComplete = true;
+            NodeStatus.HandShake = HandShakeState.Sent;
         }
 
 
@@ -167,10 +170,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             {
                                 IsReceiveCompleted = true;
 
-                                Message reply = replyManager.GetReply(msg);
-                                if (!(reply is null))
+                                Message[] reply = replyManager.GetReply(msg);
+                                if (reply != null)
                                 {
-                                    toSendQueue.Enqueue(reply);
+                                    foreach (var item in reply)
+                                    {
+                                        toSendQueue.Enqueue(item);
+                                    }
                                 }
 
                                 // TODO: handle received message here. eg. write received block to disk,...

@@ -20,7 +20,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Initializes a new instance of <see cref="Node"/> for <see cref="NetworkType.MainNet"/> using the default parameters.
         /// </summary>
         /// <param name="blockchain">The blockchain (database) manager</param>
-        public Node(IBlockchain blockchain) :
+        internal Node(IBlockchain blockchain) :
             this(Constants.P2PProtocolVersion, NodeServiceFlags.All, blockchain, true, NetworkType.MainNet)
         {
         }
@@ -33,8 +33,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="blockchain">The blockchain (database) manager</param>
         /// <param name="relay">True if the node wants to relay new transactions and blocks to other peers</param>
         /// <param name="netType">Network type</param>
-        public Node(int protocolVersion, NodeServiceFlags servs, IBlockchain blockchain, bool relay, NetworkType netType)
+        internal Node(int protocolVersion, NodeServiceFlags servs, IBlockchain blockchain, bool relay, NetworkType netType)
         {
+            NodeStatus = new NodeStatus();
+            repMan = new ReplyManager(NodeStatus, netType);
+
             // TODO: the following values are for testing, they should be set by the caller
             // they need more checks for correct and optimal values
             buffLen = 200;
@@ -54,7 +57,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                 buffMan.SetBuffer(sArg);
                 sArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-                sArg.UserToken = new MessageManager(bytesPerSaea, verMsg, repMan, netType);
+                sArg.UserToken = new MessageManager(bytesPerSaea, verMsg, repMan, NodeStatus, netType);
 
                 sendReceivePool.Push(sArg);
             }
@@ -65,7 +68,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly int buffLen;
         internal SocketAsyncEventArgsPool sendReceivePool;
         private readonly BufferManager buffMan;
-        private readonly IReplyManager repMan = new ReplyManager();
+        private readonly IReplyManager repMan;
+
+        /// <summary>
+        /// Contains the node's current state
+        /// </summary>
+        public INodeStatus NodeStatus { get; set; }
 
 
 

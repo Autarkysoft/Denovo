@@ -15,14 +15,25 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         None,
         /// <summary>
+        /// This client received a <see cref="Messages.MessagePayloads.VersionPayload"/> and replied with
+        /// <see cref="Messages.MessagePayloads.VerackPayload"/> and <see cref="Messages.MessagePayloads.VersionPayload"/>
+        /// and is waiting for a <see cref="Messages.MessagePayloads.VerackPayload"/> response.
+        /// </summary>
+        ReceivedAndReplied,
+        /// <summary>
         /// This client sent the <see cref="Messages.MessagePayloads.VersionPayload"/> and is waiting for reply
         /// </summary>
         Sent,
         /// <summary>
-        /// This client received a <see cref="Messages.MessagePayloads.VersionPayload"/> and has to reply according to
-        /// previous <see cref="HandShakeState"/>
+        /// This client sent the <see cref="Messages.MessagePayloads.VersionPayload"/> and received 
+        /// <see cref="Messages.MessagePayloads.VerackPayload"/> but not <see cref="Messages.MessagePayloads.VersionPayload"/>.
         /// </summary>
-        Received,
+        SentAndConfirmed,
+        /// <summary>
+        /// This client sent the <see cref="Messages.MessagePayloads.VersionPayload"/> and received 
+        /// <see cref="Messages.MessagePayloads.VersionPayload"/> but not <see cref="Messages.MessagePayloads.VerackPayload"/>.
+        /// </summary>
+        SentAndReceived,
         /// <summary>
         /// Handshake is finished no more <see cref="Messages.MessagePayloads.VersionPayload"/> or
         /// <see cref="Messages.MessagePayloads.VerackPayload"/> should be sent or received

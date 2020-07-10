@@ -20,9 +20,8 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void ConstructorTest()
         {
-            MessageManager man = new MessageManager(20, null, new MockReplyManager(), NetworkType.MainNet);
+            MessageManager man = new MessageManager(20, null, new MockReplyManager(), new NodeStatus(), NetworkType.MainNet);
 
-            Assert.False(man.IsHandShakeComplete);
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
             Assert.Null(man.DataToSend);
@@ -31,25 +30,23 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void DataToSendTest()
         {
-            MessageManager man = new MessageManager(20, null, new MockReplyManager(), NetworkType.MainNet)
+            MessageManager man = new MessageManager(20, null, new MockReplyManager(), new NodeStatus(), NetworkType.MainNet)
             {
                 DataToSend = null
             };
-            Assert.False(man.IsHandShakeComplete);
+            
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
             Helper.ComparePrivateField(man, "sendOffset", 0);
             Helper.ComparePrivateField(man, "remainSend", 0);
 
             man.DataToSend = new byte[0];
-            Assert.False(man.IsHandShakeComplete);
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
             Helper.ComparePrivateField(man, "sendOffset", 0);
             Helper.ComparePrivateField(man, "remainSend", 0);
 
             man.DataToSend = new byte[3] { 1, 2, 3 };
-            Assert.False(man.IsHandShakeComplete);
             Assert.True(man.IsReceiveCompleted);
             Assert.True(man.HasDataToSend);
             Helper.ComparePrivateField(man, "sendOffset", 0);
@@ -95,7 +92,7 @@ namespace Tests.Bitcoin.P2PNetwork
         public void SetSendBufferTest(int buffLen, byte[] toSend, byte[] expecBuffer1, byte[] expecBuffer2,
                                       int sendLen1, int sendLen2)
         {
-            MessageManager man = new MessageManager(buffLen, null, new MockReplyManager(), NetworkType.MainNet)
+            MessageManager man = new MessageManager(buffLen, null, new MockReplyManager(), new NodeStatus(), NetworkType.MainNet)
             {
                 DataToSend = toSend
             };
@@ -138,7 +135,7 @@ namespace Tests.Bitcoin.P2PNetwork
             var pl = new MockSerializableMessagePayload(PayloadType.Version, new byte[3] { 1, 2, 3 });
             Message msg = new Message(pl, NetworkType.MainNet);
             byte[] msgSer = Helper.HexToBytes("f9beb4d976657273696f6e00000000000300000019c6197e010203");
-            MessageManager man = new MessageManager(30, msg, new MockReplyManager(), NetworkType.MainNet);
+            MessageManager man = new MessageManager(30, msg, new MockReplyManager(), new NodeStatus(), NetworkType.MainNet);
             using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
             sarg.SetBuffer(new byte[30], 0, 30);
 
@@ -151,7 +148,6 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.Equal(msgSer.Length, sarg.Count);
             Assert.Equal(0, sarg.Offset);
             Assert.Equal(msgSer, man.DataToSend);
-            Assert.True(man.IsHandShakeComplete);
             Assert.False(man.HasDataToSend);
             Assert.True(man.IsReceiveCompleted);
         }
@@ -180,7 +176,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockReplyManager()
                 {
                     toReceive = new PayloadType[] { PayloadType.Version },
-                    toReply = new Message[] { mockMsg }
+                    toReply = new Message[][] { new Message[] { mockMsg } }
                 },
                 Helper.HexToBytes("f9beb4d976657273696f6e0000000000650000005f1a69d2" +
                 "721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d" +
@@ -194,7 +190,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [MemberData(nameof(GetReadBytesCases))]
         public void ReadBytesTest(IReplyManager repMan, byte[] buffer, int buffLen, bool hasSend)
         {
-            MessageManager man = new MessageManager(30, null, repMan);
+            MessageManager man = new MessageManager(30, null, repMan, new NodeStatus());
             man.ReadBytes(buffer, buffLen);
             Assert.Equal(hasSend, man.HasDataToSend);
         }
@@ -206,9 +202,9 @@ namespace Tests.Bitcoin.P2PNetwork
             var repMan = new MockReplyManager()
             {
                 toReceive = new PayloadType[] { PayloadType.Version },
-                toReply = new Message[] { mockMsg }
+                toReply = new Message[][] { new Message[] { mockMsg } }
             };
-            MessageManager man = new MessageManager(30, null, repMan);
+            MessageManager man = new MessageManager(30, null, repMan, new NodeStatus());
 
             man.ReadBytes(null, 0);
             Assert.True(man.IsReceiveCompleted);

@@ -19,6 +19,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="msg"><see cref="Message"/> to reply to</param>
         /// <returns>Response <see cref="Message"/> or null</returns>
-        Message GetReply(Message msg);
+        Message[] GetReply(Message msg);
     }
 }
