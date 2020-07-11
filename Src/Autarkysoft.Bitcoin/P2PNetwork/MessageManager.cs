@@ -58,21 +58,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly Message verMsg;
         private readonly IReplyManager replyManager;
 
-        private byte[] _sendData;
         /// <summary>
         /// Gets or sets the data to be sent
         /// </summary>
-        public byte[] DataToSend
-        {
-            get => _sendData;
-            set
-            {
-                remainSend = value == null ? 0 : value.Length;
-                sendOffset = 0;
-                _sendData = value;
-            }
-        }
-        private int sendOffset, remainSend;
+        public byte[] DataToSend { get; set; }
 
 
         /// <summary>
@@ -82,7 +71,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Indicates whether there is any data to send
         /// </summary>
-        public bool HasDataToSend => remainSend > 0 || toSendQueue.Count > 0;
+        public bool HasDataToSend => DataToSend != null || toSendQueue.Count > 0;
 
         /// <summary>
         /// Contains the node's current state
@@ -109,7 +98,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="sendEventArgs">Socket arg to use</param>
         public void SetSendBuffer(SocketAsyncEventArgs sendEventArgs)
         {
-            if (remainSend == 0)
+            if (DataToSend == null)
             {
                 Message msg = toSendQueue.Dequeue();
                 FastStream stream = new FastStream(Constants.MessageHeaderSize + msg.PayloadData.Length);
@@ -117,21 +106,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 DataToSend = stream.ToByteArray();
             }
 
-            if (remainSend >= buffLen)
+            if (DataToSend.Length <= buffLen)
             {
-                Buffer.BlockCopy(DataToSend, sendOffset, sendEventArgs.Buffer, 0, buffLen);
-                sendEventArgs.SetBuffer(0, buffLen);
+                Buffer.BlockCopy(DataToSend, 0, sendEventArgs.Buffer, sendEventArgs.Offset, DataToSend.Length);
+                sendEventArgs.SetBuffer(sendEventArgs.Offset, DataToSend.Length);
 
-                sendOffset += buffLen;
-                remainSend -= buffLen;
+                DataToSend = null;
             }
-            else if (remainSend < buffLen)
+            else // (DataToSend.Length > buffLen)
             {
-                Buffer.BlockCopy(DataToSend, sendOffset, sendEventArgs.Buffer, 0, remainSend);
-                sendEventArgs.SetBuffer(0, remainSend);
+                Buffer.BlockCopy(DataToSend, 0, sendEventArgs.Buffer, sendEventArgs.Offset, buffLen);
+                sendEventArgs.SetBuffer(sendEventArgs.Offset, buffLen);
 
-                sendOffset += remainSend;
-                remainSend = 0;
+                byte[] rem = new byte[DataToSend.Length - buffLen];
+                Buffer.BlockCopy(DataToSend, buffLen, rem, 0, rem.Length);
+                DataToSend = rem;
             }
         }
 
@@ -152,13 +141,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="buffer">Buffer containing the received bytes</param>
         /// <param name="len">Number of bytes received</param>
-        public void ReadBytes(byte[] buffer, int len)
+        /// <param name="offert">Offset inside <paramref name="buffer"/> parameter where the data begins</param>
+        public void ReadBytes(byte[] buffer, int len, int offert)
         {
             if (len > 0 && buffer != null)
             {
                 if (IsReceiveCompleted && len >= Constants.MessageHeaderSize)
                 {
-                    FastStreamReader stream = new FastStreamReader(buffer, 0, len);
+                    FastStreamReader stream = new FastStreamReader(buffer, offert, len);
                     if (stream.FindAndSkip(magicBytes))
                     {
                         int rem = stream.GetRemainingBytesCount();
@@ -185,7 +175,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 if (stream.GetRemainingBytesCount() > 0)
                                 {
                                     _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out tempHolder);
-                                    ReadBytes(tempHolder, tempHolder.Length);
+                                    ReadBytes(tempHolder, tempHolder.Length, 0);
                                 }
                                 else
                                 {
@@ -234,7 +224,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     if (tempHolder.Length >= Constants.MessageHeaderSize)
                     {
                         IsReceiveCompleted = true;
-                        ReadBytes(tempHolder, tempHolder.Length);
+                        ReadBytes(tempHolder, tempHolder.Length, 0);
                     }
                     else
                     {
@@ -248,6 +238,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Reads and processes the bytes that were received on this <see cref="SocketAsyncEventArgs"/>.
         /// </summary>
         /// <param name="recEventArgs"><see cref="SocketAsyncEventArgs"/> to use</param>
-        public void ReadBytes(SocketAsyncEventArgs recEventArgs) => ReadBytes(recEventArgs.Buffer, recEventArgs.BytesTransferred);
+        public void ReadBytes(SocketAsyncEventArgs recEventArgs) 
+            => ReadBytes(recEventArgs.Buffer, recEventArgs.BytesTransferred, recEventArgs.Offset);
     }
 }

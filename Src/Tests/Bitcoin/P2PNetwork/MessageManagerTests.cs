@@ -34,23 +34,17 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 DataToSend = null
             };
-            
+
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "sendOffset", 0);
-            Helper.ComparePrivateField(man, "remainSend", 0);
 
             man.DataToSend = new byte[0];
             Assert.True(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "sendOffset", 0);
-            Helper.ComparePrivateField(man, "remainSend", 0);
+            Assert.True(man.HasDataToSend);
 
             man.DataToSend = new byte[3] { 1, 2, 3 };
             Assert.True(man.IsReceiveCompleted);
             Assert.True(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "sendOffset", 0);
-            Helper.ComparePrivateField(man, "remainSend", 3);
         }
 
         public static IEnumerable<object[]> GetSetBufferCases()
@@ -106,17 +100,14 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.Equal(sendLen1, sarg.Count);
             Assert.Equal(0, sarg.Offset);
             Assert.Equal(expecBuffer1, sarg.Buffer);
-            Helper.ComparePrivateField(man, "sendOffset", sendLen1);
 
             if (expecBuffer2 == null)
             {
                 Assert.False(man.HasDataToSend);
-                Helper.ComparePrivateField(man, "remainSend", 0);
             }
             else
             {
                 Assert.True(man.HasDataToSend);
-                Helper.ComparePrivateField(man, "remainSend", sendLen2);
 
                 man.SetSendBuffer(sarg);
 
@@ -124,8 +115,6 @@ namespace Tests.Bitcoin.P2PNetwork
                 Assert.Equal(sendLen2, sarg.Count);
                 Assert.Equal(0, sarg.Offset);
                 Assert.Equal(expecBuffer2, sarg.Buffer);
-                Helper.ComparePrivateField(man, "sendOffset", toSend.Length);
-                Helper.ComparePrivateField(man, "remainSend", 0);
             }
         }
 
@@ -147,7 +136,7 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.Equal(expBuffer, sarg.Buffer);
             Assert.Equal(msgSer.Length, sarg.Count);
             Assert.Equal(0, sarg.Offset);
-            Assert.Equal(msgSer, man.DataToSend);
+            Assert.Null(man.DataToSend); // StartHandShake sets the SAEA buffer and sets the field to null
             Assert.False(man.HasDataToSend);
             Assert.True(man.IsReceiveCompleted);
         }
@@ -191,7 +180,7 @@ namespace Tests.Bitcoin.P2PNetwork
         public void ReadBytesTest(IReplyManager repMan, byte[] buffer, int buffLen, bool hasSend)
         {
             MessageManager man = new MessageManager(30, null, repMan, new NodeStatus());
-            man.ReadBytes(buffer, buffLen);
+            man.ReadBytes(buffer, buffLen, 0);
             Assert.Equal(hasSend, man.HasDataToSend);
         }
 
@@ -206,41 +195,41 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             MessageManager man = new MessageManager(30, null, repMan, new NodeStatus());
 
-            man.ReadBytes(null, 0);
+            man.ReadBytes(null, 0, 0);
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
 
-            man.ReadBytes(new byte[100], 0);
+            man.ReadBytes(new byte[100], 0, 0);
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
 
             // f9beb4d976657273696f6e0000000000650000005f1a69d2
-            man.ReadBytes(new byte[] { 0xf9, 0xbe }, 2);
+            man.ReadBytes(new byte[] { 0xf9, 0xbe }, 2, 0);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
 
-            man.ReadBytes(new byte[] { 0xb4, 0xd9, 0x76 }, 3);
+            man.ReadBytes(new byte[] { 0xb4, 0xd9, 0x76 }, 3, 0);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
             Helper.ComparePrivateField(man, "tempHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76 });
 
-            man.ReadBytes(new byte[18] { 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 }, 18);
+            man.ReadBytes(new byte[18] { 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 }, 18, 0);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
             Helper.ComparePrivateField(man, "tempHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 });
 
             // Header will be read completely but this header needs a payload which is not yet present
-            man.ReadBytes(new byte[] { 0xd2 }, 1);
+            man.ReadBytes(new byte[] { 0xd2 }, 1, 0);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
             Helper.ComparePrivateField(man, "tempHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69, 0xd2 });
 
-            man.ReadBytes(new byte[5] { 0x72, 0x11, 0x01, 0x00, 0x01 }, 5);
+            man.ReadBytes(new byte[5] { 0x72, 0x11, 0x01, 0x00, 0x01 }, 5, 0);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
             Helper.ComparePrivateField(man, "tempHolder", Helper.HexToBytes("f9beb4d976657273696f6e0000000000650000005f1a69d27211010001"));
 
-            man.ReadBytes(Helper.HexToBytes("00000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001"), 96);
+            man.ReadBytes(Helper.HexToBytes("00000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001"), 96, 0);
             Assert.True(man.IsReceiveCompleted);
             Assert.True(man.HasDataToSend);
         }
