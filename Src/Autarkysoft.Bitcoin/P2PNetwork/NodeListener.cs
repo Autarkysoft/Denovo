@@ -21,11 +21,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Initializes a new instance of the <see cref="NodeListener"/> using the given parameters.
         /// </summary>
         /// <param name="peerList">List of peers (is used to add the connected node to)</param>
-        /// <param name="blockchain">Blockchain database to use</param>
-        public NodeListener(ICollection<Node> peerList, IBlockchain blockchain)
+        /// <param name="bc">Blockchain database to use</param>
+        /// <param name="cs">Client settings</param>
+        public NodeListener(ICollection<Node> peerList, IBlockchain bc, IClientSettings cs)
         {
             peers = peerList;
-            this.blockchain = blockchain;
+            blockchain = bc;
+            settings = cs;
 
             int MaxConnections = 3;
             backlog = 3;
@@ -48,6 +50,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private SocketAsyncEventArgsPool acceptPool;
         private ICollection<Node> peers;
         private readonly IBlockchain blockchain;
+        private readonly IClientSettings settings;
 
         /// <summary>
         /// Starts listening for new connections on the given <see cref="EndPoint"/>.
@@ -55,7 +58,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="ep"><see cref="EndPoint"/> to use</param>
         public void StartListen(EndPoint ep)
         {
-            listenSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+            listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             listenSocket.Bind(ep);
             listenSocket.Listen(backlog);
             StartAccept();
@@ -75,7 +78,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (acceptEventArgs.SocketError == SocketError.Success)
             {
-                Node node = new Node(blockchain);
+                Node node = new Node(blockchain, settings);
                 peers.Add(node);
                 SocketAsyncEventArgs srEventArgs = node.sendReceivePool.Pop();
 

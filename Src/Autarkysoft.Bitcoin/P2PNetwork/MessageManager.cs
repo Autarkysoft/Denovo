@@ -22,11 +22,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="bufferLength">Size of the buffer used for each <see cref="SocketAsyncEventArgs"/> object</param>
-        /// <param name="versionMessage">Version message (used for initiating handshake)</param>
         /// <param name="repMan">A reply manager to create appropriate response to a given message</param>
         /// <param name="ns">Node status</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
-        public MessageManager(int bufferLength, Message versionMessage, IReplyManager repMan, INodeStatus ns,
+        public MessageManager(int bufferLength, IReplyManager repMan, INodeStatus ns,
                               NetworkType netType = NetworkType.MainNet)
         {
             if (bufferLength <= 0)
@@ -43,7 +42,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             };
             this.netType = netType;
 
-            verMsg = versionMessage;
             replyManager = repMan;
             NodeStatus = ns;
 
@@ -55,7 +53,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly int buffLen;
         private readonly NetworkType netType;
         private readonly byte[] magicBytes;
-        private readonly Message verMsg;
         private readonly IReplyManager replyManager;
 
         /// <summary>
@@ -130,7 +127,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="srEventArgs">Socket arg to use</param>
         public void StartHandShake(SocketAsyncEventArgs srEventArgs)
         {
-            toSendQueue.Enqueue(verMsg);
+            toSendQueue.Enqueue(replyManager.GetVersionMsg());
             SetSendBuffer(srEventArgs);
             NodeStatus.HandShake = HandShakeState.Sent;
         }

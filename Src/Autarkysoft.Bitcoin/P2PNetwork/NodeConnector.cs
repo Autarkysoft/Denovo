@@ -21,11 +21,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Initializes a new instance of the <see cref="NodeConnector"/> using the given parameters.
         /// </summary>
         /// <param name="peerList">List of peers (is used to add the connected node to)</param>
-        /// <param name="blockchain">Blockchain database to use</param>
-        public NodeConnector(ICollection<Node> peerList, IBlockchain blockchain)
+        /// <param name="bc">Blockchain database to use</param>
+        /// <param name="cs">Client settings</param>
+        public NodeConnector(ICollection<Node> peerList, IBlockchain bc, IClientSettings cs)
         {
             peers = peerList;
-            this.blockchain = blockchain;
+            blockchain = bc;
+            settings = cs;
 
             int MaxConnections = 3;
             maxConnectionEnforcer = new Semaphore(MaxConnections, MaxConnections);
@@ -45,6 +47,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private SocketAsyncEventArgsPool connectPool;
         private ICollection<Node> peers;
         private readonly IBlockchain blockchain;
+        private readonly IClientSettings settings;
 
 
         /// <summary>
@@ -73,7 +76,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (connectEventArgs.SocketError == SocketError.Success)
             {
-                Node node = new Node(blockchain);
+                Node node = new Node(blockchain, settings);
                 peers.Add(node);
                 SocketAsyncEventArgs srEventArgs = node.sendReceivePool.Pop();
 

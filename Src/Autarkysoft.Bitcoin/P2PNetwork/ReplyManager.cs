@@ -3,9 +3,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
+using System.Net;
 using System.Text;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -21,17 +23,43 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Initializes a new instanse of <see cref="ReplyManager"/> using the given parameters.
         /// </summary>
         /// <param name="ns">Node status</param>
-        /// <param name="nt">Network type</param>
-        public ReplyManager(INodeStatus ns, NetworkType nt)
+        /// <param name="bc">Blockchain database</param>
+        /// <param name="cs">Client settings</param>
+        public ReplyManager(INodeStatus ns, IBlockchain bc, IClientSettings cs)
         {
             nodeStatus = ns;
-            netType = nt;
+            settings = cs;
+            blockchain = bc;
         }
 
 
-        private readonly NetworkType netType;
         private readonly INodeStatus nodeStatus;
+        private readonly IClientSettings settings;
+        private readonly IBlockchain blockchain;
 
+        /// <inheritdoc/>
+        public Message GetVersionMsg() => GetVersionMsg(new NetworkAddress(settings.Services, IPAddress.Loopback, settings.Port));
+
+        /// <inheritdoc/>
+        public Message GetVersionMsg(NetworkAddress addr)
+        {
+            byte[] temp = new byte[8];
+            new Random().NextBytes(temp);
+
+            var ver = new VersionPayload()
+            {
+                Version = settings.ProtocolVersion,
+                Services = settings.Services,
+                Timestamp = settings.Time,
+                ReceivingNodeNetworkAddress = addr,
+                TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.Loopback, settings.Port),
+                Nonce = BitConverter.ToUInt64(temp),
+                UserAgent = settings.UserAgent,
+                StartHeight = blockchain.Height,
+                Relay = settings.Relay
+            };
+            return new Message(ver, settings.Network);
+        }
 
         /// <inheritdoc/>
         public Message[] GetReply(Message msg)
@@ -47,9 +75,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 {
                     if (plt == PayloadType.Verack)
                     {
-                        if (nodeStatus.HandShake == HandShakeState.None ||
-                            nodeStatus.HandShake == HandShakeState.Finished ||
-                            nodeStatus.HandShake == HandShakeState.SentAndConfirmed)
+                        var verack = new VerackPayload();
+                        if (!verack.TryDeserialize(new FastStreamReader(msg.PayloadData), out _))
+                        {
+                            nodeStatus.AddSmallViolation();
+                        }
+                        else if (nodeStatus.HandShake == HandShakeState.None ||
+                                 nodeStatus.HandShake == HandShakeState.Finished ||
+                                 nodeStatus.HandShake == HandShakeState.SentAndConfirmed)
                         {
                             nodeStatus.AddMediumViolation();
                         }
@@ -65,12 +98,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     }
                     else if (plt == PayloadType.Version)
                     {
-                        if (nodeStatus.HandShake == HandShakeState.None)
+                        var version = new VersionPayload();
+                        if (!version.TryDeserialize(new FastStreamReader(msg.PayloadData), out _))
+                        {
+                            nodeStatus.AddSmallViolation();
+                        }
+                        else if (nodeStatus.HandShake == HandShakeState.None)
                         {
                             nodeStatus.HandShake = HandShakeState.ReceivedAndReplied;
                             return new Message[2]
                             {
-                                new Message(new VerackPayload(), netType), new Message(new VersionPayload(), netType)
+                                new Message(new VerackPayload(), settings.Network),
+                                GetVersionMsg(version.TransmittingNodeNetworkAddress)
                             };
                         }
                         else if (nodeStatus.HandShake == HandShakeState.Sent)
@@ -78,7 +117,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             nodeStatus.HandShake = HandShakeState.SentAndReceived;
                             return new Message[1]
                             {
-                                new Message(new VerackPayload(), netType)
+                                new Message(new VerackPayload(), settings.Network)
                             };
                         }
                         else if (nodeStatus.HandShake == HandShakeState.SentAndConfirmed)
@@ -86,7 +125,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             nodeStatus.HandShake = HandShakeState.Finished;
                             return new Message[1]
                             {
-                                new Message(new VerackPayload(), netType)
+                                new Message(new VerackPayload(), settings.Network)
                             };
                         }
                         else if (nodeStatus.HandShake == HandShakeState.ReceivedAndReplied ||
@@ -147,9 +186,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             break;
                         case PayloadType.Ping:
                             var ping = new PingPayload();
-                            ping.TryDeserialize(new FastStreamReader(msg.PayloadData), out _);
-                            return new Message[1] { new Message(new PongPayload(ping.Nonce), netType) };
+                            if (!ping.TryDeserialize(new FastStreamReader(msg.PayloadData), out _))
+                            {
+                                nodeStatus.AddSmallViolation();
+                                break;
+                            }
+                            return new Message[1] { new Message(new PongPayload(ping.Nonce), settings.Network) };
                         case PayloadType.Pong:
+                            var pong = new PongPayload();
+                            if (!pong.TryDeserialize(new FastStreamReader(msg.PayloadData), out _))
+                            {
+                                nodeStatus.AddSmallViolation();
+                                break;
+                            }
                             break;
                         case PayloadType.Reject:
                             // Reject messages are ignored
@@ -170,6 +219,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 }
             }
 
+            nodeStatus.UpdateTime();
             return null;
         }
     }

@@ -19,7 +19,10 @@ namespace Denovo.ViewModels
         public MainWindowViewModel()
         {
             WinMan = new WindowManager();
-            node = new NodeConnector(AllNodes, new MockBlockChain());
+            connector = new NodeConnector(AllNodes, new MockBlockChain(), new ClientSettings());
+            listener = new NodeListener(AllNodes, new MockBlockChain(), new ClientSettings());
+
+            listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
         }
 
 
@@ -35,10 +38,12 @@ namespace Denovo.ViewModels
         }
 
         public ObservableCollection<Node> AllNodes { get; set; } = new ObservableCollection<Node>();
-        private readonly NodeConnector node;
+        private readonly NodeConnector connector;
+        private readonly NodeListener listener;
+        private const int testPortToUse = 9770;
 
 
-        private string _ip;
+        private string _ip = "127.0.0.1";
         public string IpAddress
         {
             get => _ip;
@@ -59,7 +64,7 @@ namespace Denovo.ViewModels
                 Result = string.Empty;
                 if (IPAddress.TryParse(IpAddress, out IPAddress ip))
                 {
-                    node.StartConnect(new IPEndPoint(ip, 8333));
+                    connector.StartConnect(new IPEndPoint(ip, testPortToUse));
                 }
                 else
                 {

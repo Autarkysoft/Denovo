@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
-using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -13,6 +12,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// </summary>
     public interface IReplyManager
     {
+        /// <summary>
+        /// Builds and returns a version message
+        /// </summary>
+        /// <returns>A version message</returns>
+        Message GetVersionMsg();
+
         /// <summary>
         /// Builds and returns the appropriate response to the given <see cref="Message"/>.
         /// In case there is no response null should be returned.
