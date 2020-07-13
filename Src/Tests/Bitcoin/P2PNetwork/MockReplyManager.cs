@@ -15,6 +15,17 @@ namespace Tests.Bitcoin.P2PNetwork
 {
     public class MockReplyManager : IReplyManager
     {
+        internal Message verMessage;
+        public Message GetVersionMsg()
+        {
+            if (verMessage is null)
+            {
+                Assert.True(false, "Version message to return must be set first.");
+            }
+            return verMessage;
+        }
+
+
         private int index;
         public PayloadType[] toReceive;
         public Message[][] toReply;
