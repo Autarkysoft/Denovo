@@ -1,5 +1,12 @@
 ### Release ?.?.? (Next release)
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.1.0...master)
+
+### Release 0.4.0 (2020-07-14)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.0.0...B0.4.1.0)
+* Improvements in P2PNetwork namespace (separate listen and connect operations, decouple more classes, introduce new dependencies: 
+`ClientSettings` and `NodeStatus`, some bug fixes)
+* Small optimization in some of the classes in `Cryptography.Hashing` namespace
+* New BIP: Electrum mnemonics
 
 ### Release 0.4.0 (2020-06-23)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.3.0.0...B0.4.0.0)
