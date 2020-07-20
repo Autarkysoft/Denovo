@@ -59,7 +59,7 @@ namespace Tests.Bitcoin.Blockchain
         private readonly PubkeyScriptType typeToReturn;
 
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
-        public PubkeyScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
     }
 
@@ -155,7 +155,7 @@ namespace Tests.Bitcoin.Blockchain
         private readonly PubkeyScriptType typeToReturn;
 
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
-        public PubkeyScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
     }
 
