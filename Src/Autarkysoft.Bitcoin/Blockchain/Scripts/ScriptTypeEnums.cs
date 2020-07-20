@@ -59,6 +59,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         None,
         /// <summary>
+        /// "Pay to pubkey hash" public script type (useful for optimizing verification)
+        /// </summary>
+        P2PKH,
+        /// <summary>
         /// "Pay to script hash" public script type (top stack item is interpreted as an <see cref="IRedeemScript"/>).
         /// </summary>
         P2SH,

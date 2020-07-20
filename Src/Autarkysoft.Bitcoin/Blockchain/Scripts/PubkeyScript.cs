@@ -119,21 +119,38 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public PubkeyScriptSpecialType GetSpecialType()
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height)
         {
-            // TODO: This can be the ground work for optimizing tx verification. It can skip TryEvaluate and call this first
-            //       then for known types there is no need to create IOpData and run scripts
-            if (Data.Length == 23 && Data[0] == (byte)OP.HASH160 && Data[1] == 20 && Data[^1] == (byte)OP.EQUAL)
+            // DUP HASH160 0x14(data20) EqualVerify CheckSig
+            if (Data.Length == 25 && Data[24] == (byte)OP.CheckSig && Data[23] == (byte)OP.EqualVerify &&
+                Data[2] == 20 && Data[1] == (byte)OP.HASH160 && Data[0] == (byte)OP.DUP)
+            {
+                return PubkeyScriptSpecialType.P2PKH;
+            }
+            // HASH160 0x14(data20) EQUAL
+            else if (Data.Length == 23 && consensus.IsBip16Enabled(height) &&
+                     Data[0] == (byte)OP.HASH160 && Data[1] == 20 && Data[^1] == (byte)OP.EQUAL)
             {
                 return PubkeyScriptSpecialType.P2SH;
             }
-            else if (Data.Length == 22 && Data[0] == 0 && Data[1] == 20)
+            // https://github.com/bitcoin/bitcoin/blob/476436b2dec254bb988f8c7a6cbec1d7bb7cecfd/src/script/script.cpp#L215-L231
+            else if (Data.Length >= 4 && Data.Length <= 42 && consensus.IsSegWitEnabled(height))
             {
-                return PubkeyScriptSpecialType.P2WPKH;
-            }
-            else if (Data.Length == 34 && Data[0] == 0 && Data[1] == 32)
-            {
-                return PubkeyScriptSpecialType.P2WSH;
+                // OP_0 0x14(data20)
+                if (Data.Length == 22 && Data[0] == 0 && Data[1] == 20)
+                {
+                    return PubkeyScriptSpecialType.P2WPKH;
+                }
+                // OP_0 0x20(data32)
+                else if (Data.Length == 34 && Data[0] == 0 && Data[1] == 32)
+                {
+                    return PubkeyScriptSpecialType.P2WSH;
+                }
+                // OP_num PushData()
+                else if ((Data[0] == 0 || (Data[0] >= (byte)OP._1 && Data[0] <= (byte)OP._16)) && Data.Length == Data[1] + 2)
+                {
+                    return PubkeyScriptSpecialType.UnknownWitness;
+                }
             }
 
             return PubkeyScriptSpecialType.None;

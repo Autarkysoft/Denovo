@@ -212,24 +212,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
                 };
 
-                // TODO: add Is*Enabled bool to below GetSpecialType() method
-                PubkeyScriptSpecialType pubType = prevOutput.PubScript.GetSpecialType();
-                if (pubType == PubkeyScriptSpecialType.P2SH && !consensus.IsBip16Enabled(BlockHeight))
-                {
-                    pubType = PubkeyScriptSpecialType.None;
-                }
-                else if ((pubType == PubkeyScriptSpecialType.P2WPKH || pubType == PubkeyScriptSpecialType.P2WSH)
-                         && !consensus.IsSegWitEnabled(BlockHeight))
-                {
-                    pubType = PubkeyScriptSpecialType.None;
-                }
-                else if (pubOps.Length == 2 && pubOps[0] is PushDataOp p1 && (p1.OpValue >= OP._1 && p1.OpValue <= OP._16) &&
-                         pubOps[1] is PushDataOp)
-                {
-                    pubType = PubkeyScriptSpecialType.UnknownWitness;
-                }
+                PubkeyScriptSpecialType pubType = prevOutput.PubScript.GetSpecialType(consensus, BlockHeight);
 
-                if (pubType == PubkeyScriptSpecialType.None)
+                // TODO: optimize for specific pubScrTypes
+                if (pubType == PubkeyScriptSpecialType.None || pubType == PubkeyScriptSpecialType.P2PKH)
                 {
                     TotalSigOpCount += (prevOutput.PubScript.CountSigOps() + currentInput.SigScript.CountSigOps())
                                        * Constants.WitnessScaleFactor;
