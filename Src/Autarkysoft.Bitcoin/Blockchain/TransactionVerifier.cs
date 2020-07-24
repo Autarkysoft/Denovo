@@ -616,13 +616,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 spent += tout.Amount;
             }
-            ulong fee = toSpend - spent;
-            if (fee < 0)
+
+            if (spent > toSpend)
             {
                 error = "Transaction is spending more than it can.";
                 return false;
             }
-            TotalFee += fee;
+            TotalFee += toSpend - spent;
 
             error = null;
             return true;
