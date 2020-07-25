@@ -24,6 +24,71 @@ namespace Tests.Bitcoin.Blockchain
         public virtual int CountSigOps() => throw new NotImplementedException();
     }
 
+    public abstract class MockSigScriptBase : MockScriptBase, ISignatureScript
+    {
+        public virtual void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
+        public virtual void SetToEmpty() => throw new NotImplementedException();
+        public virtual void SetToMultiSig(Signature sig, IRedeemScript redeem, ITransaction tx, int inputIndex) => throw new NotImplementedException();
+        public virtual void SetToP2PK(Signature sig) => throw new NotImplementedException();
+        public virtual void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public virtual void SetToP2SH_P2WPKH(IRedeemScript redeem) => throw new NotImplementedException();
+        public virtual void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public virtual void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
+        public virtual bool VerifyCoinbase(int height, IConsensus consensus) => throw new NotImplementedException();
+    }
+
+    public abstract class MockPubScriptBase : MockScriptBase, IPubkeyScript
+    {
+        public PubkeyScriptType GetPublicScriptType() => throw new NotImplementedException();
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
+        public bool IsUnspendable() => throw new NotImplementedException();
+    }
+
+
+
+    public class MockCoinbaseVerifySigScript : MockSigScriptBase
+    {
+        public MockCoinbaseVerifySigScript(int mockHeight, bool verifyResult, int sigOpCount = -1)
+        {
+            expHeight = mockHeight;
+            retResult = verifyResult;
+            sigOps = sigOpCount;
+        }
+
+        private readonly int expHeight;
+        private readonly bool retResult;
+        private readonly int sigOps;
+
+        public override int CountSigOps()
+        {
+            if (sigOps == -1)
+            {
+                Assert.True(false, "SigOP count must be set first.");
+            }
+            return sigOps;
+        }
+
+        public override bool VerifyCoinbase(int height, IConsensus consensus)
+        {
+            Assert.Equal(expHeight, height);
+            consensus.IsBip34Enabled(height);
+            return retResult;
+        }
+    }
+
+
+    public class MockSigOpCountPubScript : MockPubScriptBase
+    {
+        public MockSigOpCountPubScript(int sigOpCount)
+        {
+            sigOps = sigOpCount;
+        }
+
+        private readonly int sigOps;
+
+        public override int CountSigOps() => sigOps;
+    }
+
 
 
     public class MockSerializableScript : MockScriptBase

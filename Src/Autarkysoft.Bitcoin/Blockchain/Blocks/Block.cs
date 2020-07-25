@@ -231,7 +231,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 // Only has Coinbase transaction and WitnessTxId of coinbase transaction is empty
                 byte[] toHash = new byte[64];
                 byte[] result = new byte[32];
-                Buffer.BlockCopy(commitment, 0, toHash, 32, 0);
+                Buffer.BlockCopy(commitment, 0, toHash, 32, 32);
                 using Sha256 sha = new Sha256();
                 // TODO: this could be optimized more by knowing first 32 bytes are zero
                 //       also optimized more for when commitment is also all zeros

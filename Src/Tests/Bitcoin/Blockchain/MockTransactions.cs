@@ -179,4 +179,63 @@ namespace Tests.Bitcoin.Blockchain
             return string.IsNullOrEmpty(retError);
         }
     }
+
+
+
+    public class MockTxPropInOut : MockTxBase
+    {
+        public MockTxPropInOut(TxIn[] txIns, TxOut[] txOuts, IWitness[] witnesses = null)
+        {
+            _tins = txIns;
+            _touts = txOuts;
+            _wits = witnesses;
+        }
+
+        private TxIn[] _tins;
+        public override TxIn[] TxInList
+        {
+            get
+            {
+                if (_tins == null)
+                {
+                    Assert.True(false, "TxIn array was not set.");
+                }
+                return _tins;
+            }
+
+            set => _tins = value;
+        }
+
+
+        private TxOut[] _touts;
+        public override TxOut[] TxOutList
+        {
+            get
+            {
+                if (_touts == null)
+                {
+                    Assert.True(false, "TxOut array was not set.");
+                }
+                return _touts;
+            }
+
+            set => _touts = value;
+        }
+
+
+        private IWitness[] _wits;
+        public override IWitness[] WitnessList
+        {
+            get
+            {
+                if (_wits == null)
+                {
+                    Assert.True(false, "Witness array was not set.");
+                }
+                return _wits;
+            }
+
+            set => _wits = value;
+        }
+    }
 }

@@ -83,6 +83,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int WitnessScaleFactor = 4;
         /// <summary>
+        /// Minimum byte length of the witness commitment in the coinbase output as defined by BIP-141.
+        /// </summary>
+        public const int MinWitnessCommitmentLen = 38;
+        /// <summary>
         /// The constant string that is attached to the beginning of a message before it is signed
         /// </summary>
         public const string MsgSignConst = "Bitcoin Signed Message:\n";

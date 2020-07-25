@@ -59,6 +59,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public int TotalSigOpCount { get; set; }
         /// <inheritdoc/>
         public ulong TotalFee { get; set; }
+        /// <inheritdoc/>
+        public bool AnySegWit { get; set; }
         /// <summary>
         /// If true will only accept low s values in signatures. This is a standard rule.
         /// </summary>
@@ -70,33 +72,33 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public bool StrictNumberEncoding { get; set; }
 
         /// <inheritdoc/>
-        public bool VerifyCoinbasePrimary(ITransaction transaction, out string error)
+        public bool VerifyCoinbasePrimary(ITransaction coinbase, out string error)
         {
-            if (transaction.TxInList.Length != 1)
+            if (coinbase.TxInList.Length != 1)
             {
                 error = "Coinbase transaction must contain only one input.";
                 return false;
             }
-            if (transaction.TxOutList.Length == 0)
+            if (coinbase.TxOutList.Length == 0)
             {
                 error = "Transaction must contain at least one output.";
                 return false;
             }
 
             var expInputHash = new ReadOnlySpan<byte>(new byte[32]);
-            if (!expInputHash.SequenceEqual(transaction.TxInList[0].TxHash) || transaction.TxInList[0].Index != uint.MaxValue)
+            if (!expInputHash.SequenceEqual(coinbase.TxInList[0].TxHash) || coinbase.TxInList[0].Index != uint.MaxValue)
             {
                 error = "Invalid coinbase outpoint.";
                 return false;
             }
-            if (!transaction.TxInList[0].SigScript.VerifyCoinbase(BlockHeight, consensus))
+            if (!coinbase.TxInList[0].SigScript.VerifyCoinbase(BlockHeight, consensus))
             {
                 error = "Invalid coinbase signature script.";
                 return false;
             }
 
-            TotalSigOpCount += transaction.TxInList[0].SigScript.CountSigOps() * Constants.WitnessScaleFactor;
-            foreach (var tout in transaction.TxOutList)
+            TotalSigOpCount += coinbase.TxInList[0].SigScript.CountSigOps() * Constants.WitnessScaleFactor;
+            foreach (var tout in coinbase.TxOutList)
             {
                 TotalSigOpCount += tout.PubScript.CountSigOps() * Constants.WitnessScaleFactor;
             }
@@ -106,40 +108,16 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
         /// <inheritdoc/>
-        public bool VerifyCoinbaseOutput(ITransaction transaction, ReadOnlySpan<byte> witPubScr, out string error)
+        public bool VerifyCoinbaseOutput(ITransaction coinbase, out string error)
         {
             ulong totalAmount = 0;
-            foreach (var item in transaction.TxOutList)
+            ulong maxAllowed = consensus.GetBlockReward(BlockHeight) + TotalFee;
+            foreach (var item in coinbase.TxOutList)
             {
                 totalAmount += item.Amount;
-                if (totalAmount > consensus.GetBlockReward(BlockHeight) + TotalFee)
+                if (totalAmount > maxAllowed)
                 {
                     error = "Coinbase generates more coins than it should.";
-                    return false;
-                }
-            }
-
-            if (witPubScr != null)
-            {
-                if (transaction.WitnessList == null || transaction.WitnessList.Length != 1 ||
-                transaction.WitnessList[0].Items.Length != 1 || transaction.WitnessList[0].Items[0].data?.Length != 32)
-                {
-                    error = "Invalid coinbase witness.";
-                    return false;
-                }
-
-                bool valid = false;
-                for (int i = transaction.TxOutList.Length - 1; i >= 0; i--)
-                {
-                    if (witPubScr.SequenceEqual(transaction.TxOutList[i].PubScript.Data))
-                    {
-                        valid = true;
-                        break;
-                    }
-                }
-                if (!valid)
-                {
-                    error = "Invalid witness commitment in coinbase output.";
                     return false;
                 }
             }
@@ -158,6 +136,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 TotalSigOpCount += tx.SigOpCount;
                 TotalFee += utxoDb.MarkSpentAndGetFee(tx.TxInList);
+                if (!AnySegWit)
+                {
+                    AnySegWit = tx.WitnessList != null;
+                }
                 error = null;
                 return true;
             }
@@ -336,6 +318,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
                         else if (rdmType == RedeemScriptSpecialType.P2SH_P2WPKH)
                         {
+                            AnySegWit = true;
                             if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length != 2)
                             {
                                 error = $"Mandatory witness is not found." +
@@ -382,6 +365,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
                         else if (rdmType == RedeemScriptSpecialType.P2SH_P2WSH)
                         {
+                            AnySegWit = true;
                             if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length < 1)
                             {
                                 error = $"Mandatory witness is not found." +
@@ -457,6 +441,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2WPKH)
                 {
+                    AnySegWit = true;
                     if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length != 2)
                     {
                         error = $"Mandatory witness is not found." +
@@ -503,6 +488,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2WSH)
                 {
+                    AnySegWit = true;
                     if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length < 1)
                     {
                         error = $"Mandatory witness is not found." +
@@ -576,6 +562,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
                 {
+                    AnySegWit = true;
                     foreach (var op in pubOps)
                     {
                         op.Run(stack, out _);

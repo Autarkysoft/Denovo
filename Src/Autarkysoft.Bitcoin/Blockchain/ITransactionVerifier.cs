@@ -20,31 +20,36 @@ namespace Autarkysoft.Bitcoin.Blockchain
         int BlockHeight { get; set; }
         /// <summary>
         /// Total number of signature operations that this instance has verified so far.
-        /// Must be set/reset by the caller.
+        /// Must be set/reset by the caller for each block.
         /// </summary>
         int TotalSigOpCount { get; set; }
         /// <summary>
         /// Total amount of fees from all the transactions that this instance verified so far.
-        /// Must be set/reset by the caller.
+        /// Must be set/reset by the caller for each block.
         /// </summary>
         ulong TotalFee { get; set; }
+        /// <summary>
+        /// Returns if this instance verified any SegWit transaction.
+        /// Must be reset to false by the caller for each block.
+        /// </summary>
+        bool AnySegWit { get; set; }
 
         /// <summary>
         /// Performs primary checks (1-of-2) on the coinbase transactions (input/output, adds SigOp count)
         /// </summary>
-        /// <param name="transaction">Coinbase transaction to verify</param>
+        /// <param name="coinbase">Coinbase transaction to verify</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if verification was successful; otherwise false.</returns>
-        bool VerifyCoinbasePrimary(ITransaction transaction, out string error);
+        bool VerifyCoinbasePrimary(ITransaction coinbase, out string error);
         /// <summary>
-        /// Performs checks on coinbase transaction's output (2of2) (output amount, WTxId commitment
-        /// for blocks containing SegWit txs)
+        /// Performs checks (2of2) on coinbase transaction's output (output amount, WTxId commitment for blocks containing 
+        /// SegWit txs). This method should be called after <see cref="Verify(ITransaction, out string)"/> is called for 
+        /// all transactions in the block to set the <see cref="TotalFee"/> property.
         /// </summary>
-        /// <param name="transaction">Coinbase transaction to verify</param>
-        /// <param name="witPubScr">The expected pubkey script data (null means there is no witness check)</param>
+        /// <param name="coinbase">Coinbase transaction to verify</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if verification was successful; otherwise false.</returns>
-        bool VerifyCoinbaseOutput(ITransaction transaction, ReadOnlySpan<byte> witPubScr, out string error);
+        bool VerifyCoinbaseOutput(ITransaction coinbase, out string error);
         /// <summary>
         /// Performs all verifications on the given transaction and updates <see cref="TotalSigOpCount"/> and updates
         /// transaction's status inside memory pool and UTXO database.

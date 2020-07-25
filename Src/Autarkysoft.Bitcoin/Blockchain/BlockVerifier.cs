@@ -108,21 +108,40 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            byte[] witPubScr = null;
-            if (consensus.IsSegWitEnabled(block.Height) && block.TransactionList.Any(tx => tx.WitnessList != null))
+            // https://github.com/bitcoin/bitcoin/blob/40a04814d130dfc9131af3f568eb44533e2bcbfc/src/validation.cpp#L3574-L3609
+            if (consensus.IsSegWitEnabled(block.Height))
             {
-                if (coinbase.WitnessList == null || coinbase.WitnessList.Length != 1 ||
-                    coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].data?.Length != 32)
+                // Find commitment among outputs (38-byte OP_RETURN)
+                ReadOnlySpan<byte> start = new byte[6] { 0x6a, 0x24, 0xaa, 0x21, 0xa9, 0xed };
+                int commitPos = -1;
+                for (int i = coinbase.TxOutList.Length - 1; i >= 0; i--)
                 {
-                    error = "Invalid or non-existant witness commitment in coinbase output";
+                    if (coinbase.TxOutList[i].PubScript.Data.Length >= Constants.MinWitnessCommitmentLen &&
+                        ((ReadOnlySpan<byte>)coinbase.TxOutList[i].PubScript.Data).Slice(0, 4).SequenceEqual(start))
+                    {
+                        commitPos = i;
+                        break;
+                    }
+                }
+                if (txVer.AnySegWit && commitPos == -1)
+                {
+                    error = "Witness commitment was not found in coinbase output.";
                     return false;
                 }
+                if (txVer.AnySegWit &&
+                    coinbase.WitnessList == null || coinbase.WitnessList.Length != 1 ||
+                    coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].data?.Length != 32)
+                {
+                    error = "Invalid or non-existant witness commitment in coinbase output.";
+                    return false;
+                }
+
                 byte[] commitment = coinbase.WitnessList[0].Items[0].data;
-                
+
                 // An output expected in coinbase with its PubkeyScript.Data.Length of _at least_ 38 bytes
                 // starting with 0x6a24aa21a9ed and followed by 32 byte commitment hash
                 byte[] root = block.ComputeWitnessMerkleRoot(commitment);
-                witPubScr = new byte[38];
+                byte[] witPubScr = new byte[38];
                 witPubScr[0] = 0x6a;
                 witPubScr[1] = 0x24;
                 witPubScr[2] = 0xaa;
@@ -130,10 +149,18 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 witPubScr[4] = 0xa9;
                 witPubScr[5] = 0xed;
                 Buffer.BlockCopy(root, 0, witPubScr, 6, 32);
+
+                if (!((ReadOnlySpan<byte>)coinbase.TxOutList[commitPos].PubScript.Data)
+                      .Slice(0, Constants.MinWitnessCommitmentLen)
+                      .SequenceEqual(witPubScr))
+                {
+                    error = "Invalid witness commitment in coinbase output.";
+                    return false;
+                }
             }
 
             // TotalFee must be set already in ITransactionVerifier
-            if (!txVer.VerifyCoinbaseOutput(block.TransactionList[0], witPubScr, out error))
+            if (!txVer.VerifyCoinbaseOutput(coinbase, out error))
             {
                 error = $"Invalid coinbase output: {error}";
                 return false;
