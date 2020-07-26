@@ -3,7 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using System;
 using System.Collections.Generic;
@@ -196,6 +198,210 @@ namespace Tests.Bitcoin.Blockchain
             Assert.Equal(expErr, error);
             Assert.Equal(987, verifier.TotalSigOpCount); // SigOps aren't counted/changed here anymore
             Assert.Equal(fee, verifier.TotalFee); // Fee shouldn't change
+        }
+
+
+        public static IEnumerable<object[]> GetTxVerifyCases()
+        {
+            var c = new MockConsensus(MockHeight)
+            {
+                bip65 = true,
+                bip112 = true,
+                strictDer = true,
+                bip147 = true,
+                bip16 = true,
+                segWit = true,
+            };
+            byte[] simpTxHash1 = new byte[32];
+            simpTxHash1[1] = 1;
+            byte[] simpTxHash2 = new byte[32];
+            simpTxHash2[1] = 2;
+            byte[] simpTxHash3 = new byte[32];
+            simpTxHash3[1] = 3;
+
+            var simpPubScr = new PubkeyScript();
+            var simpSigScr = new SignatureScript(new byte[1] { (byte)OP._1 });
+
+            // *** Fee Tests ***
+
+            yield return new object[]
+            {
+                new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = 0, Index = 0, PubScript = simpPubScr }),
+                new MockMempool(null),
+                c,
+                new Transaction()
+                {
+                    TxInList = new TxIn[1]
+                    {
+                        new TxIn(simpTxHash1, 0, simpSigScr, uint.MaxValue)
+                    },
+                    TxOutList = new TxOut[1]
+                    {
+                        new TxOut(0, simpPubScr)
+                    }
+                },
+                true, // Verification success
+                null, // Error
+                0, // Added SigOpCount
+                0, // Added fee
+                false, // AnySegWit
+            };
+            yield return new object[]
+            {
+                new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = 0, Index = 0, PubScript = simpPubScr }),
+                new MockMempool(null),
+                c,
+                new Transaction()
+                {
+                    TxInList = new TxIn[1]
+                    {
+                        new TxIn(simpTxHash1, 0, simpSigScr, uint.MaxValue)
+                    },
+                    TxOutList = new TxOut[1]
+                    {
+                        new TxOut(1, simpPubScr)
+                    }
+                },
+                false, // Verification success
+                "Transaction is spending more than it can.", // Error
+                0, // Added SigOpCount
+                0, // Added fee
+                false, // AnySegWit
+            };
+            yield return new object[]
+            {
+                new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = 123, Index = 0, PubScript = simpPubScr }),
+                new MockMempool(null),
+                c,
+                new Transaction()
+                {
+                    TxInList = new TxIn[1]
+                    {
+                        new TxIn(simpTxHash1, 0, simpSigScr, uint.MaxValue)
+                    },
+                    TxOutList = new TxOut[1]
+                    {
+                        new TxOut(3, simpPubScr)
+                    }
+                },
+                true, // Verification success
+                null, // Error
+                0, // Added SigOpCount
+                120, // Added fee
+                false, // AnySegWit
+            };
+            yield return new object[]
+            {
+                // Make sure ulong is being used for calculation of fee
+                new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = Constants.TotalSupply, Index = 0, PubScript = simpPubScr }),
+                new MockMempool(null),
+                c,
+                new Transaction()
+                {
+                    TxInList = new TxIn[1]
+                    {
+                        new TxIn(simpTxHash1, 0, simpSigScr, uint.MaxValue)
+                    },
+                    TxOutList = new TxOut[1]
+                    {
+                        new TxOut(1000, simpPubScr)
+                    }
+                },
+                true, // Verification success
+                null, // Error
+                0, // Added SigOpCount
+                Constants.TotalSupply - 1000UL, // Added fee
+                false, // AnySegWit
+            };
+            yield return new object[]
+            {
+                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 }, 
+                new IUtxo[] 
+                    { 
+                        new MockUtxo() { Amount = 13, Index = 3, PubScript = simpPubScr },
+                        new MockUtxo() { Amount = 57, Index = 7, PubScript = simpPubScr },
+                        new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr }, 
+                    }),
+                new MockMempool(null),
+                c,
+                new Transaction()
+                {
+                    TxInList = new TxIn[3]
+                    {
+                        new TxIn(simpTxHash1, 3, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash2, 5, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash3, 7, simpSigScr, uint.MaxValue),
+                    },
+                    TxOutList = new TxOut[3]
+                    {
+                        new TxOut(140, simpPubScr),
+                        new TxOut(3, simpPubScr),
+                        new TxOut(1, simpPubScr),
+                    }
+                },
+                false, // Verification success
+                "Transaction is spending more than it can.", // Error
+                0, // Added SigOpCount
+                0, // Added fee
+                false, // AnySegWit
+            };
+            yield return new object[]
+            {
+                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 }, 
+                new IUtxo[] 
+                    { 
+                        new MockUtxo() { Amount = 13, Index = 3, PubScript = simpPubScr },
+                        new MockUtxo() { Amount = 57, Index = 7, PubScript = simpPubScr },
+                        new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr }, 
+                    }),
+                new MockMempool(null),
+                c,
+                new Transaction()
+                {
+                    TxInList = new TxIn[3]
+                    {
+                        new TxIn(simpTxHash1, 3, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash2, 5, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash3, 7, simpSigScr, uint.MaxValue),
+                    },
+                    TxOutList = new TxOut[3]
+                    {
+                        new TxOut(12, simpPubScr),
+                        new TxOut(6, simpPubScr),
+                        new TxOut(50, simpPubScr),
+                    }
+                },
+                true, // Verification success
+                null, // Error
+                0, // Added SigOpCount
+                75, // Added fee
+                false, // AnySegWit
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetTxVerifyCases))]
+        public void VerifyTest(IUtxoDatabase utxoDB, IMemoryPool memPool, IConsensus c, ITransaction tx, bool expB, string expErr,
+                               int expSigOp, ulong expFee, bool expSeg)
+        {
+            // An initial amount is set for both TotalFee and TotalSigOpCount to make sure Verify() 
+            // method always adds to previous values instead of setting them
+            ulong initialFee = 10;
+            int initialSigOp = 20;
+
+            var verifier = new TransactionVerifier(false, utxoDB, memPool, c)
+            {
+                BlockHeight = MockHeight,
+                TotalFee = initialFee,
+                TotalSigOpCount = initialSigOp
+            };
+
+            bool actualB = verifier.Verify(tx, out string error);
+
+            Assert.Equal(expB, actualB);
+            Assert.Equal(expErr, error);
+            Assert.Equal(expSigOp + initialSigOp, verifier.TotalSigOpCount);
+            Assert.Equal(expFee + initialFee, verifier.TotalFee);
+            Assert.Equal(expSeg, verifier.AnySegWit);
         }
     }
 }

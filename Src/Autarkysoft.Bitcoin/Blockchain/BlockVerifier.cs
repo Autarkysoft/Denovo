@@ -166,6 +166,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
+            // TODO: write an "undo" button to mark UTXOs as unspent in case verification of this block failed need to know index)
             // TODO: add block size and weight checks
             // TODO: add block version checks
             error = null;

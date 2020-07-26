@@ -132,8 +132,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
         {
             // If a tx is already in memory pool it must have been verified and be valid.
             // The SigOpCount property must be set by the caller (mempool dependency).
-            if (mempool.Contains(tx))
+            if (!isMempool && mempool.Contains(tx))
             {
+                // TODO: get the tx object from mempool the passed tx (from block) doesn't have any properties set
                 TotalSigOpCount += tx.SigOpCount;
                 TotalFee += utxoDb.MarkSpentAndGetFee(tx.TxInList);
                 if (!AnySegWit)
@@ -144,6 +145,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return true;
             }
 
+            // TODO: these 2 checks should be performed during creation of tx (ctor or Deserialize)
             if (tx.TxInList.Length == 0 || tx.TxOutList.Length == 0)
             {
                 error = "Invalid number of inputs or outputs.";
@@ -155,6 +157,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
             for (int i = 0; i < tx.TxInList.Length; i++)
             {
                 TxIn currentInput = tx.TxInList[i];
+                // TODO: add a condition in UTXO for when it is a coinbase transaction (they are not spendable if haven't 
+                // reached maturity ie. 100 blocks -> thisHeight - spendingCoinbaseHeight >= 100)
                 IUtxo prevOutput = utxoDb.Find(currentInput);
                 if (prevOutput is null)
                 {

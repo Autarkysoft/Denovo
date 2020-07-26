@@ -14,6 +14,35 @@ namespace Tests.Bitcoin.Blockchain
 {
     public class MockUtxoDatabase : IUtxoDatabase
     {
+        public MockUtxoDatabase()
+        {
+        }
+
+        public MockUtxoDatabase(string hashHex, IUtxo output) : this(Helper.HexToBytes(hashHex), output)
+        {
+        }
+
+        public MockUtxoDatabase(byte[] hash, IUtxo output)
+        {
+            Add(hash, output);
+        }
+
+        public MockUtxoDatabase(byte[][] hashes, IUtxo[] toReturn)
+        {
+            if (hashes is null || toReturn is null || hashes.Length != toReturn.Length)
+            {
+                throw new ArgumentException("Invalid inputs.");
+            }
+
+            index = 0;
+            this.hashes = new List<byte[]>(hashes);
+            database = new List<IUtxo>(toReturn);
+        }
+
+        private int index;
+        private List<byte[]> hashes;
+        private List<IUtxo> database;
+
         private class ByteArrayComparer : IEqualityComparer<byte[]>
         {
             public bool Equals(byte[] left, byte[] right)
@@ -37,44 +66,27 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        internal readonly Dictionary<byte[], List<IUtxo>> database = new Dictionary<byte[], List<IUtxo>>(new ByteArrayComparer());
 
         internal void Add(byte[] hash, IUtxo output)
         {
-            if (!database.ContainsKey(hash))
+            if (hashes is null)
             {
-                database.Add(hash, new List<IUtxo>() { output });
+                hashes = new List<byte[]>(1);
+                database = new List<IUtxo>(1);
             }
-            else if (!database[hash].Contains(output))
-            {
-                database[hash].Add(output);
-            }
-            else
-            {
-                Assert.True(false, "Dictionary contains duplicates.");
-            }
+
+            hashes.Add(hash);
+            database.Add(output);
         }
 
         public IUtxo Find(TxIn tin)
         {
-            if (database.TryGetValue(tin.TxHash, out List<IUtxo> res))
-            {
-                foreach (var item in res)
-                {
-                    if (item.Index == tin.Index)
-                    {
-                        return item;
-                    }
-                }
+            Assert.NotNull(hashes);
+            Assert.True(index < hashes.Count, "More calls were made to UTXO-Database.Find() than expected");
 
-                Assert.True(false, "TxIn index doesn't match any of the expected one.");
-                return null;
-            }
-            else
-            {
-                Assert.True(false, $"Unexpected TxIn was given {Helper.BytesToHex(tin.TxHash)}:{tin.Index}.");
-                return null;
-            }
+            Assert.Equal(hashes[index], tin.TxHash);
+
+            return database[index++];
         }
 
         public void MarkSpent(TxIn[] txInList)
