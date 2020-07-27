@@ -203,8 +203,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 // TODO: optimize for specific pubScrTypes
                 if (pubType == PubkeyScriptSpecialType.None || pubType == PubkeyScriptSpecialType.P2PKH)
                 {
-                    TotalSigOpCount += (prevOutput.PubScript.CountSigOps() + currentInput.SigScript.CountSigOps())
-                                       * Constants.WitnessScaleFactor;
+                    TotalSigOpCount += currentInput.SigScript.CountSigOps() * Constants.WitnessScaleFactor;
 
                     if ((tx.WitnessList != null && tx.WitnessList.Length != 0) &&
                         (tx.WitnessList[i].Items.Length != 0))
@@ -606,6 +605,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             foreach (var tout in tx.TxOutList)
             {
                 spent += tout.Amount;
+                TotalSigOpCount += tout.PubScript.CountSigOps() * Constants.WitnessScaleFactor;
             }
 
             if (spent > toSpend)

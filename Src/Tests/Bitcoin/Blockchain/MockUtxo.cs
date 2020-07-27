@@ -15,7 +15,7 @@ namespace Tests.Bitcoin.Blockchain
         public bool IsBlockSpent { get; set; }
         public uint Index { get; set; }
         public ulong Amount { get; set; }
-        public PubkeyScript PubScript { get; set; }
+        public IPubkeyScript PubScript { get; set; }
 
         public override bool Equals(object obj) => obj is MockUtxo other && Index == other.Index;
         public override int GetHashCode() => HashCode.Combine(Index);

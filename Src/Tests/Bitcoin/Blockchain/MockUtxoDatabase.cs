@@ -85,6 +85,7 @@ namespace Tests.Bitcoin.Blockchain
             Assert.True(index < hashes.Count, "More calls were made to UTXO-Database.Find() than expected");
 
             Assert.Equal(hashes[index], tin.TxHash);
+            Assert.Equal(database[index].Index, tin.Index);
 
             return database[index++];
         }

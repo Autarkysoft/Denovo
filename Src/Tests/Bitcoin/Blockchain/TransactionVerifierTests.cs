@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -315,12 +316,12 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 }, 
-                new IUtxo[] 
-                    { 
+                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 },
+                new IUtxo[]
+                    {
                         new MockUtxo() { Amount = 13, Index = 3, PubScript = simpPubScr },
                         new MockUtxo() { Amount = 57, Index = 7, PubScript = simpPubScr },
-                        new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr }, 
+                        new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr },
                     }),
                 new MockMempool(null),
                 c,
@@ -329,8 +330,8 @@ namespace Tests.Bitcoin.Blockchain
                     TxInList = new TxIn[3]
                     {
                         new TxIn(simpTxHash1, 3, simpSigScr, uint.MaxValue),
-                        new TxIn(simpTxHash2, 5, simpSigScr, uint.MaxValue),
-                        new TxIn(simpTxHash3, 7, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash2, 7, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash3, 5, simpSigScr, uint.MaxValue),
                     },
                     TxOutList = new TxOut[3]
                     {
@@ -347,12 +348,12 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 }, 
-                new IUtxo[] 
-                    { 
+                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 },
+                new IUtxo[]
+                    {
                         new MockUtxo() { Amount = 13, Index = 3, PubScript = simpPubScr },
                         new MockUtxo() { Amount = 57, Index = 7, PubScript = simpPubScr },
-                        new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr }, 
+                        new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr },
                     }),
                 new MockMempool(null),
                 c,
@@ -361,8 +362,8 @@ namespace Tests.Bitcoin.Blockchain
                     TxInList = new TxIn[3]
                     {
                         new TxIn(simpTxHash1, 3, simpSigScr, uint.MaxValue),
-                        new TxIn(simpTxHash2, 5, simpSigScr, uint.MaxValue),
-                        new TxIn(simpTxHash3, 7, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash2, 7, simpSigScr, uint.MaxValue),
+                        new TxIn(simpTxHash3, 5, simpSigScr, uint.MaxValue),
                     },
                     TxOutList = new TxOut[3]
                     {
@@ -377,6 +378,54 @@ namespace Tests.Bitcoin.Blockchain
                 75, // Added fee
                 false, // AnySegWit
             };
+
+            // *** Transaction Tests (from signtx cases) ***
+            foreach (var Case in Helper.ReadResource<JArray>("SignedTxTestData"))
+            {
+                Transaction prevTx = new Transaction();
+                prevTx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(Case["TxToSpend"].ToString())), out string _);
+                byte[] prevTxHash = prevTx.GetTransactionHash();
+                var utxoDb = new MockUtxoDatabase();
+
+                for (int i = 0; i < prevTx.TxOutList.Length; i++)
+                {
+                    var utxo = new MockUtxo()
+                    {
+                        Amount = prevTx.TxOutList[i].Amount,
+                        Index = (uint)i,
+                        PubScript = prevTx.TxOutList[i].PubScript
+                    };
+
+                    utxoDb.Add(prevTxHash, utxo);
+                }
+
+                foreach (var item in Case["Cases"])
+                {
+                    Transaction tx = new Transaction();
+                    FastStreamReader stream = new FastStreamReader(Helper.HexToBytes(item["SignedTx"].ToString()));
+                    if (!tx.TryDeserialize(stream, out string err))
+                    {
+                        throw new ArgumentException($"Could not deseralize the given tx case: " +
+                            $"{item["TestName"]}. Error: {err}");
+                    }
+
+                    int sigOpCount = (int)item["SigOpCount"];
+                    ulong fee = (ulong)item["Fee"];
+
+                    yield return new object[]
+                    {
+                        utxoDb,
+                        new MockMempool(null),
+                        c,
+                        tx,
+                        true, // Verification success
+                        null, // Error
+                        sigOpCount,
+                        fee,
+                        tx.WitnessList != null, // AnySegWit
+                    };
+                }
+            }
         }
         [Theory]
         [MemberData(nameof(GetTxVerifyCases))]
@@ -386,7 +435,7 @@ namespace Tests.Bitcoin.Blockchain
             // An initial amount is set for both TotalFee and TotalSigOpCount to make sure Verify() 
             // method always adds to previous values instead of setting them
             ulong initialFee = 10;
-            int initialSigOp = 20;
+            int initialSigOp = 50;
 
             var verifier = new TransactionVerifier(false, utxoDB, memPool, c)
             {
