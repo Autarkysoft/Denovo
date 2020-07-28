@@ -88,15 +88,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                 node.StartSend(srEventArgs);
 
-                // Remove "connect" SAEA socket and put it back in pool to be used for the next connect operation.
+                // Remove "connect" SAEA socket beforing putting it back in pool to be used for the next connect operation.
                 connectEventArgs.AcceptSocket = null;
-                connectPool.Push(connectEventArgs);
             }
             else
             {
                 connectEventArgs.AcceptSocket.Close();
-                connectPool.Push(connectEventArgs);
             }
+
+            connectPool.Push(connectEventArgs);
+            maxConnectionEnforcer.Release();
         }
 
 
