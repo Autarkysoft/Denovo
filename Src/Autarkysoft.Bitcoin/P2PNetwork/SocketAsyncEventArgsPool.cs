@@ -9,11 +9,17 @@ using System.Net.Sockets;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
-    internal sealed class SocketAsyncEventArgsPool : IDisposable
+    /// <summary>
+    /// Thread safe implementation of a stack (LIFO) collection of <see cref="SocketAsyncEventArgs"/> objects.
+    /// </summary>
+    public sealed class SocketAsyncEventArgsPool : IDisposable
     {
-        // initializes the object pool to the specified size.
-        // "capacity" = Maximum number of SocketAsyncEventArgs objects
-        internal SocketAsyncEventArgsPool(int capacity)
+        /// <summary>
+        /// Initializes a new instance of <see cref="SocketAsyncEventArgsPool"/> using the given capacity.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="capacity">Initial number of <see cref="SocketAsyncEventArgs"/> that this stack can contain</param>
+        public SocketAsyncEventArgsPool(int capacity)
         {
             pool = new Stack<SocketAsyncEventArgs>(capacity);
         }

@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -29,12 +28,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             blockchain = bc;
             settings = cs;
 
-            int MaxConnections = 3;
-            maxConnectionEnforcer = new Semaphore(MaxConnections, MaxConnections);
-
-            int MaxConnectOps = 10;
-            connectPool = new SocketAsyncEventArgsPool(MaxConnectOps);
-            for (int i = 0; i < MaxConnectOps; i++)
+            connectPool = new SocketAsyncEventArgsPool(cs.MaxConnectionCount);
+            for (int i = 0; i < cs.MaxConnectionCount; i++)
             {
                 var connectEventArg = new SocketAsyncEventArgs();
                 connectEventArg.Completed += new EventHandler<SocketAsyncEventArgs>((sender, e) => ProcessConnect(e));
@@ -43,7 +38,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
-        private Semaphore maxConnectionEnforcer;
         private SocketAsyncEventArgsPool connectPool;
         private ICollection<Node> peers;
         private readonly IBlockchain blockchain;
@@ -56,7 +50,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="ep"><see cref="EndPoint"/> to use</param>
         public void StartConnect(EndPoint ep)
         {
-            maxConnectionEnforcer.WaitOne();
+            settings.MaxConnectionEnforcer.WaitOne();
             SocketAsyncEventArgs connectEventArgs = connectPool.Pop();
             connectEventArgs.RemoteEndPoint = ep;
             connectEventArgs.AcceptSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -76,28 +70,20 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (connectEventArgs.SocketError == SocketError.Success)
             {
-                Node node = new Node(blockchain, settings);
+                Node node = new Node(blockchain, settings, connectEventArgs.AcceptSocket);
                 peers.Add(node);
-                SocketAsyncEventArgs srEventArgs = node.sendReceivePool.Pop();
 
-                // Pass the socket from the "connect" SAEA to "send/receive" SAEA.
-                srEventArgs.AcceptSocket = connectEventArgs.AcceptSocket;
-
-                MessageManager msgMan = srEventArgs.UserToken as MessageManager;
-                msgMan.StartHandShake(srEventArgs);
-
-                node.StartSend(srEventArgs);
-
-                // Remove "connect" SAEA socket beforing putting it back in pool to be used for the next connect operation.
-                connectEventArgs.AcceptSocket = null;
+                node.StartHandShake();
             }
             else
             {
                 connectEventArgs.AcceptSocket.Close();
+                settings.MaxConnectionEnforcer.Release();
             }
 
+            // Remove "connect" SAEA socket before putting it back in pool to be used for the next connect operation.
+            connectEventArgs.AcceptSocket = null;
             connectPool.Push(connectEventArgs);
-            maxConnectionEnforcer.Release();
         }
 
 
@@ -115,10 +101,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (disposing)
                 {
-                    if (!(maxConnectionEnforcer is null))
-                        maxConnectionEnforcer.Dispose();
-                    maxConnectionEnforcer = null;
-
                     if (!(connectPool is null))
                         connectPool.Dispose();
                     connectPool = null;

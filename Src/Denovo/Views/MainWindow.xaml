@@ -21,6 +21,14 @@
       <Button Content="Config" Command="{Binding Config}" Width="100" HorizontalAlignment="Left"/>
 
       <TextBlock Text="{Binding Result}" TextWrapping="Wrap"/>
+
+      <ListBox Height="200" Items="{Binding AllNodes}">
+        <ListBox.DataTemplates>
+          <DataTemplate>
+            <TextBlock Text="{Binding NodeStatus.HandShake}"/>
+          </DataTemplate>
+        </ListBox.DataTemplates>
+      </ListBox>
     </StackPanel>
 
     <StackPanel Orientation="Vertical" Spacing="5" Grid.Column="1">

@@ -6,12 +6,15 @@
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
     /// <summary>
-    /// Defines client settings. 1 instance should be used by the client and passed to each node instance.
+    /// Defines client settings. One instance should be used by the client and passed to all node instance through both
+    /// <see cref="NodeListener"/> and <see cref="NodeConnector"/>.
     /// Implements <see cref="IClientSettings"/>.
     /// </summary>
     public class ClientSettings : IClientSettings
@@ -56,6 +59,23 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             UserAgent = ua;
             Network = netType;
             Services = servs;
+
+            // TODO: the following values are for testing, they should be set by the caller
+            //       they need more checks for correct and optimal values
+
+            MaxConnectionCount = 5;
+            BufferLength = 200;
+            int totalBytes = BufferLength * MaxConnectionCount * 2;
+            MaxConnectionEnforcer = new Semaphore(MaxConnectionCount, MaxConnectionCount);
+            SendReceivePool = new SocketAsyncEventArgsPool(MaxConnectionCount * 2);
+            var buffMan = new BufferManager(totalBytes, BufferLength);
+
+            for (int i = 0; i < MaxConnectionCount * 2; i++)
+            {
+                var sArg = new SocketAsyncEventArgs();
+                buffMan.SetBuffer(sArg);
+                SendReceivePool.Push(sArg);
+            }
         }
 
 
@@ -73,5 +93,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public long Time => UnixTimeStamp.GetEpochUtcNow();
         /// <inheritdoc/>
         public ushort Port { get; set; }
+
+        /// <inheritdoc/>
+        public int BufferLength { get; }
+        /// <inheritdoc/>
+        public int MaxConnectionCount { get; set; }
+        /// <inheritdoc/>
+        public Semaphore MaxConnectionEnforcer { get; }
+        /// <inheritdoc/>
+        public SocketAsyncEventArgsPool SendReceivePool { get; }
     }
 }

@@ -122,6 +122,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         /// <summary>
+        /// Sets <see cref="SocketAsyncEventArgs"/>'s buffer for a send operation using the given <see cref="Message"/>.
+        /// </summary>
+        /// <param name="sendSAEA">Socket arg to use</param>
+        /// <param name="msg">Message to send</param>
+        public void SetSendBuffer(SocketAsyncEventArgs sendSAEA, Message msg)
+        {
+            // TODO: add lock
+            var stream = new FastStream();
+            msg.Serialize(stream);
+            DataToSend = stream.ToByteArray();
+            SetSendBuffer(sendSAEA);
+        }
+
+
+        /// <summary>
         /// Starts the handshake process by enqueueing a version message to be sent
         /// </summary>
         /// <param name="srEventArgs">Socket arg to use</param>
@@ -235,7 +250,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Reads and processes the bytes that were received on this <see cref="SocketAsyncEventArgs"/>.
         /// </summary>
         /// <param name="recEventArgs"><see cref="SocketAsyncEventArgs"/> to use</param>
-        public void ReadBytes(SocketAsyncEventArgs recEventArgs) 
+        public void ReadBytes(SocketAsyncEventArgs recEventArgs)
             => ReadBytes(recEventArgs.Buffer, recEventArgs.BytesTransferred, recEventArgs.Offset);
     }
 }

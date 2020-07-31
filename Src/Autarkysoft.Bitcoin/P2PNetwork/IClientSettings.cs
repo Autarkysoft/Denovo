@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -40,5 +41,23 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Port that this client listens to and makes connection over
         /// </summary>
         ushort Port { get; set; }
+
+        /// <summary>
+        /// Length of the buffer in bytes used by each <see cref="System.Net.Sockets.SocketAsyncEventArgs"/>
+        /// </summary>
+        int BufferLength { get; }
+        /// <summary>
+        /// Maximum number of nodes to connect to. Will also determine the total allocated buffer length.
+        /// </summary>
+        int MaxConnectionCount { get; set; }
+        /// <summary>
+        /// A <see cref="Semaphore"/> used to limit the number of connections based on <see cref="MaxConnectionCount"/>
+        /// </summary>
+        Semaphore MaxConnectionEnforcer { get; }
+        /// <summary>
+        /// A pool (stack) of <see cref="System.Net.Sockets.SocketAsyncEventArgs"/> objects used in send/receive operations.
+        /// There should be 2 items per connection (a total of 2 * <see cref="MaxConnectionCount"/>)
+        /// </summary>
+        SocketAsyncEventArgsPool SendReceivePool { get; }
     }
 }

@@ -8,9 +8,12 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Denovo.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Net;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Denovo.ViewModels
 {
@@ -18,13 +21,17 @@ namespace Denovo.ViewModels
     {
         public MainWindowViewModel()
         {
+            AllNodes = new ObservableCollection<Node>();
+            tempNodex = new List<Node>();
+            var clientSettings = new ClientSettings();
             WinMan = new WindowManager();
-            connector = new NodeConnector(AllNodes, new MockBlockChain(), new ClientSettings());
-            listener = new NodeListener(AllNodes, new MockBlockChain(), new ClientSettings());
+            connector = new NodeConnector(tempNodex, new MockBlockChain(), clientSettings);
+            listener = new NodeListener(new List<Node>(), new MockBlockChain(), clientSettings);
 
             listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
         }
 
+        List<Node> tempNodex;
 
         public IWindowManager WinMan { get; set; }
         public void Config() => WinMan.ShowDialog(new SettingsViewModel());
@@ -37,7 +44,7 @@ namespace Denovo.ViewModels
             public Target GetTarget(int height) => throw new NotImplementedException();
         }
 
-        public ObservableCollection<Node> AllNodes { get; set; } = new ObservableCollection<Node>();
+        public ObservableCollection<Node> AllNodes { get; set; }
         private readonly NodeConnector connector;
         private readonly NodeListener listener;
         private const int testPortToUse = 9770;
@@ -76,6 +83,10 @@ namespace Denovo.ViewModels
                 Result = $"An exception of type {ex.GetType()} was thrown:{Environment.NewLine}{ex.Message}" +
                     $"{Environment.NewLine}Stack trace:{Environment.NewLine}{ex.StackTrace}";
             }
+
+            Task.Delay(TimeSpan.FromSeconds(3)).Wait();
+            AllNodes = new ObservableCollection<Node>(tempNodex);
+            RaisePropertyChanged(nameof(AllNodes));
         }
 
 

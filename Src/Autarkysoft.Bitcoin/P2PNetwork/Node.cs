@@ -4,8 +4,10 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -19,44 +21,35 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="bc">The blockchain (database) manager</param>
         /// <param name="cs">Client settings</param>
-        internal Node(IBlockchain bc, IClientSettings cs)
+        /// <param name="socket">Socket to use</param>
+        internal Node(IBlockchain bc, IClientSettings cs, Socket socket)
         {
-            // TODO: the following values are for testing, they should be set by the caller
-            // they need more checks for correct and optimal values
-            buffLen = 200;
-            int bytesPerSaea = buffLen;
-            int sendReceiveSaeaCount = 10;
-            int totalBytes = bytesPerSaea * sendReceiveSaeaCount;
-
-            buffMan = new BufferManager(totalBytes, bytesPerSaea);
+            settings = cs;
             NodeStatus = new NodeStatus();
-            repMan = new ReplyManager(NodeStatus, bc, cs);
+            var repMan = new ReplyManager(NodeStatus, bc, cs);
+            msgMan = new MessageManager(cs.BufferLength, repMan, NodeStatus, cs.Network);
 
-            sendReceivePool = new SocketAsyncEventArgsPool(sendReceiveSaeaCount);
-            for (int i = 0; i < sendReceiveSaeaCount; i++)
-            {
-                SocketAsyncEventArgs sArg = new SocketAsyncEventArgs();
+            sendReceiveSAEA = cs.SendReceivePool.Pop();
+            sendReceiveSAEA.AcceptSocket = socket;
+            sendReceiveSAEA.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
 
-                buffMan.SetBuffer(sArg);
-                sArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-                sArg.UserToken = new MessageManager(bytesPerSaea, repMan, NodeStatus, cs.Network);
-
-                sendReceivePool.Push(sArg);
-            }
+            sendSAEA = cs.SendReceivePool.Pop();
+            sendSAEA.AcceptSocket = socket;
+            sendSAEA.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
         }
 
 
+        private Semaphore secondSendLimiter;
+        private SocketAsyncEventArgs sendReceiveSAEA;
+        private SocketAsyncEventArgs sendSAEA;
+        private readonly MessageManager msgMan;
+        private readonly IClientSettings settings;
 
-        private readonly int buffLen;
-        internal SocketAsyncEventArgsPool sendReceivePool;
-        private readonly BufferManager buffMan;
-        private readonly IReplyManager repMan;
 
         /// <summary>
         /// Contains the node's current state
         /// </summary>
         public INodeStatus NodeStatus { get; set; }
-
 
 
         private void IO_Completed(object sender, SocketAsyncEventArgs e)
@@ -75,7 +68,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
-        internal void StartReceive(SocketAsyncEventArgs recEventArgs)
+        internal void StartHandShake()
+        {
+            msgMan.StartHandShake(sendReceiveSAEA);
+            StartSend(sendReceiveSAEA);
+        }
+
+        internal void StartReceiving() => StartReceive(sendReceiveSAEA);
+
+        private void StartReceive(SocketAsyncEventArgs recEventArgs)
         {
             if (!recEventArgs.AcceptSocket.ReceiveAsync(recEventArgs))
             {
@@ -88,7 +89,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             // Zero bytes transferred means remote end has closed the connection. It needs to be closed here too.
             if (recEventArgs.SocketError == SocketError.Success && recEventArgs.BytesTransferred > 0)
             {
-                MessageManager msgMan = recEventArgs.UserToken as MessageManager;
                 msgMan.ReadBytes(recEventArgs);
 
                 if (msgMan.HasDataToSend)
@@ -107,6 +107,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
         }
 
+        /// <summary>
+        /// Sends the given message to this connected node.
+        /// </summary>
+        /// <param name="msg">Message to send</param>
+        public void Send(Message msg)
+        {
+            secondSendLimiter.WaitOne();
+            msgMan.SetSendBuffer(sendSAEA, msg);
+            StartSend(sendSAEA);
+        }
 
         internal void StartSend(SocketAsyncEventArgs sendEventArgs)
         {
@@ -120,11 +130,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (sendEventArgs.SocketError == SocketError.Success)
             {
-                MessageManager msgMan = sendEventArgs.UserToken as MessageManager;
                 if (msgMan.HasDataToSend)
                 {
                     msgMan.SetSendBuffer(sendEventArgs);
                     StartSend(sendEventArgs);
+                }
+                else if (ReferenceEquals(sendEventArgs, sendSAEA))
+                {
+                    secondSendLimiter.Release();
                 }
                 else
                 {
@@ -150,11 +163,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
 
             srEventArgs.AcceptSocket.Close();
-
-            MessageManager msgMan = srEventArgs.UserToken as MessageManager;
-            msgMan.Init();
-
-            sendReceivePool.Push(srEventArgs);
+            settings.MaxConnectionEnforcer.Release();
         }
 
 
@@ -172,9 +181,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (disposing)
                 {
-                    if (!(sendReceivePool is null))
-                        sendReceivePool.Dispose();
-                    sendReceivePool = null;
+                    CloseClientSocket(sendReceiveSAEA);
+                    sendReceiveSAEA.AcceptSocket = null;
+                    sendReceiveSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                    sendSAEA.AcceptSocket = null;
+                    sendSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                    settings.SendReceivePool.Push(sendReceiveSAEA);
+                    settings.SendReceivePool.Push(sendSAEA);
+                    sendReceiveSAEA = null;
+                    sendSAEA = null;
+
+                    if (!(secondSendLimiter is null))
+                        secondSendLimiter.Dispose();
+                    secondSendLimiter = null;
                 }
 
                 isDisposed = true;

@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -29,14 +28,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             blockchain = bc;
             settings = cs;
 
-            int MaxConnections = 3;
             backlog = 3;
-            int MaxAcceptOps = 10;
 
-            maxConnectionEnforcer = new Semaphore(MaxConnections, MaxConnections);
-
-            acceptPool = new SocketAsyncEventArgsPool(MaxAcceptOps);
-            for (int i = 0; i < MaxAcceptOps; i++)
+            acceptPool = new SocketAsyncEventArgsPool(cs.MaxConnectionCount);
+            for (int i = 0; i < cs.MaxConnectionCount; i++)
             {
                 var acceptEventArg = new SocketAsyncEventArgs();
                 acceptEventArg.Completed += new EventHandler<SocketAsyncEventArgs>((sender, e) => ProcessAccept(e));
@@ -45,7 +40,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         private Socket listenSocket;
-        private Semaphore maxConnectionEnforcer;
         private readonly int backlog;
         private SocketAsyncEventArgsPool acceptPool;
         private ICollection<Node> peers;
@@ -58,7 +52,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="ep"><see cref="EndPoint"/> to use</param>
         public void StartListen(EndPoint ep)
         {
-            listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            listenSocket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listenSocket.Bind(ep);
             listenSocket.Listen(backlog);
             StartAccept();
@@ -66,8 +60,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void StartAccept()
         {
+            settings.MaxConnectionEnforcer.WaitOne();
             SocketAsyncEventArgs acceptEventArg = acceptPool.Pop();
-            maxConnectionEnforcer.WaitOne();
             if (!listenSocket.AcceptAsync(acceptEventArg))
             {
                 ProcessAccept(acceptEventArg);
@@ -78,26 +72,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (acceptEventArgs.SocketError == SocketError.Success)
             {
-                Node node = new Node(blockchain, settings);
+                Node node = new Node(blockchain, settings, acceptEventArgs.AcceptSocket);
                 peers.Add(node);
-                SocketAsyncEventArgs srEventArgs = node.sendReceivePool.Pop();
-
-                // Pass the socket from the "accept" SAEA to "send/receive" SAEA.
-                srEventArgs.AcceptSocket = acceptEventArgs.AcceptSocket;
-                node.StartReceive(srEventArgs);
-
-                // Remove "accept" SAEA socket and put it back in pool to be used for the next accept operation.
-                acceptEventArgs.AcceptSocket = null;
-                acceptPool.Push(acceptEventArgs);
-                StartAccept();
+                node.StartReceiving();
             }
             else
             {
-                acceptEventArgs.AcceptSocket = null;
-                acceptPool.Push(acceptEventArgs);
-                maxConnectionEnforcer.Release();
-                StartAccept();
+                settings.MaxConnectionEnforcer.Release();
             }
+
+            // Remove "accept" SAEA socket and put it back in pool to be used for the next accept operation.
+            acceptEventArgs.AcceptSocket = null;
+            acceptPool.Push(acceptEventArgs);
+            StartAccept();
         }
 
 
@@ -119,10 +106,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         listenSocket.Dispose();
                     listenSocket = null;
 
-                    if (!(maxConnectionEnforcer is null))
-                        maxConnectionEnforcer.Dispose();
-                    maxConnectionEnforcer = null;
-
                     if (!(acceptPool is null))
                         acceptPool.Dispose();
                     acceptPool = null;
@@ -137,9 +120,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Releases all resources used by the current instance of this class.
         /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
     }
 }
