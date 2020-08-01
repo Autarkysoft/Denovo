@@ -12,7 +12,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
     /// Implementation of a cryptographic Random Number Generator (RNG) using the <see cref="RNGCryptoServiceProvider"/> class.
     /// Implements <see cref="IRandomNumberGenerator"/>.
     /// </summary>
-    public class SharpRandom : IRandomNumberGenerator
+    public sealed class SharpRandom : IRandomNumberGenerator
     {
         /// <summary>
         /// Initializes a new instance of <see cref="SharpRandom"/>.
@@ -27,9 +27,9 @@ namespace Autarkysoft.Bitcoin.Cryptography
         private RNGCryptoServiceProvider rng;
 
 
-
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ObjectDisposedException"/>
         public void GetBytes(byte[] data)
         {
             if (isDisposed)
@@ -41,34 +41,19 @@ namespace Autarkysoft.Bitcoin.Cryptography
         }
 
 
-
         private bool isDisposed = false;
-
-        /// <summary>
-        /// Releases the resources used by the <see cref="SharpRandom"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(rng is null))
-                        rng.Dispose();
-                    rng = null;
-                }
-
-                isDisposed = true;
-            }
-        }
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            Dispose(true);
+            if (!isDisposed)
+            {
+                if (!(rng is null))
+                    rng.Dispose();
+                rng = null;
+
+                isDisposed = true;
+            }
         }
     }
 }

@@ -8,7 +8,8 @@ using System;
 namespace Autarkysoft.Bitcoin.Cryptography
 {
     /// <summary>
-    /// Defines methods that random number generator classes implement
+    /// Defines methods that a random number generator classes implements.
+    /// Inherits from <see cref="IDisposable"/>.
     /// </summary>
     public interface IRandomNumberGenerator : IDisposable
     {
