@@ -73,7 +73,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <summary>
         /// ASCII bytes of the payload type name with null padding to a fixed length of 12.
         /// </summary>
-        public byte[] PayloadName { get; private set; }
+        public byte[] PayloadName { get; private set; } = new byte[CommandNameSize];
 
         private byte[] _plData = new byte[0];
         /// <summary>

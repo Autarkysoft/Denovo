@@ -195,6 +195,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             if (!version.TryDeserialize(new FastStreamReader(msg.PayloadData), out _))
             {
                 nodeStatus.AddSmallViolation();
+                return null;
             }
 
             Message[] result = null;
