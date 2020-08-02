@@ -14,6 +14,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
     public class MockOpData : IOpData
     {
+#pragma warning disable CS0649 // Field is never assigned to
+
         public MockOpData(params FuncCallName[] calls)
         {
             funcOrder = calls;
@@ -392,5 +394,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             }
         }
 
+#pragma warning restore CS0649 // Field is never assigned to
     }
 }

@@ -10,6 +10,8 @@ namespace Tests.Bitcoin.Blockchain
 {
     public class MockConsensus : IConsensus
     {
+#pragma warning disable CS0649 // Field is never assigned to
+
         public MockConsensus(int mockHeight)
         {
             expHeight = mockHeight;
@@ -95,5 +97,7 @@ namespace Tests.Bitcoin.Blockchain
             Assert.Equal(expHeight, height);
             return (bool)strictDer;
         }
+
+#pragma warning restore CS0649 // Field is never assigned to
     }
 }

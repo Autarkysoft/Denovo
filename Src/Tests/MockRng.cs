@@ -25,4 +25,18 @@ namespace Tests
 
         public void Dispose() { }
     }
+
+    internal class MockNonceRng : IRandomNonceGenerator
+    {
+        public MockNonceRng(int val) => val32 = val;
+        public MockNonceRng(long val) => val64 = val;
+
+        private readonly int val32;
+        public int NextInt32() => val32;
+
+        private readonly long val64;
+        public long NextInt64() => val64;
+
+        public void Dispose() { }
+    }
 }
