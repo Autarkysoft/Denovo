@@ -5,6 +5,10 @@
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
+    /// <summary>
+    /// Defines methods and properties that a P2P message payload implements.
+    /// Inherits from <see cref="IDeserializable"/>.
+    /// </summary>
     public interface IMessagePayload : IDeserializable
     {
         /// <summary>
