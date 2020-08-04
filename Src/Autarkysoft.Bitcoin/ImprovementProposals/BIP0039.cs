@@ -193,7 +193,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
         private readonly int[] allowedEntropyLengths = { 16, 20, 24, 28, 32 };
-        private readonly int[] allowedWordLengths = { 12, 15, 18, 21, 24 };
+        internal static readonly int[] allowedWordLengths = { 12, 15, 18, 21, 24 };
         private uint[] wordIndexes;
         private string[] allWords;
 
@@ -210,7 +210,8 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             Italian,
             Japanese,
             Korean,
-            Spanish
+            Spanish,
+            Czech
         }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 

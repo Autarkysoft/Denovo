@@ -44,6 +44,7 @@
     </None>
     <None Remove="ImprovementProposals\BIP0039WordLists\ChineseSimplified.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\ChineseTraditional.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\Czech.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\English.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\French.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\Italian.txt" />
@@ -55,6 +56,7 @@
   <ItemGroup>
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\ChineseSimplified.txt" />
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\ChineseTraditional.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Czech.txt" />
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\English.txt" />
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\French.txt" />
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Italian.txt" />
