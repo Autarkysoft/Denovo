@@ -68,13 +68,25 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         internal bool bigViolation = false;
-        public void AddBigViolation() => Assert.True(bigViolation, UnexpectedCall);
+        public void AddBigViolation()
+        {
+            Assert.True(bigViolation, UnexpectedCall);
+            bigViolation = false;
+        }
 
         internal bool mediumViolation = false;
-        public void AddMediumViolation() => Assert.True(mediumViolation, UnexpectedCall);
+        public void AddMediumViolation()
+        {
+            Assert.True(mediumViolation, UnexpectedCall);
+            mediumViolation = false;
+        }
 
         internal bool smallViolation = false;
-        public void AddSmallViolation() => Assert.True(smallViolation, UnexpectedCall);
+        public void AddSmallViolation()
+        {
+            Assert.True(smallViolation, UnexpectedCall);
+            smallViolation = false;
+        }
 
         internal bool updateTime = false;
         public void UpdateTime()
