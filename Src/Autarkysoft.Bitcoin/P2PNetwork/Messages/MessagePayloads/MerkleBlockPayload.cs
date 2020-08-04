@@ -10,7 +10,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     public class MerkleBlockPayload : PayloadBase
     {
-        public Block BlockHeader { get; set; }
+        public Block BlockHeader { get; set; } = new Block();
         private uint _txCount;
         public uint TransactionCount
         {

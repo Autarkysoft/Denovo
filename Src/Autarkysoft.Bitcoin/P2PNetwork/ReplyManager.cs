@@ -63,6 +63,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             return new Message(ver, settings.Network);
         }
 
+        private bool Deser<T>(byte[] data, out T pl) where T : IMessagePayload, new()
+        {
+            pl = new T();
+            if (pl.TryDeserialize(new FastStreamReader(data), out _))
+            {
+                return true;
+            }
+            else
+            {
+                nodeStatus.AddSmallViolation();
+                return false;
+            }
+        }
 
         /// <inheritdoc/>
         public Message[] GetReply(Message msg)
@@ -86,69 +99,136 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             switch (plt)
             {
+                // TODO: write the missing parts inside each "if" to use the deserialized object
                 case PayloadType.Addr:
+                    if (Deser(msg.PayloadData, out AddrPayload nodeAddresses))
+                    {
+
+                    }
                     break;
                 case PayloadType.Alert:
                     // Alert messages are ignored
                     break;
                 case PayloadType.Block:
+                    if (Deser(msg.PayloadData, out BlockPayload blk))
+                    {
+
+                    }
                     break;
                 case PayloadType.BlockTxn:
+                    if (Deser(msg.PayloadData, out BlockTxnPayload blkTxn))
+                    {
+
+                    }
                     break;
                 case PayloadType.CmpctBlock:
+                    if (Deser(msg.PayloadData, out CmpctBlockPayload cmBlk))
+                    {
+
+                    }
                     break;
                 case PayloadType.FeeFilter:
+                    if (Deser(msg.PayloadData, out FeeFilterPayload feeFilter))
+                    {
+
+                    }
                     break;
                 case PayloadType.FilterAdd:
+                    if (Deser(msg.PayloadData, out FilterAddPayload filterAdd))
+                    {
+
+                    }
                     break;
                 case PayloadType.FilterClear:
+                    // Empty payload
+                    // TODO: nodestatus has to clear the set filters here
                     break;
                 case PayloadType.FilterLoad:
+                    if (Deser(msg.PayloadData, out FilterLoadPayload filterLoad))
+                    {
+
+                    }
                     break;
                 case PayloadType.GetAddr:
+                    // Empty payload
                     break;
                 case PayloadType.GetBlocks:
+                    if (Deser(msg.PayloadData, out GetBlocksPayload getBlks))
+                    {
+
+                    }
                     break;
                 case PayloadType.GetBlockTxn:
+                    if (Deser(msg.PayloadData, out GetBlockTxnPayload getBlkTxn))
+                    {
+
+                    }
                     break;
                 case PayloadType.GetData:
+                    if (Deser(msg.PayloadData, out GetDataPayload getData))
+                    {
+
+                    }
                     break;
                 case PayloadType.GetHeaders:
+                    if (Deser(msg.PayloadData, out GetHeadersPayload getHdrs))
+                    {
+
+                    }
                     break;
                 case PayloadType.Headers:
+                    if (Deser(msg.PayloadData, out HeadersPayload hdrs))
+                    {
+
+                    }
                     break;
                 case PayloadType.Inv:
+                    if (Deser(msg.PayloadData, out InvPayload inv))
+                    {
+
+                    }
                     break;
                 case PayloadType.MemPool:
+                    // Empty payload
                     break;
                 case PayloadType.MerkleBlock:
+                    if (Deser(msg.PayloadData, out MerkleBlockPayload mrklBlk))
+                    {
+
+                    }
                     break;
                 case PayloadType.NotFound:
+                    if (Deser(msg.PayloadData, out NotFoundPayload notFound))
+                    {
+
+                    }
                     break;
                 case PayloadType.Ping:
-                    var ping = new PingPayload();
-                    if (!ping.TryDeserialize(new FastStreamReader(msg.PayloadData), out _))
+                    if (Deser(msg.PayloadData, out PingPayload ping))
                     {
-                        nodeStatus.AddSmallViolation();
-                        break;
+                        result = new Message[1] { new Message(new PongPayload(ping.Nonce), settings.Network) };
                     }
-                    return new Message[1] { new Message(new PongPayload(ping.Nonce), settings.Network) };
+                    break;
                 case PayloadType.Pong:
-                    var pong = new PongPayload();
-                    if (!pong.TryDeserialize(new FastStreamReader(msg.PayloadData), out _))
-                    {
-                        nodeStatus.AddSmallViolation();
-                        break;
-                    }
+                    Deser(msg.PayloadData, out PongPayload _);
                     break;
                 case PayloadType.Reject:
                     // Reject messages are ignored
                     break;
                 case PayloadType.SendCmpct:
+                    if (Deser(msg.PayloadData, out SendCmpctPayload sendCmp))
+                    {
+
+                    }
                     break;
                 case PayloadType.SendHeaders:
+                    // Empty payload
                     break;
                 case PayloadType.Tx:
+                    if (Deser(msg.PayloadData, out TxPayload tx))
+                    {
+
+                    }
                     break;
                 case PayloadType.Verack:
                     CheckVerack();
