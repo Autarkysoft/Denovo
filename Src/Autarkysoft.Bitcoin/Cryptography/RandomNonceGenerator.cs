@@ -14,7 +14,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
     /// </summary>
     public class RandomNonceGenerator : IRandomNonceGenerator
     {
-        private Random rng;
+        private Random rng = new Random();
 
         /// <inheritdoc/>
         public int NextInt32()
