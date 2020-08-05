@@ -164,9 +164,9 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
         // 2^31
-        private const uint HardenedIndex = 0x80000000;
+        internal const uint HardenedIndex = 0x80000000;
         // version(4) + depth(1) + fingerPrint(4) + index(4) + chain(32) + key(33)
-        private const int ExtendedKeyLength = 78;
+        internal const int ExtendedKeyLength = 78;
         private const int MinEntropyLength = 16;
         private const int MaxEntropyLength = 64;
         private readonly byte[] prvMainVer = { 0x04, 0x88, 0xad, 0xe4 };
@@ -183,8 +183,8 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private Base58 b58Encoder = new Base58();
 
         private byte ExtendedKeyDepth;
-        private byte[] ParentFingerPrint;
-        private byte[] ChildNumber;
+        internal byte[] ParentFingerPrint;
+        internal byte[] ChildNumber;
         private byte[] ChainCode;
         private PrivateKey PrvKey;
         private PublicKey PubKey;
