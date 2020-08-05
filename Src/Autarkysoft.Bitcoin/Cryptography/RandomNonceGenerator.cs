@@ -14,9 +14,18 @@ namespace Autarkysoft.Bitcoin.Cryptography
     /// </summary>
     public class RandomNonceGenerator : IRandomNonceGenerator
     {
-        private Random rng = new Random();
+        /// <summary>
+        /// Initializes a new instance of <see cref="RandomNonceGenerator"/>.
+        /// </summary>
+        public RandomNonceGenerator()
+        {
+            rng = new Random();
+        }
+
+        private Random rng;
 
         /// <inheritdoc/>
+        /// <exception cref="ObjectDisposedException"/>
         public int NextInt32()
         {
             if (isDisposed)
@@ -26,6 +35,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
         }
 
         /// <inheritdoc/>
+        /// <exception cref="ObjectDisposedException"/>
         public long NextInt64()
         {
             if (isDisposed)

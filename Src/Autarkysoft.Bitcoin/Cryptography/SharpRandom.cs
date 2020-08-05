@@ -42,7 +42,6 @@ namespace Autarkysoft.Bitcoin.Cryptography
 
 
         private bool isDisposed = false;
-
         /// <inheritdoc/>
         public void Dispose()
         {
