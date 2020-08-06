@@ -71,6 +71,7 @@ are in separate classes. Currently:
   [32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets"),
   [38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki "Passphrase-protected private key"),
   [39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys") (also Electrum mnemonics),
+  [85](https://github.com/bitcoin/bips/blob/master/bip-0085.mediawiki "Deterministic Entropy From BIP32 Keychains"),
   [137](https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki "Signatures of Messages using Private Keys"),
   [152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki "Compact Block Relay"),
   [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF"),

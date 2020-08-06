@@ -1,5 +1,15 @@
 ### Release ?.?.? (Next release)
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.1.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.2.0...master)
+
+### Release 0.4.2 (2020-08-6)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.1.0...B0.4.2.0)
+* Improvements in P2PNetwork namespace (Each node now uses only 2 SAEA that are taken from a pool instantiated in IClientSettings,
+other improvements in ReplyManager and MessageManager)
+* New BIP: Deterministic Entropy From BIP32 Keychains (used in Coldcard) (BIP-85)
+* New RNG for nonce generation
+* Add a new word-list to BIP-39 (Czech)
+* Some bug fixes and code improvements in `TransactionVerifier`
+* Additional tests
 
 ### Release 0.4.1 (2020-07-14)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.0.0...B0.4.1.0)
