@@ -243,121 +243,150 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
 
-        [Fact]
-        public void ComparisonTest()
+        public static IEnumerable<object[]> GetCompareSameTypeCases()
         {
-            CompactInt big = new CompactInt(1);
-            CompactInt small = new CompactInt(0);
-
-            Assert.True(big > small);
-            Assert.True(big >= small);
-            Assert.True(small < big);
-            Assert.True(small <= big);
-            Assert.False(big == small);
-            Assert.True(big != small);
-            Assert.Equal(1, big.CompareTo(small));
-            Assert.Equal(1, big.CompareTo((object)small));
-            Assert.Equal(-1, small.CompareTo(big));
-            Assert.Equal(-1, small.CompareTo((object)big));
-            Assert.False(big.Equals(small));
-            Assert.False(big.Equals((object)small));
+            yield return new object[]
+            {
+                new CompactInt(0), new CompactInt(0), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new CompactInt(1), new CompactInt(0), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new CompactInt(0), new CompactInt(1), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new CompactInt(1), new CompactInt(1), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new CompactInt(1), new CompactInt(2), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new CompactInt(2), new CompactInt(1), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new CompactInt(ulong.MaxValue),
+                new CompactInt(ulong.MaxValue),
+                new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new CompactInt(ulong.MaxValue),
+                new CompactInt(0),
+                new ValueCompareResult(true, true, false, false, false, 1),
+            };
+            yield return new object[]
+            {
+                new CompactInt(0),
+                new CompactInt(ulong.MaxValue),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new CompactInt(ulong.MaxValue-1),
+                new CompactInt(ulong.MaxValue),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new CompactInt(ulong.MaxValue),
+                new CompactInt(ulong.MaxValue-1),
+                new ValueCompareResult(true, true, false, false, false, 1)
+            };
         }
-
-        [Fact]
-        public void Comparison_EqualTest()
-        {
-            CompactInt first = new CompactInt(1);
-            CompactInt second = new CompactInt(1);
-
-            Assert.False(first > second);
-            Assert.True(first >= second);
-            Assert.False(second < first);
-            Assert.True(second <= first);
-            Assert.True(first == second);
-            Assert.False(first != second);
-            Assert.Equal(0, first.CompareTo(second));
-            Assert.Equal(0, first.CompareTo((object)second));
-            Assert.True(first.Equals(second));
-            Assert.True(first.Equals((object)second));
-        }
-
         [Theory]
-        [InlineData(1, 2, false, false)]
-        [InlineData(1, 0, true, true)]
-        [InlineData(1, -1, true, true)]
-        public void Comparison_WithIntTest(int c, int i, bool expected, bool expectedEq)
+        [MemberData(nameof(GetCompareSameTypeCases))]
+        public void ComparisonOperator_SameTypeTest(CompactInt ci1, CompactInt ci2, ValueCompareResult expected)
         {
-            CompactInt ci = new CompactInt(c);
+            Assert.Equal(expected.Bigger, ci1 > ci2);
+            Assert.Equal(expected.BiggerEqual, ci1 >= ci2);
+            Assert.Equal(expected.Smaller, ci1 < ci2);
+            Assert.Equal(expected.SmallerEqual, ci1 <= ci2);
 
-            Assert.Equal(expected, ci > i);
-            Assert.Equal(expectedEq, ci >= i);
-            Assert.Equal(expected, ci > (long)i);
-            Assert.Equal(expectedEq, ci >= (long)i);
+            Assert.Equal(expected.Equal, ci1 == ci2);
+            Assert.Equal(!expected.Equal, ci1 != ci2);
 
-            Assert.Equal(!expected, i > ci);
-            Assert.Equal(!expectedEq, i >= ci);
-            Assert.Equal(!expected, (long)i > ci);
-            Assert.Equal(!expectedEq, (long)i >= ci);
+            Assert.Equal(expected.Equal, ci1.Equals(ci2));
+            Assert.Equal(expected.Equal, ci1.Equals((object)ci2));
 
-            Assert.Equal(!expected, ci < i);
-            Assert.Equal(!expectedEq, ci <= i);
-            Assert.Equal(!expected, ci < (long)i);
-            Assert.Equal(!expectedEq, ci <= (long)i);
-
-            Assert.Equal(expected, i < ci);
-            Assert.Equal(expectedEq, i <= ci);
-            Assert.Equal(expected, (long)i < ci);
-            Assert.Equal(expectedEq, (long)i <= ci);
+            Assert.Equal(expected.Compare, ci1.CompareTo(ci2));
+            Assert.Equal(expected.Compare, ci1.CompareTo((object)ci2));
         }
 
-        [Fact]
-        public void Comparison_BigSmall_EqualIntTest()
+        public static IEnumerable<object[]> GetCompareIntCases()
         {
-            CompactInt ci = new CompactInt(1);
-            int i = 1;
+            yield return new object[] { new CompactInt(0), 0, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new CompactInt(0), 1, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new CompactInt(0), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new CompactInt(0), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
 
-            Assert.False(ci > i);
-            Assert.True(ci >= i);
-            Assert.False(ci > (long)i);
-            Assert.True(ci >= (long)i);
+            yield return new object[] { new CompactInt(1), 0, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new CompactInt(1), 1, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new CompactInt(1), 2, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new CompactInt(1), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new CompactInt(1), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
 
-            Assert.False(i > ci);
-            Assert.True(i >= ci);
-            Assert.False((long)i > ci);
-            Assert.True((long)i >= ci);
-
-            Assert.False(ci < i);
-            Assert.True(ci <= i);
-            Assert.False(ci < (long)i);
-            Assert.True(ci <= (long)i);
-
-            Assert.False(i < ci);
-            Assert.True(i <= ci);
-            Assert.False((long)i < ci);
-            Assert.True((long)i <= ci);
+            yield return new object[]
+            {
+                new CompactInt(ulong.MaxValue), 0, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new CompactInt(ulong.MaxValue), -1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new CompactInt(ulong.MaxValue), 1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new CompactInt(int.MaxValue), int.MaxValue, new ValueCompareResult(false, true, false, true, true)
+            };
         }
-
         [Theory]
-        [InlineData(1, 1, true)]
-        [InlineData(1, 2, false)]
-        [InlineData(1, -1, false)]
-        public void Comparison_WithInt_EqualTest(int c, int i, bool expected)
+        [MemberData(nameof(GetCompareIntCases))]
+        public void ComparisonOperator_WithIntTest(CompactInt ci, int i, ValueCompareResult expected)
         {
-            CompactInt ci = new CompactInt(c);
+            Assert.Equal(expected.Bigger, ci > i);
+            Assert.Equal(expected.Bigger, ci > (long)i);
+            Assert.Equal(expected.Bigger, i < ci);
+            Assert.Equal(expected.Bigger, (long)i < ci);
 
-            Assert.Equal(expected, ci == i);
-            Assert.Equal(expected, ci == (long)i);
-            Assert.Equal(!expected, ci != i);
-            Assert.Equal(!expected, ci != (long)i);
+            Assert.Equal(expected.BiggerEqual, ci >= i);
+            Assert.Equal(expected.BiggerEqual, ci >= (long)i);
+            Assert.Equal(expected.BiggerEqual, i <= ci);
+            Assert.Equal(expected.BiggerEqual, (long)i <= ci);
 
-            Assert.Equal(expected, i == ci);
-            Assert.Equal(expected, (long)i == ci);
-            Assert.Equal(!expected, i != ci);
-            Assert.Equal(!expected, (long)i != ci);
+            Assert.Equal(expected.Smaller, ci < i);
+            Assert.Equal(expected.Smaller, ci < (long)i);
+            Assert.Equal(expected.Smaller, i > ci);
+            Assert.Equal(expected.Smaller, (long)i > ci);
+
+            Assert.Equal(expected.SmallerEqual, ci <= i);
+            Assert.Equal(expected.SmallerEqual, ci <= (long)i);
+            Assert.Equal(expected.SmallerEqual, i >= ci);
+            Assert.Equal(expected.SmallerEqual, (long)i >= ci);
+
+            Assert.Equal(expected.Equal, ci == i);
+            Assert.Equal(expected.Equal, i == ci);
+            Assert.Equal(expected.Equal, ci == (long)i);
+            Assert.Equal(expected.Equal, (long)i == ci);
+
+            Assert.Equal(!expected.Equal, ci != i);
+            Assert.Equal(!expected.Equal, i != ci);
+            Assert.Equal(!expected.Equal, ci != (long)i);
+            Assert.Equal(!expected.Equal, (long)i != ci);
         }
 
+
         [Fact]
-        public void CompareToTest()
+        public void CompareTo_EdgeTest()
         {
             CompactInt ci = new CompactInt(1);
             object nObj = null;
@@ -368,7 +397,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
         [Fact]
-        public void Equals_ObjectTest()
+        public void Equals_EdgeTest()
         {
             CompactInt ci = new CompactInt(100);
             object sObj = "CompactInt!";
@@ -393,6 +422,5 @@ namespace Tests.Bitcoin.ValueTypesTests
             CompactInt ci = new CompactInt(123);
             Assert.Equal("123", ci.ToString());
         }
-
     }
 }

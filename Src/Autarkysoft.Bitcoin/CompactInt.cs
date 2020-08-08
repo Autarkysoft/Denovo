@@ -205,26 +205,26 @@ namespace Autarkysoft.Bitcoin
         public static bool operator >=(CompactInt left, CompactInt right) => left.value >= right.value;
         public static bool operator >=(CompactInt left, long right) => right < 0 || left.value >= (ulong)right;
         public static bool operator >=(CompactInt left, int right) => right < 0 || left.value >= (ulong)right;
-        public static bool operator >=(long left, CompactInt right) => left > 0 && (ulong)left >= right.value;
-        public static bool operator >=(int left, CompactInt right) => left > 0 && (ulong)left >= right.value;
+        public static bool operator >=(long left, CompactInt right) => left >= 0 && (ulong)left >= right.value;
+        public static bool operator >=(int left, CompactInt right) => left >= 0 && (ulong)left >= right.value;
 
         public static bool operator <(CompactInt left, CompactInt right) => left.value < right.value;
-        public static bool operator <(CompactInt left, long right) => right > 0 && left.value < (ulong)right;
-        public static bool operator <(CompactInt left, int right) => right > 0 && left.value < (ulong)right;
+        public static bool operator <(CompactInt left, long right) => right >= 0 && left.value < (ulong)right;
+        public static bool operator <(CompactInt left, int right) => right >= 0 && left.value < (ulong)right;
         public static bool operator <(long left, CompactInt right) => left < 0 || (ulong)left < right.value;
         public static bool operator <(int left, CompactInt right) => left < 0 || (ulong)left < right.value;
 
         public static bool operator <=(CompactInt left, CompactInt right) => left.value <= right.value;
-        public static bool operator <=(CompactInt left, long right) => right > 0 && left.value <= (ulong)right;
-        public static bool operator <=(CompactInt left, int right) => right > 0 && left.value <= (ulong)right;
+        public static bool operator <=(CompactInt left, long right) => right >= 0 && left.value <= (ulong)right;
+        public static bool operator <=(CompactInt left, int right) => right >= 0 && left.value <= (ulong)right;
         public static bool operator <=(long left, CompactInt right) => left < 0 || (ulong)left <= right.value;
         public static bool operator <=(int left, CompactInt right) => left < 0 || (ulong)left <= right.value;
 
         public static bool operator ==(CompactInt left, CompactInt right) => left.value == right.value;
-        public static bool operator ==(CompactInt left, long right) => right > 0 && left.value == (ulong)right;
-        public static bool operator ==(CompactInt left, int right) => right > 0 && left.value == (ulong)right;
-        public static bool operator ==(long left, CompactInt right) => left > 0 && (ulong)left == right.value;
-        public static bool operator ==(int left, CompactInt right) => left > 0 && (ulong)left == right.value;
+        public static bool operator ==(CompactInt left, long right) => right >= 0 && left.value == (ulong)right;
+        public static bool operator ==(CompactInt left, int right) => right >= 0 && left.value == (ulong)right;
+        public static bool operator ==(long left, CompactInt right) => left >= 0 && (ulong)left == right.value;
+        public static bool operator ==(int left, CompactInt right) => left >= 0 && (ulong)left == right.value;
 
         public static bool operator !=(CompactInt left, CompactInt right) => left.value != right.value;
         public static bool operator !=(CompactInt left, long right) => right < 0 || left.value != (ulong)right;
@@ -234,18 +234,13 @@ namespace Autarkysoft.Bitcoin
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 
-        #region Interfaces and overrides
-
         /// <summary>
         /// Compares the value of a given <see cref="CompactInt"/> with the value of this instance 
         /// and returns -1 if smaller, 0 if equal and 1 if bigger.
         /// </summary>
         /// <param name="other">Other <see cref="CompactInt"/> to compare to this instance.</param>
         /// <returns>-1 if smaller, 0 if equal and 1 if bigger.</returns>
-        public int CompareTo(CompactInt other)
-        {
-            return value.CompareTo(other.value);
-        }
+        public int CompareTo(CompactInt other) => value.CompareTo(other.value);
 
         /// <summary>
         /// Checks if the given object is of type <see cref="CompactInt"/> and then compares its value with 
@@ -270,10 +265,7 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="other">Other <see cref="CompactInt"/> value to compare to this instance.</param>
         /// <returns>true if the value is equal to the value of this instance; otherwise, false.</returns>
-        public bool Equals(CompactInt other)
-        {
-            return CompareTo(other) == 0;
-        }
+        public bool Equals(CompactInt other) => value == other.value;
 
         /// <summary>
         /// Checks if the given object is of type <see cref="CompactInt"/> and if its value is equal to the value of this instance.
@@ -283,41 +275,18 @@ namespace Autarkysoft.Bitcoin
         /// true if value is an instance of <see cref="CompactInt"/> 
         /// and equals the value of this instance; otherwise, false.
         /// </returns>
-        public override bool Equals(object obj)
-        {
-            if (obj is null)
-            {
-                return false;
-            }
-            else if (obj is CompactInt ci)
-            {
-                return Equals(ci);
-            }
-            else
-            {
-                return false;
-            }
-        }
+        public override bool Equals(object obj) => !(obj is null) && obj is CompactInt ci && value == ci.value;
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
+        public override int GetHashCode() => value.GetHashCode();
 
         /// <summary>
         /// Converts the value of the current instance to its equivalent string representation.
         /// </summary>
         /// <returns>A string representation of the value of the current instance.</returns>
-        public override string ToString()
-        {
-            return value.ToString();
-        }
-
-        #endregion
-
+        public override string ToString() => value.ToString();
     }
 }
