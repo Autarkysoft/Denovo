@@ -170,6 +170,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[]
             {
                 new MockConsensus(123),
+                new byte[0],
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus(123),
                 Helper.HexToBytes("00"),
                 PubkeyScriptSpecialType.None
             };
@@ -230,7 +236,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[]
             {
                 new MockConsensus(123) { segWit = true },
-                Helper.HexToBytes($"012b{Helper.GetBytesHex(43)}"), // OP_1 push(data43) -> len > 42 -> not witness
+                Helper.HexToBytes($"6029{Helper.GetBytesHex(41)}"), // OP_16 push(data40) -> len > 42 -> not witness
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
@@ -255,6 +261,18 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             {
                 new MockConsensus(123) { bip16 = true, segWit = true },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}87"),
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus(123) { segWit = true },
+                Helper.HexToBytes("604c020001"), // 0x60 is OP_16 and 0x4c is OP_PushData1
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus(123) { segWit = true },
+                Helper.HexToBytes("010103abcdef"),
                 PubkeyScriptSpecialType.None
             };
         }
