@@ -73,12 +73,16 @@ namespace Autarkysoft.Bitcoin
         /// Return value indicates success.
         /// </summary>
         /// <param name="stream">Stream containing the <see cref="StackInt"/></param>
-        /// <param name="isStrict">Determines if strict rules (shortest encoding possible) should be enforced</param>
+        /// <param name="bytes">
+        /// If the <see cref="StackInt"/> is not strictly encoded it will contain the wrong encoding, otherwise will be null.
+        /// </param>
         /// <param name="result">The result</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        public static bool TryRead(FastStreamReader stream, bool isStrict, out StackInt result, out string error)
+        public static bool TryRead(FastStreamReader stream, out byte[] bytes, out StackInt result, out string error)
         {
+            error = null;
+            bytes = null;
             if (stream is null)
             {
                 result = 0;
@@ -105,45 +109,45 @@ namespace Autarkysoft.Bitcoin
                     return false;
                 }
 
-                if (isStrict && val < (byte)OP.PushData1)
+                if (val < (byte)OP.PushData1)
                 {
+                    bytes = new byte[2] { firstByte, val };
                     error = $"For OP_{OP.PushData1} the data value must be bigger than {(byte)OP.PushData1 - 1}.";
-                    result = 0;
-                    return false;
                 }
+
                 result = new StackInt((uint)val);
             }
             else if (firstByte == (byte)OP.PushData2)
             {
-                if (!stream.TryReadUInt16(out ushort val))
+                if (!stream.TryReadByteArray(sizeof(ushort), out byte[] temp))
                 {
                     error = $"OP_{OP.PushData2} needs to be followed by at least two byte.";
                     result = 0;
                     return false;
                 }
 
-                if (isStrict && val <= byte.MaxValue)
+                ushort val = (ushort)(temp[0] | (temp[1] << 8));
+                if (val <= byte.MaxValue)
                 {
+                    bytes = new byte[3] { firstByte, temp[0], temp[1] };
                     error = $"For OP_{OP.PushData2} the data value must be bigger than {byte.MaxValue}.";
-                    result = 0;
-                    return false;
                 }
                 result = new StackInt((uint)val);
             }
             else if (firstByte == (byte)OP.PushData4)
             {
-                if (!stream.TryReadUInt32(out uint val))
+                if (!stream.TryReadByteArray(sizeof(uint), out byte[] temp))
                 {
                     error = $"OP_{OP.PushData4} needs to be followed by at least 4 byte.";
                     result = 0;
                     return false;
                 }
 
-                if (isStrict && val <= ushort.MaxValue)
+                uint val = (uint)(temp[0] | (temp[1] << 8) | (temp[2] << 16) | (temp[3] << 24));
+                if (val <= ushort.MaxValue)
                 {
+                    bytes = new byte[5] { firstByte, temp[0], temp[1], temp[2], temp[3] };
                     error = $"For OP_{OP.PushData4} the data value must be bigger than {ushort.MaxValue}.";
-                    result = 0;
-                    return false;
                 }
                 result = new StackInt(val);
             }
@@ -154,7 +158,6 @@ namespace Autarkysoft.Bitcoin
                 return false;
             }
 
-            error = null;
             return true;
         }
 
@@ -206,19 +209,19 @@ namespace Autarkysoft.Bitcoin
 
         public static bool operator >=(StackInt left, StackInt right) => left.value >= right.value;
         public static bool operator >=(StackInt left, int right) => right < 0 || left.value >= (ulong)right;
-        public static bool operator >=(int left, StackInt right) => left > 0 && (ulong)left >= right.value;
+        public static bool operator >=(int left, StackInt right) => left >= 0 && (ulong)left >= right.value;
 
         public static bool operator <(StackInt left, StackInt right) => left.value < right.value;
-        public static bool operator <(StackInt left, int right) => right > 0 && left.value < (ulong)right;
+        public static bool operator <(StackInt left, int right) => right >= 0 && left.value < (ulong)right;
         public static bool operator <(int left, StackInt right) => left < 0 || (ulong)left < right.value;
 
         public static bool operator <=(StackInt left, StackInt right) => left.value <= right.value;
-        public static bool operator <=(StackInt left, int right) => right > 0 && left.value <= (ulong)right;
+        public static bool operator <=(StackInt left, int right) => right >= 0 && left.value <= (ulong)right;
         public static bool operator <=(int left, StackInt right) => left < 0 || (ulong)left <= right.value;
 
         public static bool operator ==(StackInt left, StackInt right) => left.value == right.value;
-        public static bool operator ==(StackInt left, int right) => right > 0 && left.value == (ulong)right;
-        public static bool operator ==(int left, StackInt right) => left > 0 && (ulong)left == right.value;
+        public static bool operator ==(StackInt left, int right) => right >= 0 && left.value == (ulong)right;
+        public static bool operator ==(int left, StackInt right) => left >= 0 && (ulong)left == right.value;
 
         public static bool operator !=(StackInt left, StackInt right) => left.value != right.value;
         public static bool operator !=(StackInt left, int right) => right < 0 || left.value != (ulong)right;
@@ -226,18 +229,13 @@ namespace Autarkysoft.Bitcoin
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 
-        #region Interfaces and overrides
-
         /// <summary>
         /// Compares the value of a given <see cref="StackInt"/> with the value of this instance 
         /// and returns -1 if smaller, 0 if equal and 1 if bigger.
         /// </summary>
         /// <param name="other">Other <see cref="StackInt"/> to compare to this instance.</param>
         /// <returns>-1 if smaller, 0 if equal and 1 if bigger.</returns>
-        public int CompareTo(StackInt other)
-        {
-            return value.CompareTo(other.value);
-        }
+        public int CompareTo(StackInt other) => value.CompareTo(other.value);
 
         /// <summary>
         /// Checks if the given object is of type <see cref="StackInt"/> and then compares its value with 
@@ -262,10 +260,7 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="other">Other <see cref="StackInt"/> value to compare to this instance.</param>
         /// <returns>true if the value is equal to the value of this instance; otherwise, false.</returns>
-        public bool Equals(StackInt other)
-        {
-            return CompareTo(other) == 0;
-        }
+        public bool Equals(StackInt other) => value == other.value;
 
         /// <summary>
         /// Checks if the given object is of type <see cref="StackInt"/> and if its value is equal to the value of this instance.
@@ -275,41 +270,18 @@ namespace Autarkysoft.Bitcoin
         /// true if value is an instance of <see cref="StackInt"/> 
         /// and equals the value of this instance; otherwise, false.
         /// </returns>
-        public override bool Equals(object obj)
-        {
-            if (obj is null)
-            {
-                return false;
-            }
-            else if (obj is StackInt si)
-            {
-                return Equals(si);
-            }
-            else
-            {
-                return false;
-            }
-        }
+        public override bool Equals(object obj) => !(obj is null) && obj is StackInt si && value == si.value;
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
+        public override int GetHashCode() => value.GetHashCode();
 
         /// <summary>
         /// Converts the value of the current instance to its equivalent string representation.
         /// </summary>
         /// <returns>A string representation of the value of the current instance.</returns>
-        public override string ToString()
-        {
-            return value.ToString();
-        }
-
-        #endregion
-
+        public override string ToString() => value.ToString();
     }
 }

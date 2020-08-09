@@ -114,6 +114,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public override OP OpValue => _opVal;
         // Don't rename (reflection used by tests)
         internal byte[] data;
+        private byte[] stackIntBytes = null;
 
 
 
@@ -215,7 +216,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                if (!StackInt.TryRead(stream, false, out StackInt size, out error))
+                if (!StackInt.TryRead(stream, out stackIntBytes, out StackInt size, out error))
                 {
                     return false;
                 }
@@ -333,6 +334,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             if (data == null)
             {
                 stream.Write((byte)OpValue);
+            }
+            else if (stackIntBytes != null)
+            {
+                // This means the push used a wrong encoded (non-strict) StackInt hence the sig is not removed
+                // even if the signature data is the same.
+                stream.Write(stackIntBytes);
+                stream.Write(data);
             }
             else if (!sig.SequenceEqual(data))
             {

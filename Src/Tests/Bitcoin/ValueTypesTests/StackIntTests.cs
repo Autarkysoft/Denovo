@@ -57,6 +57,119 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
 
+        public static IEnumerable<object[]> GetTryReadCases()
+        {
+            string err1 = "For OP_PushData1 the data value must be bigger than 75.";
+            string err2 = "For OP_PushData2 the data value must be bigger than 255.";
+            string err3 = "For OP_PushData4 the data value must be bigger than 65535.";
+
+            // Not enough bytes to read
+            yield return new object[] { new byte[] { }, false, null, Err.EndOfStream, 0, 0 };
+
+            // 1 byte correct encoding (<0x4c)
+            yield return new object[] { new byte[] { 0 }, true, null, null, 1, 0 };
+            yield return new object[] { new byte[] { 5, 1, 2 }, true, null, null, 1, 5 };
+            yield return new object[] { new byte[] { 75 }, true, null, null, 1, 75 };
+
+            // 2 bytes correct encoding (>=0x4c && <=255)
+            yield return new object[] { new byte[] { 76, 76 }, true, null, null, 2, 76 };
+            yield return new object[] { new byte[] { 76, 77 }, true, null, null, 2, 77 };
+            yield return new object[] { new byte[] { 76, 78 }, true, null, null, 2, 78 };
+            yield return new object[] { new byte[] { 76, 79 }, true, null, null, 2, 79 };
+            yield return new object[] { new byte[] { 76, 132, 10, 20, 30 }, true, null, null, 2, 132 };
+            yield return new object[] { new byte[] { 76, 255, 12 }, true, null, null, 2, 255 };
+
+            // 2 byte not enough bytes to read
+            yield return new object[]
+            {
+                new byte[] { 76 }, false, null, "OP_PushData1 needs to be followed by at least one byte.", 1, 0
+            };
+
+            // 2 bytes wrong encoding (any value < 0x4c)
+            yield return new object[] { new byte[] { 76, 0 }, true, new byte[2] { 76, 0 }, err1, 2, 0 };
+            yield return new object[] { new byte[] { 76, 6 }, true, new byte[2] { 76, 6 }, err1, 2, 6 };
+            yield return new object[] { new byte[] { 76, 12, 13, 14 }, true, new byte[2] { 76, 12 }, err1, 2, 12 };
+            yield return new object[] { new byte[] { 76, 75 }, true, new byte[2] { 76, 75 }, err1, 2, 75 };
+
+            // 3 bytes correct encoding (> 255 && <= 0xffff)
+            yield return new object[] { new byte[] { 77, 0, 1 }, true, null, null, 3, 256 };
+            yield return new object[] { new byte[] { 77, 171, 205 }, true, null, null, 3, 52651 };
+            yield return new object[] { new byte[] { 77, 255, 255 }, true, null, null, 3, ushort.MaxValue };
+
+            // 3 bytes not enough bytes to read
+            yield return new object[]
+            {
+                new byte[] { 77 }, false, null, "OP_PushData2 needs to be followed by at least two byte.", 1, 0
+            };
+            yield return new object[]
+            {
+                new byte[] { 77, 255 }, false, null, "OP_PushData2 needs to be followed by at least two byte.", 1, 0
+            };
+
+            // 3 bytes wrong encoding
+            yield return new object[] { new byte[] { 77, 0, 0 }, true, new byte[3] { 77, 0, 0 }, err2, 3, 0 };
+            yield return new object[] { new byte[] { 77, 1, 0 }, true, new byte[3] { 77, 1, 0 }, err2, 3, 1 };
+            yield return new object[] { new byte[] { 77, 76, 0 }, true, new byte[3] { 77, 76, 0 }, err2, 3, 76 };
+            yield return new object[] { new byte[] { 77, 77, 0 }, true, new byte[3] { 77, 77, 0 }, err2, 3, 77 };
+            yield return new object[] { new byte[] { 77, 78, 0 }, true, new byte[3] { 77, 78, 0 }, err2, 3, 78 };
+            yield return new object[] { new byte[] { 77, 79, 0 }, true, new byte[3] { 77, 79, 0 }, err2, 3, 79 };
+            yield return new object[] { new byte[] { 77, 255, 0 }, true, new byte[3] { 77, 255, 0 }, err2, 3, 255 };
+
+            // 5 bytes correct encoding
+            yield return new object[] { new byte[] { 78, 0, 0, 1, 0 }, true, null, null, 5, ushort.MaxValue + 1 };
+            yield return new object[] { new byte[] { 78, 2, 1, 15, 15 }, true, null, null, 5, 252641538 };
+            yield return new object[] { new byte[] { 78, 255, 255, 255, 255 }, true, null, null, 5, uint.MaxValue };
+
+            // 5 bytes not enough bytes to read
+            string push4Error = "OP_PushData4 needs to be followed by at least 4 byte.";
+            yield return new object[] { new byte[] { 78 }, false, null, push4Error, 1, 0 };
+            yield return new object[] { new byte[] { 78, 255 }, false, null, push4Error, 1, 0 };
+            yield return new object[] { new byte[] { 78, 255, 255 }, false, null, push4Error, 1, 0 };
+            yield return new object[] { new byte[] { 78, 255, 255, 255 }, false, null, push4Error, 1, 0 };
+
+            // 5 bytes wrong encoding
+            yield return new object[] { new byte[] { 78, 0, 0, 0, 0 }, true, new byte[5] { 78, 0, 0, 0, 0 }, err3, 5, 0 };
+            yield return new object[] { new byte[] { 78, 1, 0, 0, 0, 5 }, true, new byte[5] { 78, 1, 0, 0, 0 }, err3, 5, 1 };
+            yield return new object[] { new byte[] { 78, 76, 0, 0, 0 }, true, new byte[5] { 78, 76, 0, 0, 0 }, err3, 5, 76 };
+            yield return new object[] { new byte[] { 78, 77, 0, 0, 0 }, true, new byte[5] { 78, 77, 0, 0, 0 }, err3, 5, 77 };
+            yield return new object[] { new byte[] { 78, 78, 0, 0, 0 }, true, new byte[5] { 78, 78, 0, 0, 0 }, err3, 5, 78 };
+            yield return new object[] { new byte[] { 78, 79, 0, 0, 0, 1, 1 }, true, new byte[5] { 78, 79, 0, 0, 0 }, err3, 5, 79 };
+            yield return new object[] { new byte[] { 78, 0, 1, 0, 0 }, true, new byte[5] { 78, 0, 1, 0, 0 }, err3, 5, 256 };
+            yield return new object[]
+            {
+                new byte[] { 78, 255, 255, 0, 0, 22, 23, 25, 1 }, true, new byte[5] { 78, 255, 255, 0, 0 }, err3, 5, ushort.MaxValue
+            };
+
+            // Wrong first byte to be a StackInt
+            yield return new object[] { new byte[] { 79, 255, 255, 0, 0 }, false, null, "Unknown OP_Push value.", 1, 0 };
+            yield return new object[] { new byte[] { 100, 77, 1, 0 }, false, null, "Unknown OP_Push value.", 1, 0 };
+            yield return new object[] { new byte[] { 255 }, false, null, "Unknown OP_Push value.", 1, 0 };
+        }
+        [Theory]
+        [MemberData(nameof(GetTryReadCases))]
+        public void TryReadTest(byte[] data, bool expSuccess, byte[] expBytes, string expErr, int finalPos, uint expected)
+        {
+            var stream = new FastStreamReader(data);
+            bool actSuccess = StackInt.TryRead(stream, out byte[] actBytes, out StackInt actual, out string error);
+
+            Assert.Equal(expSuccess, actSuccess);
+            Assert.Equal(expBytes, actBytes);
+            Assert.Equal(expErr, error);
+            Helper.ComparePrivateField(stream, "position", finalPos);
+            Helper.ComparePrivateField(actual, "value", expected);
+        }
+
+        [Fact]
+        public void TryRead_Fail_NullStreamTest()
+        {
+            bool b = StackInt.TryRead(null, out _, out StackInt actual, out string error);
+
+            Assert.False(b);
+            Assert.Equal("Stream can not be null.", error);
+            Helper.ComparePrivateField(actual, "value", 0U);
+        }
+
+
         public static IEnumerable<object[]> GetReadCases()
         {
             yield return new object[] { new byte[] { 0 }, 1, 0 };
@@ -71,128 +184,6 @@ namespace Tests.Bitcoin.ValueTypesTests
             yield return new object[] { new byte[] { 78, 2, 1, 15, 15 }, 5, 252641538 };
             yield return new object[] { new byte[] { 78, 255, 255, 255, 255 }, 5, uint.MaxValue };
         }
-        [Theory]
-        [MemberData(nameof(GetReadCases))]
-        public void TryRead_StrictTest(byte[] data, int finalPos, uint expected)
-        {
-            FastStreamReader stream = new FastStreamReader(data);
-            bool b = StackInt.TryRead(stream, true, out StackInt actual, out string error);
-
-            Assert.True(b);
-            Assert.Null(error);
-            Helper.ComparePrivateField(stream, "position", finalPos);
-            Helper.ComparePrivateField(actual, "value", expected);
-        }
-
-        [Theory]
-        [MemberData(nameof(GetReadCases))]
-        public void TryRead_NotStrictTest(byte[] data, int finalPos, uint expected)
-        {
-            FastStreamReader stream = new FastStreamReader(data);
-            bool b = StackInt.TryRead(stream, false, out StackInt actual, out string error);
-
-            Assert.True(b);
-            Assert.Null(error);
-            Helper.ComparePrivateField(stream, "position", finalPos);
-            Helper.ComparePrivateField(actual, "value", expected);
-        }
-
-        public static IEnumerable<object[]> GetReadNotStrictCases()
-        {
-            yield return new object[] { new byte[] { 76, 0 }, 2, 0 };
-            yield return new object[] { new byte[] { 76, 75 }, 2, 75 };
-            yield return new object[] { new byte[] { 77, 0, 0 }, 3, 0 };
-            yield return new object[] { new byte[] { 77, 76, 0 }, 3, 76 };
-            yield return new object[] { new byte[] { 77, 255, 0 }, 3, 255 };
-            yield return new object[] { new byte[] { 78, 0, 0, 0, 0 }, 5, 0 };
-            yield return new object[] { new byte[] { 78, 76, 0, 0, 0 }, 5, 76 };
-            yield return new object[] { new byte[] { 78, 255, 0, 0, 0 }, 5, 255 };
-            yield return new object[] { new byte[] { 78, 255, 255, 0, 0 }, 5, ushort.MaxValue };
-        }
-        [Theory]
-        [MemberData(nameof(GetReadNotStrictCases))]
-        public void TryRead_NotStrict_SpecialCasesTest(byte[] data, int finalPos, uint expected)
-        {
-            FastStreamReader stream = new FastStreamReader(data);
-            bool b = StackInt.TryRead(stream, false, out StackInt actual, out string error);
-
-            Assert.True(b);
-            Assert.Null(error);
-            Helper.ComparePrivateField(stream, "position", finalPos);
-            Helper.ComparePrivateField(actual, "value", expected);
-        }
-
-        public static IEnumerable<object[]> GetReadFailCases()
-        {
-            yield return new object[] { new byte[] { }, 0, Err.EndOfStream };
-            yield return new object[] { new byte[] { 76 }, 1, "OP_PushData1 needs to be followed by at least one byte." };
-            yield return new object[] { new byte[] { 77 }, 1, "OP_PushData2 needs to be followed by at least two byte." };
-            yield return new object[] { new byte[] { 77, 5 }, 1, "OP_PushData2 needs to be followed by at least two byte." };
-            yield return new object[] { new byte[] { 78 }, 1, "OP_PushData4 needs to be followed by at least 4 byte." };
-            yield return new object[]
-            {
-                new byte[] { 78, 12, 255, 78 },
-                1,
-                "OP_PushData4 needs to be followed by at least 4 byte."
-            };
-            yield return new object[] { new byte[] { 79, 255, 255 }, 1, "Unknown OP_Push value." };
-            yield return new object[] { new byte[] { 255, 255, 255 }, 1, "Unknown OP_Push value." };
-        }
-        [Theory]
-        [MemberData(nameof(GetReadFailCases))]
-        public void TryRead_FailTest(byte[] data, int finalPos, string expError)
-        {
-            FastStreamReader stream = new FastStreamReader(data);
-            bool b = StackInt.TryRead(stream, false, out StackInt actual, out string error);
-
-            Assert.False(b);
-            Assert.Equal(expError, error);
-            Helper.ComparePrivateField(stream, "position", finalPos);
-            Helper.ComparePrivateField(actual, "value", 0U);
-        }
-
-        public static IEnumerable<object[]> GetReadFailStrictCases()
-        {
-            yield return new object[] { new byte[] { 76, 0 }, 2, "For OP_PushData1 the data value must be bigger than 75." };
-            yield return new object[] { new byte[] { 76, 75 }, 2, "For OP_PushData1 the data value must be bigger than 75." };
-            yield return new object[] { new byte[] { 77, 0, 0 }, 3, "For OP_PushData2 the data value must be bigger than 255." };
-            yield return new object[]
-            {
-                new byte[] { 78, 0, 0, 0, 0 },
-                5,
-                $"For OP_PushData4 the data value must be bigger than {ushort.MaxValue}."
-            };
-            yield return new object[]
-            {
-                new byte[] { 78, 255, 255, 0, 0 },
-                5,
-                $"For OP_PushData4 the data value must be bigger than {ushort.MaxValue}."
-            };
-        }
-        [Theory]
-        [MemberData(nameof(GetReadFailStrictCases))]
-        public void TryRead_FailStrictTest(byte[] data, int finalPos, string expError)
-        {
-            FastStreamReader stream = new FastStreamReader(data);
-            bool b = StackInt.TryRead(stream, true, out StackInt actual, out string error);
-
-            Assert.False(b);
-            Assert.Equal(expError, error);
-            Helper.ComparePrivateField(stream, "position", finalPos);
-            Helper.ComparePrivateField(actual, "value", 0U);
-        }
-
-        [Fact]
-        public void TryRead_Fail_NullStreamTest()
-        {
-            bool b = StackInt.TryRead(null, true, out StackInt actual, out string error);
-
-            Assert.False(b);
-            Assert.Equal("Stream can not be null.", error);
-            Helper.ComparePrivateField(actual, "value", 0U);
-        }
-
-
         [Theory]
         [MemberData(nameof(GetReadCases))]
         public void ToByteArrayTest(byte[] data, int finalOffset, uint val)
@@ -257,102 +248,138 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
 
-        [Fact]
-        public void ComparisonTest()
+        public static IEnumerable<object[]> GetCompareSameTypeCases()
         {
-            StackInt big = new StackInt(1);
-            StackInt small = new StackInt(0);
-
-            Assert.True(big > small);
-            Assert.True(big >= small);
-            Assert.True(small < big);
-            Assert.True(small <= big);
-            Assert.False(big == small);
-            Assert.True(big != small);
-            Assert.Equal(1, big.CompareTo(small));
-            Assert.Equal(1, big.CompareTo((object)small));
-            Assert.Equal(-1, small.CompareTo(big));
-            Assert.Equal(-1, small.CompareTo((object)big));
-            Assert.False(big.Equals(small));
-            Assert.False(big.Equals((object)small));
+            yield return new object[]
+            {
+                new StackInt(0), new StackInt(0), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new StackInt(1), new StackInt(0), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new StackInt(0), new StackInt(1), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new StackInt(1), new StackInt(1), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new StackInt(1), new StackInt(2), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new StackInt(2), new StackInt(1), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new StackInt(uint.MaxValue),
+                new StackInt(uint.MaxValue),
+                new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new StackInt(uint.MaxValue),
+                new StackInt(0),
+                new ValueCompareResult(true, true, false, false, false, 1),
+            };
+            yield return new object[]
+            {
+                new StackInt(0),
+                new StackInt(uint.MaxValue),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new StackInt(uint.MaxValue-1),
+                new StackInt(uint.MaxValue),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new StackInt(uint.MaxValue),
+                new StackInt(uint.MaxValue-1),
+                new ValueCompareResult(true, true, false, false, false, 1)
+            };
         }
-
-        [Fact]
-        public void Comparison_EqualTest()
-        {
-            StackInt first = new StackInt(1);
-            StackInt second = new StackInt(1);
-
-            Assert.False(first > second);
-            Assert.True(first >= second);
-            Assert.False(second < first);
-            Assert.True(second <= first);
-            Assert.True(first == second);
-            Assert.False(first != second);
-            Assert.Equal(0, first.CompareTo(second));
-            Assert.Equal(0, first.CompareTo((object)second));
-            Assert.True(first.Equals(second));
-            Assert.True(first.Equals((object)second));
-        }
-
         [Theory]
-        [InlineData(1, 2, false, false)]
-        [InlineData(1, 0, true, true)]
-        [InlineData(1, -1, true, true)]
-        public void Comparison_WithIntTest(int c, int i, bool expected, bool expectedEq)
+        [MemberData(nameof(GetCompareSameTypeCases))]
+        public void ComparisonOperator_SameTypeTest(StackInt si1, StackInt si2, ValueCompareResult expected)
         {
-            StackInt ci = new StackInt(c);
+            Assert.Equal(expected.Bigger, si1 > si2);
+            Assert.Equal(expected.BiggerEqual, si1 >= si2);
+            Assert.Equal(expected.Smaller, si1 < si2);
+            Assert.Equal(expected.SmallerEqual, si1 <= si2);
 
-            Assert.Equal(expected, ci > i);
-            Assert.Equal(expectedEq, ci >= i);
+            Assert.Equal(expected.Equal, si1 == si2);
+            Assert.Equal(!expected.Equal, si1 != si2);
 
-            Assert.Equal(!expected, i > ci);
-            Assert.Equal(!expectedEq, i >= ci);
+            Assert.Equal(expected.Equal, si1.Equals(si2));
+            Assert.Equal(expected.Equal, si1.Equals((object)si2));
 
-            Assert.Equal(!expected, ci < i);
-            Assert.Equal(!expectedEq, ci <= i);
-
-            Assert.Equal(expected, i < ci);
-            Assert.Equal(expectedEq, i <= ci);
+            Assert.Equal(expected.Compare, si1.CompareTo(si2));
+            Assert.Equal(expected.Compare, si1.CompareTo((object)si2));
         }
 
-        [Fact]
-        public void Comparison_BigSmall_EqualIntTest()
+        public static IEnumerable<object[]> GetCompareIntCases()
         {
-            StackInt ci = new StackInt(1);
-            int i = 1;
+            yield return new object[] { new StackInt(0), 0, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new StackInt(0), 1, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new StackInt(0), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new StackInt(0), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
 
-            Assert.False(ci > i);
-            Assert.True(ci >= i);
+            yield return new object[] { new StackInt(1), 0, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new StackInt(1), 1, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new StackInt(1), 2, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new StackInt(1), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new StackInt(1), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
 
-            Assert.False(i > ci);
-            Assert.True(i >= ci);
-
-            Assert.False(ci < i);
-            Assert.True(ci <= i);
-
-            Assert.False(i < ci);
-            Assert.True(i <= ci);
+            yield return new object[]
+            {
+                new StackInt(uint.MaxValue), 0, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new StackInt(uint.MaxValue), -1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new StackInt(uint.MaxValue), 1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new StackInt(int.MaxValue), int.MaxValue, new ValueCompareResult(false, true, false, true, true)
+            };
         }
-
         [Theory]
-        [InlineData(1, 1, true)]
-        [InlineData(1, 2, false)]
-        [InlineData(1, -1, false)]
-        public void Comparison_WithInt_EqualTest(int c, int i, bool expected)
+        [MemberData(nameof(GetCompareIntCases))]
+        public void ComparisonOperator_WithIntTest(StackInt si, int i, ValueCompareResult expected)
         {
-            StackInt ci = new StackInt(c);
+            Assert.Equal(expected.Bigger, si > i);
+            Assert.Equal(expected.Bigger, i < si);
 
-            Assert.Equal(expected, ci == i);
-            Assert.Equal(!expected, ci != i);
+            Assert.Equal(expected.BiggerEqual, si >= i);
+            Assert.Equal(expected.BiggerEqual, i <= si);
 
-            Assert.Equal(expected, i == ci);
-            Assert.Equal(!expected, i != ci);
+            Assert.Equal(expected.Smaller, si < i);
+            Assert.Equal(expected.Smaller, i > si);
+
+            Assert.Equal(expected.SmallerEqual, si <= i);
+            Assert.Equal(expected.SmallerEqual, i >= si);
+
+            Assert.Equal(expected.Equal, si == i);
+            Assert.Equal(expected.Equal, i == si);
+
+            Assert.Equal(!expected.Equal, si != i);
+            Assert.Equal(!expected.Equal, i != si);
         }
 
 
         [Fact]
-        public void CompareToTest()
+        public void CompareTo_EdgeTest()
         {
             StackInt si = new StackInt(100);
             object nObj = null;
@@ -363,7 +390,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
         [Fact]
-        public void EqualsTest()
+        public void Equals_EdgeTest()
         {
             StackInt si = new StackInt(100);
             object sObj = "StackInt!";
@@ -390,6 +417,5 @@ namespace Tests.Bitcoin.ValueTypesTests
 
             Assert.Equal("123", actual);
         }
-
     }
 }
