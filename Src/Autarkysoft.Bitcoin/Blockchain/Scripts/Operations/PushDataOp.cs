@@ -304,8 +304,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                StackInt size = new StackInt(data.Length);
-                size.WriteToStream(stream);
+                if (stackIntBytes != null)
+                {
+                    stream.Write(stackIntBytes);
+                }
+                else
+                {
+                    StackInt size = new StackInt(data.Length);
+                    size.WriteToStream(stream);
+                }
                 stream.Write(data);
             }
         }
@@ -360,16 +367,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                foreach (ReadOnlySpan<byte> item in sigs)
+                if (stackIntBytes != null)
                 {
-                    if (item.SequenceEqual(data))
+                    stream.Write(stackIntBytes);
+                }
+                else
+                {
+                    foreach (ReadOnlySpan<byte> item in sigs)
                     {
-                        return;
+                        if (item.SequenceEqual(data))
+                        {
+                            return;
+                        }
                     }
+                    StackInt size = new StackInt(data.Length);
+                    size.WriteToStream(stream);
                 }
 
-                StackInt size = new StackInt(data.Length);
-                size.WriteToStream(stream);
                 stream.Write(data);
             }
         }
@@ -396,7 +410,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     }
                     else
                     {
-                        return ((ReadOnlySpan<byte>)op.data).SequenceEqual(data);
+                        return ((ReadOnlySpan<byte>)op.data).SequenceEqual(data) &&
+                               ((ReadOnlySpan<byte>)op.stackIntBytes).SequenceEqual(stackIntBytes);
                     }
                 }
             }

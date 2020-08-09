@@ -171,6 +171,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Equal(expectedOP, op.OpValue);
         }
 
+        /// <summary>
+        /// { OP.PushData1, 3, 65, 82, 174 }
+        /// </summary>
+        private static readonly byte[] BadEncoding = new byte[] { (byte)OP.PushData1, 3, 65, 82, 174 };
+        /// <summary>
+        /// { 65, 82, 174 }
+        /// </summary>
+        private static readonly byte[] BadEncodingData = new byte[] { 65, 82, 174 };
+        private static PushDataOp GetBadEncodingOp()
+        {
+            var result = new PushDataOp();
+            Assert.True(result.TryRead(new FastStreamReader(BadEncoding), out string error), error);
+            return result;
+        }
 
         public static IEnumerable<object[]> GetRunCases()
         {
@@ -180,6 +194,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             yield return new object[] { new PushDataOp(2), new byte[] { 2 } };
             yield return new object[] { new PushDataOp(16), new byte[] { 16 } };
             yield return new object[] { new PushDataOp(new byte[] { 1, 2, 3 }), new byte[] { 1, 2, 3 } };
+            // Edge case where the StackInt is not correctly used. Has to only push the data.
+            yield return new object[] { GetBadEncodingOp(), BadEncodingData };
         }
         [Theory]
         [MemberData(nameof(GetRunCases))]
@@ -322,6 +338,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
             yield return new object[] { data77, true, expWit77, (OP)0x4c }; //0x4c=OP.PushData1=76
             yield return new object[] { data77, false, exp77, OP.PushData1 };
+
+            yield return new object[] { BadEncoding, false, BadEncodingData, OP.PushData1 };
         }
         [Theory]
         [MemberData(nameof(GetReadCases))]
@@ -461,6 +479,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             yield return new object[] { new PushDataOp(data75), exp75, expWit75 };
             yield return new object[] { new PushDataOp(data76), exp76, expWit76 };
             yield return new object[] { new PushDataOp(data253), exp253, expWit253 };
+
+            // If the PushOp is created from a stream with bad encoding it should also write it to stream in the same bad way
+            // the expectedWit is not needed but we have to keep the test method happy (TryReadWitness uses CompactInt that rejects
+            // any bad encoding)
+            yield return new object[] { GetBadEncodingOp(), BadEncoding, new byte[] { 3, 65, 82, 174 } };
         }
         [Theory]
         [MemberData(nameof(WriteToStreamCases))]
@@ -513,6 +536,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             yield return new object[] { new PushDataOp(data76), sig, exp76 };
             yield return new object[] { new PushDataOp(data253), sig, exp253 };
             yield return new object[] { new PushDataOp(new byte[] { 10, 20, 30 }), sig, new byte[0] };
+
+            // A bad encoding of data unequal to signature
+            yield return new object[] { GetBadEncodingOp(), sig, BadEncoding };
+            // A bad encoding of data same as signature but because it is "bad encoding" it is not removed
+            yield return new object[] { GetBadEncodingOp(), BadEncodingData, BadEncoding };
         }
         [Theory]
         [MemberData(nameof(WriteToStreamSigningSingleCases))]
@@ -563,6 +591,18 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             yield return new object[] { new PushDataOp(new byte[] { 10, 20, 30 }), sigs, new byte[0] };
             yield return new object[] { new PushDataOp(new byte[] { 40, 50, 60, 70 }), sigs, new byte[0] };
             yield return new object[] { new PushDataOp(new byte[] { 110, 111, 112, 113, 114, 115 }), sigs, new byte[0] };
+
+            // Bad encoding with equal signature which is not removed
+            var badPush1 = new PushDataOp();
+            byte[] badBytes1 = new byte[] { (byte)OP.PushData1, 3, 10, 20, 30 };
+            Assert.True(badPush1.TryRead(new FastStreamReader(badBytes1), out string er), er);
+            yield return new object[] { badPush1, sigs, badBytes1 };
+
+            // Bad encoding with unequal signature which is not removed
+            var badPush2 = new PushDataOp();
+            byte[] badBytes2 = new byte[] { (byte)OP.PushData1, 5, 10, 20, 30, 40, 50 };
+            Assert.True(badPush2.TryRead(new FastStreamReader(badBytes2), out er), er);
+            yield return new object[] { badPush2, sigs, badBytes2 };
         }
         [Theory]
         [MemberData(nameof(WriteToStreamSigningMultiCases))]
@@ -584,6 +624,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             yield return new object[] { new PushDataOp(new byte[] { 1, 2, 3 }), new PushDataOp(new byte[] { 1, 2, 3 }), true };
             yield return new object[] { new PushDataOp(new byte[] { 1, 4, 3 }), new PushDataOp(new byte[] { 1, 2, 3 }), false };
             yield return new object[] { new PushDataOp(new byte[] { 1, 2 }), new PushDataOp(new byte[] { 1, 2, 3 }), false };
+
+            yield return new object[] { GetBadEncodingOp(), new PushDataOp(BadEncodingData), false };
+            yield return new object[] { GetBadEncodingOp(), GetBadEncodingOp(), true };
         }
         [Theory]
         [MemberData(nameof(GetEqualCases))]
