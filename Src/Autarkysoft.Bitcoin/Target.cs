@@ -219,19 +219,19 @@ namespace Autarkysoft.Bitcoin
 
         public static bool operator >=(Target left, Target right) => left.value >= right.value;
         public static bool operator >=(Target left, int right) => right < 0 || left.value >= (ulong)right;
-        public static bool operator >=(int left, Target right) => left > 0 && (ulong)left >= right.value;
+        public static bool operator >=(int left, Target right) => left >= 0 && (ulong)left >= right.value;
 
         public static bool operator <(Target left, Target right) => left.value < right.value;
-        public static bool operator <(Target left, int right) => right > 0 && left.value < (ulong)right;
+        public static bool operator <(Target left, int right) => right >= 0 && left.value < (ulong)right;
         public static bool operator <(int left, Target right) => left < 0 || (ulong)left < right.value;
 
         public static bool operator <=(Target left, Target right) => left.value <= right.value;
-        public static bool operator <=(Target left, int right) => right > 0 && left.value <= (ulong)right;
+        public static bool operator <=(Target left, int right) => right >= 0 && left.value <= (ulong)right;
         public static bool operator <=(int left, Target right) => left < 0 || (ulong)left <= right.value;
 
         public static bool operator ==(Target left, Target right) => left.value == right.value;
-        public static bool operator ==(Target left, int right) => right > 0 && left.value == (ulong)right;
-        public static bool operator ==(int left, Target right) => left > 0 && (ulong)left == right.value;
+        public static bool operator ==(Target left, int right) => right >= 0 && left.value == (ulong)right;
+        public static bool operator ==(int left, Target right) => left >= 0 && (ulong)left == right.value;
 
         public static bool operator !=(Target left, Target right) => left.value != right.value;
         public static bool operator !=(Target left, int right) => right < 0 || left.value != (ulong)right;
@@ -239,19 +239,13 @@ namespace Autarkysoft.Bitcoin
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 
-
-        #region Interfaces and overrides
-
         /// <summary>
         /// Compares the value of a given <see cref="Target"/> with the value of this instance and 
         /// And returns -1 if smaller, 0 if equal and 1 if bigger.
         /// </summary>
         /// <param name="other">Other <see cref="Target"/> to compare to this instance.</param>
         /// <returns>-1 if smaller, 0 if equal and 1 if bigger.</returns>
-        public int CompareTo(Target other)
-        {
-            return value.CompareTo(other.value);
-        }
+        public int CompareTo(Target other) => value.CompareTo(other.value);
 
         /// <summary>
         /// Checks if the given object is of type <see cref="Target"/> and then compares its value with the value of this instance.
@@ -275,10 +269,7 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="other">Other <see cref="Target"/> value to compare to this instance.</param>
         /// <returns>true if the value is equal to the value of this instance; otherwise, false.</returns>
-        public bool Equals(Target other)
-        {
-            return CompareTo(other) == 0;
-        }
+        public bool Equals(Target other) => value == other.value;
 
         /// <summary>
         /// Checks if the given object is of type <see cref="Target"/> and if its value is equal to the value of this instance.
@@ -288,41 +279,18 @@ namespace Autarkysoft.Bitcoin
         /// true if value is an instance of <see cref="Target"/> 
         /// and equals the value of this instance; otherwise, false.
         /// </returns>
-        public override bool Equals(object obj)
-        {
-            if (obj is null)
-            {
-                return false;
-            }
-            else if (obj is Target tar)
-            {
-                return Equals(tar);
-            }
-            else
-            {
-                return false;
-            }
-        }
+        public override bool Equals(object obj) => !(obj is null) && obj is Target tar && value == tar.value;
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
+        public override int GetHashCode() => value.GetHashCode();
 
         /// <summary>
         /// Converts the value of the current instance to its equivalent string representation.
         /// </summary>
         /// <returns>A string representation of the value of the current instance.</returns>
-        public override string ToString()
-        {
-            return value.ToString();
-        }
-
-        #endregion
-
+        public override string ToString() => value.ToString();
     }
 }

@@ -171,27 +171,39 @@ namespace Autarkysoft.Bitcoin
 
 
         public static bool operator >(LockTime left, LockTime right) => left.value > right.value;
+        public static bool operator >(LockTime left, long right) => right < 0 || left.value > (ulong)right;
         public static bool operator >(LockTime left, int right) => right < 0 || left.value > (ulong)right;
+        public static bool operator >(long left, LockTime right) => left > 0 && (ulong)left > right.value;
         public static bool operator >(int left, LockTime right) => left > 0 && (ulong)left > right.value;
 
         public static bool operator >=(LockTime left, LockTime right) => left.value >= right.value;
+        public static bool operator >=(LockTime left, long right) => right < 0 || left.value >= (ulong)right;
         public static bool operator >=(LockTime left, int right) => right < 0 || left.value >= (ulong)right;
-        public static bool operator >=(int left, LockTime right) => left > 0 && (ulong)left >= right.value;
+        public static bool operator >=(long left, LockTime right) => left >= 0 && (ulong)left >= right.value;
+        public static bool operator >=(int left, LockTime right) => left >= 0 && (ulong)left >= right.value;
 
         public static bool operator <(LockTime left, LockTime right) => left.value < right.value;
-        public static bool operator <(LockTime left, int right) => right > 0 && left.value < (ulong)right;
+        public static bool operator <(LockTime left, long right) => right >= 0 && left.value < (ulong)right;
+        public static bool operator <(LockTime left, int right) => right >= 0 && left.value < (ulong)right;
+        public static bool operator <(long left, LockTime right) => left < 0 || (ulong)left < right.value;
         public static bool operator <(int left, LockTime right) => left < 0 || (ulong)left < right.value;
 
         public static bool operator <=(LockTime left, LockTime right) => left.value <= right.value;
-        public static bool operator <=(LockTime left, int right) => right > 0 && left.value <= (ulong)right;
+        public static bool operator <=(LockTime left, long right) => right >= 0 && left.value <= (ulong)right;
+        public static bool operator <=(LockTime left, int right) => right >= 0 && left.value <= (ulong)right;
+        public static bool operator <=(long left, LockTime right) => left < 0 || (ulong)left <= right.value;
         public static bool operator <=(int left, LockTime right) => left < 0 || (ulong)left <= right.value;
 
         public static bool operator ==(LockTime left, LockTime right) => left.value == right.value;
-        public static bool operator ==(LockTime left, int right) => right > 0 && left.value == (ulong)right;
-        public static bool operator ==(int left, LockTime right) => left > 0 && (ulong)left == right.value;
+        public static bool operator ==(LockTime left, long right) => right >= 0 && left.value == (ulong)right;
+        public static bool operator ==(LockTime left, int right) => right >= 0 && left.value == (ulong)right;
+        public static bool operator ==(long left, LockTime right) => left >= 0 && (ulong)left == right.value;
+        public static bool operator ==(int left, LockTime right) => left >= 0 && (ulong)left == right.value;
 
         public static bool operator !=(LockTime left, LockTime right) => left.value != right.value;
+        public static bool operator !=(LockTime left, long right) => right < 0 || left.value != (ulong)right;
         public static bool operator !=(LockTime left, int right) => right < 0 || left.value != (ulong)right;
+        public static bool operator !=(long left, LockTime right) => left < 0 || (ulong)left != right.value;
         public static bool operator !=(int left, LockTime right) => left < 0 || (ulong)left != right.value;
 
         public static LockTime operator ++(LockTime lt) => lt.value == uint.MaxValue ? Maximum : new LockTime(lt.value + 1);
@@ -202,14 +214,8 @@ namespace Autarkysoft.Bitcoin
         /// Returns a new instance of <see cref="LockTime"/> with its value increased by one up to its maximum value
         /// without changing this instance. If you want to change this instance's value use the ++ operator.
         /// </summary>
-        public LockTime Increment()
-        {
-            return value == uint.MaxValue ? Maximum : new LockTime(value + 1);
-        }
+        public LockTime Increment() => value == uint.MaxValue ? Maximum : new LockTime(value + 1);
 
-
-
-        #region Interfaces and overrides
 
         /// <summary>
         /// Compares the value of a given <see cref="LockTime"/> with the value of this instance and 
@@ -217,10 +223,7 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="other">Other <see cref="LockTime"/> to compare to this instance.</param>
         /// <returns>-1 if smaller, 0 if equal and 1 if bigger.</returns>
-        public int CompareTo(LockTime other)
-        {
-            return value.CompareTo(other.value);
-        }
+        public int CompareTo(LockTime other) => value.CompareTo(other.value);
 
         /// <summary>
         /// Checks if the given object is of type <see cref="LockTime"/> and then compares its value with the value of this instance.
@@ -244,10 +247,7 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="other">Other <see cref="LockTime"/> value to compare to this instance.</param>
         /// <returns>true if the value is equal to the value of this instance; otherwise, false.</returns>
-        public bool Equals(LockTime other)
-        {
-            return CompareTo(other) == 0;
-        }
+        public bool Equals(LockTime other) => value == other.value;
 
         /// <summary>
         /// Checks if the given object is of type <see cref="LockTime"/> 
@@ -258,30 +258,13 @@ namespace Autarkysoft.Bitcoin
         /// true if value is an instance of <see cref="LockTime"/> 
         /// and equals the value of this instance; otherwise, false.
         /// </returns>
-        public override bool Equals(object obj)
-        {
-            if (obj is null)
-            {
-                return false;
-            }
-            else if (obj is LockTime lt)
-            {
-                return Equals(lt);
-            }
-            else
-            {
-                return false;
-            }
-        }
+        public override bool Equals(object obj) => !(obj is null) && obj is LockTime lt && value == lt.value;
 
         /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
+        public override int GetHashCode() => value.GetHashCode();
 
         /// <summary>
         /// Converts the value of the current instance to its equivalent string representation.
@@ -291,8 +274,5 @@ namespace Autarkysoft.Bitcoin
         {
             return (value < Threshold || value == uint.MaxValue) ? $"{value}" : $"{UnixTimeStamp.EpochToTime(value)}";
         }
-
-        #endregion
-
     }
 }

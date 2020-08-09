@@ -171,11 +171,11 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
 
-
+        // TODO: add comparison tests. Target may need some significant changes before
 
 
         [Fact]
-        public void CompareToTest()
+        public void CompareTo_EdgeTest()
         {
             Target tar = new Target(0x1b0404cbU);
             object nObj = null;
@@ -186,7 +186,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
         [Fact]
-        public void EqualsTest()
+        public void Equals_EdgeTest()
         {
             Target tar = new Target(0x1b0404cbU);
             object sObj = "Target!";
@@ -208,6 +208,5 @@ namespace Tests.Bitcoin.ValueTypesTests
             Target tar = new Target(0x1b0404cbU);
             Assert.Equal("453248203", tar.ToString());
         }
-
     }
 }

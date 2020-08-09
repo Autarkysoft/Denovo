@@ -207,101 +207,151 @@ namespace Tests.Bitcoin.ValueTypesTests
             Assert.Equal(expected, actual2);
         }
 
-        [Fact]
-        public void ComparisonTest()
+
+        public static IEnumerable<object[]> GetCompareSameTypeCases()
         {
-            LockTime big = new LockTime(1);
-            LockTime small = new LockTime(0);
-
-            Assert.True(big > small);
-            Assert.True(big >= small);
-            Assert.True(small < big);
-            Assert.True(small <= big);
-            Assert.False(big == small);
-            Assert.True(big != small);
-            Assert.Equal(1, big.CompareTo(small));
-            Assert.Equal(1, big.CompareTo((object)small));
-            Assert.Equal(-1, small.CompareTo(big));
-            Assert.Equal(-1, small.CompareTo((object)big));
-            Assert.False(big.Equals(small));
-            Assert.False(big.Equals((object)small));
+            yield return new object[]
+            {
+                new LockTime(0), new LockTime(0), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new LockTime(1), new LockTime(0), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new LockTime(0), new LockTime(1), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new LockTime(1), new LockTime(1), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new LockTime(1), new LockTime(2), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new LockTime(2), new LockTime(1), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new LockTime(uint.MaxValue),
+                new LockTime(uint.MaxValue),
+                new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new LockTime(uint.MaxValue),
+                new LockTime(0),
+                new ValueCompareResult(true, true, false, false, false, 1),
+            };
+            yield return new object[]
+            {
+                new LockTime(0),
+                new LockTime(uint.MaxValue),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new LockTime(uint.MaxValue-1),
+                new LockTime(uint.MaxValue),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new LockTime(uint.MaxValue),
+                new LockTime(uint.MaxValue-1),
+                new ValueCompareResult(true, true, false, false, false, 1)
+            };
         }
-
-        [Fact]
-        public void Comparison_EqualTest()
-        {
-            LockTime first = new LockTime(1);
-            LockTime second = new LockTime(1);
-
-            Assert.False(first > second);
-            Assert.True(first >= second);
-            Assert.False(second < first);
-            Assert.True(second <= first);
-            Assert.True(first == second);
-            Assert.False(first != second);
-            Assert.Equal(0, first.CompareTo(second));
-            Assert.Equal(0, first.CompareTo((object)second));
-            Assert.True(first.Equals(second));
-            Assert.True(first.Equals((object)second));
-        }
-
         [Theory]
-        [InlineData(1, 2, false, false)]
-        [InlineData(1, 0, true, true)]
-        [InlineData(1, -1, true, true)]
-        public void Comparison_WithIntTest(int c, int i, bool expected, bool expectedEq)
+        [MemberData(nameof(GetCompareSameTypeCases))]
+        public void ComparisonOperator_SameTypeTest(LockTime lt1, LockTime lt, ValueCompareResult expected)
         {
-            LockTime lt = new LockTime(c);
+            Assert.Equal(expected.Bigger, lt1 > lt);
+            Assert.Equal(expected.BiggerEqual, lt1 >= lt);
+            Assert.Equal(expected.Smaller, lt1 < lt);
+            Assert.Equal(expected.SmallerEqual, lt1 <= lt);
 
-            Assert.Equal(expected, lt > i);
-            Assert.Equal(expectedEq, lt >= i);
+            Assert.Equal(expected.Equal, lt1 == lt);
+            Assert.Equal(!expected.Equal, lt1 != lt);
 
-            Assert.Equal(!expected, i > lt);
-            Assert.Equal(!expectedEq, i >= lt);
+            Assert.Equal(expected.Equal, lt1.Equals(lt));
+            Assert.Equal(expected.Equal, lt1.Equals((object)lt));
 
-            Assert.Equal(!expected, lt < i);
-            Assert.Equal(!expectedEq, lt <= i);
-
-            Assert.Equal(expected, i < lt);
-            Assert.Equal(expectedEq, i <= lt);
+            Assert.Equal(expected.Compare, lt1.CompareTo(lt));
+            Assert.Equal(expected.Compare, lt1.CompareTo((object)lt));
         }
 
-        [Fact]
-        public void Comparison_BigSmall_EqualIntTest()
+        public static IEnumerable<object[]> GetCompareIntCases()
         {
-            LockTime lt = new LockTime(1);
-            int i = 1;
+            yield return new object[] { new LockTime(0), 0, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new LockTime(0), 1, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new LockTime(0), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new LockTime(0), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
 
-            Assert.False(lt > i);
-            Assert.True(lt >= i);
+            yield return new object[] { new LockTime(1), 0, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new LockTime(1), 1, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new LockTime(1), 2, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new LockTime(1), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new LockTime(1), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
 
-            Assert.False(i > lt);
-            Assert.True(i >= lt);
-
-            Assert.False(lt < i);
-            Assert.True(lt <= i);
-
-            Assert.False(i < lt);
-            Assert.True(i <= lt);
+            yield return new object[]
+            {
+                new LockTime(uint.MaxValue), 0, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new LockTime(uint.MaxValue), -1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new LockTime(uint.MaxValue), 1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new LockTime(int.MaxValue), int.MaxValue, new ValueCompareResult(false, true, false, true, true)
+            };
         }
-
         [Theory]
-        [InlineData(1, 1, true)]
-        [InlineData(1, 2, false)]
-        [InlineData(1, -1, false)]
-        public void Comparison_WithInt_EqualTest(int c, int i, bool expected)
+        [MemberData(nameof(GetCompareIntCases))]
+        public void ComparisonOperator_WithIntTest(LockTime lt, int i, ValueCompareResult expected)
         {
-            LockTime lt = new LockTime(c);
+            Assert.Equal(expected.Bigger, lt > i);
+            Assert.Equal(expected.Bigger, lt > (long)i);
+            Assert.Equal(expected.Bigger, i < lt);
+            Assert.Equal(expected.Bigger, (long)i < lt);
 
-            Assert.Equal(expected, lt == i);
-            Assert.Equal(!expected, lt != i);
+            Assert.Equal(expected.BiggerEqual, lt >= i);
+            Assert.Equal(expected.BiggerEqual, lt >= (long)i);
+            Assert.Equal(expected.BiggerEqual, i <= lt);
+            Assert.Equal(expected.BiggerEqual, (long)i <= lt);
 
-            Assert.Equal(expected, i == lt);
-            Assert.Equal(!expected, i != lt);
+            Assert.Equal(expected.Smaller, lt < i);
+            Assert.Equal(expected.Smaller, lt < (long)i);
+            Assert.Equal(expected.Smaller, i > lt);
+            Assert.Equal(expected.Smaller, (long)i > lt);
+
+            Assert.Equal(expected.SmallerEqual, lt <= i);
+            Assert.Equal(expected.SmallerEqual, lt <= (long)i);
+            Assert.Equal(expected.SmallerEqual, i >= lt);
+            Assert.Equal(expected.SmallerEqual, (long)i >= lt);
+
+            Assert.Equal(expected.Equal, lt == i);
+            Assert.Equal(expected.Equal, i == lt);
+            Assert.Equal(expected.Equal, lt == (long)i);
+            Assert.Equal(expected.Equal, (long)i == lt);
+
+            Assert.Equal(!expected.Equal, lt != i);
+            Assert.Equal(!expected.Equal, i != lt);
+            Assert.Equal(!expected.Equal, lt != (long)i);
+            Assert.Equal(!expected.Equal, (long)i != lt);
         }
 
+
         [Fact]
-        public void CompareToTest()
+        public void CompareTo_EdgeTest()
         {
             LockTime lt = new LockTime(100);
             object nObj = null;
@@ -312,7 +362,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
         [Fact]
-        public void EqualsTest()
+        public void Equals_EdgeTest()
         {
             LockTime lt = new LockTime(100);
             object sObj = "LockTime!";
@@ -384,6 +434,5 @@ namespace Tests.Bitcoin.ValueTypesTests
             lt++;
             Assert.Equal(expected, lt);
         }
-
     }
 }
