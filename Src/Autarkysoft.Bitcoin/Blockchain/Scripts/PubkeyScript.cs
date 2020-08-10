@@ -134,20 +134,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 return PubkeyScriptSpecialType.P2SH;
             }
             // https://github.com/bitcoin/bitcoin/blob/476436b2dec254bb988f8c7a6cbec1d7bb7cecfd/src/script/script.cpp#L215-L231
-            else if (Data.Length >= 4 && Data.Length <= 42 && consensus.IsSegWitEnabled(height))
+            else if (consensus.IsSegWitEnabled(height) &&
+                     Data.Length >= 4 && Data.Length <= 42 &&
+                     Data.Length == Data[1] + 2 &&
+                     (Data[0] == 0 || (Data[0] >= (byte)OP._1 && Data[0] <= (byte)OP._16)))
             {
-                // OP_0 0x14(data20)
-                if (Data.Length == 22 && Data[0] == 0 && Data[1] == 20)
+                // Version 0 witness program
+                if (Data[0] == 0)
                 {
-                    return PubkeyScriptSpecialType.P2WPKH;
-                }
-                // OP_0 0x20(data32)
-                else if (Data.Length == 34 && Data[0] == 0 && Data[1] == 32)
-                {
-                    return PubkeyScriptSpecialType.P2WSH;
+                    // OP_0 0x14(data20)
+                    if (Data.Length == 22)
+                    {
+                        return PubkeyScriptSpecialType.P2WPKH;
+                    }
+                    // OP_0 0x20(data32)
+                    else if (Data.Length == 34)
+                    {
+                        return PubkeyScriptSpecialType.P2WSH;
+                    }
+                    else
+                    {
+                        return PubkeyScriptSpecialType.InvalidWitness;
+                    }
                 }
                 // OP_num PushData()
-                else if ((Data[0] == 0 || (Data[0] >= (byte)OP._1 && Data[0] <= (byte)OP._16)) && Data.Length == Data[1] + 2)
+                else
                 {
                     return PubkeyScriptSpecialType.UnknownWitness;
                 }

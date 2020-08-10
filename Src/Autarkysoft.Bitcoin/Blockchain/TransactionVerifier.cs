@@ -565,12 +565,25 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
                 {
+                    // The unknown witness versions must have an empty signature script but there is no checking the IWitness
+                    if (currentInput.SigScript.Data.Length != 0)
+                    {
+                        error = "Non-empty signature script for witness (unknown version).";
+                        return false;
+                    }
+
                     AnySegWit = true;
+                    // TODO: there is no need to Run() the 2 pubOps which are PushOps but we have to skip the VerifyOP.Run()
                     foreach (var op in pubOps)
                     {
                         op.Run(stack, out _);
                     }
                     // VerifyOp will make sure top stack item is not "False"
+                }
+                else if (pubType == PubkeyScriptSpecialType.InvalidWitness)
+                {
+                    error = "Invalid witness pubkey script was found.";
+                    return false;
                 }
                 else
                 {
