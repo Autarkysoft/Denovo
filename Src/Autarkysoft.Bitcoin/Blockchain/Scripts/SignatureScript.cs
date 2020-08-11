@@ -89,8 +89,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
             if (consensus.IsBip34Enabled(height))
             {
-                PushDataOp op = new PushDataOp();
-                return op.TryRead(new FastStreamReader(Data), out _) && op.TryGetNumber(out long h, out _, true, 5) && h == height;
+                var stream = new FastStream(4);
+                new PushDataOp(height).WriteToStream(stream);
+                ReadOnlySpan<byte> expected = stream.ToByteArray();
+
+                return Data.Length >= expected.Length && ((ReadOnlySpan<byte>)Data).Slice(0, expected.Length).SequenceEqual(expected);
             }
             else
             {

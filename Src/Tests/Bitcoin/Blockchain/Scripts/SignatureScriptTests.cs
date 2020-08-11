@@ -101,6 +101,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[] { new byte[] { 1, 123 }, 123, new MockConsensus(123) { bip34 = true }, true };
             yield return new object[] { new byte[] { 2, 123, 0 }, 123, new MockConsensus(123) { bip34 = true }, false };
             yield return new object[] { new byte[] { 3, 123 }, 123, new MockConsensus(123) { bip34 = true }, false };
+            // Test endianness, taken from block #643158
+            yield return new object[]
+            {
+                new byte[] { 0x03, 0x56, 0xd0, 0x09 }, 643158, new MockConsensus(643158) { bip34 = true }, true
+            };
+            yield return new object[]
+            {
+                new byte[] { 0x03, 0x09, 0xd0, 0x56 }, 643158, new MockConsensus(643158) { bip34 = true }, false
+            };
+            // Bad StackInt is used for pushing
+            yield return new object[]
+            {
+                new byte[] { (byte)OP.PushData1, 1, 123 }, 123, new MockConsensus(123) { bip34 = true }, false
+            };
         }
         [Theory]
         [MemberData(nameof(GetVerifyCoinbaseCases))]
