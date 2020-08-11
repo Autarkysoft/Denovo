@@ -78,20 +78,28 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Converts the given P2WPKH script operations to the byte array used in serialization for signing.
         /// <para/>Note: Will not validate (assumes the validation is done by the caller)
-        /// <para/>Note: does not include result length
+        /// <para/>Note: does not include result length (<see cref="CompactInt"/>)
         /// </summary>
         /// <param name="ops">
         /// Must contain 2 <see cref="PushDataOp"/> with first one being <see cref="OP._0"/> and second being a 20 byte push.
         /// </param>
         /// <returns>An array of bytes</returns>
-        public byte[] ConvertP2wpkh(IOperation[] ops)
+        public byte[] ConvertP2wpkh(IOperation[] ops) => ConvertP2wpkh(((PushDataOp)ops[1]).data);
+
+        /// <summary>
+        /// Converts the given hash from a P2WPKH script to the byte array used in serialization for signing.
+        /// <para/>Note: does not include result length (<see cref="CompactInt"/>)
+        /// </summary>
+        /// <param name="hash">20 byte hash</param>
+        /// <returns>An array of bytes</returns>
+        public byte[] ConvertP2wpkh(byte[] hash)
         {
             // Convert P2WPKH (0014<hash160>) to (19)76a914<hash160>88ac without data length (0x19)
             byte[] result = new byte[25];
             result[0] = (byte)OP.DUP;
             result[1] = (byte)OP.HASH160;
             result[2] = 20;
-            Buffer.BlockCopy(((PushDataOp)ops[1]).data, 0, result, 3, 20);
+            Buffer.BlockCopy(hash, 0, result, 3, 20);
             result[^2] = (byte)OP.EqualVerify;
             result[^1] = (byte)OP.CheckSig;
 
