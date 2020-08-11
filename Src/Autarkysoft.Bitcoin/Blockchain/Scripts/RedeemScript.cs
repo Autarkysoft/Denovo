@@ -143,15 +143,36 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public RedeemScriptSpecialType GetSpecialType()
+        public RedeemScriptSpecialType GetSpecialType(IConsensus consensus, int height)
         {
-            if (Data.Length == 22 && Data[0] == 0 && Data[1] == 20)
+            if (consensus.IsSegWitEnabled(height) &&
+                Data.Length >= 4 && Data.Length <= 42 &&
+                Data.Length == Data[1] + 2 &&
+                (Data[0] == 0 || (Data[0] >= (byte)OP._1 && Data[0] <= (byte)OP._16)))
             {
-                return RedeemScriptSpecialType.P2SH_P2WPKH;
-            }
-            else if (Data.Length == 34 && Data[0] == 0 && Data[1] == 32)
-            {
-                return RedeemScriptSpecialType.P2SH_P2WSH;
+                // Version 0 witness program
+                if (Data[0] == 0)
+                {
+                    // OP_0 0x14(data20)
+                    if (Data.Length == 22)
+                    {
+                        return RedeemScriptSpecialType.P2SH_P2WPKH;
+                    }
+                    // OP_0 0x20(data32)
+                    else if (Data.Length == 34)
+                    {
+                        return RedeemScriptSpecialType.P2SH_P2WSH;
+                    }
+                    else
+                    {
+                        return RedeemScriptSpecialType.InvalidWitness;
+                    }
+                }
+                // OP_num PushData()
+                else
+                {
+                    return RedeemScriptSpecialType.UnknownWitness;
+                }
             }
 
             return RedeemScriptSpecialType.None;

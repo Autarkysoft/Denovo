@@ -67,10 +67,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         P2SH,
         /// <summary>
-        /// Any invalid witness pubkey script type that should be rejected during evaluation.
-        /// </summary>
-        InvalidWitness,
-        /// <summary>
         /// "Pay to witness public key hash" public script type
         /// (<see cref="ISignatureScript"/> must be empty and <see cref="IWitness"/> must contain only 2 items:
         /// signature + public key)
@@ -80,6 +76,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// "Pay to witness script hash" public script type
         /// </summary>
         P2WSH,
+        /// <summary>
+        /// Any invalid witness pubkey script type that should be rejected during evaluation.
+        /// </summary>
+        InvalidWitness,
         /// <summary>
         /// Witness but with an unknown version (currently anything above zero)
         /// </summary>
@@ -138,5 +138,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Redeem script for "pay to witness script hash in a pay to script hash" scripts
         /// </summary>
         P2SH_P2WSH,
+        /// <summary>
+        /// Any invalid witness pubkey script type that should be rejected during evaluation.
+        /// </summary>
+        InvalidWitness,
+        /// <summary>
+        /// Witness but with an unknown version (currently anything above zero)
+        /// </summary>
+        UnknownWitness,
     }
 }

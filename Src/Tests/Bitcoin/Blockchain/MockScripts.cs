@@ -164,7 +164,7 @@ namespace Tests.Bitcoin.Blockchain
         private readonly RedeemScriptType typeToReturn;
 
         public RedeemScriptType GetRedeemScriptType() => typeToReturn;
-        public RedeemScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public RedeemScriptSpecialType GetSpecialType(IConsensus c, int height) => throw new NotImplementedException();
         public int CountSigOps(IOperation[] ops) => throw new NotImplementedException();
     }
 
@@ -277,7 +277,7 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        public RedeemScriptSpecialType GetSpecialType() => throw new NotImplementedException();
+        public RedeemScriptSpecialType GetSpecialType(IConsensus c, int height) => throw new NotImplementedException();
         public int CountSigOps(IOperation[] ops) => throw new NotImplementedException();
     }
 }

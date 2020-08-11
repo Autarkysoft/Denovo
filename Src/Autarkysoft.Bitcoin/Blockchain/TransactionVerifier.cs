@@ -251,7 +251,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     else
                     {
                         RedeemScript redeem = new RedeemScript(rdmPush.data);
-                        RedeemScriptSpecialType rdmType = redeem.GetSpecialType();
+                        RedeemScriptSpecialType rdmType = redeem.GetSpecialType(consensus, BlockHeight);
                         if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
                         {
                             error = $"Script evaluation failed (invalid redeem script)." +
