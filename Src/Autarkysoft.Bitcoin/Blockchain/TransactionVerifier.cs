@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain
@@ -17,7 +18,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
     /// updating state of the transaction inside memory pool and UTXO set.
     /// Implements <see cref="ITransactionVerifier"/>.
     /// </summary>
-    public class TransactionVerifier : ITransactionVerifier
+    public class TransactionVerifier : ITransactionVerifier, IDisposable
     {
         /// <summary>
         /// Initializes a new instance of <see cref="TransactionVerifier"/> using given parameters.
@@ -40,8 +41,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
             utxoDb = utxoDatabase;
             mempool = memoryPool;
             this.consensus = consensus;
+
             calc = new EllipticCurveCalculator();
             scrSer = new ScriptSerializer();
+            hash160 = new Ripemd160Sha256();
+            sha256 = new Sha256();
         }
 
 
@@ -51,6 +55,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private readonly IUtxoDatabase utxoDb;
         private readonly IMemoryPool mempool;
         private readonly IConsensus consensus;
+        private Ripemd160Sha256 hash160;
+        private Sha256 sha256;
 
 
         /// <inheritdoc/>
@@ -127,6 +133,200 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
+        private bool VerifyP2pkh(ITransaction tx, int index, PushDataOp sigPush, PushDataOp pubPush,
+                                 ReadOnlySpan<byte> pubScrData, out string error)
+        {
+            var actualHash = hash160.ComputeHash(pubPush.data);
+            if (!pubScrData.Slice(3, 20).SequenceEqual(actualHash))
+            {
+                error = "Invalid hash.";
+                return false;
+            }
+
+            Signature sig;
+            if (consensus.IsStrictDerSig(BlockHeight))
+            {
+                if (!Signature.TryReadStrict(sigPush.data, out sig, out error))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!Signature.TryReadLoose(sigPush.data, out sig, out error))
+                {
+                    return false;
+                }
+            }
+
+            if (!PublicKey.TryRead(pubPush.data, out PublicKey pubK))
+            {
+                error = "Invalid public key";
+                return false;
+            }
+
+            byte[] toSign = tx.SerializeForSigning(pubScrData.ToArray(), index, sig.SigHash);
+            if (calc.Verify(toSign, sig, pubK, ForceLowS))
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = "Invalid signature";
+                return false;
+            }
+        }
+
+        private bool VerifyP2wpkh(ITransaction tx, int index, PushDataOp sigPush, PushDataOp pubPush,
+                                  ReadOnlySpan<byte> pubScrData, ulong amount, out string error)
+        {
+            if (sigPush.data == null || pubPush.data == null)
+            {
+                error = "Invalid data pushes in P2WPKH witness.";
+                return false;
+            }
+
+            var actualHash = hash160.ComputeHash(pubPush.data);
+            if (!pubScrData.Slice(2, 20).SequenceEqual(actualHash))
+            {
+                error = "Invalid hash.";
+                return false;
+            }
+
+            if (!Signature.TryReadStrict(sigPush.data, out Signature sig, out error))
+            {
+                error = $"Invalid signature ({error})";
+                return false;
+            }
+
+            if (!PublicKey.TryRead(pubPush.data, out PublicKey pubK))
+            {
+                error = "Invalid public key";
+                return false;
+            }
+
+            byte[] toSign = tx.SerializeForSigningSegWit(scrSer.ConvertP2wpkh(actualHash), index, amount, sig.SigHash);
+            if (calc.Verify(toSign, sig, pubK, ForceLowS))
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = "Invalid signature";
+                return false;
+            }
+        }
+
+        private bool VerifyP2wsh(ITransaction tx, int index, IRedeemScript redeem, ReadOnlySpan<byte> expectedHash,
+                                 ulong amount, out string error)
+        {
+            ReadOnlySpan<byte> actualHash = sha256.ComputeHash(redeem.Data);
+            if (!actualHash.SequenceEqual(expectedHash))
+            {
+                error = "Invalid hash.";
+                return false;
+            }
+
+            if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
+            {
+                error = $"Script evaluation failed." +
+                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                        $"{Environment.NewLine}More info: {error}";
+                return false;
+            }
+
+            // Note that there is no *Constants.WitnessScaleFactor here anymore
+            TotalSigOpCount += redeem.CountSigOps(redeemOps);
+
+            var stack = new OpData()
+            {
+                Tx = tx,
+                TxInIndex = index,
+
+                ForceLowS = ForceLowS,
+                StrictNumberEncoding = StrictNumberEncoding,
+
+                IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
+                IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
+                IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
+                IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
+            };
+
+            for (int j = 0; j < tx.WitnessList[index].Items.Length - 1; j++)
+            {
+                if (!tx.WitnessList[index].Items[j].Run(stack, out error))
+                {
+                    error = $"Script evaluation failed." +
+                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                            $"{Environment.NewLine}More info: {error}";
+                    return false;
+                }
+            }
+
+            stack.AmountBeingSpent = amount;
+            stack.IsSegWit = true;
+            stack.OpCount = redeemOpCount;
+            stack.ExecutingScript = redeemOps;
+
+            foreach (var op in redeemOps)
+            {
+                if (!op.Run(stack, out error))
+                {
+                    error = $"Script evaluation failed." +
+                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                            $"{Environment.NewLine}More info: {error}";
+                    return false;
+                }
+            }
+
+            // Stack has to only have 1 item left
+            if (stack.ItemCount == 1 && IsNotZero(stack.Pop()))
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = stack.ItemCount != 1 ?
+                    "Stack has to have only 1 item after witness execution." :
+                    "Top stack item is not true";
+                return false;
+            }
+        }
+
+
+        private bool IsNotZero(byte[] data)
+        {
+            for (int i = 0; i < data.Length; i++)
+            {
+                if (data[i] != 0)
+                {
+                    // Can be negative zero
+                    if (i == data.Length - 1 && data[i] == 0x80)
+                    {
+                        return false;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+        private bool CheckStack(OpData stack, out string error)
+        {
+            if (stack.ItemCount > 0 && IsNotZero(stack.Pop()))
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = stack.ItemCount == 0 ? "Emtpy stack" : "Top stack item is not true.";
+                return false;
+            }
+        }
+
         /// <inheritdoc/>
         public bool Verify(ITransaction tx, out string error)
         {
@@ -168,98 +368,67 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 toSpend += prevOutput.Amount;
 
-                if (!prevOutput.PubScript.TryEvaluate(out IOperation[] pubOps, out int pubOpCount, out error))
-                {
-                    error = $"Invalid input transaction pubkey script." +
-                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                            $"{Environment.NewLine}More info: {error}";
-                    return false;
-                }
-
-                if (!currentInput.SigScript.TryEvaluate(out IOperation[] signatureOps, out int signatureOpCount, out error))
-                {
-                    error = $"Invalid transaction signature script." +
-                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                            $"{Environment.NewLine}More info: {error}";
-                    return false;
-                }
-
-                OpData stack = new OpData()
-                {
-                    Tx = tx,
-                    TxInIndex = i,
-
-                    ForceLowS = ForceLowS,
-                    StrictNumberEncoding = StrictNumberEncoding,
-
-                    IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
-                    IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
-                    IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
-                    IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
-                };
-
                 PubkeyScriptSpecialType pubType = prevOutput.PubScript.GetSpecialType(consensus, BlockHeight);
 
-                // TODO: optimize for specific pubScrTypes
                 if (pubType == PubkeyScriptSpecialType.None || pubType == PubkeyScriptSpecialType.P2PKH)
                 {
-                    TotalSigOpCount += currentInput.SigScript.CountSigOps() * Constants.WitnessScaleFactor;
-
-                    if ((tx.WitnessList != null && tx.WitnessList.Length != 0) &&
-                        (tx.WitnessList[i].Items.Length != 0))
+                    // If the type is not witness there shouldn't be any witness item
+                    if (tx.WitnessList != null && tx.WitnessList.Length != 0 && tx.WitnessList[i].Items.Length != 0)
                     {
                         error = $"Unexpected witness." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
+                        return false;
+                    }
+
+                    if (!currentInput.SigScript.TryEvaluate(out IOperation[] signatureOps, out int signatureOpCount, out error))
+                    {
+                        error = $"Invalid transaction signature script." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                 $"{Environment.NewLine}More info: {error}";
                         return false;
                     }
 
-                    // Note that checking OP count is below max is done during Evaluate() and op.Run()
-                    stack.ExecutingScript = signatureOps;
-                    stack.OpCount = signatureOpCount;
-                    foreach (var op in signatureOps)
+                    // P2PKH is not a special type so the signature can contain extra OPs (eg. PushData() OP_DROP <sig> <pub>).
+                    // The optimization only works when the signature script is standard (Push<sig> Push<pub>).
+                    // The optimization doesn't need to use OpData, evaluate PubkeyScript, convert PubkeyScript (FindAndDelete),
+                    // run the operations, count Ops, count sigOps, check for stack item overflow,
+                    // or check stack after execution.
+                    if (pubType == PubkeyScriptSpecialType.P2PKH && signatureOps.Length == 2 &&
+                        signatureOps[0] is PushDataOp sigPush && sigPush.data != null &&
+                        signatureOps[1] is PushDataOp pubPush && pubPush.data != null)
                     {
-                        if (!op.Run(stack, out error))
+                        if (!VerifyP2pkh(tx, i, sigPush, pubPush, prevOutput.PubScript.Data, out error))
                         {
-                            error = $"Script evaluation failed." +
-                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
                             return false;
                         }
-                    }
-
-                    stack.ExecutingScript = pubOps;
-                    stack.OpCount = pubOpCount;
-                    foreach (var op in pubOps)
-                    {
-                        if (!op.Run(stack, out error))
-                        {
-                            error = $"Script evaluation failed." +
-                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
-                            return false;
-                        }
-                    }
-                }
-                else if (pubType == PubkeyScriptSpecialType.P2SH)
-                {
-                    if (signatureOps.Length == 0 || !(signatureOps[^1] is PushDataOp rdmPush))
-                    {
-                        error = "Redeem script was not found.";
-                        return false;
                     }
                     else
                     {
-                        RedeemScript redeem = new RedeemScript(rdmPush.data);
-                        RedeemScriptSpecialType rdmType = redeem.GetSpecialType(consensus, BlockHeight);
-                        if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
+                        TotalSigOpCount += currentInput.SigScript.CountSigOps() * Constants.WitnessScaleFactor;
+
+                        if (!prevOutput.PubScript.TryEvaluate(out IOperation[] pubOps, out int pubOpCount, out error))
                         {
-                            error = $"Script evaluation failed (invalid redeem script)." +
+                            error = $"Invalid input transaction pubkey script." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                     $"{Environment.NewLine}More info: {error}";
                             return false;
                         }
 
+                        var stack = new OpData()
+                        {
+                            Tx = tx,
+                            TxInIndex = i,
+
+                            ForceLowS = ForceLowS,
+                            StrictNumberEncoding = StrictNumberEncoding,
+
+                            IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
+                            IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
+                            IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
+                            IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
+                        };
+
+                        // Note that checking OP count is below max is done during Evaluate() and op.Run()
                         stack.ExecutingScript = signatureOps;
                         stack.OpCount = signatureOpCount;
                         foreach (var op in signatureOps)
@@ -286,281 +455,233 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             }
                         }
 
-                        if (!new VerifyOp().Run(stack, out _))
+                        if (!CheckStack(stack, out error))
                         {
-                            error = $"Script evaluation failed (top stack item is false: redeem script hash is not the same)." +
+                            return false;
+                        }
+                    }
+                }
+                else if (pubType == PubkeyScriptSpecialType.P2SH)
+                {
+                    // P2SH signature script is all pushes so there is no need to count OPs in it for running which changes with
+                    // OP_CheckMultiSig(Verify) Ops only (the normal count is already checked during evaluation)
+                    if (!currentInput.SigScript.TryEvaluate(out IOperation[] signatureOps, out _, out error))
+                    {
+                        error = $"Invalid transaction signature script." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                $"{Environment.NewLine}More info: {error}";
+                        return false;
+                    }
+
+                    // Note that the top stack item after running signature script can not be result of OP_num push
+                    // eg. sig pushes OP_2 to stack, top stack item is now 2
+                    // Redeem script reading 2 expects a push of 2 bytes and fails
+                    if (signatureOps.Length == 0 || !(signatureOps[^1] is PushDataOp rdmPush) || rdmPush.data == null)
+                    {
+                        error = "Redeem script was not found.";
+                        return false;
+                    }
+
+                    RedeemScript redeem = new RedeemScript(rdmPush.data);
+
+                    ReadOnlySpan<byte> actualHash = hash160.ComputeHash(redeem.Data);
+                    ReadOnlySpan<byte> expectedHash = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2, 20);
+                    if (!actualHash.SequenceEqual(expectedHash))
+                    {
+                        error = "Invalid hash.";
+                        return false;
+                    }
+
+                    RedeemScriptSpecialType rdmType = redeem.GetSpecialType(consensus, BlockHeight);
+
+                    if (rdmType == RedeemScriptSpecialType.None)
+                    {
+                        if (tx.WitnessList != null && tx.WitnessList.Length != 0 && tx.WitnessList[i].Items.Length != 0)
+                        {
+                            error = $"Unexpected witness." +
+                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                    $"{Environment.NewLine}More info: {error}";
+                            return false;
+                        }
+
+                        var stack = new OpData()
+                        {
+                            Tx = tx,
+                            TxInIndex = i,
+
+                            ForceLowS = ForceLowS,
+                            StrictNumberEncoding = StrictNumberEncoding,
+
+                            IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
+                            IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
+                            IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
+                            IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
+                        };
+
+                        // There is no need to set the following 2 since all sigOps are PushOps
+                        //stack.ExecutingScript = signatureOps;
+                        //stack.OpCount = signatureOpCount;
+
+                        // There is no need to check or run the last Op, it is the redeem push which is checked and hashed
+                        for (int j = 0; j < signatureOps.Length - 1; j++)
+                        {
+                            IOperation op = signatureOps[j];
+                            // Signature script of P2SH must be push-only
+                            if (!(signatureOps[j] is PushDataOp) || !op.Run(stack, out error))
+                            {
+                                error = $"Script evaluation failed." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+                        }
+
+                        // There is no need to run pubOps
+
+                        if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
+                        {
+                            error = $"Script evaluation failed (invalid redeem script)." +
+                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                    $"{Environment.NewLine}More info: {error}";
+                            return false;
+                        }
+
+                        TotalSigOpCount += redeem.CountSigOps(redeemOps) * Constants.WitnessScaleFactor;
+
+                        stack.ExecutingScript = redeemOps;
+                        stack.OpCount = redeemOpCount;
+                        foreach (var op in redeemOps)
+                        {
+                            if (!op.Run(stack, out error))
+                            {
+                                error = $"Script evaluation failed." +
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {error}";
+                                return false;
+                            }
+                        }
+
+                        if (!CheckStack(stack, out error))
+                        {
+                            return false;
+                        }
+                    }
+                    else if (rdmType == RedeemScriptSpecialType.P2SH_P2WPKH)
+                    {
+                        AnySegWit = true;
+                        if (tx.WitnessList == null ||
+                            tx.WitnessList.Length != tx.TxInList.Length ||
+                            tx.WitnessList[i].Items.Length != 2)
+                        {
+                            error = $"Mandatory witness is not found." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
                             return false;
                         }
 
-                        if (rdmType == RedeemScriptSpecialType.None)
+                        TotalSigOpCount++;
+                        if (!VerifyP2wpkh(tx, i, tx.WitnessList[i].Items[0], tx.WitnessList[i].Items[1],
+                            redeem.Data, prevOutput.Amount, out error))
                         {
-                            if ((tx.WitnessList != null && tx.WitnessList.Length != 0) &&
-                                (tx.WitnessList[i].Items.Length != 0))
-                            {
-                                error = $"Unexpected witness." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
-
-                            TotalSigOpCount += redeem.CountSigOps(redeemOps) * Constants.WitnessScaleFactor;
-
-                            stack.ExecutingScript = redeemOps;
-                            stack.OpCount = redeemOpCount;
-                            foreach (var op in redeemOps)
-                            {
-                                if (!op.Run(stack, out error))
-                                {
-                                    error = $"Script evaluation failed." +
-                                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                            $"{Environment.NewLine}More info: {error}";
-                                    return false;
-                                }
-                            }
+                            return false;
                         }
-                        else if (rdmType == RedeemScriptSpecialType.P2SH_P2WPKH)
+                    }
+                    else if (rdmType == RedeemScriptSpecialType.P2SH_P2WSH)
+                    {
+                        AnySegWit = true;
+                        if (tx.WitnessList == null ||
+                            tx.WitnessList.Length != tx.TxInList.Length ||
+                            tx.WitnessList[i].Items.Length < 1 ||
+                            tx.WitnessList[i].Items[^1].data == null)
                         {
-                            AnySegWit = true;
-                            if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length != 2)
-                            {
-                                error = $"Mandatory witness is not found." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
-
-                            TotalSigOpCount++;
-
-                            if (!Signature.TryReadStrict(tx.WitnessList[i].Items[0].data, out Signature sig, out error))
-                            {
-                                error = $"Invalid signature encoding." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
-                            if (!PublicKey.TryRead(tx.WitnessList[i].Items[1].data, out PublicKey pub))
-                            {
-                                stack.Push(new byte[0]);
-                            }
-                            else
-                            {
-                                // Push pubkey
-                                tx.WitnessList[i].Items[1].Run(stack, out _);
-                                // Replace it with HASH160
-                                new Hash160Op().Run(stack, out _);
-                                // Push expected hash
-                                redeemOps[1].Run(stack, out _);
-                                // Check equality
-                                if (!new EqualVerifyOp().Run(stack, out error))
-                                {
-                                    error = $"Script evaluation failed." +
-                                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                            $"{Environment.NewLine}More info: {error}";
-                                    return false;
-                                }
-
-                                byte[] spendScr = scrSer.ConvertP2wpkh(redeemOps);
-                                byte[] dataToSign = tx.SerializeForSigningSegWit(spendScr, i, prevOutput.Amount, sig.SigHash);
-                                bool b = calc.Verify(dataToSign, sig, pub, ForceLowS);
-                                stack.Push(b);
-                            }
+                            error = $"Mandatory witness is not found." +
+                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
+                            return false;
                         }
-                        else if (rdmType == RedeemScriptSpecialType.P2SH_P2WSH)
+
+                        RedeemScript witRdm = new RedeemScript(tx.WitnessList[i].Items[^1].data);
+                        expectedHash = ((ReadOnlySpan<byte>)redeem.Data).Slice(2);
+                        if (!VerifyP2wsh(tx, i, witRdm, expectedHash, prevOutput.Amount, out error))
                         {
-                            AnySegWit = true;
-                            if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length < 1)
-                            {
-                                error = $"Mandatory witness is not found." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
+                            return false;
+                        }
+                    }
+                    else if (rdmType == RedeemScriptSpecialType.InvalidWitness)
+                    {
+                        error = "Invalid witness pubkey script was found.";
+                        return false;
+                    }
+                    else if (rdmType == RedeemScriptSpecialType.UnknownWitness)
+                    {
+                        // The unknown witness versions must have an empty signature script but there is no checking the IWitness
+                        if (currentInput.SigScript.Data.Length != 0)
+                        {
+                            error = "Non-empty signature script for witness (unknown version).";
+                            return false;
+                        }
 
-                            RedeemScript witRdm = new RedeemScript(tx.WitnessList[i].Items[^1].data);
-                            if (!witRdm.TryEvaluate(out IOperation[] witRdmOps, out int witRdmOpCount, out error))
-                            {
-                                error = $"Script evaluation failed." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
+                        AnySegWit = true;
 
-                            // Note that there is no *Constants.WitnessScaleFactor here anymore
-                            TotalSigOpCount += witRdm.CountSigOps(witRdmOps);
-
-                            foreach (var op in tx.WitnessList[i].Items)
-                            {
-                                if (!op.Run(stack, out error))
-                                {
-                                    error = $"Script evaluation failed." +
-                                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                            $"{Environment.NewLine}More info: {error}";
-                                    return false;
-                                }
-                            }
-
-                            if (!new Sha256Op().Run(stack, out error))
-                            {
-                                error = $"Script evaluation failed." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
-
-                            if (!redeemOps[^1].Run(stack, out error))
-                            {
-                                error = $"Script evaluation failed." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
-
-                            if (!new EqualVerifyOp().Run(stack, out error))
-                            {
-                                error = $"Script evaluation failed." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
-                                return false;
-                            }
-
-                            stack.AmountBeingSpent = prevOutput.Amount;
-                            stack.IsSegWit = true;
-                            stack.OpCount = witRdmOpCount;
-                            stack.ExecutingScript = witRdmOps;
-
-                            foreach (var op in witRdmOps)
-                            {
-                                if (!op.Run(stack, out error))
-                                {
-                                    error = $"Script evaluation failed." +
-                                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                            $"{Environment.NewLine}More info: {error}";
-                                    return false;
-                                }
-                            }
+                        // We already know that PubkeyScript is in form of OP_num PushData(>=2 && <=40 bytes)
+                        // we only have to make sure the data is not all zeros
+                        ReadOnlySpan<byte> thePush = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
+                        if (thePush.SequenceEqual(new byte[thePush.Length]))
+                        {
+                            error = "Witness program can not be all zeros.";
+                            return false;
                         }
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2WPKH)
                 {
                     AnySegWit = true;
-                    if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length != 2)
-                    {
-                        error = $"Mandatory witness is not found." +
-                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
-                        return false;
-                    }
-
                     TotalSigOpCount++;
 
-                    if (!Signature.TryReadStrict(tx.WitnessList[i].Items[0].data, out Signature sig, out error))
+                    if (tx.WitnessList == null ||
+                        tx.WitnessList.Length != tx.TxInList.Length ||
+                        tx.WitnessList[i].Items.Length != 2)
                     {
-                        error = $"Invalid signature encoding." +
-                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
+                        error = $"Mandatory witness is not found." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
                         return false;
                     }
-                    if (!PublicKey.TryRead(tx.WitnessList[i].Items[1].data, out PublicKey pub))
+                    if (currentInput.SigScript.Data.Length != 0)
                     {
-                        stack.Push(new byte[0]);
+                        error = "Signature script must be empty for spending witness outputs.";
+                        return false;
                     }
-                    else
-                    {
-                        // Push pubkey
-                        tx.WitnessList[i].Items[1].Run(stack, out _);
-                        // Replace it with HASH160
-                        new Hash160Op().Run(stack, out _);
-                        // Push expected hash
-                        pubOps[1].Run(stack, out _);
-                        // Check equality
-                        if (!new EqualVerifyOp().Run(stack, out error))
-                        {
-                            error = $"Script evaluation failed." +
-                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
-                            return false;
-                        }
 
-                        byte[] spendScr = scrSer.ConvertP2wpkh(pubOps);
-                        byte[] dataToSign = tx.SerializeForSigningSegWit(spendScr, i, prevOutput.Amount, sig.SigHash);
-                        bool b = calc.Verify(dataToSign, sig, pub, ForceLowS);
-                        stack.Push(b);
+                    // This optimization doesn't need to use OpData, evaluate PubkeyScript, evaluate signature script,
+                    // run the operations, count Ops, count sigOps, check for stack item overflow,
+                    // or check stack after execution.
+                    if (!VerifyP2wpkh(tx, i, tx.WitnessList[i].Items[0], tx.WitnessList[i].Items[1],
+                        prevOutput.PubScript.Data, prevOutput.Amount, out error))
+                    {
+                        return false;
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2WSH)
                 {
                     AnySegWit = true;
-                    if (tx.WitnessList.Length != tx.TxInList.Length || tx.WitnessList[i].Items.Length < 1)
+                    if (tx.WitnessList == null ||
+                        tx.WitnessList.Length != tx.TxInList.Length ||
+                        tx.WitnessList[i].Items.Length < 1 || // At least 1 item is needed as the redeem script
+                        tx.WitnessList[i].Items[^1].data == null) // That 1 item can not be a OP_num
                     {
                         error = $"Mandatory witness is not found." +
-                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
+                        return false;
+                    }
+                    if (currentInput.SigScript.Data.Length != 0)
+                    {
+                        error = "Signature script must be empty for spending witness outputs.";
                         return false;
                     }
 
                     RedeemScript redeem = new RedeemScript(tx.WitnessList[i].Items[^1].data);
-                    if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
+                    ReadOnlySpan<byte> expectedHash = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
+                    if (!VerifyP2wsh(tx, i, redeem, expectedHash, prevOutput.Amount, out error))
                     {
-                        error = $"Script evaluation failed." +
-                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
                         return false;
-                    }
-
-                    // Note that there is no *Constants.WitnessScaleFactor here anymore
-                    TotalSigOpCount += redeem.CountSigOps(redeemOps);
-
-                    foreach (var op in tx.WitnessList[i].Items)
-                    {
-                        if (!op.Run(stack, out error))
-                        {
-                            error = $"Script evaluation failed." +
-                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
-                            return false;
-                        }
-                    }
-
-                    if (!new Sha256Op().Run(stack, out error))
-                    {
-                        error = $"Script evaluation failed." +
-                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
-                        return false;
-                    }
-
-                    if (!pubOps[^1].Run(stack, out error))
-                    {
-                        error = $"Script evaluation failed." +
-                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
-                        return false;
-                    }
-
-                    if (!new EqualVerifyOp().Run(stack, out error))
-                    {
-                        error = $"Script evaluation failed." +
-                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
-                        return false;
-                    }
-
-                    stack.AmountBeingSpent = prevOutput.Amount;
-                    stack.IsSegWit = true;
-                    stack.OpCount = redeemOpCount;
-                    stack.ExecutingScript = redeemOps;
-
-                    foreach (var op in redeemOps)
-                    {
-                        if (!op.Run(stack, out error))
-                        {
-                            error = $"Script evaluation failed." +
-                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
-                            return false;
-                        }
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
@@ -573,36 +694,22 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
 
                     AnySegWit = true;
-                    // TODO: there is no need to Run() the 2 pubOps which are PushOps but we have to skip the VerifyOP.Run()
-                    foreach (var op in pubOps)
+
+                    // We already know that PubkeyScript is in form of OP_num PushData(>=2 && <=40 bytes)
+                    // we only have to make sure the data is not all zeros
+                    ReadOnlySpan<byte> thePush = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
+                    if (thePush.SequenceEqual(new byte[thePush.Length]))
                     {
-                        op.Run(stack, out _);
+                        error = "Witness program can not be all zeros.";
+                        return false;
                     }
-                    // VerifyOp will make sure top stack item is not "False"
                 }
                 else if (pubType == PubkeyScriptSpecialType.InvalidWitness)
                 {
                     error = "Invalid witness pubkey script was found.";
                     return false;
                 }
-                else
-                {
-                    throw new ArgumentException("Pubkey special script type is not defined.");
-                }
-
-
-                if (stack.ItemCount == 0)
-                {
-                    error = $"Script evaluation failed (empty stack after execution)." +
-                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
-                    return false;
-                }
-                else if (!new VerifyOp().Run(stack, out _))
-                {
-                    error = $"Script evaluation failed (top stack item is false)." +
-                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
-                    return false;
-                }
+                
 
                 if (isMempool)
                 {
@@ -631,5 +738,38 @@ namespace Autarkysoft.Bitcoin.Blockchain
             error = null;
             return true;
         }
+
+
+        private bool isDisposed;
+
+        /// <summary>
+        /// Releases the resources used by this instance.
+        /// </summary>
+        /// <param name="disposing">
+        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!isDisposed)
+            {
+                if (disposing)
+                {
+                    if (!(hash160 is null))
+                        hash160.Dispose();
+                    hash160 = null;
+
+                    if (!(sha256 is null))
+                        sha256.Dispose();
+                    sha256 = null;
+                }
+
+                isDisposed = true;
+            }
+        }
+
+        /// <summary>
+        /// Releases all resources used by this instance.
+        /// </summary>
+        public void Dispose() => Dispose(true);
     }
 }
