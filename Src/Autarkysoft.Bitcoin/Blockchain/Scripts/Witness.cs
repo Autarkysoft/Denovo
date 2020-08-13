@@ -42,14 +42,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
 
+        private PushDataOp[] _items = new PushDataOp[0];
         /// <inheritdoc/>
-        public PushDataOp[] Items { get; set; }
+        public PushDataOp[] Items
+        {
+            get => _items;
+            set => _items = value ?? new PushDataOp[0];
+        }
 
 
         /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
-            if (Items == null || Items.Length == 0)
+            if (Items.Length == 0)
             {
                 stream.Write((byte)0);
             }

@@ -15,7 +15,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     public interface IWitness : IDeserializable
     {
         /// <summary>
-        /// Items (data) to be used in this witness object
+        /// Items (data) to be used in this witness object (must never be null or the dependants may fail)
         /// </summary>
         PushDataOp[] Items { get; set; }
 
