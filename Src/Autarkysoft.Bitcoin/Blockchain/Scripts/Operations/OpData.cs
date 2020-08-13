@@ -206,12 +206,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public bool CheckMultiSigGarbage(byte[] garbage) => IsBip147Enabled ? garbage.Length == 0 : true;
+        public bool CheckMultiSigGarbage(byte[] garbage) => !IsBip147Enabled || garbage.Length == 0;
 
         /// <inheritdoc/>
-        public bool CheckConditionalOpBool(byte[] data) => IsStrictConditionalOpBool ?
-                                                           (data.Length == 0 || (data.Length == 1 && data[0] == 1)) :
-                                                           true;
+        public bool CheckConditionalOpBool(byte[] data) => !IsStrictConditionalOpBool ||
+                                                            data.Length == 0 ||
+                                                            (data.Length == 1 && data[0] == 1);
 
         /// <inheritdoc/>
         public bool CompareLocktimes(long other, out string error)
@@ -266,7 +266,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (Tx.Version < 2)
             {
-                error = "Transaction version must be bigger than 2.";
+                error = "Transaction version must be bigger than 1.";
                 return false;
             }
 
@@ -276,16 +276,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            LockTime temp = new LockTime(Tx.TxInList[TxInIndex].Sequence & 0b00000000_01000000_11111111_11111111U);
+            long txSeq = Tx.TxInList[TxInIndex].Sequence & 0b00000000_01000000_11111111_11111111U;
             other &= 0b00000000_01000000_11111111_11111111U;
-            if (!temp.IsSameType(other))
+            if (!(txSeq < 0x400000 && other < 0x400000 || txSeq >= 0x400000 && other >= 0x400000))
             {
                 error = "Extracted sequence from script should be the same type as transaction's sequence as locktime.";
                 return false;
             }
 
-
-            if (temp < other)
+            if (txSeq < other)
             {
                 error = "Input is not spendable (locktime not reached).";
                 return false;
