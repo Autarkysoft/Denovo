@@ -733,6 +733,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 error = "TxIn count is too big.";
                 return false;
             }
+            if (tinCount == 0)
+            {
+                error = "TxOut count cann ot be zero.";
+                return false;
+            }
             // TODO: Add a check for when (tinCount * eachTinSize) overflows size of our data
 
             TxInList = new TxIn[(int)tinCount];
@@ -753,6 +758,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (toutCount > int.MaxValue) // TODO: set a better value to check against.
             {
                 error = "TxOut count is too big.";
+                return false;
+            }
+            if (toutCount == 0)
+            {
+                error = "TxOut count cannot be zero.";
                 return false;
             }
             // TODO: Add a check for when (toutCount * eachToutSize) overflows size of our data
