@@ -27,14 +27,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             settings = cs;
             NodeStatus = new NodeStatus();
             var repMan = new ReplyManager(NodeStatus, bc, cs);
-            msgMan = new MessageManager(cs.BufferLength, repMan, NodeStatus, cs.Network);
 
             sendReceiveSAEA = cs.SendReceivePool.Pop();
             sendReceiveSAEA.AcceptSocket = socket;
+            sendReceiveSAEA.UserToken = new MessageManager(cs, repMan, NodeStatus);
             sendReceiveSAEA.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
 
             sendSAEA = cs.SendReceivePool.Pop();
             sendSAEA.AcceptSocket = socket;
+            sendSAEA.UserToken = new MessageManager(cs, repMan, NodeStatus);
             sendSAEA.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
         }
 
@@ -42,7 +43,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private Semaphore secondSendLimiter;
         private SocketAsyncEventArgs sendReceiveSAEA;
         private SocketAsyncEventArgs sendSAEA;
-        private readonly MessageManager msgMan;
         private readonly IClientSettings settings;
 
 
@@ -70,7 +70,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         internal void StartHandShake()
         {
-            msgMan.StartHandShake(sendReceiveSAEA);
+            ((MessageManager)sendReceiveSAEA.UserToken).StartHandShake(sendReceiveSAEA);
             StartSend(sendReceiveSAEA);
         }
 
@@ -89,6 +89,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             // Zero bytes transferred means remote end has closed the connection. It needs to be closed here too.
             if (recEventArgs.SocketError == SocketError.Success && recEventArgs.BytesTransferred > 0)
             {
+                var msgMan = recEventArgs.UserToken as MessageManager;
                 msgMan.ReadBytes(recEventArgs);
 
                 if (msgMan.HasDataToSend)
@@ -114,7 +115,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public void Send(Message msg)
         {
             secondSendLimiter.WaitOne();
-            msgMan.SetSendBuffer(sendSAEA, msg);
+            ((MessageManager)sendSAEA.UserToken).SetSendBuffer(sendSAEA, msg);
             StartSend(sendSAEA);
         }
 
@@ -130,6 +131,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (sendEventArgs.SocketError == SocketError.Success)
             {
+                var msgMan = sendEventArgs.UserToken as MessageManager;
                 if (msgMan.HasDataToSend)
                 {
                     msgMan.SetSendBuffer(sendEventArgs);

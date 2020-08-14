@@ -3,15 +3,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using Autarkysoft.Bitcoin.P2PNetwork;
 using System.Net.Sockets;
-using Autarkysoft.Bitcoin.P2PNetwork.Messages;
-using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
+using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
 {
@@ -20,7 +19,9 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void ConstructorTest()
         {
-            MessageManager man = new MessageManager(20, new MockReplyManager(), new NodeStatus(), NetworkType.MainNet);
+            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
+
+            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus());
 
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
@@ -30,7 +31,8 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void DataToSendTest()
         {
-            MessageManager man = new MessageManager(20, new MockReplyManager(), new NodeStatus(), NetworkType.MainNet)
+            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
+            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus())
             {
                 DataToSend = null
             };
@@ -86,16 +88,97 @@ namespace Tests.Bitcoin.P2PNetwork
         public void SetSendBufferTest(int buffLen, byte[] toSend, byte[] expecBuffer1, byte[] expecBuffer2,
                                       int sendLen1, int sendLen2)
         {
-            MessageManager man = new MessageManager(buffLen, new MockReplyManager(), new NodeStatus(), NetworkType.MainNet)
+            using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
+            sarg.SetBuffer(new byte[buffLen], 0, buffLen);
+
+            var cs = new MockClientSettings() { _buffLen = buffLen, _netType = NetworkType.MainNet };
+            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus())
             {
                 DataToSend = toSend
             };
-            using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
-            sarg.SetBuffer(new byte[buffLen], 0, buffLen);
 
             Assert.True(man.HasDataToSend);
 
             man.SetSendBuffer(sarg);
+
+            Assert.Equal(sendLen1, sarg.Count);
+            Assert.Equal(0, sarg.Offset);
+            Assert.Equal(expecBuffer1, sarg.Buffer);
+
+            if (expecBuffer2 == null)
+            {
+                Assert.False(man.HasDataToSend);
+            }
+            else
+            {
+                Assert.True(man.HasDataToSend);
+
+                man.SetSendBuffer(sarg);
+
+                Assert.False(man.HasDataToSend);
+                Assert.Equal(sendLen2, sarg.Count);
+                Assert.Equal(0, sarg.Offset);
+                Assert.Equal(expecBuffer2, sarg.Buffer);
+            }
+        }
+
+        public static IEnumerable<object[]> GetSetBufferMsgCases()
+        {
+            yield return new object[]
+            {
+                // Smaller than buffer length
+                30, // < 24+3
+                new Message(new MockSerializableMessagePayload(PayloadType.Addr, new byte[3] { 1, 2, 3 }), NetworkType.MainNet),
+                new byte[30]
+                {
+                    0xf9, 0xbe, 0xb4, 0xd9,
+                    (byte)'a', (byte)'d', (byte)'d', (byte)'r', 0, 0, 0, 0, 0, 0, 0, 0,
+                    3, 0, 0, 0,
+                    0x19, 0xc6, 0x19, 0x7e,
+                    1, 2, 3,
+                    0, 0, 0
+                },
+                null,
+                24+3,
+                0
+            };
+            yield return new object[]
+            {
+                // Bigger than buffer length
+                20,
+                new Message(new MockSerializableMessagePayload(PayloadType.Addr, new byte[3] { 1, 2, 3 }), NetworkType.MainNet),
+                new byte[20]
+                {
+                    0xf9, 0xbe, 0xb4, 0xd9,
+                    (byte)'a', (byte)'d', (byte)'d', (byte)'r', 0, 0, 0, 0, 0, 0, 0, 0,
+                    3, 0, 0, 0
+                },
+                new byte[20]
+                {
+                    0x19, 0xc6, 0x19, 0x7e,
+                    1, 2, 3,
+                    // Leftover from previous buffer set
+                    (byte)'r', 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0
+                },
+                20,
+                7
+            };
+
+        }
+        [Theory]
+        [MemberData(nameof(GetSetBufferMsgCases))]
+        public void SetSendBuffer_WithMsgTest(int buffLen, Message toSend, byte[] expecBuffer1, byte[] expecBuffer2,
+                                              int sendLen1, int sendLen2)
+        {
+            using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
+            sarg.SetBuffer(new byte[buffLen], 0, buffLen);
+
+            var cs = new MockClientSettings() { _buffLen = buffLen, _netType = NetworkType.MainNet };
+            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus());
+
+            Assert.False(man.HasDataToSend);
+
+            man.SetSendBuffer(sarg, toSend);
 
             Assert.Equal(sendLen1, sarg.Count);
             Assert.Equal(0, sarg.Offset);
@@ -125,7 +208,8 @@ namespace Tests.Bitcoin.P2PNetwork
             Message msg = new Message(pl, NetworkType.MainNet);
             byte[] msgSer = Helper.HexToBytes("f9beb4d976657273696f6e00000000000300000019c6197e010203");
             var repMan = new MockReplyManager() { verMessage = msg };
-            MessageManager man = new MessageManager(30, repMan, new NodeStatus(), NetworkType.MainNet);
+            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 30 };
+            MessageManager man = new MessageManager(cs, repMan, new NodeStatus());
             using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
             sarg.SetBuffer(new byte[30], 0, 30);
 
@@ -151,15 +235,37 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
                 Helper.HexToBytes("f9beb4d976657261636b000000000000000000005df6e0e2"),
+                0,
                 24,
+                false,
+                false
+            };
+            yield return new object[]
+            {
+                new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
+                Helper.HexToBytes("010203f9beb4d976657261636b000000000000000000005df6e0e2"),
+                3,
+                24,
+                false,
+                false
+            };
+            yield return new object[]
+            {
+                new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
+                Helper.HexToBytes("0102030405f9beb4d976657261636b000000000000000000005df6e0e2"),
+                3,
+                26, // 2 extra bytes at the beginning
+                false,
                 false
             };
             yield return new object[]
             {
                 new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
                 Helper.HexToBytes("f9beb4d976657261636b000000000000000000005df6e0e1"),
+                0,
                 24,
-                false
+                false,
+                true // Invalid checksum
             };
             yield return new object[]
             {
@@ -172,16 +278,19 @@ namespace Tests.Bitcoin.P2PNetwork
                 "721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d" +
                 "010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e" +
                 "392e332fcf05050001"),
+                0,
                 125,
-                true
+                true,
+                false
             };
         }
         [Theory]
         [MemberData(nameof(GetReadBytesCases))]
-        public void ReadBytesTest(IReplyManager repMan, byte[] buffer, int buffLen, bool hasSend)
+        public void ReadBytesTest(IReplyManager repMan, byte[] buffer, int offset, int recvLen, bool hasSend, bool violation)
         {
-            MessageManager man = new MessageManager(30, repMan, new NodeStatus());
-            man.ReadBytes(buffer, buffLen, 0);
+            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 200 };
+            MessageManager man = new MessageManager(cs, repMan, new MockNodeStatus() { smallViolation = violation });
+            man.ReadBytes(buffer, offset, recvLen);
             Assert.Equal(hasSend, man.HasDataToSend);
         }
 
@@ -194,7 +303,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 toReceive = new PayloadType[] { PayloadType.Version },
                 toReply = new Message[][] { new Message[] { mockMsg } }
             };
-            MessageManager man = new MessageManager(30, repMan, new NodeStatus());
+            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
+            MessageManager man = new MessageManager(cs, repMan, new NodeStatus());
 
             man.ReadBytes(null, 0, 0);
             Assert.True(man.IsReceiveCompleted);
@@ -205,32 +315,32 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.False(man.HasDataToSend);
 
             // f9beb4d976657273696f6e0000000000650000005f1a69d2
-            man.ReadBytes(new byte[] { 0xf9, 0xbe }, 2, 0);
+            man.ReadBytes(new byte[] { 0xf9, 0xbe }, 0, 2);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
 
-            man.ReadBytes(new byte[] { 0xb4, 0xd9, 0x76 }, 3, 0);
+            man.ReadBytes(new byte[] { 0xb4, 0xd9, 0x76 }, 0, 3);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "tempHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76 });
+            Helper.ComparePrivateField(man, "rcvHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76 });
 
-            man.ReadBytes(new byte[18] { 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 }, 18, 0);
+            man.ReadBytes(new byte[18] { 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 }, 0, 18);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "tempHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 });
+            Helper.ComparePrivateField(man, "rcvHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 });
 
             // Header will be read completely but this header needs a payload which is not yet present
-            man.ReadBytes(new byte[] { 0xd2 }, 1, 0);
+            man.ReadBytes(new byte[] { 0xd2 }, 0, 1);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "tempHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69, 0xd2 });
+            Helper.ComparePrivateField(man, "rcvHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69, 0xd2 });
 
-            man.ReadBytes(new byte[5] { 0x72, 0x11, 0x01, 0x00, 0x01 }, 5, 0);
+            man.ReadBytes(new byte[5] { 0x72, 0x11, 0x01, 0x00, 0x01 }, 0, 5);
             Assert.False(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "tempHolder", Helper.HexToBytes("f9beb4d976657273696f6e0000000000650000005f1a69d27211010001"));
+            Helper.ComparePrivateField(man, "rcvHolder", Helper.HexToBytes("f9beb4d976657273696f6e0000000000650000005f1a69d27211010001"));
 
-            man.ReadBytes(Helper.HexToBytes("00000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001"), 96, 0);
+            man.ReadBytes(Helper.HexToBytes("00000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001"), 0, 96);
             Assert.True(man.IsReceiveCompleted);
             Assert.True(man.HasDataToSend);
         }

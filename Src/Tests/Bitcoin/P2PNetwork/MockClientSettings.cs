@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
 {
-    class MockClientSettings : IClientSettings
+    public class MockClientSettings : IClientSettings
     {
 #pragma warning disable CS0649 // Field is never assigned to
 

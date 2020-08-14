@@ -21,18 +21,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <param name="bufferLength">Size of the buffer used for each <see cref="SocketAsyncEventArgs"/> object</param>
+        /// <param name="cs">Client settings</param>
         /// <param name="repMan">A reply manager to create appropriate response to a given message</param>
         /// <param name="ns">Node status</param>
-        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
-        public MessageManager(int bufferLength, IReplyManager repMan, INodeStatus ns,
-                              NetworkType netType = NetworkType.MainNet)
+        public MessageManager(IClientSettings cs, IReplyManager repMan, INodeStatus ns)
         {
-            if (bufferLength <= 0)
-                throw new ArgumentOutOfRangeException(nameof(bufferLength), "Buffer length can not be negative or zero.");
+            if (cs is null)
+                throw new ArgumentNullException(nameof(cs), "Client settings can not be null.");
             if (repMan is null)
                 throw new ArgumentNullException(nameof(repMan), "Reply manager can not be null.");
+            if (ns is null)
+                throw new ArgumentNullException(nameof(ns), "Node status can not be null.");
 
+            netType = cs.Network;
             magicBytes = netType switch
             {
                 NetworkType.MainNet => Base16.Decode(Constants.MainNetMagic),
@@ -40,13 +41,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 NetworkType.RegTest => Base16.Decode(Constants.RegTestMagic),
                 _ => throw new ArgumentException(Err.InvalidNetwork)
             };
-            this.netType = netType;
 
             replyManager = repMan;
             NodeStatus = ns;
 
-            buffLen = bufferLength;
-            Init();
+            buffLen = cs.BufferLength;
+            toSendQueue = new Queue<Message>();
+            IsReceiveCompleted = true;
         }
 
 
@@ -54,6 +55,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly NetworkType netType;
         private readonly byte[] magicBytes;
         private readonly IReplyManager replyManager;
+        private readonly Queue<Message> toSendQueue;
+        private byte[] rcvHolder;
 
         /// <summary>
         /// Gets or sets the data to be sent
@@ -75,18 +78,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         public INodeStatus NodeStatus { get; set; }
 
-        private byte[] tempHolder;
-
-        private readonly Queue<Message> toSendQueue = new Queue<Message>();
-
-
-        internal void Init()
-        {
-            DataToSend = null;
-            toSendQueue.Clear();
-            NodeStatus.HandShake = HandShakeState.None;
-            IsReceiveCompleted = true;
-        }
 
         /// <summary>
         /// Sets <see cref="SocketAsyncEventArgs"/>'s buffer for a send operation 
@@ -97,7 +88,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (DataToSend == null)
             {
-                Message msg = toSendQueue.Dequeue();
+                if (!toSendQueue.TryDequeue(out Message msg))
+                {
+                    sendEventArgs.SetBuffer(sendEventArgs.Offset, 0);
+                    return;
+                }
+
                 FastStream stream = new FastStream(Constants.MessageHeaderSize + msg.PayloadData.Length);
                 msg.Serialize(stream);
                 DataToSend = stream.ToByteArray();
@@ -128,7 +124,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="msg">Message to send</param>
         public void SetSendBuffer(SocketAsyncEventArgs sendSAEA, Message msg)
         {
-            // TODO: add lock
             var stream = new FastStream();
             msg.Serialize(stream);
             DataToSend = stream.ToByteArray();
@@ -142,9 +137,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="srEventArgs">Socket arg to use</param>
         public void StartHandShake(SocketAsyncEventArgs srEventArgs)
         {
-            toSendQueue.Enqueue(replyManager.GetVersionMsg());
-            SetSendBuffer(srEventArgs);
             NodeStatus.HandShake = HandShakeState.Sent;
+            SetSendBuffer(srEventArgs, replyManager.GetVersionMsg());
         }
 
 
@@ -152,15 +146,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Reads and processes the given bytes from the given buffer and provided length.
         /// </summary>
         /// <param name="buffer">Buffer containing the received bytes</param>
-        /// <param name="len">Number of bytes received</param>
-        /// <param name="offert">Offset inside <paramref name="buffer"/> parameter where the data begins</param>
-        public void ReadBytes(byte[] buffer, int len, int offert)
+        /// <param name="offset">Offset inside <paramref name="buffer"/> parameter where the data begins</param>
+        /// <param name="rcvLen">Number of bytes received</param>
+        public void ReadBytes(byte[] buffer, int offset, int rcvLen)
         {
-            if (len > 0 && buffer != null)
+            if (rcvLen > 0 && buffer != null)
             {
-                if (IsReceiveCompleted && len >= Constants.MessageHeaderSize)
+                if (IsReceiveCompleted && rcvLen >= Constants.MessageHeaderSize)
                 {
-                    FastStreamReader stream = new FastStreamReader(buffer, offert, len);
+                    FastStreamReader stream = new FastStreamReader(buffer, offset, rcvLen);
                     if (stream.FindAndSkip(magicBytes))
                     {
                         int rem = stream.GetRemainingBytesCount();
@@ -186,57 +180,57 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 // Handle remaining data
                                 if (stream.GetRemainingBytesCount() > 0)
                                 {
-                                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out tempHolder);
-                                    ReadBytes(tempHolder, tempHolder.Length, 0);
+                                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out rcvHolder);
+                                    ReadBytes(rcvHolder, 0, rcvHolder.Length);
                                 }
                                 else
                                 {
-                                    tempHolder = null;
+                                    rcvHolder = null;
                                 }
                             }
                             else if (res == Message.ReadResult.NotEnoughBytes)
                             {
                                 IsReceiveCompleted = false;
-                                tempHolder = new byte[len];
-                                Buffer.BlockCopy(buffer, 0, tempHolder, 0, len);
+                                rcvHolder = new byte[rcvLen];
+                                Buffer.BlockCopy(buffer, offset, rcvHolder, 0, rcvLen);
                             }
-                            else // TODO: add violation (invalid message)
+                            else
                             {
-
+                                // Invalid message was received (checksum, network or payload size overflow)
+                                NodeStatus.AddSmallViolation();
                             }
                         }
                         else if (rem != 0)
                         {
-                            stream.TryReadByteArray(rem, out tempHolder);
+                            stream.TryReadByteArray(rem, out rcvHolder);
                             IsReceiveCompleted = false;
                         }
                     }
-                    else // TODO: add violation (No magic was found)
+                    else
                     {
-
+                        // Received data bigger than header size but it didn't contain any magic
+                        NodeStatus.AddSmallViolation();
                     }
-                    // TODO: some sort of point system is needed to give negative points to malicious nodes
-                    //       eg. sending garbage bytes which is what is caught in the "else" part of the "if" above
                 }
                 else
                 {
-                    if (tempHolder == null)
+                    if (rcvHolder == null)
                     {
-                        tempHolder = new byte[len];
-                        Buffer.BlockCopy(buffer, 0, tempHolder, 0, len);
+                        rcvHolder = new byte[rcvLen];
+                        Buffer.BlockCopy(buffer, offset, rcvHolder, 0, rcvLen);
                     }
                     else
                     {
-                        byte[] temp = new byte[tempHolder.Length + len];
-                        Buffer.BlockCopy(tempHolder, 0, temp, 0, tempHolder.Length);
-                        Buffer.BlockCopy(buffer, 0, temp, tempHolder.Length, len);
-                        tempHolder = temp;
+                        byte[] temp = new byte[rcvHolder.Length + rcvLen];
+                        Buffer.BlockCopy(rcvHolder, 0, temp, 0, rcvHolder.Length);
+                        Buffer.BlockCopy(buffer, offset, temp, rcvHolder.Length, rcvLen);
+                        rcvHolder = temp;
                     }
 
-                    if (tempHolder.Length >= Constants.MessageHeaderSize)
+                    if (rcvHolder.Length >= Constants.MessageHeaderSize)
                     {
                         IsReceiveCompleted = true;
-                        ReadBytes(tempHolder, tempHolder.Length, 0);
+                        ReadBytes(rcvHolder, 0, rcvHolder.Length);
                     }
                     else
                     {
@@ -251,6 +245,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="recEventArgs"><see cref="SocketAsyncEventArgs"/> to use</param>
         public void ReadBytes(SocketAsyncEventArgs recEventArgs)
-            => ReadBytes(recEventArgs.Buffer, recEventArgs.BytesTransferred, recEventArgs.Offset);
+            => ReadBytes(recEventArgs.Buffer, recEventArgs.Offset, recEventArgs.BytesTransferred);
     }
 }
