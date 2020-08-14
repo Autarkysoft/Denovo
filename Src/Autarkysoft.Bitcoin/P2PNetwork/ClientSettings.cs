@@ -64,7 +64,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             //       they need more checks for correct and optimal values
 
             MaxConnectionCount = 5;
-            BufferLength = 200;
+            BufferLength = 16384; // 16 KB
             int totalBytes = BufferLength * MaxConnectionCount * 2;
             MaxConnectionEnforcer = new Semaphore(MaxConnectionCount, MaxConnectionCount);
             SendReceivePool = new SocketAsyncEventArgsPool(MaxConnectionCount * 2);
