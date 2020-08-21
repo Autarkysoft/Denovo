@@ -56,40 +56,79 @@ namespace Tests.Bitcoin.P2PNetwork
                 // Smaller than buffer length
                 10,
                 new byte[3] { 1, 2, 3 },
-                new byte[10] { 1, 2, 3, 0, 0, 0, 0, 0, 0, 0 },
-                null,
-                3,
-                0
+                new byte[1][] { new byte[10] { 1, 2, 3, 0, 0, 0, 0, 0, 0, 0 } },
+                3
             };
             yield return new object[]
             {
                 // Equal to buffer length
                 10,
                 new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-                new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-                null,
-                10,
-                0
+                new byte[1][] { new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } },
+                10
             };
             yield return new object[]
             {
                 // Bigger than buffer length (needs only 2 calls)
                 10,
                 new byte[12] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 },
-                new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-                // From 3rd byte is from previous buffer but since count is 3 they are ignored and SAEA won't send them
-                new byte[10] { 11, 12, 3, 4, 5, 6, 7, 8, 9, 10 },
-                10,
+                new byte[2][]
+                {
+                    new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+                    // From 3rd byte is from previous buffer but since count is 3 they are ignored and SAEA won't send them
+                    new byte[10] { 11, 12, 3, 4, 5, 6, 7, 8, 9, 10 }
+                },
                 2
+            };
+            yield return new object[]
+            {
+                // Bigger than buffer length (needs 4 calls)
+                3,
+                new byte[11] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
+                new byte[4][]
+                {
+                    new byte[3] { 1, 2, 3 },
+                    new byte[3] { 4, 5, 6 },
+                    new byte[3] { 7, 8, 9 },
+                    new byte[3] { 10, 11, 9 }, // Last byte is leftover but sendLen is 2
+                },
+                2
+            };
+            yield return new object[]
+            {
+                // Bigger than buffer length (needs 4 calls)
+                3,
+                new byte[12] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 },
+                new byte[4][]
+                {
+                    new byte[3] { 1, 2, 3 },
+                    new byte[3] { 4, 5, 6 },
+                    new byte[3] { 7, 8, 9 },
+                    new byte[3] { 10, 11, 12 },
+                },
+                3
             };
         }
         [Theory]
         [MemberData(nameof(GetSetBufferCases))]
-        public void SetSendBufferTest(int buffLen, byte[] toSend, byte[] expecBuffer1, byte[] expecBuffer2,
-                                      int sendLen1, int sendLen2)
+        public void SetSendBufferTest(int buffLen, byte[] toSend, byte[][] expecBuffers, int lastSendLen)
         {
             using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
-            sarg.SetBuffer(new byte[buffLen], 0, buffLen);
+            // There are 5 bytes before and 5 bytes after the buffer used by socket and is set to 254 and should not change.
+            byte[] buffer = new byte[buffLen + 10];
+            buffer[0] = 254;
+            buffer[1] = 254;
+            buffer[2] = 254;
+            buffer[3] = 254;
+            buffer[4] = 254;
+            buffer[^1] = 254;
+            buffer[^2] = 254;
+            buffer[^3] = 254;
+            buffer[^4] = 254;
+            buffer[^5] = 254;
+            sarg.SetBuffer(buffer, 5, buffLen);
+            // Create a copy to use as expected buffer
+            byte[] expectedBuffer = buffer.CloneByteArray();
 
             var cs = new MockClientSettings() { _buffLen = buffLen, _netType = NetworkType.MainNet };
             MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus())
@@ -97,29 +136,27 @@ namespace Tests.Bitcoin.P2PNetwork
                 DataToSend = toSend
             };
 
-            Assert.True(man.HasDataToSend);
-
-            man.SetSendBuffer(sarg);
-
-            Assert.Equal(sendLen1, sarg.Count);
-            Assert.Equal(0, sarg.Offset);
-            Assert.Equal(expecBuffer1, sarg.Buffer);
-
-            if (expecBuffer2 == null)
-            {
-                Assert.False(man.HasDataToSend);
-            }
-            else
+            for (int i = 0; i < expecBuffers.Length; i++)
             {
                 Assert.True(man.HasDataToSend);
-
                 man.SetSendBuffer(sarg);
 
-                Assert.False(man.HasDataToSend);
-                Assert.Equal(sendLen2, sarg.Count);
-                Assert.Equal(0, sarg.Offset);
-                Assert.Equal(expecBuffer2, sarg.Buffer);
+                Assert.Equal(5, sarg.Offset);
+                // Copy the buffer bytes to the expected buffer from offset=5
+                Buffer.BlockCopy(expecBuffers[i], 0, expectedBuffer, 5, buffLen);
+                Assert.Equal(expectedBuffer, sarg.Buffer);
+
+                if (i != expecBuffers.Length - 1)
+                {
+                    Assert.Equal(expecBuffers[i].Length, sarg.Count);
+                }
+                else
+                {
+                    Assert.Equal(lastSendLen, sarg.Count);
+                }
             }
+
+            Assert.False(man.HasDataToSend);
         }
 
         public static IEnumerable<object[]> GetSetBufferMsgCases()
