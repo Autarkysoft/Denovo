@@ -270,116 +270,308 @@ namespace Tests.Bitcoin.P2PNetwork
 
             yield return new object[]
             {
-                new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
-                Helper.HexToBytes("f9beb4d976657261636b000000000000000000005df6e0e2"),
+                // Receive length is 0
+                new MockReplyManager(),
+                new MockNodeStatus(),
+                new byte[][] { new byte[0], new byte[0] },
                 0,
-                24,
-                false,
-                false
+                new int[] { 0, 0 },
+                new byte[][] { null, null },
+                new bool[] { true, true },
+                new bool[] { false, false }
             };
             yield return new object[]
             {
-                new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
-                Helper.HexToBytes("010203f9beb4d976657261636b000000000000000000005df6e0e2"),
-                3,
-                24,
-                false,
-                false
+                // Receive length is 0 with a bigger buffer and at an offset
+                new MockReplyManager(),
+                new MockNodeStatus(),
+                new byte[][] { new byte[10], new byte[10] },
+                2,
+                new int[] { 0, 0 },
+                new byte[][] { null, null },
+                new bool[] { true, true },
+                new bool[] { false, false }
             };
             yield return new object[]
             {
-                new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
-                Helper.HexToBytes("0102030405f9beb4d976657261636b000000000000000000005df6e0e2"),
-                3,
-                26, // 2 extra bytes at the beginning
-                false,
-                false
+                // 3 buffers of length 3, 1 and 2 are received and since total size is smaller than header
+                // it is not processed and only moved to holder
+                new MockReplyManager(),
+                new MockNodeStatus(),
+                new byte[][] { new byte[5] { 1, 2, 3, 4, 5 }, new byte[5] { 6, 7, 8, 9, 10 }, new byte[5] { 11, 12, 13, 14, 15 } },
+                2,
+                new int[] { 3, 1, 2 },
+                new byte[][] { new byte[3] { 3, 4, 5 }, new byte[4] { 3, 4, 5, 8 }, new byte[6] { 3, 4, 5, 8, 13, 14 } },
+                new bool[] { false, false, false },
+                new bool[] { false, false, false }
             };
             yield return new object[]
             {
-                new MockReplyManager() { toReceive = new PayloadType[] { PayloadType.Verack } },
-                Helper.HexToBytes("f9beb4d976657261636b000000000000000000005df6e0e1"),
-                0,
-                24,
-                false,
-                true // Invalid checksum
+                // 3 buffers received with total length of equal to header size so the result is processed
+                // But it doesn't contain the magic.
+                // There is also 2 0xff bytes at the start and at the end that aren't read based on offset and buffer length
+                new MockReplyManager(),
+                new MockNodeStatus() { smallViolation = true },
+                new byte[][]
+                {
+                    new byte[10 + 2 + 2] { 255, 255, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 255, 255  },
+                    new byte[4 + 2 + 2] { 255, 255, 11, 12, 13, 14, 255, 255 },
+                    new byte[10 + 2 + 2] { 255, 255, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 255, 255 }
+                },
+                2,
+                new int[] { 10, 4, 10 },
+                new byte[][]
+                {
+                    new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+                    new byte[14] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 },
+                    // Next holder is set to 24 bytes (1,2,...,24) then it is processed and only 3 last bytes are stored
+                    new byte[3] { 22, 23, 24 }
+                },
+                new bool[] { false, false, false },
+                new bool[] { false, false, false }
             };
             yield return new object[]
             {
+                // Same as before but with bigger than header size total
+                new MockReplyManager(),
+                new MockNodeStatus() { smallViolation = true },
+                new byte[][]
+                {
+                    new byte[10 + 2 + 2] { 255, 255, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 255, 255  },
+                    new byte[4 + 2 + 2] { 255, 255, 11, 12, 13, 14, 255, 255 },
+                    new byte[11 + 2 + 2] { 255, 255, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 255, 255 }
+                },
+                2,
+                new int[] { 10, 4, 11 },
+                new byte[][]
+                {
+                    new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+                    new byte[14] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 },
+                    // Next holder is set to 25 bytes (1,2,...,24,25) then it is processed and only 3 last bytes are stored
+                    new byte[3] { 23, 24, 25 }
+                },
+                new bool[] { false, false, false },
+                new bool[] { false, false, false }
+            };
+            yield return new object[]
+            {
+                // Same as before but with has another buffer to read
+                new MockReplyManager(),
+                new MockNodeStatus() { smallViolation = true },
+                new byte[][]
+                {
+                    new byte[10 + 2 + 2] { 255, 255, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 255, 255  },
+                    new byte[4 + 2 + 2] { 255, 255, 11, 12, 13, 14, 255, 255 },
+                    new byte[11 + 2 + 2] { 255, 255, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 255, 255 },
+                    new byte[3 + 2 + 2] { 255, 255, 26, 27, 28, 255, 255 }
+                },
+                2,
+                new int[] { 10, 4, 11, 3 },
+                new byte[][]
+                {
+                    new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+                    new byte[14] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 },
+                    // Next holder is set to 25 bytes (1,2,...,24,25) then it is processed and only 3 last bytes are stored
+                    new byte[3] { 23, 24, 25 },
+                    new byte[6] { 23, 24, 25, 26, 27, 28 },
+                },
+                new bool[] { false, false, false, false },
+                new bool[] { false, false, false, false }
+            };
+            yield return new object[]
+            {
+                // 2 buffers received and since total size exceeds header size the buffer is processed 
+                // and the garbage bytes are disposed in second round
+                new MockReplyManager(),
+                new MockNodeStatus(),
+                new byte[][]
+                {
+                    new byte[20 + 1] { 255, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 },
+                    new byte[4 + 1] { 255, 0xf9, 0xbe, 0xb4, 0xd9 }
+                },
+                1,
+                new int[] { 20, 4 },
+                new byte[][]
+                {
+                    new byte[20] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 },
+                    new byte[4] { 0xf9, 0xbe, 0xb4, 0xd9 }
+                },
+                new bool[] { false, false },
+                new bool[] { false, false }
+            };
+            yield return new object[]
+            {
+                // Same as before but the message is processed
                 new MockReplyManager()
                 {
-                    toReceive = new PayloadType[] { PayloadType.Version },
+                    toReceive = new PayloadType[] { PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[0] }
+                },
+                new MockNodeStatus(),
+                new byte[][]
+                {
+                    new byte[3 + 1 + 2] { 255, 1, 2, 3, 255, 255 },
+                    new byte[24 + 1 + 2] { 255, 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x61, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5d, 0xf6, 0xe0, 0xe2, 255, 255 }
+                },
+                1,
+                new int[] { 3, 24 },
+                new byte[][]
+                {
+                    new byte[3] { 1, 2, 3 },
+                    null
+                },
+                new bool[] { false, true },
+                new bool[] { false, false }
+            };
+            yield return new object[]
+            {
+                // Same as before but with a reply
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[0] },
                     toReply = new Message[][] { new Message[] { mockMsg } }
                 },
-                Helper.HexToBytes("f9beb4d976657273696f6e0000000000650000005f1a69d2" +
-                "721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d" +
-                "010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e" +
-                "392e332fcf05050001"),
-                0,
-                125,
-                true,
-                false
+                new MockNodeStatus(),
+                new byte[][]
+                {
+                    new byte[3 + 1 + 2] { 255, 1, 2, 3, 255, 255 },
+                    new byte[24 + 1 + 2] { 255, 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x61, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5d, 0xf6, 0xe0, 0xe2, 255, 255 }
+                },
+                1,
+                new int[] { 3, 24 },
+                new byte[][]
+                {
+                    new byte[3] { 1, 2, 3 },
+                    null
+                },
+                new bool[] { false, true },
+                new bool[] { false, true }
+            };
+            yield return new object[]
+            {
+                // Same as before but after processing first message there are some leftover bytes
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[0] },
+                },
+                new MockNodeStatus(),
+                new byte[][]
+                {
+                    new byte[3 + 1 + 2] { 255, 1, 2, 3, 255, 255 },
+                    new byte[27 + 1 + 2] { 255, 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x61, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5d, 0xf6, 0xe0, 0xe2, 4, 5, 6, 255, 255 }
+                },
+                1,
+                new int[] { 3, 27 },
+                new byte[][]
+                {
+                    new byte[3] { 1, 2, 3 },
+                    new byte[3] { 4, 5, 6 },
+                },
+                new bool[] { false, false },
+                new bool[] { false, false }
+            };
+            yield return new object[]
+            {
+                // 2 messages are received back to back with some garbage bytes in the middle
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack, PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[0], new byte[1] { 0x23 } },
+                },
+                new MockNodeStatus(),
+                new byte[][]
+                {
+                    new byte[3 + 1 + 2] { 255, 1, 2, 3, 255, 255 },
+                    new byte[27 + 1 + 2] { 255, 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x61, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5d, 0xf6, 0xe0, 0xe2, 4, 5, 6, 255, 255 },
+                    new byte[28 + 1 + 2] { 255, 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x61, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x7c, 0x8b, 0x1e, 0xd7, 0x23, 7, 8, 9, 255, 255 }
+                },
+                1,
+                new int[] { 3, 27, 28 },
+                new byte[][]
+                {
+                    new byte[3] { 1, 2, 3 },
+                    new byte[3] { 4, 5, 6 },
+                    new byte[3] { 7, 8, 9 },
+                },
+                new bool[] { false, false, false },
+                new bool[] { false, false, false }
+            };
+            yield return new object[]
+            {
+                // 2 messages in 1 buffer
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack, PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[0], new byte[1] { 0x23 } },
+                },
+                new MockNodeStatus(),
+                new byte[][]
+                {
+                    Helper.HexToBytes("ffff" +
+                    "f9beb4d976657261636b000000000000000000005df6e0e2"+"f9beb4d976657261636b000000000000010000007c8b1ed723" +
+                    "ff")
+                },
+                2,
+                new int[] { 49 },
+                new byte[][] { null },
+                new bool[] { true },
+                new bool[] { false }
+            };
+            yield return new object[]
+            {
+                // Same as before but with some garbage bytes inserted
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack, PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[0], new byte[1] { 0x23 } },
+                },
+                new MockNodeStatus(),
+                new byte[][]
+                {
+                    Helper.HexToBytes("ffff" +
+                    "f9beb4d976657261636b000000000000000000005df6e0e2"+"010203"+
+                    "f9beb4d976657261636b000000000000010000007c8b1ed723" + "0405" +
+                    "ff")
+                },
+                2,
+                new int[] { 54 },
+                new byte[][] { new byte[] { 4, 5 } },
+                new bool[] { false },
+                new bool[] { false }
             };
         }
         [Theory]
         [MemberData(nameof(GetReadBytesCases))]
-        public void ReadBytesTest(IReplyManager repMan, byte[] buffer, int offset, int recvLen, bool hasSend, bool violation)
+        public void ReadBytesTest(IReplyManager repMan, INodeStatus ns, byte[][] buffers, int offset, int[] recvLens,
+                                  byte[][] leftovers, bool[] rcvComplete, bool[] hasSend)
         {
-            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 200 };
-            MessageManager man = new MessageManager(cs, repMan, new MockNodeStatus() { smallViolation = violation });
-            man.ReadBytes(buffer, offset, recvLen);
-            Assert.Equal(hasSend, man.HasDataToSend);
-        }
-
-        [Fact]
-        public void ReadBytes_SmallBufferTest()
-        {
-            var mockMsg = new Message(new MockSerializableMessagePayload((PayloadType)10000, new byte[] { 1, 2, 3 }), NetworkType.MainNet);
-            var repMan = new MockReplyManager()
-            {
-                toReceive = new PayloadType[] { PayloadType.Version },
-                toReply = new Message[][] { new Message[] { mockMsg } }
-            };
             var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
-            MessageManager man = new MessageManager(cs, repMan, new NodeStatus());
+            var man = new MessageManager(cs, repMan, ns);
 
-            man.ReadBytes(null, 0, 0);
-            Assert.True(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
+            Assert.Equal(buffers.Length, recvLens.Length);
+            Assert.Equal(buffers.Length, leftovers.Length);
+            Assert.Equal(buffers.Length, hasSend.Length);
+            Assert.Equal(buffers.Length, rcvComplete.Length);
 
-            man.ReadBytes(new byte[100], 0, 0);
-            Assert.True(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
+            for (int i = 0; i < buffers.Length; i++)
+            {
+                byte[] item = buffers[i];
+                man.ReadBytes(item, offset, recvLens[i]);
 
-            // f9beb4d976657273696f6e0000000000650000005f1a69d2
-            man.ReadBytes(new byte[] { 0xf9, 0xbe }, 0, 2);
-            Assert.False(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
+                if (leftovers[i] == null)
+                {
+                    Helper.CheckNullPrivateField(man, "rcvHolder");
+                }
+                else
+                {
+                    Helper.ComparePrivateField(man, "rcvHolder", leftovers[i]);
+                }
 
-            man.ReadBytes(new byte[] { 0xb4, 0xd9, 0x76 }, 0, 3);
-            Assert.False(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "rcvHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76 });
-
-            man.ReadBytes(new byte[18] { 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 }, 0, 18);
-            Assert.False(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "rcvHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69 });
-
-            // Header will be read completely but this header needs a payload which is not yet present
-            man.ReadBytes(new byte[] { 0xd2 }, 0, 1);
-            Assert.False(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "rcvHolder", new byte[] { 0xf9, 0xbe, 0xb4, 0xd9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x5f, 0x1a, 0x69, 0xd2 });
-
-            man.ReadBytes(new byte[5] { 0x72, 0x11, 0x01, 0x00, 0x01 }, 0, 5);
-            Assert.False(man.IsReceiveCompleted);
-            Assert.False(man.HasDataToSend);
-            Helper.ComparePrivateField(man, "rcvHolder", Helper.HexToBytes("f9beb4d976657273696f6e0000000000650000005f1a69d27211010001"));
-
-            man.ReadBytes(Helper.HexToBytes("00000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001"), 0, 96);
-            Assert.True(man.IsReceiveCompleted);
-            Assert.True(man.HasDataToSend);
+                Assert.Equal(rcvComplete[i], man.IsReceiveCompleted);
+                Assert.Equal(hasSend[i], man.HasDataToSend);
+            }
         }
     }
 }

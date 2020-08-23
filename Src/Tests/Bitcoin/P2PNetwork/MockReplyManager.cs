@@ -28,20 +28,25 @@ namespace Tests.Bitcoin.P2PNetwork
 
         private int index;
         public PayloadType[] toReceive;
+        public byte[][] toReceiveBytes;
         public Message[][] toReply;
 
         public Message[] GetReply(Message msg)
         {
-            if (toReceive == null || index >= toReceive.Length)
+            if (toReceive == null || toReceiveBytes == null || index >= toReceive.Length)
             {
                 Assert.True(false, "Unexpected message was received.");
             }
-
-            if (!Enum.TryParse(Encoding.ASCII.GetString(msg.PayloadName.TrimEnd()), ignoreCase: true, out PayloadType plt) ||
-                plt != toReceive[index])
+            if (toReceive.Length != toReceiveBytes.Length)
             {
-                Assert.True(false, "A different message was received.");
+                Assert.True(false, "Expected payload type and bytes are incorrectly set.");
             }
+            
+            byte[] expPl = new byte[12];
+            byte[] plBa = Encoding.ASCII.GetBytes(toReceive[index].ToString().ToLower());
+            Buffer.BlockCopy(plBa, 0, expPl, 0, plBa.Length);
+            Assert.Equal(expPl, msg.PayloadName);
+            Assert.Equal(toReceiveBytes[index], msg.PayloadData);
 
             Message[] reply = toReply?[index];
             index++;

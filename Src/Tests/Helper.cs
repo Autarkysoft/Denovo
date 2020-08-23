@@ -48,6 +48,21 @@ namespace Tests
             }
         }
 
+        public static void CheckNullPrivateField<InstanceType>(InstanceType instance, string fieldName)
+        {
+            FieldInfo fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (fi is null)
+            {
+                Assert.True(false, "The private field was not found.");
+            }
+
+            object fieldVal = fi.GetValue(instance);
+            if (!(fieldVal is null))
+            {
+                Assert.True(false, "The private field value is not null.");
+            }
+        }
+
 
         internal static byte[] ConcatBytes(int totalSize, params byte[][] bytes)
         {

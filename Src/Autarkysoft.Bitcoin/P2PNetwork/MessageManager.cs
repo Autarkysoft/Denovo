@@ -178,10 +178,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 // TODO: handle received message here. eg. write received block to disk,...
 
                                 // Handle remaining data
-                                if (stream.GetRemainingBytesCount() > 0)
+                                rem = stream.GetRemainingBytesCount();
+                                if (rem > 0)
                                 {
-                                    _ = stream.TryReadByteArray(stream.GetRemainingBytesCount(), out rcvHolder);
-                                    ReadBytes(rcvHolder, 0, rcvHolder.Length);
+                                    rcvHolder = stream.ReadByteArrayChecked(rem);
+                                    if (rem >= Constants.MessageHeaderSize)
+                                    {
+                                        IsReceiveCompleted = true;
+                                        ReadBytes(rcvHolder, 0, rcvHolder.Length);
+                                    }
+                                    else
+                                    {
+                                        IsReceiveCompleted = false;
+                                    }
                                 }
                                 else
                                 {
@@ -202,13 +211,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         }
                         else if (rem != 0)
                         {
-                            stream.TryReadByteArray(rem, out rcvHolder);
+                            rcvHolder = stream.ReadByteArrayChecked(rem);
                             IsReceiveCompleted = false;
                         }
                     }
                     else
                     {
-                        // Received data bigger than header size but it didn't contain any magic
+                        // There are always 3 bytes remaining in stream that failed to find magic and has to be stored in holder
+                        rcvHolder = stream.ReadByteArrayChecked(stream.GetRemainingBytesCount());
+                        IsReceiveCompleted = false;
+                        // There were at least 21 bytes of garbage in this buffer
                         NodeStatus.AddSmallViolation();
                     }
                 }
