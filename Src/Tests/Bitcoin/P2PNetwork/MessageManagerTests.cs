@@ -541,10 +541,43 @@ namespace Tests.Bitcoin.P2PNetwork
                 new bool[] { false },
                 new bool[] { false }
             };
+            yield return new object[]
+            {
+                // Buffer is bigger than header size so message is evaluated but doesn't have enough bytes 
+                // so there's more to receive
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[] { 0x11, 0x22 } }
+                },
+                new MockNodeStatus(),
+                new byte[][] { Helper.HexToBytes("f9beb4d976657261636b0000000000000200000037f67ee111"), new byte[1] { 0x22 } },
+                0,
+                new int[] { 25, 1 },
+                new byte[][] { Helper.HexToBytes("f9beb4d976657261636b0000000000000200000037f67ee111"), null },
+                new bool[] { false, true },
+                new bool[] { false, false }
+            };
+            yield return new object[]
+            {
+                // Same as before but with invalid checksum
+                new MockReplyManager()
+                {
+                    toReceive = new PayloadType[] { PayloadType.Verack },
+                    toReceiveBytes = new byte[][] { new byte[] { 0x11, 0x22 } }
+                },
+                new MockNodeStatus() { smallViolation = true },
+                new byte[][] { Helper.HexToBytes("f9beb4d976657261636b0000000000000200000027f67ee111"), new byte[1] { 0x22 } },
+                0,
+                new int[] { 25, 1 },
+                new byte[][] { Helper.HexToBytes("f9beb4d976657261636b0000000000000200000027f67ee111"), null },
+                new bool[] { false, true },
+                new bool[] { false, false }
+            };
         }
         [Theory]
         [MemberData(nameof(GetReadBytesCases))]
-        public void ReadBytesTest(IReplyManager repMan, INodeStatus ns, byte[][] buffers, int offset, int[] recvLens,
+        public void ReadBytesTest(IReplyManager repMan, MockNodeStatus ns, byte[][] buffers, int offset, int[] recvLens,
                                   byte[][] leftovers, bool[] rcvComplete, bool[] hasSend)
         {
             var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
@@ -572,6 +605,9 @@ namespace Tests.Bitcoin.P2PNetwork
                 Assert.Equal(rcvComplete[i], man.IsReceiveCompleted);
                 Assert.Equal(hasSend[i], man.HasDataToSend);
             }
+
+            // It is either not set and is false or set and checked and changed to false
+            Assert.False(ns.smallViolation);
         }
     }
 }

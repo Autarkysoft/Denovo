@@ -207,6 +207,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             {
                                 // Invalid message was received (checksum, network or payload size overflow)
                                 NodeStatus.AddSmallViolation();
+                                rcvHolder = null;
                             }
                         }
                         else if (rem != 0)
