@@ -10,6 +10,7 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Tests.Bitcoin.Blockchain;
 using Xunit;
@@ -55,9 +56,95 @@ namespace Tests.Bitcoin.P2PNetwork
         {
             var cs = new MockClientSettings() { _netType = NetworkType.MainNet };
             var bc = new MockBlockchain();
+            var mockAddr0 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Loopback, 1010, 5678);
+            var mockAddr1 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("200.2.3.4"), 23, 98);
+            var mockAddr2 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("1.2.3.4"), 8080, 665412);
+            var mockAddr3 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("99.77.88.66"), 444, 120000);
+
+            var mockAddrs = new NetworkAddressWithTime[] { mockAddr1, mockAddr2, mockAddr3 };
+
+            var mockAddrs1000 = Enumerable.Repeat(mockAddr0, 997).ToList();
+            mockAddrs1000.AddRange(mockAddrs); // last 3 items are distict
+
+            var mockAddrs1002 = Enumerable.Repeat(mockAddr0, 999).ToList();
+            mockAddrs1002.AddRange(mockAddrs); // last 3 items are distict
+
+            var expAddr1002_1 = Enumerable.Repeat(mockAddr0, 999).ToList();
+            expAddr1002_1.Add(mockAddr1);
+            var expAddr1002_2 = new NetworkAddressWithTime[2] { mockAddr2, mockAddr3 };
 
             yield return new object[]
             {
+                // Addr
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    addrsToReceive = mockAddrs
+                },
+                bc,
+                new Message(new AddrPayload(mockAddrs), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // GetAddr with smaller than max items
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    addrsToReturn = mockAddrs
+                },
+                bc,
+                new Message(new GetAddrPayload(), NetworkType.MainNet),
+                new Message[1] { new Message(new AddrPayload(mockAddrs), NetworkType.MainNet) }
+            };
+            yield return new object[]
+            {
+                // GetAddr with max items
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    addrsToReturn = mockAddrs1000.ToArray()
+                },
+                bc,
+                new Message(new GetAddrPayload(), NetworkType.MainNet),
+                new Message[1] { new Message(new AddrPayload(mockAddrs1000.ToArray()), NetworkType.MainNet) }
+            };
+            yield return new object[]
+            {
+                // GetAddr with more than max items (needs 2 messages)
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    addrsToReturn = mockAddrs1002.ToArray()
+                },
+                bc,
+                new Message(new GetAddrPayload(), NetworkType.MainNet),
+                new Message[2]
+                {
+                    new Message(new AddrPayload(expAddr1002_1.ToArray()), NetworkType.MainNet),
+                    new Message(new AddrPayload(expAddr1002_2), NetworkType.MainNet)
+                }
+            };
+            yield return new object[]
+            {
+                // GetAddr with 0 items (no reply message)
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    addrsToReturn = new NetworkAddressWithTime[0]
+                },
+                bc,
+                new Message(new GetAddrPayload(), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // Ping
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
                 cs, bc,
                 new Message(new PingPayload(98765), NetworkType.MainNet),
@@ -65,6 +152,7 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
+                // Pong
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
                 cs, bc,
                 new Message(new PongPayload(98765), NetworkType.MainNet),

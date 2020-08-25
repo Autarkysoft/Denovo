@@ -127,6 +127,33 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public SocketAsyncEventArgsPool SendReceivePool => throw new NotImplementedException();
 
+        internal NetworkAddressWithTime[] addrsToReturn;
+        public NetworkAddressWithTime[] GetNodeAddrs()
+        {
+            Assert.True(addrsToReturn != null, $"Unexpected call to {nameof(GetNodeAddrs)} method was made.");
+            return addrsToReturn;
+        }
+
+        internal NetworkAddressWithTime[] addrsToReceive;
+        public void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses)
+        {
+            Assert.True(addrsToReceive != null, $"Unexpected call to {nameof(UpdateNodeAddrs)} method was made.");
+
+            var actualStream = new FastStream();
+            var expectedStream = new FastStream();
+            Assert.Equal(addrsToReceive.Length, nodeAddresses.Length);
+            foreach (var item in nodeAddresses)
+            {
+                item.Serialize(actualStream);
+            }
+            foreach (var item in addrsToReceive)
+            {
+                item.Serialize(expectedStream);
+            }
+
+            Assert.Equal(expectedStream.ToByteArray(), actualStream.ToByteArray());
+        }
+
 #pragma warning restore CS0649 // Field is never assigned to
     }
 }

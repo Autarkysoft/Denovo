@@ -59,5 +59,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// There should be 2 items per connection (a total of 2 * <see cref="MaxConnectionCount"/>)
         /// </summary>
         SocketAsyncEventArgsPool SendReceivePool { get; }
+
+        /// <summary>
+        /// Returns an array of known node network addresses to this client.
+        /// </summary>
+        /// <returns>
+        /// An array of <see cref="NetworkAddressWithTime"/> (may contain more items than <see cref="Constants.MaxAddrCount"/>
+        /// limit)
+        /// </returns>
+        NetworkAddressWithTime[] GetNodeAddrs();
+        /// <summary>
+        /// Updates the list of node IP addresses (should also handle storing to disk).
+        /// </summary>
+        /// <param name="nodeAddresses">List of timestamped nodes network addresses</param>
+        void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses);
     }
 }

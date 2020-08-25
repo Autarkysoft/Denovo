@@ -102,5 +102,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public Semaphore MaxConnectionEnforcer { get; }
         /// <inheritdoc/>
         public SocketAsyncEventArgsPool SendReceivePool { get; }
+
+        /// <inheritdoc/>
+        public NetworkAddressWithTime[] GetNodeAddrs()
+        {
+            // TODO: implement this (needs a new IDatabaseManager)
+            return new NetworkAddressWithTime[0];
+        }
+        /// <inheritdoc/>
+        public void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses)
+        {
+            // TODO: implement this (needs a new IDatabaseManager)
+        }
     }
 }
