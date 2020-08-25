@@ -19,7 +19,6 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public void ConstructorTest()
         {
             Assert.Throws<ArgumentNullException>(() => new AddrPayload(null));
-            Assert.Throws<ArgumentNullException>(() => new AddrPayload(new NetworkAddressWithTime[0]));
             Assert.Throws<ArgumentOutOfRangeException>(() => new AddrPayload(new NetworkAddressWithTime[1001]));
         }
 
@@ -63,6 +62,18 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             Assert.Equal(addr2.NodePort, pl.Addresses[1].NodePort);
 
             Assert.Equal(PayloadType.Addr, pl.PayloadType);
+        }
+
+        [Fact]
+        public void TryDeserialize_EmptyListTest()
+        {
+            AddrPayload pl = new AddrPayload();
+            FastStreamReader stream = new FastStreamReader(Helper.HexToBytes("00"));
+            bool b = pl.TryDeserialize(stream, out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Empty(pl.Addresses);
         }
 
         public static IEnumerable<object[]> GetDeserFailCases()

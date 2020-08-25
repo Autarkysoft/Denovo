@@ -25,21 +25,20 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <param name="netAddrList">List of network addresses</param>
+        /// <param name="netAddrList">
+        /// List of network addresses (Can contain between 0 to <see cref="Constants.MaxAddrCount"/> items)
+        /// </param>
         public AddrPayload(NetworkAddressWithTime[] netAddrList)
         {
             Addresses = netAddrList;
         }
 
 
-        /// <summary>
-        /// Maximum length of the <see cref="Addresses"/> list
-        /// </summary>
-        private const int MaxAddrCount = 1000;
 
         private NetworkAddressWithTime[] _addrs;
         /// <summary>
-        /// List of network addresses (node information)
+        /// List of network addresses (node information).
+        /// Can contain between 0 to <see cref="Constants.MaxAddrCount"/> items.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
@@ -48,9 +47,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             get => _addrs;
             set
             {
-                if (value is null || value.Length == 0)
-                    throw new ArgumentNullException(nameof(Addresses), "NetworkAddress list can not be null or empty.");
-                if (value.Length > MaxAddrCount)
+                if (value is null)
+                    throw new ArgumentNullException(nameof(Addresses), "NetworkAddress list can not be null.");
+                if (value.Length > Constants.MaxAddrCount)
                     throw new ArgumentOutOfRangeException(nameof(Addresses), "NetworkAddress list has too many items.");
 
                 _addrs = value;
@@ -86,9 +85,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (count > MaxAddrCount)
+            if (count > Constants.MaxAddrCount)
             {
-                error = $"AddressCount can not be bigger than {MaxAddrCount}.";
+                error = $"AddressCount can not be bigger than {Constants.MaxAddrCount}.";
                 return false;
             }
 

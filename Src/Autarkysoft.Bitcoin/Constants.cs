@@ -129,5 +129,9 @@ namespace Autarkysoft.Bitcoin
         /// https://github.com/bitcoin/bitcoin/blob/5879bfa9a541576100d939d329a2639b79d9e4f9/src/net.h#L55-L56
         /// </remarks>
         public const int MaxPayloadSize = 4 * 1000 * 1000;
+        /// <summary>
+        /// Maximum allowed number of items in the <see cref="P2PNetwork.Messages.MessagePayloads.AddrPayload.Addresses"/> list
+        /// </summary>
+        public const int MaxAddrCount = 1000;
     }
 }
