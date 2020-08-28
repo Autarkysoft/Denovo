@@ -11,7 +11,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// <summary>
     /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
     /// </summary>
-    public struct EllipticCurvePoint : IEquatable<EllipticCurvePoint>
+    public readonly struct EllipticCurvePoint : IEquatable<EllipticCurvePoint>
     {
         /// <summary>
         /// Initializes a new instance of <see cref="EllipticCurvePoint"/> with given x and y coordinates.
@@ -25,7 +25,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         }
 
 
-
         /// <summary>
         /// X coordinate
         /// </summary>
@@ -34,7 +33,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// Y coordinate
         /// </summary>
         public BigInteger Y { get; }
-
 
 
         /// <summary>
@@ -54,10 +52,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is EllipticCurvePoint && this == (EllipticCurvePoint)obj;
+        public override bool Equals(object obj) => obj is EllipticCurvePoint point && this == point;
 
         /// <inheritdoc/>
-        public override int GetHashCode() => (X + Y).GetHashCode();
+        public override int GetHashCode() => HashCode.Combine(X, Y);
 
         /// <summary>
         /// Checks if the value of the given <see cref="EllipticCurvePoint"/> is equal to the value of this instance.
