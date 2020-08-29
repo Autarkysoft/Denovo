@@ -73,6 +73,8 @@ namespace Tests.Bitcoin.P2PNetwork
             expAddr1002_1.Add(mockAddr1);
             var expAddr1002_2 = new NetworkAddressWithTime[2] { mockAddr2, mockAddr3 };
 
+            var mockBlock = new MockSerializableBlock(Helper.HexToBytes("01000000161126f0d39ec082e51bbd29a1dfb40b416b445ac8e493f88ce993860000000030e2a3e32abf1663a854efbef1b233c67c8cdcef5656fe3b4f28e52112469e9bae306849ffff001d16d1b42d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0116ffffffff0100f2052a01000000434104f5efde0c2d30ab28e3dbe804c1a4aaf13066f9b198a4159c76f8f79b3b20caf99f7c979ed6c71481061277a6fc8666977c249da99960c97c8d8714fda9f0e883ac00000000"));
+
             yield return new object[]
             {
                 // Addr
@@ -84,6 +86,38 @@ namespace Tests.Bitcoin.P2PNetwork
                 },
                 bc,
                 new Message(new AddrPayload(mockAddrs), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // Block
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                },
+                new MockBlockchain()
+                {
+                    expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
+                    blkProcessSuccess = true
+                },
+                new Message(new BlockPayload(mockBlock), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // Block
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, mediumViolation = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                },
+                new MockBlockchain()
+                {
+                    expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
+                    blkProcessSuccess = false
+                },
+                new Message(new BlockPayload(mockBlock), NetworkType.MainNet),
                 null
             };
             yield return new object[]
@@ -186,8 +220,11 @@ namespace Tests.Bitcoin.P2PNetwork
                 }
             }
 
-            // Mock will change the following bool to false if it were called.
+            // Mock will change the following bools to false if it were called.
             Assert.False(ns.updateTime, "UpdateTime() was never called");
+            Assert.False(ns.smallViolation, "AddSmallViolation() was never called");
+            Assert.False(ns.mediumViolation, "AddMediumViolation() was never called");
+            Assert.False(ns.bigViolation, "AddBigViolation() was never called");
         }
 
         public static IEnumerable<object[]> GetDeserFailCases()

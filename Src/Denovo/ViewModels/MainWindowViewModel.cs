@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Denovo.Services;
 using System;
@@ -42,12 +43,13 @@ namespace Denovo.ViewModels
             public int Height => 0;
             public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
             public Target GetTarget(int height) => throw new NotImplementedException();
+            public bool ProcessBlock(IBlock block) => true;
         }
 
         public ObservableCollection<Node> AllNodes { get; set; }
         private readonly NodeConnector connector;
         private readonly NodeListener listener;
-        private const int testPortToUse = 9770;
+        private const int testPortToUse = 8333;
 
 
         private string _ip = "127.0.0.1";

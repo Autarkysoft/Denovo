@@ -112,7 +112,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Block:
                     if (Deser(msg.PayloadData, out BlockPayload blk))
                     {
-
+                        if (!blockchain.ProcessBlock(blk.BlockData))
+                        {
+                            nodeStatus.AddMediumViolation();
+                        }
                     }
                     break;
                 case PayloadType.BlockTxn:

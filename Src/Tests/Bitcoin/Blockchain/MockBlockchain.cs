@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
 using Xunit;
 
@@ -46,6 +47,14 @@ namespace Tests.Bitcoin.Blockchain
 
             Assert.Equal(expectedTargetHeight, height);
             return targetToReturn.Value;
+        }
+
+        internal string expProcessBlk;
+        internal bool blkProcessSuccess;
+        public bool ProcessBlock(IBlock block)
+        {
+            Assert.Equal(expProcessBlk, block.GetBlockID());
+            return blkProcessSuccess;
         }
 
 #pragma warning restore CS0649 // Field is never assigned to
