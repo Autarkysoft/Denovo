@@ -1,7 +1,16 @@
 ### Release ?.?.? (Next release)
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.2.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.0.0...master)
 
-### Release 0.4.2 (2020-08-6)
+### Release 0.5.0 (2020-09-01)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.2.0...B0.5.0.0)
+* Rewrite of the `TransactionVerifier` with major improvements and optimization. It now uses the full potential of the powerful
+implementation of Bitcoin scripts in Bitcoin.Net which improves the efficiency of the transaction verification process.
+* Some fixes in custom value types such as `CompactInt` comparison operators.
+* Add new script special types to both `PubkeyScript` and `RedeemScript`
+* Some improvements in `P2PNetwork` namespace focusing on `MessageManager` and `ReplyManger`
+* Various code improvements, bug fixes and additional tests
+
+### Release 0.4.2 (2020-08-06)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.1.0...B0.4.2.0)
 * Improvements in P2PNetwork namespace (Each node now uses only 2 SAEA that are taken from a pool instantiated in IClientSettings,
 other improvements in ReplyManager and MessageManager)
