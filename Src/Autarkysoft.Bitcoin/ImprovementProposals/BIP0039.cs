@@ -330,6 +330,49 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
         }
 
+
+        /// <summary>
+        /// Returns Levenshtein distance between each 2 words in a jagged array (2-dimentional) for the given word list.
+        /// <para/>Note: items at index [n,n] are set to -1 which indicates distance of each word with itself. This creates
+        /// a distiction between comparing a word with itself or with a duplicate. In other words if the value at 
+        /// index [n,m] where n!=m was 0 the list contains a duplicate.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="words">List of 2048 words to use</param>
+        /// <returns>Levenshtein distance between each word compared to others</returns>
+        public static int[,] LevenshteinDistance(string[] words)
+        {
+            if (words == null)
+                throw new ArgumentNullException(nameof(words), "Word list can not be null.");
+            if (words.Length != 2048)
+                throw new ArgumentOutOfRangeException(nameof(words), "Word list must contain 2048 items.");
+
+            int[,] result = new int[2048, 2048];
+
+            for (int i = 0; i < words.Length; i++)
+            {
+                for (int j = 0; j < words.Length; j++)
+                {
+                    if (i == j)
+                    {
+                        result[i, j] = -1;
+                    }
+                    else
+                    {
+                        result[i, j] = words[i].LevenshteinDistance(words[j]);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc cref="LevenshteinDistance(string[])"/>
+        /// <exception cref="ArgumentException"/>
+        public static int[,] LevenshteinDistance(WordLists wl) => LevenshteinDistance(GetAllWords(wl));
+
+
         private void SetBip32(string passPhrase)
         {
             byte[] password = Encoding.UTF8.GetBytes(ToMnemonic());

@@ -436,4 +436,50 @@ namespace Autarkysoft.Bitcoin
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsSingle(this SigHashType sht) => ((int)sht & 0b0001_1111) == (int)SigHashType.Single;
     }
+
+
+
+
+
+    /// <summary>
+    /// String extentions
+    /// </summary>
+    public static class StringExtension
+    {
+        /// <summary>
+        /// Computes Levenshtein distance between the two strings using the Wagner–Fischer algorithm
+        /// </summary>
+        /// <remarks>
+        /// <para/>https://en.wikipedia.org/wiki/Levenshtein_distance 
+        /// <para/>https://en.wikipedia.org/wiki/Wagner%E2%80%93Fischer_algorithm
+        /// </remarks>
+        /// <param name="s1">First string</param>
+        /// <param name="s2">Second string</param>
+        /// <returns>Levenshtein distance</returns>
+        public static int LevenshteinDistance(this string s1, string s2)
+        {
+            var fast1 = s1.AsSpan();
+            var fast2 = s2.AsSpan();
+
+            int[,] distance = new int[s1.Length + 1, s2.Length + 1];
+
+            for (var i = 0; i <= s1.Length; distance[i, 0] = i++) ;
+            for (var j = 0; j <= s2.Length; distance[0, j] = j++) ;
+
+            for (var i = 1; i <= fast1.Length; i++)
+            {
+                for (var j = 1; j <= fast2.Length; j++)
+                {
+                    var cost = (fast1[i - 1] == fast2[j - 1]) ? 0 : 1;
+                    int deletion = distance[i - 1, j] + 1;
+                    int insertion = distance[i, j - 1] + 1;
+                    int substitution = distance[i - 1, j - 1] + cost;
+
+                    distance[i, j] = Math.Min(Math.Min(deletion, insertion), substitution);
+                }
+            }
+
+            return distance[s1.Length, s2.Length];
+        }
+    }
 }
