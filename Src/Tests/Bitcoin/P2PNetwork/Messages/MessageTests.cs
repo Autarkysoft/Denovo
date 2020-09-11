@@ -48,6 +48,17 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
             Assert.Throws<ArgumentOutOfRangeException>(() => new Message(pl, NetworkType.MainNet));
         }
 
+        [Theory]
+        [InlineData("f9beb4d96e6f74666f756e6400000000000000005df6e0e2", true, PayloadType.NotFound)]
+        [InlineData("f9beb4d96e6f74666f756e6300000000000000005df6e0e2", false, PayloadType.Addr)]
+        public void TryGetPayloadTypeTest(string hex, bool expSuccess, PayloadType expPlt)
+        {
+            Message msg = new Message(NetworkType.MainNet);
+            Assert.True(msg.TryDeserialize(new FastStreamReader(Helper.HexToBytes(hex)), out string error), error);
+            Assert.Equal(expSuccess, msg.TryGetPayloadType(out PayloadType actualPlt));
+            Assert.Equal(expPlt, actualPlt);
+        }
+
         [Fact]
         public void SerializeTest()
         {

@@ -95,6 +95,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             }
         }
 
+        /// <summary>
+        /// Returns the <see cref="PayloadType"/> enum value of the <see cref="PayloadName"/> property if possible.
+        /// </summary>
+        /// <param name="plt">Payload type</param>
+        /// <returns>True if the type was available; otherwise false.</returns>
+        public bool TryGetPayloadType(out PayloadType plt)
+        {
+            string name = Encoding.ASCII.GetString(PayloadName.TrimEnd());
+            return Enum.TryParse(name, ignoreCase: true, out plt);
+        }
+
 
         /// <inheritdoc/>
         public void Serialize(FastStream stream)

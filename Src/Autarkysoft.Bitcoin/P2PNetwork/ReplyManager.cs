@@ -80,7 +80,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public Message[] GetReply(Message msg)
         {
-            if (!Enum.TryParse(Encoding.ASCII.GetString(msg.PayloadName.TrimEnd()), ignoreCase: true, out PayloadType plt))
+            if (!msg.TryGetPayloadType(out PayloadType plt))
             {
                 // Undefined payload type
                 nodeStatus.AddSmallViolation();
