@@ -119,8 +119,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
         private byte[] CalculateChecksum(byte[] data)
         {
-            using Sha256 hash = new Sha256(true);
-            return hash.ComputeHash(data).SubArray(0, CheckSumSize);
+            using Sha256 hash = new Sha256();
+            return hash.ComputeChecksum(data);
         }
 
         /// <summary>
