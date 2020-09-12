@@ -336,6 +336,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     break;
             }
 
+            nodeStatus.ProtocolVersion = version.Version;
+            nodeStatus.Services = version.Services;
+            nodeStatus.Nonce = version.Nonce;
+            nodeStatus.UserAgent = version.UserAgent;
+            nodeStatus.StartHeight = version.StartHeight;
+            nodeStatus.Relay = version.Relay;
+
             return result;
         }
     }

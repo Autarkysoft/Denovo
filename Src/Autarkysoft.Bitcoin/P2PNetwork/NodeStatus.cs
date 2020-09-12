@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -25,6 +26,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public event PropertyChangedEventHandler PropertyChanged;
 
 
+        /// <inheritdoc/>
+        public int ProtocolVersion { get; set; }
+        /// <inheritdoc/>
+        public NodeServiceFlags Services { get; set; }
+        /// <inheritdoc/>
+        public ulong Nonce { get; set; }
+        /// <inheritdoc/>
+        public string UserAgent { get; set; }
+        /// <inheritdoc/>
+        public int StartHeight { get; set; }
+        /// <inheritdoc/>
+        public bool Relay { get; set; }
         /// <inheritdoc/>
         public bool SendCompact { get; set; }
         /// <inheritdoc/>

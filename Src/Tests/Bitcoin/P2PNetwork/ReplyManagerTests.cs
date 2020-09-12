@@ -416,7 +416,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
             yield return new object[]
             {
-                new MockNodeStatus()
+                new MockNodeStatus(verPl)
                 {
                     _handShakeToReturn = HandShakeState.None,
                     _handShakeToSet = HandShakeState.ReceivedAndReplied,
@@ -426,7 +426,7 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                new MockNodeStatus()
+                new MockNodeStatus(verPl)
                 {
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     mediumViolation = true,
@@ -436,7 +436,7 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                new MockNodeStatus()
+                new MockNodeStatus(verPl)
                 {
                     _handShakeToReturn = HandShakeState.Sent,
                     _handShakeToSet = HandShakeState.SentAndReceived,
@@ -446,7 +446,7 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                new MockNodeStatus()
+                new MockNodeStatus(verPl)
                 {
                     _handShakeToReturn = HandShakeState.SentAndConfirmed,
                     _handShakeToSet = HandShakeState.Finished,
@@ -456,7 +456,7 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                new MockNodeStatus()
+                new MockNodeStatus(verPl)
                 {
                     _handShakeToReturn = HandShakeState.SentAndReceived,
                     mediumViolation = true,
@@ -466,7 +466,7 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                new MockNodeStatus()
+                new MockNodeStatus(verPl)
                 {
                     _handShakeToReturn = HandShakeState.Finished,
                     mediumViolation = true,

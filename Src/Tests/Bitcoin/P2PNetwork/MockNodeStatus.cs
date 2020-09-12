@@ -4,6 +4,8 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using Xunit;
 
@@ -12,8 +14,112 @@ namespace Tests.Bitcoin.P2PNetwork
     public class MockNodeStatus : INodeStatus
     {
 #pragma warning disable CS0649 // Field is never assigned to
+        public MockNodeStatus()
+        {
+        }
+
+        public MockNodeStatus(VersionPayload pl)
+        {
+            _protVer = pl.Version;
+            _servs = pl.Services;
+            _nonce = pl.Nonce;
+            _agent = pl.UserAgent;
+            _height = pl.StartHeight;
+            _relay = pl.Relay;
+        }
+
 
         private const string UnexpectedCall = "Unexpected call was made";
+
+        internal int? _protVer;
+        public int ProtocolVersion
+        {
+            get
+            {
+                Assert.True(_protVer.HasValue, UnexpectedCall);
+                return _protVer.Value;
+            }
+            set
+            {
+                Assert.True(_protVer.HasValue, UnexpectedCall);
+                Assert.Equal(_protVer.Value, value);
+            }
+        }
+
+        internal NodeServiceFlags? _servs;
+        public NodeServiceFlags Services
+        {
+            get
+            {
+                Assert.True(_servs.HasValue, UnexpectedCall);
+                return _servs.Value;
+            }
+            set
+            {
+                Assert.True(_servs.HasValue, UnexpectedCall);
+                Assert.Equal(_servs.Value, value);
+            }
+        }
+
+        internal ulong? _nonce;
+        public ulong Nonce
+        {
+            get
+            {
+                Assert.True(_nonce.HasValue, UnexpectedCall);
+                return _nonce.Value;
+            }
+            set
+            {
+                Assert.True(_nonce.HasValue, UnexpectedCall);
+                Assert.Equal(_nonce.Value, value);
+            }
+        }
+
+        internal string _agent;
+        public string UserAgent
+        {
+            get
+            {
+                Assert.False(string.IsNullOrEmpty(_agent), UnexpectedCall);
+                return _agent;
+            }
+            set
+            {
+                Assert.False(string.IsNullOrEmpty(_agent), UnexpectedCall);
+                Assert.Equal(_agent, value);
+            }
+        }
+
+        internal int? _height;
+        public int StartHeight
+        {
+            get
+            {
+                Assert.True(_height.HasValue, UnexpectedCall);
+                return _height.Value;
+            }
+            set
+            {
+                Assert.True(_height.HasValue, UnexpectedCall);
+                Assert.Equal(_height.Value, value);
+            }
+        }
+
+        internal bool? _relay;
+        public bool Relay
+        {
+            get
+            {
+                Assert.True(_relay.HasValue, UnexpectedCall);
+                return _relay.Value;
+            }
+            set
+            {
+                Assert.True(_relay.HasValue, UnexpectedCall);
+                Assert.Equal(_relay.Value, value);
+            }
+        }
 
         internal bool? _sendCmpt;
         public bool SendCompact

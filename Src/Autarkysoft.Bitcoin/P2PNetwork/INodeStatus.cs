@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -12,6 +13,34 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// </summary>
     public interface INodeStatus
     {
+        /// <summary>
+        /// Gets or sets the protocol version that this node supports 
+        /// announced in <see cref="Messages.MessagePayloads.VersionPayload"/>
+        /// </summary>
+        int ProtocolVersion { get; set; }
+        /// <summary>
+        /// Gets or sets the services this node supports announced in <see cref="Messages.MessagePayloads.VersionPayload"/>
+        /// </summary>
+        NodeServiceFlags Services { get; set; }
+        /// <summary>
+        /// Gets or sets the nonce announced in <see cref="Messages.MessagePayloads.VersionPayload"/>
+        /// </summary>
+        ulong Nonce { get; set; }
+        /// <summary>
+        /// Gets or sets the user agent (client name usually using <see cref="ImprovementProposals.BIP0014"/>) 
+        /// announced in <see cref="Messages.MessagePayloads.VersionPayload"/>
+        /// </summary>
+        string UserAgent { get; set; }
+        /// <summary>
+        /// Gets or sets the starting best block height of this node
+        /// announced in <see cref="Messages.MessagePayloads.VersionPayload"/>
+        /// </summary>
+        int StartHeight { get; set; }
+        /// <summary>
+        /// Gets or sets whether new transactions should be sent to this node,
+        /// announced in <see cref="Messages.MessagePayloads.VersionPayload"/>
+        /// </summary>
+        bool Relay { get; set; }
         /// <summary>
         /// Returns if compact blocks should be sent to this node
         /// </summary>
