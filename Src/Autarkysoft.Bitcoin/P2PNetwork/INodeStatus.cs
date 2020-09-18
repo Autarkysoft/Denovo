@@ -42,6 +42,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         bool Relay { get; set; }
         /// <summary>
+        /// Minimum fee rate in in Satoshis per kilobyte for transactions that this node wishes to receive
+        /// </summary>
+        ulong FeeFilter { get; set; }
+        /// <summary>
         /// Returns if compact blocks should be sent to this node
         /// </summary>
         bool SendCompact { get; set; }

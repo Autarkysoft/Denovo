@@ -39,6 +39,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public bool Relay { get; set; }
         /// <inheritdoc/>
+        public ulong FeeFilter { get; set; }
+        /// <inheritdoc/>
         public bool SendCompact { get; set; }
         /// <inheritdoc/>
         public bool ShouldDisconnect => violation > DisconnectThreshold;

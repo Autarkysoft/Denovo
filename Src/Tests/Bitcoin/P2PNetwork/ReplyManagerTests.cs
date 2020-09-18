@@ -122,6 +122,14 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
+                // FeeFilter
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _fee = 12345 },
+                cs, bc,
+                new Message(new FeeFilterPayload(12345), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
                 // GetAddr with smaller than max items
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
                 new MockClientSettings()

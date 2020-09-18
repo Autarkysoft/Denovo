@@ -121,6 +121,21 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        internal ulong? _fee;
+        public ulong FeeFilter
+        {
+            get
+            {
+                Assert.True(_fee.HasValue, UnexpectedCall);
+                return _fee.Value;
+            }
+            set
+            {
+                Assert.True(_fee.HasValue, UnexpectedCall);
+                Assert.Equal(_fee.Value, value);
+            }
+        }
+
         internal bool? _sendCmpt;
         public bool SendCompact
         {

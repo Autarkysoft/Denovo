@@ -133,7 +133,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.FeeFilter:
                     if (Deser(msg.PayloadData, out FeeFilterPayload feeFilter))
                     {
-
+                        nodeStatus.FeeFilter = feeFilter.FeeRate;
                     }
                     break;
                 case PayloadType.FilterAdd:
