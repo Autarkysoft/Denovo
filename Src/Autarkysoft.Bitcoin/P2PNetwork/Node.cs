@@ -165,7 +165,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
 
             srEventArgs.AcceptSocket.Close();
-            settings.MaxConnectionEnforcer.Release();
         }
 
 
@@ -183,11 +182,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (disposing)
                 {
+                    // There are 2 SAEAs both using the same Socket, closing only one is enough.
                     CloseClientSocket(sendReceiveSAEA);
+
                     sendReceiveSAEA.AcceptSocket = null;
                     sendReceiveSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+
                     sendSAEA.AcceptSocket = null;
                     sendSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+
                     settings.SendReceivePool.Push(sendReceiveSAEA);
                     settings.SendReceivePool.Push(sendSAEA);
                     sendReceiveSAEA = null;
@@ -196,6 +199,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     if (!(secondSendLimiter is null))
                         secondSendLimiter.Dispose();
                     secondSendLimiter = null;
+
+                    settings.MaxConnectionEnforcer.Release();
                 }
 
                 isDisposed = true;
