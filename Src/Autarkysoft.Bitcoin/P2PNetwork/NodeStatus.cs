@@ -61,6 +61,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             set => SetField(ref _handShake, value);
         }
 
+        private bool _isDead = false;
+        /// <inheritdoc/>
+        public bool IsDisconnected
+        {
+            get => _isDead;
+            set => SetField(ref _isDead, value);
+        }
+
         /// <inheritdoc/>
         public void UpdateTime() => LastSeen = DateTime.Now;
         /// <inheritdoc/>

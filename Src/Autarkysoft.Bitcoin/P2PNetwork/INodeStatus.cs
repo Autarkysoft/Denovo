@@ -61,6 +61,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// The current state of hand-shake with this node
         /// </summary>
         HandShakeState HandShake { get; set; }
+        /// <summary>
+        /// Returns if this node was disconnected (it is safe to be disposed)
+        /// </summary>
+        bool IsDisconnected { get; set; }
 
         /// <summary>
         /// Changes <see cref="LastSeen"/> to current time

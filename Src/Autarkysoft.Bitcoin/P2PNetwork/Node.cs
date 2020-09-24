@@ -159,12 +159,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             try
             {
                 srEventArgs.AcceptSocket.Shutdown(SocketShutdown.Both);
+                srEventArgs.AcceptSocket.Close();
+                NodeStatus.IsDisconnected = true;
             }
             catch (Exception)
             {
             }
-
-            srEventArgs.AcceptSocket.Close();
         }
 
 

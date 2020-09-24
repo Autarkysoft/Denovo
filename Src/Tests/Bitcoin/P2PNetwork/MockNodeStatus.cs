@@ -188,6 +188,22 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        internal bool? _isDead;
+        public bool IsDisconnected
+        {
+            get
+            {
+                Assert.True(_isDead.HasValue, UnexpectedCall);
+                return _isDead.Value;
+            }
+            set
+            {
+                Assert.True(_isDead.HasValue, UnexpectedCall);
+                Assert.Equal(_isDead.Value, value);
+                _isDead = null;
+            }
+        }
+
         internal bool bigViolation = false;
         public void AddBigViolation()
         {
