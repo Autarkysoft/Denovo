@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -25,7 +26,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         internal Node(IBlockchain bc, IClientSettings cs, Socket socket)
         {
             settings = cs;
-            NodeStatus = new NodeStatus();
+            IPEndPoint ep = socket.RemoteEndPoint as IPEndPoint;
+            NodeStatus = new NodeStatus()
+            {
+                IP = ep is null ? IPAddress.Loopback : ep.Address
+            };
+
             var repMan = new ReplyManager(NodeStatus, bc, cs);
 
             sendReceiveSAEA = cs.SendReceivePool.Pop();

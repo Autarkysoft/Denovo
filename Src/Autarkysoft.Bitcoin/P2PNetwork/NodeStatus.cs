@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Net;
 using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -25,7 +26,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
 
-
+        /// <inheritdoc/>
+        public IPAddress IP { get; set; }
         /// <inheritdoc/>
         public int ProtocolVersion { get; set; }
         /// <inheritdoc/>
