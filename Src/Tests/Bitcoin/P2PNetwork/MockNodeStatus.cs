@@ -159,6 +159,21 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        internal ulong? _CmptVer;
+        public ulong SendCompactVer
+        {
+            get
+            {
+                Assert.True(_CmptVer.HasValue, UnexpectedCall);
+                return _CmptVer.Value;
+            }
+            set
+            {
+                Assert.True(_CmptVer.HasValue, UnexpectedCall);
+                Assert.Equal(_CmptVer.Value, value);
+            }
+        }
+
         internal bool? _disconnect;
         public bool ShouldDisconnect
         {

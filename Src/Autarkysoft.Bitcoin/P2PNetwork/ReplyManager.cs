@@ -241,7 +241,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.SendCmpct:
                     if (Deser(msg.PayloadData, out SendCmpctPayload sendCmp))
                     {
-
+                        nodeStatus.SendCompact = sendCmp.Announce;
+                        nodeStatus.SendCompactVer = sendCmp.CmpctVersion;
                     }
                     break;
                 case PayloadType.SendHeaders:

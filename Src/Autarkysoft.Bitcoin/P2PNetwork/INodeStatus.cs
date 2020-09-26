@@ -55,6 +55,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         bool SendCompact { get; set; }
         /// <summary>
+        /// Send compact version
+        /// </summary>
+        ulong SendCompactVer { get; set; }
+        /// <summary>
         /// Returns if the connection to this node should be terminated due to excessive violations
         /// </summary>
         bool ShouldDisconnect { get; }

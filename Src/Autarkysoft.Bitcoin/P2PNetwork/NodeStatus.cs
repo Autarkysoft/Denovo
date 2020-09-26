@@ -45,6 +45,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public bool SendCompact { get; set; }
         /// <inheritdoc/>
+        public ulong SendCompactVer { get; set; }
+        /// <inheritdoc/>
         public bool ShouldDisconnect => violation > DisconnectThreshold;
 
         private DateTime _lastSeen;

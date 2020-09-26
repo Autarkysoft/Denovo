@@ -200,6 +200,28 @@ namespace Tests.Bitcoin.P2PNetwork
                 new Message(new PongPayload(98765), NetworkType.MainNet),
                 null
             };
+            yield return new object[]
+            {
+                // SendCmpct
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, _sendCmpt = true, _CmptVer = 1
+                },
+                cs, bc,
+                new Message(new SendCmpctPayload(true, 1), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // SendCmpct
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, _sendCmpt = false, _CmptVer = 2
+                },
+                cs, bc,
+                new Message(new SendCmpctPayload(false, 2), NetworkType.MainNet),
+                null
+            };
         }
         [Theory]
         [MemberData(nameof(GetReplyCases))]
