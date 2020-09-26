@@ -44,8 +44,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public ulong FeeFilter { get; set; }
         /// <inheritdoc/>
         public bool SendCompact { get; set; }
+        private ulong _cmptVer;
         /// <inheritdoc/>
-        public ulong SendCompactVer { get; set; }
+        public ulong SendCompactVer
+        {
+            get => _cmptVer;
+            set
+            {
+                if (_cmptVer < value)
+                    SetField(ref _cmptVer, value);
+            }
+        }
         /// <inheritdoc/>
         public bool ShouldDisconnect => violation > DisconnectThreshold;
 
