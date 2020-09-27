@@ -4,6 +4,8 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System.Net;
 using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
@@ -11,11 +13,60 @@ namespace Tests.Bitcoin.P2PNetwork
     public class NodeStatusTests
     {
         [Fact]
+        public void DisconnectEvent_WithViolationProp_Test()
+        {
+            var ns = new NodeStatus();
+            bool raised = false;
+            ns.DisconnectEvent += (sender, e) =>
+            {
+                raised = true;
+            };
+            ns.Violation = 99;
+            Assert.False(raised);
+            ns.Violation = 10;
+            Assert.False(raised);
+            ns.Violation = 100;
+            Assert.True(raised);
+        }
+
+        [Fact]
+        public void DisconnectEvent_WithAddViolation_Test()
+        {
+            var ns = new NodeStatus();
+            bool raised = false;
+            ns.DisconnectEvent += (sender, e) =>
+            {
+                raised = true;
+            };
+            ns.AddBigViolation();
+            Assert.False(raised);
+            ns.AddBigViolation();
+            Assert.True(raised);
+        }
+
+        [Fact]
+        public void InpcTest()
+        {
+            var ns = new NodeStatus();
+            Assert.PropertyChanged(ns, nameof(ns.FeeFilter), () => ns.FeeFilter = 1);
+            Assert.PropertyChanged(ns, nameof(ns.HandShake), () => ns.HandShake = HandShakeState.Finished);
+            Assert.PropertyChanged(ns, nameof(ns.IP), () => ns.IP = IPAddress.Loopback);
+            Assert.PropertyChanged(ns, nameof(ns.Nonce), () => ns.Nonce = 123);
+            Assert.PropertyChanged(ns, nameof(ns.ProtocolVersion), () => ns.ProtocolVersion = 123);
+            Assert.PropertyChanged(ns, nameof(ns.Relay), () => ns.Relay = true);
+            Assert.PropertyChanged(ns, nameof(ns.SendCompact), () => ns.SendCompact = true);
+            Assert.PropertyChanged(ns, nameof(ns.SendCompactVer), () => ns.SendCompactVer = 2);
+            Assert.PropertyChanged(ns, nameof(ns.Services), () => ns.Services = NodeServiceFlags.NodeBloom);
+            Assert.PropertyChanged(ns, nameof(ns.StartHeight), () => ns.StartHeight = 1);
+            Assert.PropertyChanged(ns, nameof(ns.UserAgent), () => ns.UserAgent = "Foo");
+        }
+
+        [Fact]
         public void SendCompactVerTest()
         {
             var ns = new NodeStatus();
             Assert.Equal(0UL, ns.SendCompactVer);
-            
+
             ns.SendCompactVer = 0;
             Assert.Equal(0UL, ns.SendCompactVer);
 

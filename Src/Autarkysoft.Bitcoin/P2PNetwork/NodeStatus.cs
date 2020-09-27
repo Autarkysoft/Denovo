@@ -17,7 +17,22 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// </summary>
     public class NodeStatus : INodeStatus, INotifyPropertyChanged
     {
-        private int violation;
+        private int _v;
+        /// <summary>
+        /// Returns the violation score of this node
+        /// </summary>
+        public int Violation
+        {
+            get => _v;
+            set
+            {
+                _v = value;
+                if (ShouldDisconnect)
+                {
+                    RaiseDisconnectEvent();
+                }
+            }
+        }
         private const int SmallV = 10;
         private const int MediumV = 20;
         private const int BigV = 50;
@@ -25,25 +40,81 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
+        /// <inheritdoc/>
+        public event EventHandler DisconnectEvent;
 
+        private IPAddress _ip;
         /// <inheritdoc/>
-        public IPAddress IP { get; set; }
+        public IPAddress IP
+        {
+            get => _ip;
+            set => SetField(ref _ip, value);
+        }
+
+        private int _protVer;
         /// <inheritdoc/>
-        public int ProtocolVersion { get; set; }
+        public int ProtocolVersion
+        {
+            get => _protVer;
+            set => SetField(ref _protVer, value);
+        }
+
+        private NodeServiceFlags _servs;
         /// <inheritdoc/>
-        public NodeServiceFlags Services { get; set; }
+        public NodeServiceFlags Services
+        {
+            get => _servs;
+            set => SetField(ref _servs, value);
+        }
+
+        private ulong _nonce;
         /// <inheritdoc/>
-        public ulong Nonce { get; set; }
+        public ulong Nonce
+        {
+            get => _nonce;
+            set => SetField(ref _nonce, value);
+        }
+
+        private string _ua;
         /// <inheritdoc/>
-        public string UserAgent { get; set; }
+        public string UserAgent
+        {
+            get => _ua;
+            set => SetField(ref _ua, value);
+        }
+
+        private int _height;
         /// <inheritdoc/>
-        public int StartHeight { get; set; }
+        public int StartHeight
+        {
+            get => _height;
+            set => SetField(ref _height, value);
+        }
+
+        private bool _relay;
         /// <inheritdoc/>
-        public bool Relay { get; set; }
+        public bool Relay
+        {
+            get => _relay;
+            set => SetField(ref _relay, value);
+        }
+
+        private ulong _fee;
         /// <inheritdoc/>
-        public ulong FeeFilter { get; set; }
+        public ulong FeeFilter
+        {
+            get => _fee;
+            set => SetField(ref _fee, value);
+        }
+
+        private bool _cmpt;
         /// <inheritdoc/>
-        public bool SendCompact { get; set; }
+        public bool SendCompact
+        {
+            get => _cmpt;
+            set => SetField(ref _cmpt, value);
+        }
+
         private ulong _cmptVer;
         /// <inheritdoc/>
         public ulong SendCompactVer
@@ -55,8 +126,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     SetField(ref _cmptVer, value);
             }
         }
-        /// <inheritdoc/>
-        public bool ShouldDisconnect => violation > DisconnectThreshold;
 
         private DateTime _lastSeen;
         /// <inheritdoc/>
@@ -79,17 +148,29 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public bool IsDisconnected
         {
             get => _isDead;
-            set => SetField(ref _isDead, value);
+            set
+            {
+                if (SetField(ref _isDead, value) && value)
+                {
+                    RaiseDisconnectEvent();
+                }
+            }
         }
+
+
+        /// <inheritdoc/>
+        public bool ShouldDisconnect => Violation >= DisconnectThreshold;
+
+        private void RaiseDisconnectEvent() => DisconnectEvent?.Invoke(this, EventArgs.Empty);
 
         /// <inheritdoc/>
         public void UpdateTime() => LastSeen = DateTime.Now;
         /// <inheritdoc/>
-        public void AddBigViolation() => violation += SmallV;
+        public void AddBigViolation() => Violation += BigV;
         /// <inheritdoc/>
-        public void AddMediumViolation() => violation += MediumV;
+        public void AddMediumViolation() => Violation += MediumV;
         /// <inheritdoc/>
-        public void AddSmallViolation() => violation += BigV;
+        public void AddSmallViolation() => Violation += SmallV;
 
 
         /// <summary>
@@ -98,9 +179,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="propertyName">The Name of the property that is changing.</param>
         private void RaisePropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         private bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {

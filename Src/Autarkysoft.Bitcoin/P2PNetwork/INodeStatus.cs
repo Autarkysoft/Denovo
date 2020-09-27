@@ -74,7 +74,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Returns if this node was disconnected (it is safe to be disposed)
         /// </summary>
         bool IsDisconnected { get; set; }
-
+        
+        /// <summary>
+        /// An event to be raised whenever the connection has to be terminated (could be due to high violation score,
+        /// or simply dead connection)
+        /// </summary>
+        event EventHandler DisconnectEvent;
         /// <summary>
         /// Changes <see cref="LastSeen"/> to current time
         /// </summary>

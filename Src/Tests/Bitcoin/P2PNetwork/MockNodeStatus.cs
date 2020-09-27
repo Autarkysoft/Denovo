@@ -249,6 +249,9 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         internal bool updateTime = false;
+
+        public event EventHandler DisconnectEvent;
+
         public void UpdateTime()
         {
             Assert.True(updateTime, UnexpectedCall);
