@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
         x:Class="Denovo.Views.MainWindow"
-        Height="400" Width="600"
+        Height="650" Width="700"
         Title="MainWindow">
 
   <Design.DataContext>
@@ -18,17 +18,26 @@
         <TextBox Text="{Binding IpAddress}" Width="200"/>
       </StackPanel>
       <Button Content="Connect" Command="{Binding Connect}" Width="100" HorizontalAlignment="Left"/>
+      <Button Content="Disconnect" Command="{Binding Disconnect}" Width="100" HorizontalAlignment="Left"/>
       <Button Content="Config" Command="{Binding Config}" Width="100" HorizontalAlignment="Left"/>
 
       <TextBlock Text="{Binding Result}" TextWrapping="Wrap"/>
 
-      <ListBox Height="200" Items="{Binding AllNodes}">
+      <ListBox Height="200" Items="{Binding AllNodes}" 
+               SelectedItem="{Binding SelectedNode}">
         <ListBox.DataTemplates>
           <DataTemplate>
-            <TextBlock Text="{Binding NodeStatus.HandShake}"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="{Binding NodeStatus.HandShake}"/>
+              <TextBlock Text="{Binding NodeStatus.IP}"/>
+              <TextBlock Text="{Binding NodeStatus.StartHeight}"/>
+              <TextBlock Text="{Binding NodeStatus.UserAgent}"/>
+            </StackPanel>
           </DataTemplate>
         </ListBox.DataTemplates>
       </ListBox>
+
+      <TextBlock Text="{Binding NodeInfo}"/>
     </StackPanel>
 
     <StackPanel Orientation="Vertical" Spacing="5" Grid.Column="1">

@@ -7,11 +7,9 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Denovo.MVVM;
 using Denovo.Services;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -22,17 +20,18 @@ namespace Denovo.ViewModels
     {
         public MainWindowViewModel()
         {
-            AllNodes = new ObservableCollection<Node>();
-            tempNodex = new List<Node>();
-            var clientSettings = new ClientSettings();
+            AllNodes = new NodePool(5);
+            var clientSettings = new ClientSettings() { UserAgent = "/Satoshi:0.20.1/", Relay = false };
             WinMan = new WindowManager();
-            connector = new NodeConnector(tempNodex, new MockBlockChain(), clientSettings);
-            listener = new NodeListener(new List<Node>(), new MockBlockChain(), clientSettings);
+            connector = new NodeConnector(AllNodes, new MockBlockChain(), clientSettings);
+            listener = new NodeListener(AllNodes, new MockBlockChain(), clientSettings);
 
             listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
+
+            DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
         }
 
-        List<Node> tempNodex;
+        public NodePool AllNodes { get; set; }
 
         public IWindowManager WinMan { get; set; }
         public void Config() => WinMan.ShowDialog(new SettingsViewModel());
@@ -46,7 +45,40 @@ namespace Denovo.ViewModels
             public bool ProcessBlock(IBlock block) => true;
         }
 
-        public ObservableCollection<Node> AllNodes { get; set; }
+
+        private Node _selNode;
+        public Node SelectedNode
+        {
+            get => _selNode;
+            set
+            {
+                if (SetField(ref _selNode, value))
+                {
+                    DisconnectCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+
+        [DependsOnProperty(nameof(SelectedNode))]
+        public string NodeInfo => SelectedNode is null ?
+            "Nothing is selected." :
+            $"UA: {SelectedNode.NodeStatus.UserAgent}{Environment.NewLine}" +
+            $"IP: {SelectedNode.NodeStatus.IP}{Environment.NewLine}" +
+            $"Prot. Ver.: {SelectedNode.NodeStatus.ProtocolVersion}{Environment.NewLine}" +
+            $"Handshake: {SelectedNode.NodeStatus.HandShake}{Environment.NewLine}" +
+            $"Last seen: {SelectedNode.NodeStatus.LastSeen}{Environment.NewLine}" +
+            $"Height: {SelectedNode.NodeStatus.StartHeight}{Environment.NewLine}" +
+            $"Services: {SelectedNode.NodeStatus.Services}{Environment.NewLine}" +
+            $"IsDead: {SelectedNode.NodeStatus.IsDisconnected}{Environment.NewLine}" +
+            $"Relay: {SelectedNode.NodeStatus.Relay}{Environment.NewLine}" +
+            $"Send Cmpt: {SelectedNode.NodeStatus.SendCompact}{Environment.NewLine}" +
+            $"Send Cmpt ver: {SelectedNode.NodeStatus.SendCompactVer}{Environment.NewLine}" +
+            $"Fee filter: {SelectedNode.NodeStatus.FeeFilter}{Environment.NewLine}" +
+            $"Nonce: {SelectedNode.NodeStatus.Nonce}{Environment.NewLine}" +
+            $"Violation: {((NodeStatus)SelectedNode.NodeStatus).Violation}{Environment.NewLine}";
+
+
         private readonly NodeConnector connector;
         private readonly NodeListener listener;
         private const int testPortToUse = 8333;
@@ -73,7 +105,7 @@ namespace Denovo.ViewModels
                 Result = string.Empty;
                 if (IPAddress.TryParse(IpAddress, out IPAddress ip))
                 {
-                    connector.StartConnect(new IPEndPoint(ip, testPortToUse));
+                    Task.Run(() => connector.StartConnect(new IPEndPoint(ip, testPortToUse)));
                 }
                 else
                 {
@@ -85,10 +117,13 @@ namespace Denovo.ViewModels
                 Result = $"An exception of type {ex.GetType()} was thrown:{Environment.NewLine}{ex.Message}" +
                     $"{Environment.NewLine}Stack trace:{Environment.NewLine}{ex.StackTrace}";
             }
+        }
 
-            Task.Delay(TimeSpan.FromSeconds(3)).Wait();
-            AllNodes = new ObservableCollection<Node>(tempNodex);
-            RaisePropertyChanged(nameof(AllNodes));
+        public BindableCommand DisconnectCommand { get; }
+        public bool CanDisconnect() => SelectedNode != null;
+        public void Disconnect()
+        {
+            AllNodes.Remove(SelectedNode);
         }
 
 
