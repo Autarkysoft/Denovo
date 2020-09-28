@@ -103,7 +103,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     msgMan.SetSendBuffer(recEventArgs);
                     StartSend(recEventArgs);
                 }
-                else
+                else if (!NodeStatus.ShouldDisconnect)
                 {
                     StartReceive(recEventArgs);
                 }
@@ -147,7 +147,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 {
                     secondSendLimiter.Release();
                 }
-                else
+                else if(!NodeStatus.ShouldDisconnect)
                 {
                     StartReceive(sendEventArgs);
                 }
