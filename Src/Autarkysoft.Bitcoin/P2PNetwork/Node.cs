@@ -26,10 +26,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         internal Node(IBlockchain bc, IClientSettings cs, Socket socket)
         {
             settings = cs;
-            IPEndPoint ep = socket.RemoteEndPoint as IPEndPoint;
             NodeStatus = new NodeStatus()
             {
-                IP = ep is null ? IPAddress.Loopback : ep.Address
+                IP = socket.RemoteEndPoint is IPEndPoint ep ? ep.Address : IPAddress.Loopback
             };
 
             var repMan = new ReplyManager(NodeStatus, bc, cs);
@@ -43,6 +42,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             sendSAEA.AcceptSocket = socket;
             sendSAEA.UserToken = new MessageManager(cs, repMan, NodeStatus);
             sendSAEA.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+
+            secondSendLimiter = new Semaphore(1, 1);
         }
 
 
