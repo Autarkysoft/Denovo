@@ -605,7 +605,55 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         throw new ArgumentException("Wrong previous transaction or index.");
                     }
 
-                    TxInList[inputIndex].SigScript.SetToMultiSig(sig, redeem, this, inputIndex);
+                    RedeemScriptType redeemType = redeem.GetRedeemScriptType();
+                    switch (redeemType)
+                    {
+                        case RedeemScriptType.MultiSig:
+                            TxInList[inputIndex].SigScript.SetToMultiSig(sig, redeem, this, inputIndex);
+                            break;
+                        case RedeemScriptType.CheckLocktimeVerify:
+                            break;
+                        case RedeemScriptType.P2SH_P2WPKH:
+                            TxInList[inputIndex].SigScript.SetToP2SH_P2WPKH(redeem);
+
+                            expHash160 = ((ReadOnlySpan<byte>)redeem.Data).Slice(2, 20);
+                            actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
+                            compressed = true;
+                            if (!actualHash160.SequenceEqual(expHash160))
+                            {
+                                actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(false));
+                                if (!actualHash160.SequenceEqual(expHash160))
+                                {
+                                    throw new ArgumentException("Public key is invalid.");
+                                }
+                                else
+                                {
+                                    compressed = false;
+                                }
+                            }
+
+                            // only initialize witness list once
+                            if (WitnessList == null || WitnessList.Length == 0)
+                            {
+                                WitnessList = new Witness[TxInList.Length];
+                                for (int i = 0; i < WitnessList.Length; i++)
+                                {
+                                    WitnessList[i] = new Witness();
+                                }
+                            }
+
+                            WitnessList[inputIndex].SetToP2WPKH(sig, pubKey, compressed);
+
+                            break;
+                        case RedeemScriptType.P2SH_P2WSH:
+                            TxInList[inputIndex].SigScript.SetToP2SH_P2WSH(redeem);
+                            break;
+                        case RedeemScriptType.P2WSH:
+                        case RedeemScriptType.Empty:
+                        case RedeemScriptType.Unknown:
+                        default:
+                            throw new ArgumentException("Not defined.");
+                    }
                     break;
 
                 case PubkeyScriptType.CheckLocktimeVerify:
