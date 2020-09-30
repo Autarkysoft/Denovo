@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Blocks
@@ -222,8 +223,11 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
         public static IEnumerable<object[]> GetWitMerkleCases()
         {
-            // TODO: find other witness commitments for testing
-            byte[] zeroCommit = new byte[32];
+            byte[] Commit0 = new byte[32];
+            byte[] Commit1 = Enumerable.Repeat((byte)1, 32).ToArray();
+            byte[] Commit255 = Enumerable.Repeat((byte)255, 32).ToArray();
+            // SHA256("Witness Commitment Test")
+            byte[] CommitRand = Helper.HexToBytes("1d505f2e8168d4fb2c8b163a6c54f80fa52c5e1de6361bba53a2af0b6a45ad25");
             byte[] nBa = null;
             yield return new object[]
             {
@@ -233,7 +237,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                      // it should never call that method, instead a byte[32] (all zero) should be used
                      new MockWTxIdTx(nBa)
                  },
-                 zeroCommit,
+                 Commit0,
                  // Merkle root copied from block's highest index output starting with 0x6a24aa21a9ed data using a block explorer
                  Helper.HexToBytes("e2f61c3f71d1defd3fa999dfa36953755c690689799962b48bebd836974e8cf9")
             };
@@ -244,7 +248,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx(nBa),
                     new MockWTxIdTx("d6c900b378c39a125906d5beb1a0032f2f69c67e05dac0fb0ad1a7b51ebf9283"),
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("6e07e98e02f24198969280bf1248daf49e64c3792dbd7f92776080af59a85bc3")
             };
             yield return new object[]
@@ -254,7 +258,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx(nBa),
                     new MockWTxIdTx("bea31d447fc019818137a7ab7ed33c3a131b50c4860faae55f05e1df566c3521"),
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("02a7c90fe9795d0af5206b29acea5111d03eb8219fff0a67577a5c9482441869")
             };
             yield return new object[]
@@ -265,7 +269,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx("c84bb5f71c134f00450a90b3822625dd9d8d507a724643b5bc1441d7fec06730"),
                     new MockWTxIdTx("e92905efb73409ecf56cc7729402d00807199316f38f00a5e4c6e30d88fb96ae")
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("7d69a85bb62a695bdff903264e505360d3badc9f7dd0488cafd6a53d6ee0e977")
             };
             yield return new object[]
@@ -277,7 +281,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx("9b68ec760e5a32e31e887f7148fd89f82262dd9b2168196b8ab56dea8fbc4990"),
                     new MockWTxIdTx("d960cc7e9912ee1f636f490cedf0afc8f935a69b37f5923d5070600144e10fc1")
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("0c6b3ef03fd460da49822111b81d4e264d325d71495e5434fedaa4412076fcb8")
             };
             yield return new object[]
@@ -290,7 +294,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx("2996921b19da93e5493e0fb3a5577ec01989c9b385c3c6a70e48320a5546a3da"),
                     new MockWTxIdTx("94b0a6335715ee927631c711c2c424e8d3fd2fbf1704e1d485542917a2282132"),
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("656ee0f12871bcd1516faa8034b8d77849d5cec944421aa44d5fe109a3bc2756")
             };
             yield return new object[]
@@ -304,7 +308,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx("daa91bc760d6d1a4878300ed680cfb12a57eecb6bd18d036e7009e7577dcd7bc"),
                     new MockWTxIdTx("340d0e8e5bfcdb703b752bfb1cc1f2076e192cdaadd3660a02bf60c4431c252c"),
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("c9e9e34416703ef71ae09d0d1e4d5a824ac8a2d10e66e164661df2267f5f2d97")
             };
             yield return new object[]
@@ -319,7 +323,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx("10e56b8945be140a64ce53cb7f11588085cce11d4da3ee9dc90913677497433b"),
                     new MockWTxIdTx("508b7aeeb896797cb8cfca9de87e874f6e8d58a085f137a1fcbf29aacfac2eab"),
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("8b4a4ec22ff353f6cdaef2d1632690599be00c64a7a198219a63c26abaa0404d")
             };
             yield return new object[]
@@ -335,7 +339,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx("3610d21802b13eb21bca8301e735f3e056ea179ca9a81c6f8ec32b3c99b2b5b2"),
                     new MockWTxIdTx("46d9b50bbaa6a1aa384347541ba4beff96ffcc6b69b9542fadd2d9578a531bd6"),
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("03f33ee4bc04703ebe27df891f3a695c3e6fcda1c7bfc9007e56be9949b1b408")
             };
             yield return new object[]
@@ -354,8 +358,50 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                     new MockWTxIdTx("4773295e87e5bbff4c50c0e0770a42c046922e77319ec64d6269ac4c70875285"),
                     new MockWTxIdTx("ec61ba60120e4cad1ab1029bb83981ad7573ce8396b554382a35ff8c678d98a3"),
                 },
-                zeroCommit,
+                Commit0,
                 Helper.HexToBytes("73499f5bfa0338e3683100e993f496a93352fee3bcd0f7fe5b161a4393aa241a")
+            };
+
+            // The following blocks are found on TestNet and are mined using Denovo each with a custom witness commitment
+            yield return new object[]
+            {
+                 new ITransaction[1] // block #1836793 on testnet
+                 {
+                     new MockWTxIdTx(nBa)
+                 },
+                 Commit1,
+                 Helper.HexToBytes("705ede9d42476fc3e5a978b042ce790a193678f46d19f47ec4ab46539c47b76d")
+            };
+            yield return new object[]
+            {
+                 new ITransaction[1] // block #1836806 on testnet
+                 {
+                     new MockWTxIdTx(nBa)
+                 },
+                 Commit255,
+                 Helper.HexToBytes("4fa4a869878bd4837e6192377293a0cc14f192b88711635ca3df0447dc1bea76")
+            };
+            yield return new object[]
+            {
+                 new ITransaction[3] // block #1836819 on testnet
+                 {
+                     new MockWTxIdTx(nBa),
+                     new MockWTxIdTx("3fa93b79ee6e7e0280e8303393b725b0211b0f7e6eb144359677173841255e09"),
+                     new MockWTxIdTx("f260a173cd9d57875d9a89b70abfcbd619c794e5c63ec10feb488921f4293c17"),
+                 },
+                 Commit255,
+                 Helper.HexToBytes("14a32ab00fa19ffc3ad13f160e3361b47b7420f12baf5c41d412e916eee8d94f")
+            };
+            yield return new object[]
+            {
+                 new ITransaction[3] // block #1836832 on testnet
+                 {
+                     new MockWTxIdTx(nBa),
+                     new MockWTxIdTx("34199146aa700ecac71c8da751f6d211906a37313c7cd85dd94f845ecdca428b"),
+                     new MockWTxIdTx("827ea1784b8b18691d103fe0c42a1c40dbd5337f9f692460bbbac44a16b3dd34"),
+                 },
+                 CommitRand,
+                 Helper.HexToBytes("848fdbeef5571a41ae2520a9cb5a877b61e9df72d14fe7163913b2d3665884fa")
             };
         }
         [Theory]
