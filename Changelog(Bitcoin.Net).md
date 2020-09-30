@@ -1,5 +1,12 @@
 ### Release ?.?.? (Next release)
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.1.0...master)
+
+### Release 0.5.1 (2020-09-29)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.0.0...B0.5.1.0)
+* BIP-39 can now measure Levenshtein distance for any word-list
+* Small bug fix in transaction class
+* NodeStatus is improved to be a better representative of the status of the connected nodes
+* General code improvement and bug fixes in `P2PNetwork` namespace
 
 ### Release 0.5.0 (2020-09-01)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.4.2.0...B0.5.0.0)
