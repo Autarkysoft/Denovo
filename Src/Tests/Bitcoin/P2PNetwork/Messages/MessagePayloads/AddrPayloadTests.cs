@@ -23,7 +23,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         private readonly NetworkAddressWithTime addr1 = new NetworkAddressWithTime(NodeServiceFlags.NodeNetwork, IPAddress.Parse("192.0.2.51"), 8333, 1414012889);
-        private readonly NetworkAddressWithTime addr2 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("123.45.67.89"), 9823, 1581412378);
+        private readonly NetworkAddressWithTime addr2 = new NetworkAddressWithTime(NodeServiceFlags.AllLimited, IPAddress.Parse("123.45.67.89"), 9823, 1581412378);
         private readonly string addr1Hex = "d91f4854010000000000000000000000000000000000ffffc0000233208d";
         private readonly string addr2Hex = "1a70425e1f0400000000000000000000000000000000ffff7b2d4359265f";
 

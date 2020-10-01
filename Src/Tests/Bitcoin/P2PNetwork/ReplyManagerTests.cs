@@ -26,7 +26,7 @@ namespace Tests.Bitcoin.P2PNetwork
             var cs = new MockClientSettings()
             {
                 _protoVer = 123,
-                _services = NodeServiceFlags.All,
+                _services = NodeServiceFlags.AllLimited,
                 _time = 456,
                 _port = 789,
                 _ua = "foo",

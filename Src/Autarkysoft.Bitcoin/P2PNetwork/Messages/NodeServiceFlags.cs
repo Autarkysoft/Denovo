@@ -47,8 +47,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         NodeNetworkLimited = (1 << 10),
         
         /// <summary>
-        /// Indicates a node that supports all the services.
+        /// Indicates a full node that supports all the services (except <see cref="NodeNetworkLimited"/>).
         /// </summary>
-        All = NodeNone | NodeNetwork | NodeGetUtxo | NodeBloom | NodeWitness | NodeXThin | NodeNetworkLimited
+        All = NodeNone | NodeNetwork | NodeGetUtxo | NodeBloom | NodeWitness | NodeXThin,
+        /// <summary>
+        /// Indicates a limited (pruned) full node that supports all the services.
+        /// </summary>
+        AllLimited = NodeNone | NodeNetwork | NodeGetUtxo | NodeBloom | NodeWitness | NodeXThin | NodeNetworkLimited,
     }
 }
