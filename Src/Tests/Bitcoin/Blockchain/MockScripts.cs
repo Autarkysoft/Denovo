@@ -42,6 +42,7 @@ namespace Tests.Bitcoin.Blockchain
         public PubkeyScriptType GetPublicScriptType() => throw new NotImplementedException();
         public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
+        public void SetToWitnessCommitment(byte[] hash) => throw new NotImplementedException();
     }
 
 
@@ -126,6 +127,7 @@ namespace Tests.Bitcoin.Blockchain
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
         public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
+        public void SetToWitnessCommitment(byte[] hash) => throw new NotImplementedException();
     }
 
 
@@ -222,6 +224,7 @@ namespace Tests.Bitcoin.Blockchain
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
         public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
+        public void SetToWitnessCommitment(byte[] hash) => throw new NotImplementedException();
     }
 
 

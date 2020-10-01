@@ -504,5 +504,25 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
             SetToReturn(scr.Data);
         }
+
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public void SetToWitnessCommitment(byte[] hash)
+        {
+            if (hash == null)
+                throw new ArgumentNullException(nameof(hash));
+            if (hash.Length != 32)
+                throw new ArgumentOutOfRangeException(nameof(hash), "Hash should be 32 bytes");
+
+            Data = new byte[38];
+            Data[0] = 0x6a;
+            Data[1] = 0x24;
+            Data[2] = 0xaa;
+            Data[3] = 0x21;
+            Data[4] = 0xa9;
+            Data[5] = 0xed;
+            Buffer.BlockCopy(hash, 0, Data, 6, 32);
+        }
     }
 }

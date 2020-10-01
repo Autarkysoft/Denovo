@@ -654,5 +654,26 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             Assert.Throws<ArgumentNullException>(() => scr.SetToReturn(nba));
             Assert.Throws<ArgumentNullException>(() => scr.SetToReturn(nscr));
         }
+
+        [Fact]
+        public void SetToWitnessCommitmentTest()
+        {
+            var scr = new PubkeyScript();
+
+            string hash = Helper.GetBytesHex(32);
+            scr.SetToWitnessCommitment(Helper.HexToBytes(hash));
+            byte[] expected = Helper.HexToBytes($"6a24aa21a9ed{hash}");
+
+            Assert.Equal(expected, scr.Data);
+        }
+
+        [Fact]
+        public void SetToWitnessCommitment_ExceptionTest()
+        {
+            var scr = new PubkeyScript();
+
+            Assert.Throws<ArgumentNullException>(() => scr.SetToWitnessCommitment(null));
+            Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToWitnessCommitment(new byte[1]));
+        }
     }
 }

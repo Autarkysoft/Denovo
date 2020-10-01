@@ -32,5 +32,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// True if script starts with <see cref="OP.RETURN"/> or the size is bigger than <see cref="Constants.MaxScriptLength"/>
         /// </returns>
         bool IsUnspendable();
+
+        /// <summary>
+        /// Sets this script to witness commitment used in coinbase transaction of blocks that contain transactions that have
+        /// witnesses. It is <see cref="OP.RETURN"/> 0x24 0xaa21a9ed <paramref name="hash"/>
+        /// </summary>
+        /// <param name="hash">32-byte merkle root hash</param>
+        void SetToWitnessCommitment(byte[] hash);
     }
 }
