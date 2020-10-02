@@ -20,10 +20,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Returns the special type of this instance (types that require additional steps during transaction verification).
         /// </summary>
-        /// <param name="consensus">Consensus rules</param>
-        /// <param name="height">Block height</param>
+        /// <param name="consensus">Consensus rules (it must have the correct block height property set)</param>
         /// <returns><see cref="PubkeyScriptSpecialType"/> enum</returns>
-        PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height);
+        PubkeyScriptSpecialType GetSpecialType(IConsensus consensus);
 
         /// <summary>
         /// Returns if this instance is surely unspendable based on its size and existence of <see cref="OP.RETURN"/> at the start.

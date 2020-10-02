@@ -57,6 +57,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 error = "Block height is not set.";
                 return false;
             }
+            // Set/change consensus rule
+            consensus.BlockHeight = block.Height;
+
             // We can only verify _new_ blocks since verification requires an up to date UTXO set.
             // In case of a split (orphan,...) the caller must update IBlockchain and IUtxo first.
             if (block.Height != chain.Height + 1)
@@ -82,7 +85,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            txVer.BlockHeight = block.Height;
             txVer.TotalSigOpCount = 0;
             ITransaction coinbase = block.TransactionList[0];
             if (!txVer.VerifyCoinbasePrimary(coinbase, out error))
@@ -109,7 +111,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
 
             // https://github.com/bitcoin/bitcoin/blob/40a04814d130dfc9131af3f568eb44533e2bcbfc/src/validation.cpp#L3574-L3609
-            if (consensus.IsSegWitEnabled(block.Height))
+            if (consensus.IsSegWitEnabled)
             {
                 // Find commitment among outputs (38-byte OP_RETURN)
                 ReadOnlySpan<byte> start = new byte[6] { 0x6a, 0x24, 0xaa, 0x21, 0xa9, 0xed };

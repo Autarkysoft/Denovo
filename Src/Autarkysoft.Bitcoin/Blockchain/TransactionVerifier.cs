@@ -60,8 +60,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         /// <inheritdoc/>
-        public int BlockHeight { get; set; }
-        /// <inheritdoc/>
         public int TotalSigOpCount { get; set; }
         /// <inheritdoc/>
         public ulong TotalFee { get; set; }
@@ -97,7 +95,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 error = "Invalid coinbase outpoint.";
                 return false;
             }
-            if (!coinbase.TxInList[0].SigScript.VerifyCoinbase(BlockHeight, consensus))
+            if (!coinbase.TxInList[0].SigScript.VerifyCoinbase(consensus))
             {
                 error = "Invalid coinbase signature script.";
                 return false;
@@ -117,7 +115,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public bool VerifyCoinbaseOutput(ITransaction coinbase, out string error)
         {
             ulong totalAmount = 0;
-            ulong maxAllowed = consensus.GetBlockReward(BlockHeight) + TotalFee;
+            ulong maxAllowed = consensus.BlockReward + TotalFee;
             foreach (var item in coinbase.TxOutList)
             {
                 totalAmount += item.Amount;
@@ -144,7 +142,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
 
             Signature sig;
-            if (consensus.IsStrictDerSig(BlockHeight))
+            if (consensus.IsStrictDerSig)
             {
                 if (!Signature.TryReadStrict(sigPush.data, out sig, out error))
                 {
@@ -247,11 +245,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                 ForceLowS = ForceLowS,
                 StrictNumberEncoding = StrictNumberEncoding,
-
-                IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
-                IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
-                IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
-                IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
+                // TODO: change this to accept IConsensus
+                IsBip65Enabled = consensus.IsBip65Enabled,
+                IsBip112Enabled = consensus.IsBip112Enabled,
+                IsStrictDerSig = consensus.IsStrictDerSig,
+                IsBip147Enabled = consensus.IsBip147Enabled,
             };
 
             for (int j = 0; j < tx.WitnessList[index].Items.Length - 1; j++)
@@ -368,7 +366,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 toSpend += prevOutput.Amount;
 
-                PubkeyScriptSpecialType pubType = prevOutput.PubScript.GetSpecialType(consensus, BlockHeight);
+                PubkeyScriptSpecialType pubType = prevOutput.PubScript.GetSpecialType(consensus);
 
                 if (pubType == PubkeyScriptSpecialType.None || pubType == PubkeyScriptSpecialType.P2PKH)
                 {
@@ -422,10 +420,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             ForceLowS = ForceLowS,
                             StrictNumberEncoding = StrictNumberEncoding,
 
-                            IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
-                            IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
-                            IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
-                            IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
+                            IsBip65Enabled = consensus.IsBip65Enabled,
+                            IsBip112Enabled = consensus.IsBip112Enabled,
+                            IsStrictDerSig = consensus.IsStrictDerSig,
+                            IsBip147Enabled = consensus.IsBip147Enabled,
                         };
 
                         // Note that checking OP count is below max is done during Evaluate() and op.Run()
@@ -492,7 +490,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
-                    RedeemScriptSpecialType rdmType = redeem.GetSpecialType(consensus, BlockHeight);
+                    RedeemScriptSpecialType rdmType = redeem.GetSpecialType(consensus);
 
                     if (rdmType == RedeemScriptSpecialType.None)
                     {
@@ -512,10 +510,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             ForceLowS = ForceLowS,
                             StrictNumberEncoding = StrictNumberEncoding,
 
-                            IsBip65Enabled = consensus.IsBip65Enabled(BlockHeight),
-                            IsBip112Enabled = consensus.IsBip112Enabled(BlockHeight),
-                            IsStrictDerSig = consensus.IsStrictDerSig(BlockHeight),
-                            IsBip147Enabled = consensus.IsBip147Enabled(BlockHeight),
+                            IsBip65Enabled = consensus.IsBip65Enabled,
+                            IsBip112Enabled = consensus.IsBip112Enabled,
+                            IsStrictDerSig = consensus.IsStrictDerSig,
+                            IsBip147Enabled = consensus.IsBip147Enabled,
                         };
 
                         // There is no need to set the following 2 since all sigOps are PushOps
@@ -709,7 +707,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     error = "Invalid witness pubkey script was found.";
                     return false;
                 }
-                
+
 
                 if (isMempool)
                 {

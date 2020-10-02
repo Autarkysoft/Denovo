@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
-using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -16,12 +15,25 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public class Consensus : IConsensus
     {
         /// <summary>
+        /// Initializes a new instance of <see cref="Consensus"/> using block height zero for <see cref="NetworkType.MainNet"/>.
+        /// </summary>
+        public Consensus() : this(0, NetworkType.MainNet)
+        {
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="Consensus"/> using the <see cref="NetworkType"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
+        /// <param name="height">
+        /// Block height to use for setting the consens rules (can be set to zero and changed later using the
+        /// <see cref="BlockHeight"/> property). It has to change based on block height.
+        /// </param>
         /// <param name="netType">Network type</param>
-        public Consensus(NetworkType netType)
+        public Consensus(int height, NetworkType netType)
         {
+            BlockHeight = height;
+
             // https://github.com/bitcoin/bitcoin/blob/544709763e1f45148d1926831e07ff03487673ee/src/chainparams.cpp
             switch (netType)
             {
@@ -62,7 +74,21 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private readonly int bip16, bip34, bip65, bip66, bip112, seg;
+        private int _height;
 
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public int BlockHeight
+        {
+            get => _height;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(BlockHeight), "Block height can not be negative.");
+
+                _height = value;
+            }
+        }
 
         /// <inheritdoc/>
         public int MaxSigOpCount { get; }
@@ -71,49 +97,45 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public int HalvingInterval { get; }
 
         /// <inheritdoc/>
-        public ulong GetBlockReward(int height)
+        public ulong BlockReward
         {
-            int halvings = height / HalvingInterval;
-
-            // Dividing max reward (50 BTC) 33 times will result in 0 but we'll use the same logic as core 
-            // https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp#L1222-L1224
-            // Note: in (ulong >> count) shifts the (count & 0x3F) is used instead
-            if (halvings >= 64)
+            get
             {
-                return 0;
-            }
+                int halvings = BlockHeight / HalvingInterval;
 
-            return 50_0000_0000UL >> halvings;
+                // Dividing max reward (50 BTC) 33 times will result in 0 but we'll use the same logic as core 
+                // https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp#L1222-L1224
+                // Note: in (ulong >> count) shifts the (count & 0x3F) is used instead
+                if (halvings >= 64)
+                {
+                    return 0;
+                }
+
+                return 50_0000_0000UL >> halvings;
+            }
         }
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         // Only 1 block on MainNet and 1 block on TestNet violate P2SH validation rule (before it activates)
         // the rest either don't have any or BIP-16 is already activated.
-        public bool IsBip16Enabled(int height) => height != bip16;
+        public bool IsBip16Enabled => BlockHeight != bip16;
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsBip34Enabled(int height) => height >= bip34;
+        public bool IsBip34Enabled => BlockHeight >= bip34;
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsBip65Enabled(int height) => height >= bip65;
+        public bool IsBip65Enabled => BlockHeight >= bip65;
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsStrictDerSig(int height) => height >= bip66;
+        public bool IsStrictDerSig => BlockHeight >= bip66;
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsBip112Enabled(int height) => height >= bip112;
+        public bool IsBip112Enabled => BlockHeight >= bip112;
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsBip147Enabled(int height) => height >= seg; // BIP-147 was enabled alongside segwit
+        public bool IsBip147Enabled => BlockHeight >= seg; // BIP-147 was enabled alongside segwit
 
         /// <inheritdoc/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsSegWitEnabled(int height) => height >= seg;
+        public bool IsSegWitEnabled => BlockHeight >= seg;
     }
 }

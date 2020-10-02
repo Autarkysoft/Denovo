@@ -119,7 +119,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height)
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus)
         {
             // DUP HASH160 0x14(data20) EqualVerify CheckSig
             if (Data.Length == 25 && Data[24] == (byte)OP.CheckSig && Data[23] == (byte)OP.EqualVerify &&
@@ -128,13 +128,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 return PubkeyScriptSpecialType.P2PKH;
             }
             // HASH160 0x14(data20) EQUAL
-            else if (Data.Length == 23 && consensus.IsBip16Enabled(height) &&
+            else if (Data.Length == 23 && consensus.IsBip16Enabled &&
                      Data[0] == (byte)OP.HASH160 && Data[1] == 20 && Data[^1] == (byte)OP.EQUAL)
             {
                 return PubkeyScriptSpecialType.P2SH;
             }
             // https://github.com/bitcoin/bitcoin/blob/476436b2dec254bb988f8c7a6cbec1d7bb7cecfd/src/script/script.cpp#L215-L231
-            else if (consensus.IsSegWitEnabled(height) &&
+            else if (consensus.IsSegWitEnabled &&
                      Data.Length >= 4 && Data.Length <= 42 &&
                      Data.Length == Data[1] + 2 &&
                      (Data[0] == 0 || (Data[0] >= (byte)OP._1 && Data[0] <= (byte)OP._16)))

@@ -14,11 +14,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public interface ITransactionVerifier
     {
         /// <summary>
-        /// Height of the block containing the transaction(s) to be verified. It must be set/changed by the caller before calling
-        /// Verify* methods since it is used to determine current consensus rules.
-        /// </summary>
-        int BlockHeight { get; set; }
-        /// <summary>
         /// Total number of signature operations that this instance has verified so far.
         /// Must be set/reset by the caller for each block.
         /// </summary>

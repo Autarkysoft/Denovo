@@ -143,9 +143,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public RedeemScriptSpecialType GetSpecialType(IConsensus consensus, int height)
+        public RedeemScriptSpecialType GetSpecialType(IConsensus consensus)
         {
-            if (consensus.IsSegWitEnabled(height) &&
+            if (consensus.IsSegWitEnabled &&
                 Data.Length >= 4 && Data.Length <= 42 &&
                 Data.Length == Data[1] + 2 &&
                 (Data[0] == 0 || (Data[0] >= (byte)OP._1 && Data[0] <= (byte)OP._16)))

@@ -169,151 +169,151 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = false },
+                new MockConsensus() { segWit = false },
                 new byte[0],
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 new byte[0],
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes("00"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("00"), // len < 4
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123),
+                new MockConsensus(),
                 Helper.HexToBytes($"76a914{Helper.GetBytesHex(20)}88ac"),
                 PubkeyScriptSpecialType.P2PKH
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"76a913{Helper.GetBytesHex(19)}88ac"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true, segWit = true },
+                new MockConsensus() { bip16 = true, segWit = true },
                 Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}88"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = false, segWit = true },
+                new MockConsensus() { bip16 = false, segWit = true },
                 Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true },
+                new MockConsensus() { bip16 = true },
                 Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87"),
                 PubkeyScriptSpecialType.P2SH
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true, segWit = true },
+                new MockConsensus() { bip16 = true, segWit = true },
                 Helper.HexToBytes($"a915{Helper.GetBytesHex(21)}87"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}"),
                 PubkeyScriptSpecialType.P2WPKH
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true, segWit = true },
+                new MockConsensus() { bip16 = true, segWit = true },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(21)}"), // Has 1 extra byte outside of the push => is not witness
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true, segWit = true },
+                new MockConsensus() { bip16 = true, segWit = true },
                 Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"), // Invalid push length
                 PubkeyScriptSpecialType.InvalidWitness
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"001f{Helper.GetBytesHex(31)}"), // Invalid push length
                 PubkeyScriptSpecialType.InvalidWitness
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true, segWit = false },
+                new MockConsensus() { bip16 = true, segWit = false },
                 Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"), // Invalid push length but SegWit is not enabled
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes($"0020{Helper.GetBytesHex(32)}"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"0020{Helper.GetBytesHex(32)}"),
                 PubkeyScriptSpecialType.P2WSH
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"5101ff"), // OP_1 push(0xff) -> len < 4 -> not witness
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"6029{Helper.GetBytesHex(41)}"), // OP_16 push(data40) -> len > 42 -> not witness
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"5114{Helper.GetBytesHex(20)}"), // This case may need to update when version 1 is added
                 PubkeyScriptSpecialType.UnknownWitness
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true, segWit = true },
+                new MockConsensus() { bip16 = true, segWit = true },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}87"), // Has an extra OP code at the end
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("604c020001"), // 0x60 is OP_16 and 0x4c is OP_PushData1
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("6003020001"), // 0x60 is OP_16 but push is correct
                 PubkeyScriptSpecialType.UnknownWitness
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("010103abcdef"), // Starts with 0x01 instead of OP_1=0x51
                 PubkeyScriptSpecialType.None
             };
@@ -323,7 +323,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void GetSpecialTypeTest(IConsensus consensus, byte[] data, PubkeyScriptSpecialType expected)
         {
             PubkeyScript scr = new PubkeyScript(data);
-            Assert.Equal(expected, scr.GetSpecialType(consensus, 123));
+            Assert.Equal(expected, scr.GetSpecialType(consensus));
         }
 
         public static IEnumerable<object[]> GetP2pkCases()

@@ -80,17 +80,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
         /// <inheritdoc/>
-        public bool VerifyCoinbase(int height, IConsensus consensus)
+        public bool VerifyCoinbase(IConsensus consensus)
         {
             if (Data.Length < Constants.MinCoinbaseScriptLength || Data.Length > Constants.MaxCoinbaseScriptLength)
             {
                 return false;
             }
 
-            if (consensus.IsBip34Enabled(height))
+            if (consensus.IsBip34Enabled)
             {
                 var stream = new FastStream(4);
-                new PushDataOp(height).WriteToStream(stream);
+                new PushDataOp(consensus.BlockHeight).WriteToStream(stream);
                 ReadOnlySpan<byte> expected = stream.ToByteArray();
 
                 return Data.Length >= expected.Length && ((ReadOnlySpan<byte>)Data).Slice(0, expected.Length).SequenceEqual(expected);

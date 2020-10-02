@@ -93,35 +93,35 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetVerifyCoinbaseCases()
         {
-            yield return new object[] { new byte[0], 123, null, false };
-            yield return new object[] { new byte[1], 123, null, false };
-            yield return new object[] { new byte[101], 123, null, false };
-            yield return new object[] { new byte[2], 123, new MockConsensus(123) { bip34 = false }, true };
-            yield return new object[] { new byte[2], 123, new MockConsensus(123) { bip34 = true }, false };
-            yield return new object[] { new byte[] { 1, 123 }, 123, new MockConsensus(123) { bip34 = true }, true };
-            yield return new object[] { new byte[] { 2, 123, 0 }, 123, new MockConsensus(123) { bip34 = true }, false };
-            yield return new object[] { new byte[] { 3, 123 }, 123, new MockConsensus(123) { bip34 = true }, false };
+            yield return new object[] { new byte[0], null, false };
+            yield return new object[] { new byte[1], null, false };
+            yield return new object[] { new byte[101], null, false };
+            yield return new object[] { new byte[2], new MockConsensus() { expHeight = 123, bip34 = false }, true };
+            yield return new object[] { new byte[2], new MockConsensus() { expHeight = 123, bip34 = true }, false };
+            yield return new object[] { new byte[] { 1, 123 }, new MockConsensus() { expHeight = 123, bip34 = true }, true };
+            yield return new object[] { new byte[] { 2, 123, 0 }, new MockConsensus() { expHeight = 123, bip34 = true }, false };
+            yield return new object[] { new byte[] { 3, 123 }, new MockConsensus() { expHeight = 123, bip34 = true }, false };
             // Test endianness, taken from block #643158
             yield return new object[]
             {
-                new byte[] { 0x03, 0x56, 0xd0, 0x09 }, 643158, new MockConsensus(643158) { bip34 = true }, true
+                new byte[] { 0x03, 0x56, 0xd0, 0x09 }, new MockConsensus() { expHeight = 643158,  bip34 = true }, true
             };
             yield return new object[]
             {
-                new byte[] { 0x03, 0x09, 0xd0, 0x56 }, 643158, new MockConsensus(643158) { bip34 = true }, false
+                new byte[] { 0x03, 0x09, 0xd0, 0x56 }, new MockConsensus() { expHeight = 643158, bip34 = true }, false
             };
             // Bad StackInt is used for pushing
             yield return new object[]
             {
-                new byte[] { (byte)OP.PushData1, 1, 123 }, 123, new MockConsensus(123) { bip34 = true }, false
+                new byte[] { (byte)OP.PushData1, 1, 123 }, new MockConsensus() { expHeight = 123, bip34 = true }, false
             };
         }
         [Theory]
         [MemberData(nameof(GetVerifyCoinbaseCases))]
-        public void VerifyCoinbaseTest(byte[] data, int height, IConsensus consensus, bool expected)
+        public void VerifyCoinbaseTest(byte[] data, IConsensus consensus, bool expected)
         {
             SignatureScript scr = new SignatureScript(data);
-            bool actual = scr.VerifyCoinbase(height, consensus);
+            bool actual = scr.VerifyCoinbase(consensus);
             Assert.Equal(expected, actual);
         }
 

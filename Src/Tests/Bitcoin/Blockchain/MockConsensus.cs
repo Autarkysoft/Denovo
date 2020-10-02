@@ -11,16 +11,26 @@ namespace Tests.Bitcoin.Blockchain
     public class MockConsensus : IConsensus
     {
 #pragma warning disable CS0649 // Field is never assigned to
-
-        public MockConsensus(int mockHeight)
-        {
-            expHeight = mockHeight;
-        }
-
-        private readonly int expHeight;
-        internal int maxSigOp, halving;
+        internal int expHeight = -1, maxSigOp = 0, halving = 0;
         internal ulong blockReward;
         internal bool? bip16, bip34, bip65, bip112, bip147, strictDer, segWit;
+
+        private const string UnexpectedCall = "Unexpected call was made";
+
+        public int BlockHeight
+        {
+            get
+            {
+                Assert.False(expHeight == -1, "Expected height should be set first.");
+                return expHeight;
+            }
+            set
+            {
+                Assert.False(expHeight == -1, "Expected height should be set first.");
+                Assert.Equal(expHeight, value);
+            }
+        }
+
 
         public int MaxSigOpCount
         {
@@ -41,61 +51,77 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        public ulong GetBlockReward(int height)
+        public ulong BlockReward
         {
-            Assert.NotEqual(0UL, blockReward);
-            Assert.Equal(expHeight, height);
-            return blockReward;
+            get
+            {
+                Assert.NotEqual(0UL, blockReward);
+                return blockReward;
+            }
         }
 
-        public bool IsBip112Enabled(int height)
+        public bool IsBip112Enabled
         {
             // NotNull check makes sure value is set by tester otherwise this is an unexpected call
-            Assert.NotNull(bip112);
-            Assert.Equal(expHeight, height);
-            return (bool)bip112;
+            get
+            {
+                Assert.True(bip112.HasValue, UnexpectedCall);
+                return bip112.Value;
+            }
         }
 
-        public bool IsBip147Enabled(int height)
+        public bool IsBip147Enabled
         {
-            Assert.NotNull(bip147);
-            Assert.Equal(expHeight, height);
-            return (bool)bip147;
+            get
+            {
+                Assert.True(bip147.HasValue, UnexpectedCall);
+                return bip147.Value;
+            }
         }
 
-        public bool IsBip16Enabled(int height)
+        public bool IsBip16Enabled
         {
-            Assert.NotNull(bip16);
-            Assert.Equal(expHeight, height);
-            return (bool)bip16;
+            get
+            {
+                Assert.True(bip16.HasValue, UnexpectedCall);
+                return bip16.Value;
+            }
         }
 
-        public bool IsBip34Enabled(int height)
+        public bool IsBip34Enabled
         {
-            Assert.NotNull(bip34);
-            Assert.Equal(expHeight, height);
-            return (bool)bip34;
+            get
+            {
+                Assert.True(bip34.HasValue, UnexpectedCall);
+                return bip34.Value;
+            }
         }
 
-        public bool IsBip65Enabled(int height)
+        public bool IsBip65Enabled
         {
-            Assert.NotNull(bip65);
-            Assert.Equal(expHeight, height);
-            return (bool)bip65;
+            get
+            {
+                Assert.True(bip65.HasValue, UnexpectedCall);
+                return bip65.Value;
+            }
         }
 
-        public bool IsSegWitEnabled(int height)
+        public bool IsSegWitEnabled
         {
-            Assert.NotNull(segWit);
-            Assert.Equal(expHeight, height);
-            return (bool)segWit;
+            get
+            {
+                Assert.True(segWit.HasValue, UnexpectedCall);
+                return segWit.Value;
+            }
         }
 
-        public bool IsStrictDerSig(int height)
+        public bool IsStrictDerSig
         {
-            Assert.NotNull(strictDer);
-            Assert.Equal(expHeight, height);
-            return (bool)strictDer;
+            get
+            {
+                Assert.True(strictDer.HasValue, UnexpectedCall);
+                return strictDer.Value;
+            }
         }
 
 #pragma warning restore CS0649 // Field is never assigned to

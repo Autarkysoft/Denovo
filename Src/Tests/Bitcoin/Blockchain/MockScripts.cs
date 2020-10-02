@@ -34,13 +34,13 @@ namespace Tests.Bitcoin.Blockchain
         public virtual void SetToP2SH_P2WPKH(IRedeemScript redeem) => throw new NotImplementedException();
         public virtual void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
         public virtual void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
-        public virtual bool VerifyCoinbase(int height, IConsensus consensus) => throw new NotImplementedException();
+        public virtual bool VerifyCoinbase(IConsensus consensus) => throw new NotImplementedException();
     }
 
     public abstract class MockPubScriptBase : MockScriptBase, IPubkeyScript
     {
         public PubkeyScriptType GetPublicScriptType() => throw new NotImplementedException();
-        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
         public void SetToWitnessCommitment(byte[] hash) => throw new NotImplementedException();
     }
@@ -69,10 +69,10 @@ namespace Tests.Bitcoin.Blockchain
             return sigOps;
         }
 
-        public override bool VerifyCoinbase(int height, IConsensus consensus)
+        public override bool VerifyCoinbase(IConsensus consensus)
         {
-            Assert.Equal(expHeight, height);
-            consensus.IsBip34Enabled(height);
+            // If MockConsensus is used, the following call makes sure the property is set
+            _ = consensus.IsBip34Enabled;
             return retResult;
         }
     }
@@ -125,7 +125,7 @@ namespace Tests.Bitcoin.Blockchain
         private readonly PubkeyScriptType typeToReturn;
 
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
-        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
         public void SetToWitnessCommitment(byte[] hash) => throw new NotImplementedException();
     }
@@ -146,7 +146,7 @@ namespace Tests.Bitcoin.Blockchain
         public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
         public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
-        public bool VerifyCoinbase(int height, IConsensus consensus) => throw new NotImplementedException();
+        public bool VerifyCoinbase(IConsensus consensus) => throw new NotImplementedException();
     }
 
 
@@ -166,7 +166,7 @@ namespace Tests.Bitcoin.Blockchain
         private readonly RedeemScriptType typeToReturn;
 
         public RedeemScriptType GetRedeemScriptType() => typeToReturn;
-        public RedeemScriptSpecialType GetSpecialType(IConsensus c, int height) => throw new NotImplementedException();
+        public RedeemScriptSpecialType GetSpecialType(IConsensus c) => throw new NotImplementedException();
         public int CountSigOps(IOperation[] ops) => throw new NotImplementedException();
     }
 
@@ -222,7 +222,7 @@ namespace Tests.Bitcoin.Blockchain
         private readonly PubkeyScriptType typeToReturn;
 
         public PubkeyScriptType GetPublicScriptType() => typeToReturn;
-        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus, int height) => throw new NotImplementedException();
+        public PubkeyScriptSpecialType GetSpecialType(IConsensus consensus) => throw new NotImplementedException();
         public bool IsUnspendable() => throw new NotImplementedException();
         public void SetToWitnessCommitment(byte[] hash) => throw new NotImplementedException();
     }
@@ -243,7 +243,7 @@ namespace Tests.Bitcoin.Blockchain
         public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
         public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
-        public bool VerifyCoinbase(int height, IConsensus consensus) => throw new NotImplementedException();
+        public bool VerifyCoinbase(IConsensus consensus) => throw new NotImplementedException();
     }
 
 
@@ -280,7 +280,7 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        public RedeemScriptSpecialType GetSpecialType(IConsensus c, int height) => throw new NotImplementedException();
+        public RedeemScriptSpecialType GetSpecialType(IConsensus c) => throw new NotImplementedException();
         public int CountSigOps(IOperation[] ops) => throw new NotImplementedException();
     }
 }

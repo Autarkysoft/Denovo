@@ -191,110 +191,110 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetSpecialScrTypeCases()
         {
-            yield return new object[] { new MockConsensus(MockHeight) { segWit = true }, null, RedeemScriptSpecialType.None };
-            yield return new object[] { new MockConsensus(MockHeight) { segWit = false }, null, RedeemScriptSpecialType.None };
-            yield return new object[] { new MockConsensus(MockHeight) { segWit = true }, new byte[22], RedeemScriptSpecialType.None };
-            yield return new object[] { new MockConsensus(MockHeight) { segWit = false }, new byte[22], RedeemScriptSpecialType.None };
+            yield return new object[] { new MockConsensus() { segWit = true }, null, RedeemScriptSpecialType.None };
+            yield return new object[] { new MockConsensus() { segWit = false }, null, RedeemScriptSpecialType.None };
+            yield return new object[] { new MockConsensus() { segWit = true }, new byte[22], RedeemScriptSpecialType.None };
+            yield return new object[] { new MockConsensus() { segWit = false }, new byte[22], RedeemScriptSpecialType.None };
             // The following 2 are from https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes("001479091972186c449eb1ded22b78e40d009bdf0089"),
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("001479091972186c449eb1ded22b78e40d009bdf0089"),
                 RedeemScriptSpecialType.P2SH_P2WPKH
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes("0020a16b5755f7f6f96dbd65f5f0d6ab9418b89af4b1f14a1bb8a09062c35f0dcb54"),
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("0020a16b5755f7f6f96dbd65f5f0d6ab9418b89af4b1f14a1bb8a09062c35f0dcb54"),
                 RedeemScriptSpecialType.P2SH_P2WSH
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(21)}"), // Has 1 extra byte outside of the push => is not witness
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(21)}"),
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"), // Invalid push length
                 RedeemScriptSpecialType.InvalidWitness
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"),
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"),
                 RedeemScriptSpecialType.InvalidWitness
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { segWit = false },
+                new MockConsensus() { segWit = false },
                 Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"),
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"5101ff"), // OP_1 push(0xff) -> len < 4 -> not witness
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"6029{Helper.GetBytesHex(41)}"), // OP_16 push(data40) -> len > 42 -> not witness
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"5114{Helper.GetBytesHex(20)}"), // This case may need to update when version 1 is added
                 RedeemScriptSpecialType.UnknownWitness
             };
             yield return new object[]
             {
-                new MockConsensus(123) { bip16 = true, segWit = true },
+                new MockConsensus() { bip16 = true, segWit = true },
                 Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}87"), // Has an extra OP code at the end
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("604c020001"), // 0x60 is OP_16 and 0x4c is OP_PushData1
                 RedeemScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("6003020001"), // 0x60 is OP_16 but push is correct
                 RedeemScriptSpecialType.UnknownWitness
             };
             yield return new object[]
             {
-                new MockConsensus(123) { segWit = true },
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes("010103abcdef"), // Starts with 0x01 instead of OP_1=0x51
                 RedeemScriptSpecialType.None
             };
@@ -304,7 +304,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void RedeemScriptSpecialTypeTest(IConsensus c, byte[] data, RedeemScriptSpecialType expected)
         {
             var scr = new RedeemScript(data);
-            RedeemScriptSpecialType actual = scr.GetSpecialType(c, MockHeight);
+            RedeemScriptSpecialType actual = scr.GetSpecialType(c);
             Assert.Equal(expected, actual);
         }
 

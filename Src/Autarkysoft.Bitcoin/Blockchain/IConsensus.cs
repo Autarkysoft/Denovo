@@ -7,9 +7,17 @@ namespace Autarkysoft.Bitcoin.Blockchain
 {
     /// <summary>
     /// Defines methods and properties defining the consensus rules used in bitcoin.
+    /// <para/>Note: Consensus rules change based on block height so it has to be set by the caller before using any of the
+    /// properties here and change when the block changes (like in <see cref="BlockVerifier"/> for each block being verified).
     /// </summary>
     public interface IConsensus
     {
+        /// <summary>
+        /// Gets or sets the block height which will change the consensus (and all other properties).
+        /// <para/>Height can not be negative
+        /// </summary>
+        int BlockHeight { get; set; }
+
         /// <summary>
         /// Returns maximum number of allowed signature operations in a block
         /// </summary>
@@ -21,59 +29,44 @@ namespace Autarkysoft.Bitcoin.Blockchain
         int HalvingInterval { get; }
 
         /// <summary>
-        /// Returns maximum allowed block reward based on its height.
+        /// Returns maximum allowed block reward based in satoshi
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>Block reward in satoshi</returns>
-        ulong GetBlockReward(int height);
+        ulong BlockReward { get; }
 
         /// <summary>
-        /// BIP-16 enables P2SH scrips
+        /// Returns if BIP-16 (P2SH scrips) is enabled
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>True if BIP-16 is enabled on this height; otherwise false.</returns>
-        bool IsBip16Enabled(int height);
+        bool IsBip16Enabled { get; }
 
         /// <summary>
-        /// BIP-34 requires coinbase transactions to include the block height.
+        /// Returns if BIP-34 (coinbase transactions must include block height) is enabled
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>True if BIP-34 is enabled on this height; otherwise false.</returns>
-        bool IsBip34Enabled(int height);
+        bool IsBip34Enabled { get; }
 
         /// <summary>
-        /// Returns if BIP-65 has enabled <see cref="Scripts.OP.CheckLocktimeVerify"/> OP code
+        /// Returns if BIP-65 (<see cref="Scripts.OP.CheckLocktimeVerify"/>) is enabled
         /// </summary>
-        /// /// <param name="height">Block height</param>
-        /// <returns>True if BIP-65 is enabled on this height; otherwise false.</returns>
-        bool IsBip65Enabled(int height);
+        bool IsBip65Enabled { get; }
 
         /// <summary>
-        /// Returns if BIP-66 is enabled to enforce strict DER encoding for signatures.
+        /// Returns if BIP-66 (enforce strict DER encoding for signatures) is enabled
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>True if BIP-66 is enabled on this height; otherwise false.</returns>
-        bool IsStrictDerSig(int height);
+        bool IsStrictDerSig { get; }
 
         /// <summary>
-        /// Returns if BIP-112 has enabled <see cref="Scripts.OP.CheckSequenceVerify"/> OP code
+        /// Returns if BIP-112 (<see cref="Scripts.OP.CheckSequenceVerify"/>) is enabled
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>True if BIP-112 is enabled on this height; otherwise false.</returns>
-        bool IsBip112Enabled(int height);
+        bool IsBip112Enabled { get; }
 
         /// <summary>
-        /// Returns if BIP-147 has enabled enforcing the dummy stack element that <see cref="Scripts.OP.CheckMultiSig"/> ops pop.
+        /// Returns if BIP-147 (enforcing strict rules for dummy stack element that <see cref="Scripts.OP.CheckMultiSig"/> ops pop)
+        /// is enabled
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>True if BIP-147 is enabled on this height; otherwise false.</returns>
-        bool IsBip147Enabled(int height);
+        bool IsBip147Enabled { get; }
 
         /// <summary>
-        /// Segregated Witness soft fork
+        /// Returns if Segregated Witness soft fork is enabled
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>True if SegWit is enabled on this height; otherwise false.</returns>
-        bool IsSegWitEnabled(int height);
+        bool IsSegWitEnabled { get; }
     }
 }

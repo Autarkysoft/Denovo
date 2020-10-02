@@ -21,10 +21,9 @@ namespace Tests.Bitcoin.Blockchain
         [Fact]
         public void ConstructorTest()
         {
-            var verifier = new TransactionVerifier(true, new MockUtxoDatabase(), new MockMempool(null), new MockConsensus(MockHeight));
+            var verifier = new TransactionVerifier(true, new MockUtxoDatabase(), new MockMempool(null), new MockConsensus());
 
             Helper.ComparePrivateField(verifier, "isMempool", true);
-            Assert.Equal(0, verifier.BlockHeight);
             Assert.False(verifier.ForceLowS);
             Assert.False(verifier.StrictNumberEncoding);
             Assert.Equal(0UL, verifier.TotalFee);
@@ -36,7 +35,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             var ut = new MockUtxoDatabase();
             var mem = new MockMempool(null);
-            var c = new MockConsensus(MockHeight);
+            var c = new MockConsensus();
 
             Assert.Throws<ArgumentNullException>(() => new TransactionVerifier(true, null, mem, c));
             Assert.Throws<ArgumentNullException>(() => new TransactionVerifier(true, ut, null, c));
@@ -46,7 +45,7 @@ namespace Tests.Bitcoin.Blockchain
 
         public static IEnumerable<object[]> GetCoinBasePrimCases()
         {
-            var c = new MockConsensus(MockHeight) { bip34 = true };
+            var c = new MockConsensus() { expHeight = MockHeight, bip34 = true };
 
             yield return new object[]
             {
@@ -118,10 +117,7 @@ namespace Tests.Bitcoin.Blockchain
         [MemberData(nameof(GetCoinBasePrimCases))]
         public void VerifyCoinbasePrimaryTest(IConsensus consensus, ITransaction tx, bool expB, string expErr, int expOpCount)
         {
-            var verifier = new TransactionVerifier(false, new MockUtxoDatabase(), new MockMempool(null), consensus)
-            {
-                BlockHeight = MockHeight
-            };
+            var verifier = new TransactionVerifier(false, new MockUtxoDatabase(), new MockMempool(null), consensus);
 
             bool actualB = verifier.VerifyCoinbasePrimary(tx, out string error);
 
@@ -135,7 +131,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { blockReward = 100 },
+                new MockConsensus() { expHeight = MockHeight, blockReward = 100 },
                 new MockTxPropInOut(null, new TxOut[] { new TxOut(102, null) }),
                 1,
                 false,
@@ -143,7 +139,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { blockReward = 100 },
+                new MockConsensus() { expHeight = MockHeight, blockReward = 100 },
                 new MockTxPropInOut(null, new TxOut[] { new TxOut(102, null) }),
                 10, // 110 > 102
                 true,
@@ -151,7 +147,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { blockReward = 100 },
+                new MockConsensus() { expHeight = MockHeight, blockReward = 100 },
                 new MockTxPropInOut(null, new TxOut[] { new TxOut(102, null) }),
                 2, // 102 >= 102
                 true,
@@ -159,7 +155,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { blockReward = 100 },
+                new MockConsensus() { expHeight = MockHeight, blockReward = 100 },
                 new MockTxPropInOut(null, new TxOut[] { new TxOut(50, null), new TxOut(20, null), new TxOut(50, null) }),
                 0,
                 false,
@@ -167,7 +163,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { blockReward = 100 },
+                new MockConsensus() { expHeight = MockHeight, blockReward = 100 },
                 new MockTxPropInOut(null, new TxOut[] { new TxOut(50, null), new TxOut(20, null), new TxOut(50, null) }),
                 150, // 150 > 120
                 true,
@@ -175,7 +171,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockConsensus(MockHeight) { blockReward = 100 },
+                new MockConsensus() { expHeight = MockHeight, blockReward = 100 },
                 new MockTxPropInOut(null, new TxOut[] { new TxOut(50, null), new TxOut(20, null), new TxOut(50, null) }),
                 120, // 120 >= 120
                 true,
@@ -188,7 +184,6 @@ namespace Tests.Bitcoin.Blockchain
         {
             var verifier = new TransactionVerifier(false, new MockUtxoDatabase(), new MockMempool(null), c)
             {
-                BlockHeight = MockHeight,
                 TotalFee = fee,
                 TotalSigOpCount = 987
             };
@@ -204,8 +199,9 @@ namespace Tests.Bitcoin.Blockchain
 
         public static IEnumerable<object[]> GetTxVerifyCases()
         {
-            var c = new MockConsensus(MockHeight)
+            var c = new MockConsensus()
             {
+                expHeight = MockHeight,
                 bip65 = true,
                 bip112 = true,
                 strictDer = true,
@@ -439,7 +435,6 @@ namespace Tests.Bitcoin.Blockchain
 
             var verifier = new TransactionVerifier(false, utxoDB, memPool, c)
             {
-                BlockHeight = MockHeight,
                 TotalFee = initialFee,
                 TotalSigOpCount = initialSigOp
             };

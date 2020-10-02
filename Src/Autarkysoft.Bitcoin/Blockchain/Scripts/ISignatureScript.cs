@@ -17,10 +17,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Verifies signature script of the coinbase transaction
         /// </summary>
-        /// <param name="height">Determines if the coinbase script must have height included</param>
-        /// <param name="consensus">Consensus rules</param>
+        /// <param name="consensus">Consensus rules (it must have the correct block height property set)</param>
         /// <returns>True if script is valid for coinbase input, otherwise false.</returns>
-        bool VerifyCoinbase(int height, IConsensus consensus);
+        bool VerifyCoinbase(IConsensus consensus);
 
         /// <summary>
         /// Sets this instance to an empty script. This is useful for spending scripts such as P2WPKH.

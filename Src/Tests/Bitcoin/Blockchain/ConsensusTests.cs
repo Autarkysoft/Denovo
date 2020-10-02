@@ -15,7 +15,8 @@ namespace Tests.Bitcoin.Blockchain
         [Fact]
         public void Constructor_ExceptionTest()
         {
-            Assert.Throws<ArgumentException>(() => new Consensus((NetworkType)100));
+            Assert.Throws<ArgumentException>(() => new Consensus(0, (NetworkType)100));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Consensus(-1, NetworkType.MainNet));
         }
 
         [Theory]
@@ -27,10 +28,10 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(420_000, 12_5000_0000U)]
         [InlineData(420_001, 12_5000_0000U)]
         [InlineData(13_440_000, 0U)]
-        public void GetBlockRewardTest(int height, ulong expected)
+        public void BlockRewardTest(int height, ulong expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            ulong actual = cs.GetBlockReward(height);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            ulong actual = cs.BlockReward;
             Assert.Equal(expected, actual);
         }
 
@@ -41,9 +42,8 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(170061, true)]
         public void IsBip16Enabled(int height, bool expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            bool actual = cs.IsBip16Enabled(height);
-            Assert.Equal(expected, actual);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.IsBip16Enabled);
         }
 
         [Theory]
@@ -53,9 +53,8 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(227932, true)]
         public void IsBip34EnabledTest(int height, bool expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            bool actual = cs.IsBip34Enabled(height);
-            Assert.Equal(expected, actual);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.IsBip34Enabled);
         }
 
         [Theory]
@@ -65,9 +64,8 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(388382, true)]
         public void IsBip65EnabledTest(int height, bool expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            bool actual = cs.IsBip65Enabled(height);
-            Assert.Equal(expected, actual);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.IsBip65Enabled);
         }
 
         [Theory]
@@ -77,9 +75,8 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(363726, true)]
         public void IsStrictDerSigTest(int height, bool expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            bool actual = cs.IsStrictDerSig(height);
-            Assert.Equal(expected, actual);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.IsStrictDerSig);
         }
 
         [Theory]
@@ -89,9 +86,8 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(419329, true)]
         public void IsBip112EnabledTest(int height, bool expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            bool actual = cs.IsBip112Enabled(height);
-            Assert.Equal(expected, actual);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.IsBip112Enabled);
         }
 
         [Theory]
@@ -101,9 +97,8 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(481825, true)]
         public void IsBip147EnabledTest(int height, bool expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            bool actual = cs.IsBip147Enabled(height);
-            Assert.Equal(expected, actual);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.IsBip147Enabled);
         }
 
         [Theory]
@@ -113,9 +108,8 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(481825, true)]
         public void IsSegWitEnabledTest(int height, bool expected)
         {
-            Consensus cs = new Consensus(NetworkType.MainNet);
-            bool actual = cs.IsSegWitEnabled(height);
-            Assert.Equal(expected, actual);
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.IsSegWitEnabled);
         }
     }
 }
