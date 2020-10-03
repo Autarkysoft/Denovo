@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Threading;
 
@@ -13,6 +14,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// </summary>
     public interface IClientSettings
     {
+        /// <summary>
+        /// Gets or sets the blockchain instance to be shared among all node instances
+        /// </summary>
+        IBlockchain Blockchain { get; set; }
+
         /// <summary>
         /// Protocol version that the client supports
         /// </summary>

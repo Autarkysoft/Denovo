@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
@@ -17,6 +18,17 @@ namespace Tests.Bitcoin.P2PNetwork
 #pragma warning disable CS0649 // Field is never assigned to
 
         private const string UnexpectedCall = "Unexpected call was made";
+
+        internal IBlockchain _bchain;
+        public IBlockchain Blockchain
+        {
+            get
+            {
+                Assert.NotNull(_bchain);
+                return _bchain;
+            }
+            set => throw new NotImplementedException();
+        }
 
         internal int _protoVer;
         public int ProtocolVersion

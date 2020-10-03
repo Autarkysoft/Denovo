@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Blockchain;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -20,12 +19,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Initializes a new instance of the <see cref="NodeListener"/> using the given parameters.
         /// </summary>
         /// <param name="peerList">List of peers (is used to add the connected node to)</param>
-        /// <param name="bc">Blockchain database to use</param>
         /// <param name="cs">Client settings</param>
-        public NodeListener(ICollection<Node> peerList, IBlockchain bc, IClientSettings cs)
+        public NodeListener(ICollection<Node> peerList, IClientSettings cs)
         {
             peers = peerList;
-            blockchain = bc;
             settings = cs;
 
             backlog = 3;
@@ -43,7 +40,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly int backlog;
         private SocketAsyncEventArgsPool acceptPool;
         private ICollection<Node> peers;
-        private readonly IBlockchain blockchain;
         private readonly IClientSettings settings;
 
         /// <summary>
@@ -72,7 +68,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (acceptEventArgs.SocketError == SocketError.Success)
             {
-                Node node = new Node(blockchain, settings, acceptEventArgs.AcceptSocket);
+                Node node = new Node(settings, acceptEventArgs.AcceptSocket);
                 peers.Add(node);
                 node.StartReceiving();
             }

@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Net;
@@ -20,10 +19,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Initializes a new instance of <see cref="Node"/> using the given parameters.
         /// </summary>
-        /// <param name="bc">The blockchain (database) manager</param>
         /// <param name="cs">Client settings</param>
         /// <param name="socket">Socket to use</param>
-        internal Node(IBlockchain bc, IClientSettings cs, Socket socket)
+        internal Node(IClientSettings cs, Socket socket)
         {
             settings = cs;
             NodeStatus = new NodeStatus()
@@ -31,7 +29,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 IP = socket.RemoteEndPoint is IPEndPoint ep ? ep.Address : IPAddress.Loopback
             };
 
-            var repMan = new ReplyManager(NodeStatus, bc, cs);
+            var repMan = new ReplyManager(NodeStatus, cs);
 
             sendReceiveSAEA = cs.SendReceivePool.Pop();
             sendReceiveSAEA.AcceptSocket = socket;
@@ -148,7 +146,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 {
                     secondSendLimiter.Release();
                 }
-                else if(!NodeStatus.ShouldDisconnect)
+                else if (!NodeStatus.ShouldDisconnect)
                 {
                     StartReceive(sendEventArgs);
                 }

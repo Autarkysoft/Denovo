@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
@@ -31,14 +30,11 @@ namespace Tests.Bitcoin.P2PNetwork
                 _port = 789,
                 _ua = "foo",
                 _relay = true,
-                _netType = NetworkType.TestNet
-            };
-            var bc = new MockBlockchain()
-            {
-                _height = 12345
+                _netType = NetworkType.TestNet,
+                _bchain = new MockBlockchain() { _height = 12345 }
             };
 
-            var rep = new ReplyManager(ns, bc, cs)
+            var rep = new ReplyManager(ns, cs)
             {
                 rng = new MockNonceRng(0x0158a8e8ba5f3ed3)
             };
@@ -54,8 +50,8 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public static IEnumerable<object[]> GetReplyCases()
         {
-            var cs = new MockClientSettings() { _netType = NetworkType.MainNet };
             var bc = new MockBlockchain();
+            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _bchain = bc };
             var mockAddr0 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Loopback, 1010, 5678);
             var mockAddr1 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("200.2.3.4"), 23, 98);
             var mockAddr2 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("1.2.3.4"), 8080, 665412);
@@ -82,9 +78,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    addrsToReceive = mockAddrs
+                    addrsToReceive = mockAddrs,
                 },
-                bc,
                 new Message(new AddrPayload(mockAddrs), NetworkType.MainNet),
                 null
             };
@@ -95,11 +90,11 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                },
-                new MockBlockchain()
-                {
-                    expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
-                    blkProcessSuccess = true
+                    _bchain = new MockBlockchain()
+                    {
+                        expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
+                        blkProcessSuccess = true
+                    }
                 },
                 new Message(new BlockPayload(mockBlock), NetworkType.MainNet),
                 null
@@ -111,11 +106,11 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                },
-                new MockBlockchain()
-                {
-                    expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
-                    blkProcessSuccess = false
+                    _bchain = new MockBlockchain()
+                    {
+                        expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
+                        blkProcessSuccess = false
+                    }
                 },
                 new Message(new BlockPayload(mockBlock), NetworkType.MainNet),
                 null
@@ -124,7 +119,7 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 // FeeFilter
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _fee = 12345 },
-                cs, bc,
+                cs,
                 new Message(new FeeFilterPayload(12345), NetworkType.MainNet),
                 null
             };
@@ -135,9 +130,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    addrsToReturn = mockAddrs
+                    addrsToReturn = mockAddrs,
                 },
-                bc,
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 new Message[1] { new Message(new AddrPayload(mockAddrs), NetworkType.MainNet) }
             };
@@ -148,9 +142,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    addrsToReturn = mockAddrs1000.ToArray()
+                    addrsToReturn = mockAddrs1000.ToArray(),
                 },
-                bc,
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 new Message[1] { new Message(new AddrPayload(mockAddrs1000.ToArray()), NetworkType.MainNet) }
             };
@@ -161,9 +154,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    addrsToReturn = mockAddrs1002.ToArray()
+                    addrsToReturn = mockAddrs1002.ToArray(),
                 },
-                bc,
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 new Message[2]
                 {
@@ -178,9 +170,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    addrsToReturn = new NetworkAddressWithTime[0]
+                    addrsToReturn = new NetworkAddressWithTime[0],
                 },
-                bc,
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 null
             };
@@ -188,7 +179,7 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 // Ping
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
-                cs, bc,
+                cs,
                 new Message(new PingPayload(98765), NetworkType.MainNet),
                 new Message[1] { new Message(new PongPayload(98765), NetworkType.MainNet) }
             };
@@ -196,7 +187,7 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 // Pong
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
-                cs, bc,
+                cs,
                 new Message(new PongPayload(98765), NetworkType.MainNet),
                 null
             };
@@ -207,7 +198,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.Finished, updateTime = true, _sendCmpt = true, _CmptVer = 1
                 },
-                cs, bc,
+                cs,
                 new Message(new SendCmpctPayload(true, 1), NetworkType.MainNet),
                 null
             };
@@ -218,16 +209,16 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.Finished, updateTime = true, _sendCmpt = false, _CmptVer = 2
                 },
-                cs, bc,
+                cs,
                 new Message(new SendCmpctPayload(false, 2), NetworkType.MainNet),
                 null
             };
         }
         [Theory]
         [MemberData(nameof(GetReplyCases))]
-        public void GetReplyTest(MockNodeStatus ns, IClientSettings cs, IBlockchain bc, Message msg, Message[] expected)
+        public void GetReplyTest(MockNodeStatus ns, IClientSettings cs, Message msg, Message[] expected)
         {
-            var rep = new ReplyManager(ns, bc, cs);
+            var rep = new ReplyManager(ns, cs);
 
             Message[] actual = rep.GetReply(msg);
 
@@ -281,7 +272,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 smallViolation = true,
                 updateTime = true
             };
-            var rep = new ReplyManager(ns, new MockBlockchain(), new ClientSettings());
+            var rep = new ReplyManager(ns, new ClientSettings());
 
             Message[] actual = rep.GetReply(msg);
             Assert.Null(actual);
@@ -301,7 +292,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 smallViolation = true,
                 updateTime = true
             };
-            var rep = new ReplyManager(ns, new MockBlockchain(), new MockClientSettings());
+            var rep = new ReplyManager(ns, new MockClientSettings());
 
             var actual = rep.GetReply(msg);
 
@@ -319,7 +310,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 mediumViolation = true,
                 updateTime = true
             };
-            var rep = new ReplyManager(ns, new MockBlockchain(), new MockClientSettings());
+            var rep = new ReplyManager(ns, new MockClientSettings());
 
             var actual = rep.GetReply(msg);
 
@@ -347,7 +338,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 _handShakeToReturn = HandShakeState.Finished,
                 updateTime = true
             };
-            var rep = new ReplyManager(ns, new MockBlockchain(), new MockClientSettings());
+            var rep = new ReplyManager(ns, new MockClientSettings());
 
             var actual = rep.GetReply(msg);
 
@@ -407,7 +398,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [MemberData(nameof(GetVerackCases))]
         public void CheckVerackTest(MockNodeStatus ns)
         {
-            var rep = new ReplyManager(ns, new MockBlockchain(), new MockClientSettings());
+            var rep = new ReplyManager(ns, new MockClientSettings());
             var msg = new Message(new VerackPayload(), NetworkType.MainNet);
 
             Message[] actual = rep.GetReply(msg);
@@ -430,11 +421,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 _port = 789,
                 _ua = "foo",
                 _relay = true,
-                _netType = NetworkType.MainNet
-            };
-            var bc = new MockBlockchain()
-            {
-                _height = 12345
+                _netType = NetworkType.MainNet,
+                _bchain = new MockBlockchain() { _height = 12345 }
             };
             var verPl = new VersionPayload();
             Assert.True(verPl.TryDeserialize(new FastStreamReader(Helper.HexToBytes("721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001")), out string error), error);
@@ -452,7 +440,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.ReceivedAndReplied,
                     updateTime = true
                 },
-                cs, bc, msg, new Message[] { verak, ver }
+                cs, msg, new Message[] { verak, ver }
             };
             yield return new object[]
             {
@@ -462,7 +450,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     mediumViolation = true,
                     updateTime = true
                 },
-                cs, bc, msg, null
+                cs, msg, null
             };
             yield return new object[]
             {
@@ -472,7 +460,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.SentAndReceived,
                     updateTime = true
                 },
-                cs, bc, msg, new Message[] { verak }
+                cs, msg, new Message[] { verak }
             };
             yield return new object[]
             {
@@ -482,7 +470,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true
                 },
-                cs, bc, msg, new Message[] { verak }
+                cs, msg, new Message[] { verak }
             };
             yield return new object[]
             {
@@ -492,7 +480,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     mediumViolation = true,
                     updateTime = true
                 },
-                cs, bc, msg, null
+                cs, msg, null
             };
             yield return new object[]
             {
@@ -502,14 +490,14 @@ namespace Tests.Bitcoin.P2PNetwork
                     mediumViolation = true,
                     updateTime = true
                 },
-                cs, bc, msg, null
+                cs, msg, null
             };
         }
         [Theory]
         [MemberData(nameof(GetVersionCases))]
-        public void CheckVersionTest(MockNodeStatus ns, IClientSettings cs, IBlockchain bc, Message msg, Message[] expected)
+        public void CheckVersionTest(MockNodeStatus ns, IClientSettings cs, Message msg, Message[] expected)
         {
-            var rep = new ReplyManager(ns, bc, cs)
+            var rep = new ReplyManager(ns, cs)
             {
                 rng = new MockNonceRng(0x0158a8e8ba5f3ed3)
             };

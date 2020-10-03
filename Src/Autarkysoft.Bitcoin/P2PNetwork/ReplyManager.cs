@@ -3,13 +3,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Net;
-using System.Text;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -24,19 +22,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Initializes a new instanse of <see cref="ReplyManager"/> using the given parameters.
         /// </summary>
         /// <param name="ns">Node status</param>
-        /// <param name="bc">Blockchain database</param>
         /// <param name="cs">Client settings</param>
-        public ReplyManager(INodeStatus ns, IBlockchain bc, IClientSettings cs)
+        public ReplyManager(INodeStatus ns, IClientSettings cs)
         {
             nodeStatus = ns;
             settings = cs;
-            blockchain = bc;
         }
 
 
         private readonly INodeStatus nodeStatus;
         private readonly IClientSettings settings;
-        private readonly IBlockchain blockchain;
+
         /// <summary>
         /// A weak RNG to generate nonces for messages.
         /// </summary>
@@ -57,7 +53,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.Loopback, settings.Port),
                 Nonce = (ulong)rng.NextInt64(),
                 UserAgent = settings.UserAgent,
-                StartHeight = blockchain.Height,
+                StartHeight = settings.Blockchain.Height,
                 Relay = settings.Relay
             };
             return new Message(ver, settings.Network);
@@ -112,7 +108,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Block:
                     if (Deser(msg.PayloadData, out BlockPayload blk))
                     {
-                        if (!blockchain.ProcessBlock(blk.BlockData))
+                        if (!settings.Blockchain.ProcessBlock(blk.BlockData))
                         {
                             nodeStatus.AddMediumViolation();
                         }

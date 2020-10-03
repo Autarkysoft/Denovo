@@ -21,10 +21,16 @@ namespace Denovo.ViewModels
         public MainWindowViewModel()
         {
             AllNodes = new NodePool(5);
-            var clientSettings = new ClientSettings() { UserAgent = "/Satoshi:0.20.1/", Relay = false };
+            var clientSettings = new ClientSettings()
+            {
+                UserAgent = "/Denovo:0.1.0/",
+                Relay = false,
+                Network = NetworkType.MainNet,
+                Blockchain = new MockBlockChain()
+            };
             WinMan = new WindowManager();
-            connector = new NodeConnector(AllNodes, new MockBlockChain(), clientSettings);
-            listener = new NodeListener(AllNodes, new MockBlockChain(), clientSettings);
+            connector = new NodeConnector(AllNodes, clientSettings);
+            listener = new NodeListener(AllNodes, clientSettings);
 
             listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
 
@@ -35,7 +41,6 @@ namespace Denovo.ViewModels
 
         public IWindowManager WinMan { get; set; }
         public void Config() => WinMan.ShowDialog(new SettingsViewModel());
-
 
         internal class MockBlockChain : IBlockchain
         {

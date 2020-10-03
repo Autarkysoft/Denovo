@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
@@ -78,6 +79,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
         }
 
+
+        /// <inheritdoc/>
+        public IBlockchain Blockchain { get; set; }
 
         /// <inheritdoc/>
         public int ProtocolVersion { get; set; }
