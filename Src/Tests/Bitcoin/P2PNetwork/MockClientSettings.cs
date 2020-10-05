@@ -30,6 +30,17 @@ namespace Tests.Bitcoin.P2PNetwork
             set => throw new NotImplementedException();
         }
 
+        internal IStorage _storage;
+        public IStorage Storage
+        {
+            get
+            {
+                Assert.NotNull(_storage);
+                return _storage;
+            }
+            set => throw new NotImplementedException();
+        }
+
         internal int _protoVer;
         public int ProtocolVersion
         {

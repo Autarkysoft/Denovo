@@ -20,6 +20,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         IBlockchain Blockchain { get; set; }
 
         /// <summary>
+        /// Gets or sets the database to be shared and used between all node instances
+        /// </summary>
+        IStorage Storage { get; set; }
+
+        /// <summary>
         /// Protocol version that the client supports
         /// </summary>
         int ProtocolVersion { get; set; }

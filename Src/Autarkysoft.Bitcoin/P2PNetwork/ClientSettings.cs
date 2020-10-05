@@ -84,6 +84,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public IBlockchain Blockchain { get; set; }
 
         /// <inheritdoc/>
+        public IStorage Storage { get; set; }
+
+        /// <inheritdoc/>
         public int ProtocolVersion { get; set; }
         /// <inheritdoc/>
         public bool Relay { get; set; }
@@ -107,16 +110,26 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public SocketAsyncEventArgsPool SendReceivePool { get; }
 
+
         /// <inheritdoc/>
         public NetworkAddressWithTime[] GetNodeAddrs()
         {
-            // TODO: implement this (needs a new IDatabaseManager)
-            return new NetworkAddressWithTime[0];
+            if (!(Storage is null))
+            {
+                return Storage.ReadAddrs();
+            }
+            else
+            {
+                return new NetworkAddressWithTime[0];
+            }
         }
         /// <inheritdoc/>
         public void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses)
         {
-            // TODO: implement this (needs a new IDatabaseManager)
+            if (!(Storage is null))
+            {
+                Storage.WriteAddrs(nodeAddresses);
+            }
         }
     }
 }
