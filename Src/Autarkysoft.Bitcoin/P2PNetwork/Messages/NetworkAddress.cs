@@ -3,15 +3,16 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
 using System.Net;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 {
     /// <summary>
     /// Information about a node such as IP, port and service flags it has. 
-    /// Implements <see cref="IDeserializable"/>.
+    /// Implements <see cref="IEquatable&#60;NetworkAddress&#62;"/> <see cref="IDeserializable"/>.
     /// </summary>
-    public class NetworkAddress : IDeserializable
+    public class NetworkAddress : IEquatable<NetworkAddress>, IDeserializable
     {
         /// <summary>
         /// Initializes an empty instance of <see cref="NetworkAddress"/>.
@@ -102,5 +103,31 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             error = null;
             return true;
         }
+
+        /// <summary>
+        /// Compares equality of the given <see cref="NetworkAddress"/> with this instance based on their IP and port.
+        /// </summary>
+        /// <param name="other">Other <see cref="NetworkAddress"/> to use</param>
+        /// <returns>True if both instances have the same IP and port.</returns>
+        public bool Equals(NetworkAddress other)
+        {
+            if (other is null)
+                return false;
+
+            return ReferenceEquals(this, other) || (NodeIP.Equals(other.NodeIP) && NodePort == other.NodePort);
+        }
+
+        /// <summary>
+        /// Compares equality of the given object based on its type and this instance based on their IP and port.
+        /// </summary>
+        /// <param name="obj">Object to check</param>
+        /// <returns>True if <paramref name="obj"/> is of type <see cref="NetworkAddress"/> and has same IP and port.</returns>
+        public override bool Equals(object obj) => Equals(obj as NetworkAddress);
+
+        /// <summary>
+        /// Returns the unique hash code of this instance based on only IP and port.
+        /// </summary>
+        /// <returns>The 32-bit signed integer as hash code</returns>
+        public override int GetHashCode() => HashCode.Combine(NodeIP, NodePort);
     }
 }

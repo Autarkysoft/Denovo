@@ -91,5 +91,66 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
             Assert.False(b);
             Assert.Equal(expErr, error);
         }
+
+        public static IEnumerable<object[]> GetEqulsCases()
+        {
+            var addr1 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.4"), 111, 456);
+            var addr2 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.4"), 111, 456);
+            var addr3 = new NetworkAddressWithTime(NodeServiceFlags.NodeNetwork, IPAddress.Parse("1.2.3.4"), 111, 456);
+            var addr4 = new NetworkAddressWithTime(NodeServiceFlags.NodeNetwork, IPAddress.Parse("1.2.3.4"), 111, 45678);
+            var addr5 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.5"), 111, 456);
+            var addr6 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.4"), 112, 456);
+
+            yield return new object[] { addr1, addr1, true };
+            yield return new object[] { addr1, addr2, true };
+            yield return new object[] { addr1, addr3, true };
+            yield return new object[] { addr1, addr4, true };
+            yield return new object[] { addr1, addr5, false };
+            yield return new object[] { addr1, addr6, false };
+        }
+        [Theory]
+        [MemberData(nameof(GetEqulsCases))]
+        public void EqualsTest(NetworkAddressWithTime addr1, NetworkAddressWithTime addr2, bool expected)
+        {
+            Assert.Equal(expected, addr1.Equals(addr2));
+            Assert.Equal(expected, addr1.Equals((object)addr2));
+
+            Assert.Equal(expected, addr2.Equals(addr1));
+            Assert.Equal(expected, addr2.Equals((object)addr1));
+
+            Assert.True(addr1.Equals(addr1));
+            Assert.True(addr1.Equals((object)addr1));
+
+            Assert.True(addr2.Equals(addr2));
+            Assert.True(addr2.Equals((object)addr2));
+        }
+
+        [Fact]
+        public void GetHashCodeTest()
+        {
+            var addr1 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.4"), 111, 456);
+            var addr2 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.4"), 111, 456);
+            var addr3 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.4"), 111, 4567);
+            var addr4 = new NetworkAddressWithTime(NodeServiceFlags.NodeNetwork, IPAddress.Parse("1.2.3.4"), 111, 456);
+            var addr5 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("1.2.3.4"), 111, 4567);
+            var addr6 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.5"), 111, 456);
+            var addr7 = new NetworkAddressWithTime(NodeServiceFlags.NodeNone, IPAddress.Parse("1.2.3.4"), 112, 456);
+
+            int h1 = addr1.GetHashCode();
+            int h2 = addr2.GetHashCode();
+            int h3 = addr3.GetHashCode();
+            int h4 = addr4.GetHashCode();
+            int h5 = addr5.GetHashCode();
+            int h6 = addr6.GetHashCode();
+            int h7 = addr7.GetHashCode();
+
+            Assert.Equal(h1, h2);
+            Assert.Equal(h1, h3);
+            Assert.Equal(h1, h4);
+            Assert.Equal(h1, h5);
+            Assert.NotEqual(h1, h6);
+            Assert.NotEqual(h1, h7);
+            Assert.NotEqual(h6, h7);
+        }
     }
 }
