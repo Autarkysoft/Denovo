@@ -6,46 +6,61 @@
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 {
     /// <summary>
-    /// A block miner that finds and sets correct variable so that the resulting block header hash is lower than
-    /// the defined target. Implements <see cref="IDisposable"/>.
+    /// A block miner that finds and sets correct <see cref="IBlock"/> properties so that the resulting block header hash
+    /// is lower than the defined <see cref="IBlock.NBits"/> (ie. the target).
     /// </summary>
-    public class Miner : IDisposable
+    public class Miner
     {
-        // TODO: this is a primary implementation of the miner. Currently it only goes through all nonces and returns true/false.
-        // It needs more improvement:
-        //      *Implement IMemoryPool first and inject it here so that miner can update transactions, merkle root, time,...
-        //       on its own,
-        //      *Add a CancelationToken so that the caller (which is probably the client with the open socket) can cancel
-        //       when the same block was found by someone else.
-
-        private Sha256 sha = new Sha256();
-
-        private readonly uint[] w = new uint[64];
-
-        private readonly uint[] block1 = new uint[64];
-        private readonly uint[] block2 = new uint[64];
-        private readonly uint[] block3 = new uint[64];
-        private readonly uint[] hashState1 = new uint[8];
-        private readonly uint[] hashState3 = new uint[8];
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint SSIG0(uint x) => (x >> 7 | x << 25) ^ (x >> 18 | x << 14) ^ (x >> 3);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint SSIG1(uint x) => (x >> 17 | x << 15) ^ (x >> 19 | x << 13) ^ (x >> 10);
-
-
         /// <summary>
-        /// Goes through all possible nonces to find the appropriate hash. Return value indicates success.
+        /// Goes through all possible nonces to find the appropriate hash by changing <see cref="IBlock.Nonce"/> and
+        /// <see cref="IBlock.BlockTime"/>. Return value indicates success.
+        /// <para/>
         /// </summary>
-        /// <param name="block">Block to mine</param>
-        /// <returns>True if a successful hash was found; otherwise false.</returns>
-        public unsafe bool Mine(IBlock block)
+        /// <param name="block">Block to mine (it has to be instantiated with all of its properties set to correct values)</param>
+        /// <param name="token">
+        /// Can be used to cancel the process 
+        /// (eg. if the same block was found by someone else or block transactions have to change based on new ones in mempool)
+        /// </param>
+        /// <param name="maxDegreeOfParallelism">
+        /// [Default value = 0] Sets the <see cref="ParallelOptions.MaxDegreeOfParallelism"/> only if the value is bigger than 0,
+        /// otherwise the maximum will be used.
+        /// <para/>0 -> max
+        /// <para/>1 -> 1 core
+        /// <para/>2 -> 2 cores
+        /// </param>
+        /// <returns>False if mining was canceled or failed to find anything; otherwise true.</returns>
+        public async Task<bool> Mine(IBlock block, CancellationToken token, int maxDegreeOfParallelism = 0)
+        {
+            var options = new ParallelOptions()
+            {
+                CancellationToken = token
+            };
+            if (maxDegreeOfParallelism > 0)
+            {
+                options.MaxDegreeOfParallelism = maxDegreeOfParallelism;
+            }
+
+            try
+            {
+                // The for loop is using different time offsets in seconds to be added to the block time on each thread.
+                // Each thread is compting uint.max (or ~4.3 billion) hashes and could take minutes to complete.
+                await Task.Run(() => Parallel.For(0, 120, options, (i, state) => Mine(block, i, state, options)));
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private unsafe bool Mine(IBlock block, int timeOffset, ParallelLoopState state, ParallelOptions options)
         {
             /*** Target ***/
             uint[] targetArr = block.NBits.ToUInt32Array();
@@ -59,8 +74,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             //    Compress 16 bytes + pad + len  -> block2, hashState2
             //    Compress 32 bytes + pad + len  -> block3, hashState3
 
-            fixed (uint* blkPt1 = &block1[0], blkPt2 = &block2[0], blkPt3 = &block3[0])
-            fixed (uint* hPt1 = &hashState1[0], hPt3 = &hashState3[0], wPt = &w[0])
+            using Sha256 sha = new Sha256();
+
+            uint* buffer = stackalloc uint[64 + 64 + 64 + 64 + 8 + 8]; // 1088 bytes total
+            uint* wPt = buffer;
+            uint* blkPt1 = buffer + 64;
+            uint* blkPt2 = blkPt1 + 64;
+            uint* blkPt3 = blkPt2 + 64;
+            uint* hPt1 = blkPt3 + 64;
+            uint* hPt3 = hPt1 + 8;
+
             fixed (uint* tarPt = &targetArr[0])
             fixed (byte* prvBlkH = &block.PreviousBlockHeaderHash[0], mrkl = &block.MerkleRootHash[0])
             {
@@ -103,7 +126,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
                 // 4 byte BlockTime (index at 1)
                 // will be incremented inside the block time loop
-                blkPt2[1] = block.BlockTime.SwapEndian();
+                // BlockTime property should not change here since the same instance is being accessed from different threads
+                blkPt2[1] = (block.BlockTime + (uint)timeOffset).SwapEndian();
 
                 // 4 byte NBits
                 blkPt2[2] = ((uint)block.NBits).SwapEndian();
@@ -127,6 +151,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 // Nonce loop
                 for (ulong nonce = block.Nonce.SwapEndian(); nonce <= uint.MaxValue; nonce++)
                 {
+                    if (state.IsStopped || options.CancellationToken.IsCancellationRequested)
+                    {
+                        return false;
+                    }
+
                     blkPt2[3] = (uint)nonce;
 
                     blkPt2[16] = SSIG0(blkPt2[1]) + blkPt2[0];
@@ -241,9 +270,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                     sha.CompressBlock_WithWSet(hPt3, blkPt3);
 
                     // Check to see if the hash result is smaller than target
-                    if (CompareTarget(hPt3, tarPt, hashState3.Length))
+                    if (CompareTarget(hPt3, tarPt))
                     {
                         block.Nonce = ((uint)nonce).SwapEndian();
+                        // Block time should also be set here since it is different for each thread
+                        block.BlockTime += (uint)timeOffset;
+                        state.Stop();
                         return true;
                     }
                 }
@@ -252,7 +284,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             }
         }
 
-        private unsafe bool CompareTarget(uint* hash, uint* target, int length)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint SSIG0(uint x) => (x >> 7 | x << 25) ^ (x >> 18 | x << 14) ^ (x >> 3);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint SSIG1(uint x) => (x >> 17 | x << 15) ^ (x >> 19 | x << 13) ^ (x >> 10);
+
+        private unsafe bool CompareTarget(uint* hash, uint* target)
         {
             for (int i = 0, j = 7; i < 8; i++, j--)
             {
@@ -294,35 +332,5 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
             return false;
         }
-
-
-
-        private bool isDisposed = false;
-
-        /// <summary>
-        /// Releases the resources used by the <see cref="Miner"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(sha is null))
-                        sha.Dispose();
-                    sha = null;
-                }
-
-                isDisposed = true;
-            }
-        }
-
-        /// <summary>
-        /// Releases all resources used by the current instance of the <see cref="Miner"/> class.
-        /// </summary>
-        public void Dispose() => Dispose(true);
     }
 }
