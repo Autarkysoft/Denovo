@@ -115,7 +115,7 @@ namespace Denovo.Services
             {
                 if (localAddrs is null)
                 {
-                    if (File.Exists(Path.Combine(mainDir, NodeAddrs)))
+                    if (File.Exists(Path.Combine(mainDir, $"{NodeAddrs}.json")))
                     {
                         var temp = ReadFile<NetworkAddressWithTime[]>(NodeAddrs, GetAddrJsonOps());
                         localAddrs = new HashSet<NetworkAddressWithTime>(temp);
@@ -137,8 +137,8 @@ namespace Denovo.Services
             {
                 if (localAddrs is null)
                 {
-                    WriteFile(addrs, NodeAddrs, GetAddrJsonOps());
                     localAddrs = new HashSet<NetworkAddressWithTime>(addrs);
+                    WriteFile(localAddrs.ToArray(), NodeAddrs, GetAddrJsonOps());
                 }
                 else
                 {
