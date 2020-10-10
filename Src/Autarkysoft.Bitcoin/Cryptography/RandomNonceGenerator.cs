@@ -4,6 +4,8 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Autarkysoft.Bitcoin.Cryptography
 {
@@ -44,6 +46,28 @@ namespace Autarkysoft.Bitcoin.Cryptography
             byte[] temp = new byte[8];
             rng.NextBytes(temp);
             return BitConverter.ToInt64(temp);
+        }
+
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <exception cref="ObjectDisposedException"/>
+        public int[] GetDistinct(int min, int max, int count)
+        {
+            if (isDisposed)
+                throw new ObjectDisposedException(nameof(RandomNonceGenerator));
+            if (min < 0 || max < 0 || count < 0)
+                throw new ArgumentOutOfRangeException("Parameters can not be negative.");
+            if (min >= max)
+                throw new ArgumentOutOfRangeException(nameof(min), "Min value should be smaller than max value.");
+            if (count > max - min)
+                throw new ArgumentOutOfRangeException(nameof(count), "There aren't enough elements.");
+
+            HashSet<int> hs = new HashSet<int>(count);
+            while (hs.Count < count)
+            {
+                hs.Add(rng.Next(min, max));
+            }
+            return hs.ToArray();
         }
 
         private bool isDisposed = false;

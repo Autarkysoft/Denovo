@@ -23,5 +23,14 @@ namespace Autarkysoft.Bitcoin.Cryptography
         /// </summary>
         /// <returns>The randomly generated 64-bit signed integer</returns>
         long NextInt64();
+        /// <summary>
+        /// Creates an array with requested number of elements and populates it with random but distinct items
+        /// that are between <paramref name="min"/> and <paramref name="max"/>.
+        /// </summary>
+        /// <param name="min">Array elements will be bigger than or equal to this</param>
+        /// <param name="max">Array elements will be smaller than this</param>
+        /// <param name="count">Number of elements in the returned array</param>
+        /// <returns>An array of distinct and randomly generated 32-bit signed integers</returns>
+        int[] GetDistinct(int min, int max, int count);
     }
 }
