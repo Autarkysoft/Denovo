@@ -30,12 +30,31 @@ namespace Tests
     {
         public MockNonceRng(int val) => val32 = val;
         public MockNonceRng(long val) => val64 = val;
+        public MockNonceRng(int min, int max, int count, int[] result)
+        {
+            expMin = min;
+            expMax = max;
+            expCount = count;
+            expArr = result;
+        }
 
         private readonly int val32;
         public int NextInt32() => val32;
 
         private readonly long val64;
         public long NextInt64() => val64;
+
+        private readonly int expMin, expMax, expCount;
+        private readonly int[] expArr;
+        public int[] GetDistinct(int min, int max, int count)
+        {
+            Assert.False(expArr == null, "Mock RNG is not instantiated corrently.");
+            Assert.Equal(expMin, min);
+            Assert.Equal(expMax, max);
+            Assert.Equal(expCount, count);
+
+            return expArr;
+        }
 
         public void Dispose() { }
     }
