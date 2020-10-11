@@ -126,7 +126,7 @@ namespace Tests.Bitcoin.P2PNetwork
             yield return new object[]
             {
                 // GetAddr with smaller than max items
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
@@ -138,7 +138,7 @@ namespace Tests.Bitcoin.P2PNetwork
             yield return new object[]
             {
                 // GetAddr with max items
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
@@ -150,7 +150,7 @@ namespace Tests.Bitcoin.P2PNetwork
             yield return new object[]
             {
                 // GetAddr with more than max items (needs 2 messages)
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
@@ -166,12 +166,20 @@ namespace Tests.Bitcoin.P2PNetwork
             yield return new object[]
             {
                 // GetAddr with 0 items (no reply message)
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     addrsToReturn = new NetworkAddressWithTime[0],
                 },
+                new Message(new GetAddrPayload(), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // GetAddr but addr was already sent (no reply message)
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = true },
+                new MockClientSettings() { _netType = NetworkType.MainNet },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 null
             };

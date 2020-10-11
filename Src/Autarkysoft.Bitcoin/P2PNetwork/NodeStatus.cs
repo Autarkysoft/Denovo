@@ -157,6 +157,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
         }
 
+        /// <inheritdoc/>
+        public bool IsAddrSent { get; set; } = false;
+
 
         /// <inheritdoc/>
         public bool ShouldDisconnect => Violation >= DisconnectThreshold;

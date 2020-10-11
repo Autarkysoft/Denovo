@@ -150,25 +150,30 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     break;
                 case PayloadType.GetAddr:
                     // Empty payload
-                    NetworkAddressWithTime[] availableAddrs = settings.GetNodeAddrs();
-                    if (availableAddrs.Length != 0 && availableAddrs.Length <= Constants.MaxAddrCount)
+                    if (!nodeStatus.IsAddrSent)
                     {
-                        result = new Message[1] { new Message(new AddrPayload(availableAddrs), settings.Network) };
-                    }
-                    else if (availableAddrs.Length != 0)
-                    {
-                        result = new Message[(int)Math.Ceiling((double)availableAddrs.Length / Constants.MaxAddrCount)];
-                        int offset = 0;
-                        int i = 0;
-                        while (offset < availableAddrs.Length)
+                        NetworkAddressWithTime[] availableAddrs = settings.GetNodeAddrs();
+                        if (availableAddrs.Length != 0 && availableAddrs.Length <= Constants.MaxAddrCount)
                         {
-                            int rem = availableAddrs.Length - offset;
-                            int count = rem > Constants.MaxAddrCount ? Constants.MaxAddrCount : rem;
-                            var temp = new NetworkAddressWithTime[count];
-                            Array.Copy(availableAddrs, offset, temp, 0, temp.Length);
-                            offset += count;
-                            result[i++] = new Message(new AddrPayload(temp), settings.Network);
+                            result = new Message[1] { new Message(new AddrPayload(availableAddrs), settings.Network) };
                         }
+                        else if (availableAddrs.Length != 0)
+                        {
+                            result = new Message[(int)Math.Ceiling((double)availableAddrs.Length / Constants.MaxAddrCount)];
+                            int offset = 0;
+                            int i = 0;
+                            while (offset < availableAddrs.Length)
+                            {
+                                int rem = availableAddrs.Length - offset;
+                                int count = rem > Constants.MaxAddrCount ? Constants.MaxAddrCount : rem;
+                                var temp = new NetworkAddressWithTime[count];
+                                Array.Copy(availableAddrs, offset, temp, 0, temp.Length);
+                                offset += count;
+                                result[i++] = new Message(new AddrPayload(temp), settings.Network);
+                            }
+                        }
+
+                        nodeStatus.IsAddrSent = true;
                     }
                     break;
                 case PayloadType.GetBlocks:

@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
@@ -116,7 +117,27 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (!(Storage is null))
             {
-                return Storage.ReadAddrs();
+                NetworkAddressWithTime[] allAddrs = Storage.ReadAddrs();
+                // TODO: this value can change or it could be set by the user. For not it is for testing
+                // Maximum number of items to return
+                int maxToReturn = 50;
+                if (allAddrs.Length <= maxToReturn)
+                {
+                    return allAddrs;
+                }
+                else
+                {
+                    using var rng = new RandomNonceGenerator();
+                    int randCount = rng.NextInt32() % maxToReturn;
+                    int[] indices = rng.GetDistinct(0, allAddrs.Length, randCount == 0 ? maxToReturn : randCount);
+                    NetworkAddressWithTime[] result = new NetworkAddressWithTime[randCount];
+                    for (int i = 0; i < result.Length; i++)
+                    {
+                        result[i] = allAddrs[indices[i]];
+                    }
+
+                    return result;
+                }
             }
             else
             {

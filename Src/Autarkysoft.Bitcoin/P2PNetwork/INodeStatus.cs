@@ -74,6 +74,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Returns if this node was disconnected (it is safe to be disposed)
         /// </summary>
         bool IsDisconnected { get; set; }
+        /// <summary>
+        /// Returns if the addr message was sent to this node (prevents multiple requests from each nodes)
+        /// </summary>
+        bool IsAddrSent { get; set; }
         
         /// <summary>
         /// An event to be raised whenever the connection has to be terminated (could be due to high violation score,

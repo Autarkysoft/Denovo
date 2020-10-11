@@ -227,6 +227,22 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        internal bool? _addrSent;
+        public bool IsAddrSent
+        {
+            get
+            {
+                Assert.True(_addrSent.HasValue, UnexpectedCall);
+                return _addrSent.Value;
+            }
+            set
+            {
+                // Only true is set by ReplyManager
+                Assert.True(value);
+                _addrSent = null;
+            }
+        }
+
         internal bool bigViolation = false;
         public void AddBigViolation()
         {
