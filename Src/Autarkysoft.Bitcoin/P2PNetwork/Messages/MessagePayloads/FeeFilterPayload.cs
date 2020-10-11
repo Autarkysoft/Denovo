@@ -40,7 +40,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public ulong FeeRate
         {
             get => _feeRate;
-            set => _feeRate = value;
+            set
+            {
+                // Fee rate is per kilobyte
+                if (value > Constants.TotalSupply * 1000)
+                    throw new ArgumentOutOfRangeException(nameof(FeeRate), "Fee rate can not be bigger than total supply.");
+
+                _feeRate = value;
+            }
         }
 
         /// <summary>
@@ -70,6 +77,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             if (!stream.TryReadUInt64(out _feeRate))
             {
                 error = Err.EndOfStream;
+                return false;
+            }
+
+            // We reject stupidly high fee rates (no need for *1000 here).
+            if (_feeRate >= Constants.TotalSupply)
+            {
+                error = "Fee rate filter is huge.";
                 return false;
             }
 

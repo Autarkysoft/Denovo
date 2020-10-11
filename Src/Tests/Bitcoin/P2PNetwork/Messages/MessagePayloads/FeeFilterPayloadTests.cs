@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -12,6 +13,19 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     public class FeeFilterPayloadTests
     {
+        [Fact]
+        public void ConstructorTest()
+        {
+            FeeFilterPayload pl = new FeeFilterPayload(123);
+            Assert.Equal(123UL, pl.FeeRate);
+        }
+
+        [Fact]
+        public void Constructor_ExceptionTest()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new FeeFilterPayload((Constants.TotalSupply * 1000) + 1));
+        }
+
         [Fact]
         public void FeePerByteTest()
         {
@@ -47,10 +61,29 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             Assert.Equal(PayloadType.FeeFilter, pl.PayloadType);
         }
 
+        [Fact]
+        public void TryDeserialize_EdgeTest()
+        {
+            FeeFilterPayload pl = new FeeFilterPayload();
+            FastStreamReader stream = new FastStreamReader(new byte[8] { 0x7c, 0xbd, 0, 0, 0, 0, 0, 0 });
+            bool b = pl.TryDeserialize(stream, out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Equal(48_508UL, pl.FeeRate);
+            Assert.Equal(PayloadType.FeeFilter, pl.PayloadType);
+        }
+
         public static IEnumerable<object[]> GetDeserFailCases()
         {
             yield return new object[] { null, "Stream can not be null." };
             yield return new object[] { new FastStreamReader(new byte[1]), Err.EndOfStream };
+            yield return new object[]
+            {
+                // Fee is 21 million + 1 (no *1000)
+                new FastStreamReader(new byte[8] { 0x01, 0x40, 0x07, 0x5a, 0xf0, 0x75, 0x07, 0x00 }),
+                "Fee rate filter is huge."
+            };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
