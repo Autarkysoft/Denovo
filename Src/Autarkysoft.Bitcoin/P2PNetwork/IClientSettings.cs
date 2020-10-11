@@ -33,6 +33,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         bool Relay { get; set; }
         /// <summary>
+        /// Gets or sets the minimum fee rate (in satoshi per byte) of transactions that are accepted in <see cref="IMemoryPool"/>
+        /// </summary>
+        ulong MinTxRelayFee { get; set; }
+        /// <summary>
         /// Name of the client as defined by <see cref="ImprovementProposals.BIP0014"/>
         /// </summary>
         string UserAgent { get; set; }

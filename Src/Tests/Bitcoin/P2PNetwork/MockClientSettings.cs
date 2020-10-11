@@ -63,6 +63,17 @@ namespace Tests.Bitcoin.P2PNetwork
             set => throw new NotImplementedException();
         }
 
+        internal ulong? _fee;
+        public ulong MinTxRelayFee
+        {
+            get
+            {
+                Assert.True(_fee.HasValue, UnexpectedCall);
+                return _fee.Value;
+            }
+            set => throw new NotImplementedException();
+        }
+
         internal string _ua;
         public string UserAgent
         {

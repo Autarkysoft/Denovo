@@ -92,6 +92,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public bool Relay { get; set; }
         /// <inheritdoc/>
+        public ulong MinTxRelayFee { get; set; }
+        /// <inheritdoc/>
         public string UserAgent { get; set; }
         /// <inheritdoc/>
         public NetworkType Network { get; set; }
