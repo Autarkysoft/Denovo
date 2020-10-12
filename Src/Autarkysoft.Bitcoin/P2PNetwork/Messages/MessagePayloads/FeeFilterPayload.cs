@@ -23,6 +23,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <summary>
         /// Initializes a new instance of <see cref="FeeFilterPayload"/> with the given network address list.
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="feeRate">
         /// The fee rate (in Satoshis per kilobyte) below which transactions should not be relayed to this peer.
         /// </param>
@@ -37,6 +38,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <summary>
         /// The fee rate (in Satoshis per kilobyte) below which transactions should not be relayed to this peer.
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         public ulong FeeRate
         {
             get => _feeRate;
