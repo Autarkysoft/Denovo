@@ -118,9 +118,37 @@ namespace Tests.Bitcoin.P2PNetwork
             yield return new object[]
             {
                 // FeeFilter
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _fee = 12345 },
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, _relayToReturn = true, _fee = 12345
+                },
                 cs,
                 new Message(new FeeFilterPayload(12345), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // FeeFilter (node doesn't relay)
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, _relayToReturn = false, smallViolation = true
+                },
+                cs,
+                new Message(new FeeFilterPayload(12345), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // FeeFilter (node wants to set an unreasonably huge fee filter)
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true,
+                    _relayToReturn = true,
+                    _relayToSet = false, // Relay is changed to false by ReplyManager
+                    mediumViolation = true
+                },
+                cs,
+                new Message(new FeeFilterPayload(444000_000UL), NetworkType.MainNet),
                 null
             };
             yield return new object[]
@@ -439,6 +467,9 @@ namespace Tests.Bitcoin.P2PNetwork
             var trs = new NetworkAddress(NodeServiceFlags.All, IPAddress.Loopback, 789);
             var verak = new Message(new VerackPayload(), NetworkType.MainNet);
             var ver = new Message(new VersionPayload(123, 456, rcv, trs, 0x0158a8e8ba5f3ed3, "foo", 12345, true), NetworkType.MainNet);
+            ulong feeRateSat = 123456;
+            ulong feeRateKiloSat = 123456_000;
+            var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
 
             yield return new object[]
             {
@@ -478,7 +509,40 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true
                 },
-                cs, msg, new Message[] { verak }
+                new MockClientSettings()
+                {
+                    _protoVer = cs._protoVer,
+                    _services = cs._services,
+                    _time = cs._time,
+                    _port = cs._port,
+                    _ua = cs._ua,
+                    _netType = cs._netType,
+                    _bchain = cs._bchain,
+                    _relay = false, // No relay won't sent FeeFilter
+                },
+                msg, new Message[] { verak }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus(verPl)
+                {
+                    _handShakeToReturn = HandShakeState.SentAndConfirmed,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true
+                },
+                new MockClientSettings()
+                {
+                    _protoVer = cs._protoVer,
+                    _services = cs._services,
+                    _time = cs._time,
+                    _port = cs._port,
+                    _ua = cs._ua,
+                    _netType = cs._netType,
+                    _bchain = cs._bchain,
+                    _relay = true, // With relay there should be a FeeFilter
+                    _fee = feeRateSat
+                },
+                msg, new Message[] { verak, feeFilter }
             };
             yield return new object[]
             {

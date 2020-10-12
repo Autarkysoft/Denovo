@@ -26,7 +26,8 @@ namespace Tests.Bitcoin.P2PNetwork
             _nonce = pl.Nonce;
             _agent = pl.UserAgent;
             _height = pl.StartHeight;
-            _relay = pl.Relay;
+            _relayToReturn = pl.Relay;
+            _relayToSet = pl.Relay;
         }
 
 
@@ -114,18 +115,19 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
-        internal bool? _relay;
+        internal bool? _relayToReturn;
+        internal bool? _relayToSet;
         public bool Relay
         {
             get
             {
-                Assert.True(_relay.HasValue, UnexpectedCall);
-                return _relay.Value;
+                Assert.True(_relayToReturn.HasValue, UnexpectedCall);
+                return _relayToReturn.Value;
             }
             set
             {
-                Assert.True(_relay.HasValue, UnexpectedCall);
-                Assert.Equal(_relay.Value, value);
+                Assert.True(_relayToSet.HasValue, UnexpectedCall);
+                Assert.Equal(_relayToSet.Value, value);
             }
         }
 

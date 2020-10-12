@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -129,7 +130,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.FeeFilter:
                     if (Deser(msg.PayloadData, out FeeFilterPayload feeFilter))
                     {
-                        nodeStatus.FeeFilter = feeFilter.FeeRate;
+                        if (!nodeStatus.Relay)
+                        {
+                            // A node that doesn't relay txs doesn't need a fee filter!
+                            nodeStatus.AddSmallViolation();
+                        }
+                        // TODO: set the following constant in Constants as MaxTxRelayFee (?)
+                        else if (feeFilter.FeeRate >= 444000_000UL)
+                        {
+                            // Don't waste time on nodes that set their MinRelayTxFee to such a high value that fee of a
+                            // small tx should be nearly 1 BTC for them to accept it in their mempool
+                            nodeStatus.Relay = false;
+                            // This is also considered a violation
+                            nodeStatus.AddMediumViolation();
+                        }
+                        else
+                        {
+                            nodeStatus.FeeFilter = feeFilter.FeeRate;
+                        }
                     }
                     break;
                 case PayloadType.FilterAdd:
@@ -270,6 +288,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
+        private Message[] GetSettingsMessages(Message extraMsg)
+        {
+            var result = new List<Message>(3);
+            if (!(extraMsg is null))
+            {
+                result.Add(extraMsg);
+            }
+            if (settings.Relay)
+            {
+                result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
+            }
+
+            return result.ToArray();
+        }
+
         private void CheckVerack()
         {
             // VerackPayload doesn't have a body and won't deserialize anything
@@ -324,10 +357,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     break;
                 case HandShakeState.SentAndConfirmed:
                     nodeStatus.HandShake = HandShakeState.Finished;
-                    result = new Message[1]
-                    {
-                        new Message(new VerackPayload(), settings.Network)
-                    };
+                    result = GetSettingsMessages(new Message(new VerackPayload(), settings.Network));
                     break;
                 case HandShakeState.ReceivedAndReplied:
                 case HandShakeState.SentAndReceived:
