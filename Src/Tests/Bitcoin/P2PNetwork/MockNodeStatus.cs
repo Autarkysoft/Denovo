@@ -245,6 +245,39 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        internal TimeSpan? _latency;
+        public TimeSpan Latency
+        {
+            get
+            {
+                Assert.True(_latency.HasValue, UnexpectedCall);
+                return _latency.Value;
+            }
+            set
+            {
+                Assert.True(_latency.HasValue, UnexpectedCall);
+                Assert.Equal(_latency.Value, value);
+                _latency = null;
+            }
+        }
+
+        internal long? expPingNonce;
+        internal bool storePingReturn;
+        public bool StorePing(long nonce)
+        {
+            Assert.True(expPingNonce.HasValue, UnexpectedCall);
+            Assert.Equal(expPingNonce.Value, nonce);
+            return storePingReturn;
+        }
+
+        internal long? expPongNonce;
+        public void CheckPing(long nonce)
+        {
+            Assert.True(expPongNonce.HasValue, UnexpectedCall);
+            Assert.Equal(expPongNonce.Value, nonce);
+        }
+
+
         internal bool bigViolation = false;
         public void AddBigViolation()
         {

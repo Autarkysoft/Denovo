@@ -252,7 +252,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     }
                     break;
                 case PayloadType.Pong:
-                    Deser(msg.PayloadData, out PongPayload _);
+                    if (Deser(msg.PayloadData, out PongPayload pong))
+                    {
+                        nodeStatus.CheckPing(pong.Nonce);
+                    }
                     break;
                 case PayloadType.Reject:
                     // Reject messages are ignored
@@ -299,6 +302,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
             }
+
+            long nonce = rng.NextInt64();
+            // TODO: latency may have a small error this way (maybe the following line should be moved to Node class)
+            nodeStatus.StorePing(nonce);
+            result.Add(new Message(new PingPayload(nonce), settings.Network));
 
             return result.ToArray();
         }

@@ -33,6 +33,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 }
             }
         }
+
         private const int SmallV = 10;
         private const int MediumV = 20;
         private const int BigV = 50;
@@ -159,6 +160,42 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         /// <inheritdoc/>
         public bool IsAddrSent { get; set; } = false;
+
+        private TimeSpan _latency;
+        /// <inheritdoc/>
+        public TimeSpan Latency
+        {
+            get => _latency;
+            set => SetField(ref _latency, value);
+        }
+
+
+        // TODO: some sort of "watcher" mechanism is needed to check connection on intervals (based on last seen)
+        //       which would also be responsible for emptying pings list to prevent it from growing too big if the other node
+        //       is not responding to any of them.
+
+        // TODO: Dictionary could be replaced by a class that handles adding nonces + times itself and also makes sure to
+        //       keep the array short and also to punish misbehaving nodes that spam Ping messages by raising the disconnect event
+        //       Right now the following methods are only used by the Pings the client sends not the ones it receives.
+
+        private readonly Dictionary<long, DateTime> pings = new Dictionary<long, DateTime>(5);
+
+        /// <inheritdoc/>
+        public bool StorePing(long nonce) => pings.TryAdd(nonce, DateTime.Now);
+
+        /// <inheritdoc/>
+        public void CheckPing(long nonce)
+        {
+            if (pings.Remove(nonce, out DateTime sendTime))
+            {
+                Latency = DateTime.Now - sendTime;
+            }
+            else
+            {
+                // Node replied with a nonce that wasn't supplied by us
+                AddSmallViolation();
+            }
+        }
 
 
         /// <inheritdoc/>

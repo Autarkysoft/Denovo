@@ -78,7 +78,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Returns if the addr message was sent to this node (prevents multiple requests from each nodes)
         /// </summary>
         bool IsAddrSent { get; set; }
-        
+        /// <summary>
+        /// Gets or sets the node's latency as a <see cref="TimeSpan"/> (calculated using ping messages)
+        /// </summary>
+        TimeSpan Latency { get; set; }
+        /// <summary>
+        /// Stores the random nonce of the sent ping message to this node alongside current time for further reference.
+        /// Return value indicates whether the nonce wasn't added before.
+        /// </summary>
+        /// <param name="nonce">The random 64-bit number used in ping message</param>
+        /// <returns>True if the nonce is new; otherwise false.</returns>
+        bool StorePing(long nonce);
+        /// <summary>
+        /// Checks the given random nonce received in the pong message versus the local stored value 
+        /// (in <see cref="StorePing(long)"/> method), removes it from local storage and sets the latency.
+        /// </summary>
+        /// <param name="nonce">The random 64-bit number used in ping message and received in pong message</param>
+        void CheckPing(long nonce);
+
         /// <summary>
         /// An event to be raised whenever the connection has to be terminated (could be due to high violation score,
         /// or simply dead connection)

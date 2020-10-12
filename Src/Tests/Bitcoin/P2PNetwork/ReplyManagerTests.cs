@@ -18,6 +18,9 @@ namespace Tests.Bitcoin.P2PNetwork
 {
     public class ReplyManagerTests
     {
+        private const long RngReturnValue = 0x0158a8e8ba5f3ed3;
+
+
         [Fact]
         public void GetVersionMsgTest()
         {
@@ -36,7 +39,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
             var rep = new ReplyManager(ns, cs)
             {
-                rng = new MockNonceRng(0x0158a8e8ba5f3ed3)
+                rng = new MockNonceRng(RngReturnValue)
             };
 
 
@@ -222,7 +225,10 @@ namespace Tests.Bitcoin.P2PNetwork
             yield return new object[]
             {
                 // Pong
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, expPongNonce = 98765
+                },
                 cs,
                 new Message(new PongPayload(98765), NetworkType.MainNet),
                 null
@@ -470,6 +476,7 @@ namespace Tests.Bitcoin.P2PNetwork
             ulong feeRateSat = 123456;
             ulong feeRateKiloSat = 123456_000;
             var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
+            var ping = new Message(new PingPayload(RngReturnValue), NetworkType.MainNet);
 
             yield return new object[]
             {
@@ -507,7 +514,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.SentAndConfirmed,
                     _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true
+                    updateTime = true,
+                    expPingNonce = RngReturnValue
                 },
                 new MockClientSettings()
                 {
@@ -520,7 +528,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _bchain = cs._bchain,
                     _relay = false, // No relay won't sent FeeFilter
                 },
-                msg, new Message[] { verak }
+                msg, new Message[] { verak, ping }
             };
             yield return new object[]
             {
@@ -528,7 +536,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.SentAndConfirmed,
                     _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true
+                    updateTime = true,
+                    expPingNonce = RngReturnValue
                 },
                 new MockClientSettings()
                 {
@@ -542,7 +551,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true, // With relay there should be a FeeFilter
                     _fee = feeRateSat
                 },
-                msg, new Message[] { verak, feeFilter }
+                msg, new Message[] { verak, feeFilter, ping }
             };
             yield return new object[]
             {
@@ -571,7 +580,7 @@ namespace Tests.Bitcoin.P2PNetwork
         {
             var rep = new ReplyManager(ns, cs)
             {
-                rng = new MockNonceRng(0x0158a8e8ba5f3ed3)
+                rng = new MockNonceRng(RngReturnValue)
             };
 
             Message[] actual = rep.GetReply(msg);
