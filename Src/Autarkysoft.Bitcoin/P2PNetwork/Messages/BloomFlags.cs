@@ -5,10 +5,22 @@
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 {
-    public enum BloomFlags : byte
+    /// <summary>
+    /// Bloom flags used in bloom filters
+    /// </summary>
+    public enum BloomFlags
     {
-        BLOOM_UPDATE_NONE = 0,
-        BLOOM_UPDATE_ALL = 1,
-        BLOOM_UPDATE_P2PUBKEY_ONLY = 2,
+        /// <summary>
+        /// Adds nothing
+        /// </summary>
+        UpdateNone = 0,
+        /// <summary>
+        /// Adds everything
+        /// </summary>
+        UpdateAll = 1,
+        /// <summary>
+        /// Adds only outpoints to the filter if the output is a pay-to-pubkey/pay-to-multisig script
+        /// </summary>
+        UpdateP2PubkeyOnly = 2,
     }
 }
