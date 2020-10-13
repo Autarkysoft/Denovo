@@ -28,7 +28,7 @@ namespace Tests.Bitcoin.P2PNetwork
             var cs = new MockClientSettings()
             {
                 _protoVer = 123,
-                _services = NodeServiceFlags.AllLimited,
+                _services = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness,
                 _time = 456,
                 _port = 789,
                 _ua = "foo",
@@ -46,7 +46,7 @@ namespace Tests.Bitcoin.P2PNetwork
             Message msg = rep.GetVersionMsg();
             FastStream actual = new FastStream();
             msg.Serialize(actual);
-            byte[] expected = Helper.HexToBytes("0b11090776657273696f6e0000000000590000000ba371327b0000001f04000000000000c8010000000000001f0400000000000000000000000000000000ffff7f00000103151f0400000000000000000000000000000000ffff7f0000010315d33e5fbae8a8580103666f6f3930000001");
+            byte[] expected = Helper.HexToBytes("0b11090776657273696f6e000000000059000000a7eff2257b0000000900000000000000c801000000000000090000000000000000000000000000000000ffff7f0000010315090000000000000000000000000000000000ffff7f0000010315d33e5fbae8a8580103666f6f3930000001");
 
             Assert.Equal(expected, actual.ToByteArray());
         }
