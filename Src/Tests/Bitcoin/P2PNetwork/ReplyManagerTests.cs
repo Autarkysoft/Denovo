@@ -390,9 +390,17 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public static IEnumerable<object[]> GetVerackCases()
         {
+            var cs = new MockClientSettings();
+            ulong feeRateSat = 123456;
+            ulong feeRateKiloSat = 123456_000;
+            var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
+            var ping = new Message(new PingPayload(RngReturnValue), NetworkType.MainNet);
+
             yield return new object[]
             {
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.None, mediumViolation = true, updateTime = true },
+                cs,
+                null
             };
             yield return new object[]
             {
@@ -400,8 +408,16 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true
+                    updateTime = true,
+                    expPingNonce = RngReturnValue
                 },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _relay = true,
+                    _fee = feeRateSat
+                },
+                new Message[] { feeFilter, ping }
             };
             yield return new object[]
             {
@@ -411,6 +427,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.SentAndConfirmed,
                     updateTime = true
                 },
+                cs,
+                null
             };
             yield return new object[]
             {
@@ -418,6 +436,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.SentAndConfirmed, mediumViolation = true, updateTime = true
                 },
+                cs,
+                null
             };
             yield return new object[]
             {
@@ -425,8 +445,32 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.SentAndReceived,
                     _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true
+                    updateTime = true,
+                    expPingNonce = RngReturnValue
                 },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _relay = true,
+                    _fee = feeRateSat
+                },
+                new Message[] { feeFilter, ping }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.SentAndReceived,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _relay = false, // No relay won't send FeeFilter
+                },
+                new Message[] { ping }
             };
             yield return new object[]
             {
@@ -434,17 +478,39 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.Finished, mediumViolation = true, updateTime = true
                 },
+                cs,
+                null
             };
         }
         [Theory]
         [MemberData(nameof(GetVerackCases))]
-        public void CheckVerackTest(MockNodeStatus ns)
+        public void CheckVerackTest(MockNodeStatus ns, IClientSettings cs, Message[] expected)
         {
-            var rep = new ReplyManager(ns, new MockClientSettings());
+            var rep = new ReplyManager(ns, cs)
+            {
+                rng = new MockNonceRng(RngReturnValue)
+            };
             var msg = new Message(new VerackPayload(), NetworkType.MainNet);
 
             Message[] actual = rep.GetReply(msg);
-            Assert.Null(actual);
+            if (expected is null)
+            {
+                Assert.Null(actual);
+            }
+            else
+            {
+                Assert.NotNull(actual);
+                Assert.Equal(expected.Length, actual.Length);
+                for (int i = 0; i < expected.Length; i++)
+                {
+                    var actualStream = new FastStream(Constants.MessageHeaderSize + actual[i].PayloadData.Length);
+                    var expectedStream = new FastStream(Constants.MessageHeaderSize + expected[i].PayloadData.Length);
+                    actual[i].Serialize(actualStream);
+                    expected[i].Serialize(expectedStream);
+
+                    Assert.Equal(expectedStream.ToByteArray(), actualStream.ToByteArray());
+                }
+            }
 
             // Mock will change the following bool to false if it were called.
             Assert.False(ns.updateTime, "UpdateTime() was never called");

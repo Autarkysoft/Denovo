@@ -277,7 +277,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     }
                     break;
                 case PayloadType.Verack:
-                    CheckVerack();
+                    result = CheckVerack();
                     break;
                 case PayloadType.Version:
                     result = CheckVersion(msg);
@@ -311,7 +311,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             return result.ToArray();
         }
 
-        private void CheckVerack()
+        private Message[] CheckVerack()
         {
             // VerackPayload doesn't have a body and won't deserialize anything
             // If anything were added to it in the future a TryDeserialize() should be written here
@@ -326,13 +326,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case HandShakeState.ReceivedAndReplied:
                 case HandShakeState.SentAndReceived:
                     nodeStatus.HandShake = HandShakeState.Finished;
-                    break;
+                    return GetSettingsMessages(null);
                 case HandShakeState.Sent:
                     nodeStatus.HandShake = HandShakeState.SentAndConfirmed;
                     break;
                 default:
                     break;
             }
+
+            return null;
         }
 
         private Message[] CheckVersion(Message msg)
