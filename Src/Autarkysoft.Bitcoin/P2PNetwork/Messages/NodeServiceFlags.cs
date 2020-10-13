@@ -11,6 +11,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
     /// Service bits for unauthenticated advertisement of services that nodes support.
     /// </summary>
     /// <remarks>
+    /// https://github.com/bitcoin/bitcoin/blob/af22322dab1a2277483b2512723491a5fad1a606/src/protocol.h#L268-L302
+    /// XThin flag is removed (old link):
     /// https://github.com/bitcoin/bitcoin/blob/fa2510d5c1cdf9c2cd5cc9887302ced4378c7202/src/protocol.h#L246-L279
     /// </remarks>
     [Flags]
@@ -41,18 +43,22 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// </summary>
         NodeXThin = (1 << 4),
         /// <summary>
+        /// Indicates a node capable of processing block filter requests as defined in BIP-157 and BIP-158.
+        /// </summary>
+        NodeCompactFilters = (1 << 6),
+        /// <summary>
         /// Indicates a node similar to <see cref="NodeNetwork"/> but the node has at least 
         /// the last 288 blocks (last 2 days) (BIP159).
         /// </summary>
         NodeNetworkLimited = (1 << 10),
-        
+
         /// <summary>
         /// Indicates a full node that supports all the services (except <see cref="NodeNetworkLimited"/>).
         /// </summary>
-        All = NodeNone | NodeNetwork | NodeGetUtxo | NodeBloom | NodeWitness | NodeXThin,
+        All = NodeNone | NodeNetwork | NodeGetUtxo | NodeBloom | NodeWitness | NodeXThin | NodeCompactFilters,
         /// <summary>
         /// Indicates a limited (pruned) full node that supports all the services.
         /// </summary>
-        AllLimited = NodeNone | NodeNetwork | NodeGetUtxo | NodeBloom | NodeWitness | NodeXThin | NodeNetworkLimited,
+        AllLimited = NodeNone | NodeNetwork | NodeGetUtxo | NodeBloom | NodeWitness | NodeXThin | NodeCompactFilters | NodeNetworkLimited,
     }
 }
