@@ -13,14 +13,16 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     public class GetBlocksPayloadTests
     {
+        private const int MaxCount = 101;
+
         [Fact]
         public void Constructor_OutOfRangeExceptionTest()
         {
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(-1, new byte[1][], new byte[32]));
             Assert.Contains("Version can not be negative.", ex.Message);
 
-            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(1, new byte[501][], new byte[32]));
-            Assert.Contains("Only a maximum of 500 hashes are allowed.", ex.Message);
+            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(1, new byte[MaxCount + 1][], new byte[32]));
+            Assert.Contains($"Only a maximum of {MaxCount} hashes are allowed.", ex.Message);
 
             ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(1, new byte[1][], new byte[33]));
             Assert.Contains("Stop hash length must be 32 bytes.", ex.Message);
@@ -83,8 +85,13 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             };
             yield return new object[]
             {
+                new FastStreamReader(new byte[5] { 1, 0, 0, 0, 0x66 }),
+                $"Only {MaxCount} hashes are accepted."
+            };
+            yield return new object[]
+            {
                 new FastStreamReader(new byte[7] { 1, 0, 0, 0, 0xfd, 0xf5, 0x01 }),
-                "Only 500 hashes are accepted."
+                $"Only {MaxCount} hashes are accepted."
             };
             yield return new object[]
             {

@@ -39,7 +39,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <summary>
         /// Maximum number of hashes allowed in the hash list
         /// </summary>
-        protected virtual int MaximumHashes => 500;
+        /// <remarks>
+        /// https://github.com/bitcoin/bitcoin/blob/ec0453cd57736df33e9f50c004d88bea10428ad5/src/net_processing.cpp#L71-L72
+        /// </remarks>
+        protected virtual int MaximumHashes => 101;
 
         private int _ver;
         /// <summary>
@@ -138,31 +141,29 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt len, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
             {
                 return false;
             }
-            if (len > MaximumHashes)
+            if (count > MaximumHashes)
             {
                 error = $"Only {MaximumHashes} hashes are accepted.";
                 return false;
             }
-
-            Hashes = new byte[(byte)len][];
-            for (int i = 0; i < (int)len; i++)
-            {
-                if (!stream.TryReadByteArray(32, out Hashes[i]))
-                {
-                    error = Err.EndOfStream;
-                    return false;
-                }
-            }
-
-            if (!stream.TryReadByteArray(32, out _stopHash))
+            int iCount = (int)count;
+            if (!stream.CheckRemaining((iCount * 32) + 32))
             {
                 error = Err.EndOfStream;
                 return false;
             }
+
+            _hashes = new byte[iCount][];
+            for (int i = 0; i < _hashes.Length; i++)
+            {
+                _hashes[i] = stream.ReadByteArray32Checked();
+            }
+
+            _stopHash = stream.ReadByteArray32Checked();
 
             error = null;
             return true;
