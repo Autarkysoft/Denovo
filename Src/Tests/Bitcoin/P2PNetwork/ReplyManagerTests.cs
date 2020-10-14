@@ -297,7 +297,15 @@ namespace Tests.Bitcoin.P2PNetwork
                 if (item != PayloadType.Alert && item != PayloadType.Reject && // Ignored messages
                     item != PayloadType.Verack && item != PayloadType.Version && // have separate tests
                     item != PayloadType.FilterClear && item != PayloadType.GetAddr &&
-                    item != PayloadType.MemPool && item != PayloadType.SendHeaders) // Empty payload
+                    item != PayloadType.MemPool && item != PayloadType.SendHeaders && // Empty payload
+
+                    // TODO: remove these after implementation
+                    !new PayloadType[] 
+                    { 
+                        PayloadType.AddrV2, PayloadType.CFCheckpt, PayloadType.CFHeaders, PayloadType.CFilter, 
+                        PayloadType.GetCFCheckpt, PayloadType.GetCFHeaders, PayloadType.GetCFilters, PayloadType.SendAddrV2,
+                        PayloadType.WTxIdRelay 
+                    }.Contains(item))
                 {
                     yield return new object[] { item };
                 }

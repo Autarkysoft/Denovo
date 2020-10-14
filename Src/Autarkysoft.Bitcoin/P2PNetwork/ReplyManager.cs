@@ -79,7 +79,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (!msg.TryGetPayloadType(out PayloadType plt))
             {
-                // Undefined payload type
+                // Undefined payload type (this is a violation since other node knoes our protocol version)
                 nodeStatus.AddSmallViolation();
                 nodeStatus.UpdateTime();
                 return null;
@@ -103,8 +103,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         settings.UpdateNodeAddrs(nodeAddresses.Addresses);
                     }
                     break;
+                case PayloadType.AddrV2:
+                    break;
                 case PayloadType.Alert:
                     // Alert messages are ignored
+                    // TODO: add violation if the protocol version is above the one that disabled this type
                     break;
                 case PayloadType.Block:
                     if (Deser(msg.PayloadData, out BlockPayload blk))
@@ -120,6 +123,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     {
 
                     }
+                    break;
+                case PayloadType.CFCheckpt:
+                    break;
+                case PayloadType.CFHeaders:
+                    break;
+                case PayloadType.CFilter:
                     break;
                 case PayloadType.CmpctBlock:
                     if (Deser(msg.PayloadData, out CmpctBlockPayload cmBlk))
@@ -206,6 +215,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                     }
                     break;
+                case PayloadType.GetCFHeaders:
+                    break;
+                case PayloadType.GetCFCheckpt:
+                    break;
+                case PayloadType.GetCFilters:
+                    break;
                 case PayloadType.GetData:
                     if (Deser(msg.PayloadData, out GetDataPayload getData))
                     {
@@ -260,6 +275,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Reject:
                     // Reject messages are ignored
                     break;
+                case PayloadType.SendAddrV2:
+                    break;
                 case PayloadType.SendCmpct:
                     if (Deser(msg.PayloadData, out SendCmpctPayload sendCmp))
                     {
@@ -282,7 +299,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Version:
                     result = CheckVersion(msg);
                     break;
-                default:
+                case PayloadType.WTxIdRelay:
                     break;
             }
 
