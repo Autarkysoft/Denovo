@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.ImprovementProposals;
@@ -84,6 +85,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public IBlockchain Blockchain { get; set; }
 
+
+        /// <inheritdoc/>
+        public IMemoryPool MemPool { get; set; }
+
         /// <inheritdoc/>
         public IStorage Storage { get; set; }
 
@@ -112,6 +117,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public Semaphore MaxConnectionEnforcer { get; }
         /// <inheritdoc/>
         public SocketAsyncEventArgsPool SendReceivePool { get; }
+
+        /// <inheritdoc/>
+        public bool AddToMempool(ITransaction tx)
+        {
+            // TODO: this needs improvement of IMemoryPool first, it needs to return a report, 
+            //       invalid tx, existing tx, double spend tx, ... aren't added but some may need adding violation to nodes status
+            return true;
+        }
 
 
         /// <inheritdoc/>

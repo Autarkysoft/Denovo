@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Threading;
 
@@ -18,6 +19,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Gets or sets the blockchain instance to be shared among all node instances
         /// </summary>
         IBlockchain Blockchain { get; set; }
+
+        /// <summary>
+        /// Gets or sets the memory pool instance that is shared by all node instances
+        /// </summary>
+        IMemoryPool MemPool { get; set; }
 
         /// <summary>
         /// Gets or sets the database to be shared and used between all node instances
@@ -75,6 +81,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         SocketAsyncEventArgsPool SendReceivePool { get; }
 
+        /// <summary>
+        /// Adds the given transaction to memory pool
+        /// </summary>
+        /// <param name="tx"></param>
+        /// <returns></returns>
+        public bool AddToMempool(ITransaction tx);
         /// <summary>
         /// Returns an array of known node network addresses to this client.
         /// </summary>

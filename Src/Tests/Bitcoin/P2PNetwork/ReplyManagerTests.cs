@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
@@ -73,6 +74,9 @@ namespace Tests.Bitcoin.P2PNetwork
             var expAddr1002_2 = new NetworkAddressWithTime[2] { mockAddr2, mockAddr3 };
 
             var mockBlock = new MockSerializableBlock(Helper.HexToBytes("01000000161126f0d39ec082e51bbd29a1dfb40b416b445ac8e493f88ce993860000000030e2a3e32abf1663a854efbef1b233c67c8cdcef5656fe3b4f28e52112469e9bae306849ffff001d16d1b42d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0116ffffffff0100f2052a01000000434104f5efde0c2d30ab28e3dbe804c1a4aaf13066f9b198a4159c76f8f79b3b20caf99f7c979ed6c71481061277a6fc8666977c249da99960c97c8d8714fda9f0e883ac00000000"));
+
+            var tx = new Transaction();
+            tx.TryDeserialize(new FastStreamReader(Helper.HexToBytes("01000000027993f8d801d045e9a7c92da4d231b86203b84930a84b7c97f5acf5fd5f44e27d0000000000ffffffff7993f8d801d045e9a7c92da4d231b86203b84930a84b7c97f5acf5fd5f44e27d0100000000ffffffff02a0860100000000001976a914b50a33e43bec2c74112d1d6ea42a174f435aabd688ac6e860100000000001976a914de00391342cfb6dd4a844d6cacec2fefe43cadf388ac37661900")), out _);
 
             yield return new object[]
             {
@@ -255,6 +259,21 @@ namespace Tests.Bitcoin.P2PNetwork
                 new Message(new SendCmpctPayload(false, 2), NetworkType.MainNet),
                 null
             };
+            yield return new object[]
+            {
+                // Tx
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true,
+                },
+                new MockClientSettings()
+                {
+                    _expMemPoolTx = tx,
+                    _addToMemPoolReturn = true
+                },
+                new Message(new TxPayload(tx), NetworkType.MainNet),
+                null
+            };
         }
         [Theory]
         [MemberData(nameof(GetReplyCases))]
@@ -300,11 +319,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     item != PayloadType.MemPool && item != PayloadType.SendHeaders && // Empty payload
 
                     // TODO: remove these after implementation
-                    !new PayloadType[] 
-                    { 
-                        PayloadType.AddrV2, PayloadType.CFCheckpt, PayloadType.CFHeaders, PayloadType.CFilter, 
+                    !new PayloadType[]
+                    {
+                        PayloadType.AddrV2, PayloadType.CFCheckpt, PayloadType.CFHeaders, PayloadType.CFilter,
                         PayloadType.GetCFCheckpt, PayloadType.GetCFHeaders, PayloadType.GetCFilters, PayloadType.SendAddrV2,
-                        PayloadType.WTxIdRelay 
+                        PayloadType.WTxIdRelay
                     }.Contains(item))
                 {
                     yield return new object[] { item };

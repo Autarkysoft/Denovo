@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
@@ -26,6 +27,17 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 Assert.NotNull(_bchain);
                 return _bchain;
+            }
+            set => throw new NotImplementedException();
+        }
+
+        internal IMemoryPool _memPool;
+        public IMemoryPool MemPool
+        {
+            get
+            {
+                Assert.NotNull(_memPool);
+                return _memPool;
             }
             set => throw new NotImplementedException();
         }
@@ -160,6 +172,16 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         public SocketAsyncEventArgsPool SendReceivePool => throw new NotImplementedException();
+
+
+        internal ITransaction _expMemPoolTx;
+        internal bool _addToMemPoolReturn;
+        public bool AddToMempool(ITransaction tx)
+        {
+            Assert.NotNull(_expMemPoolTx);
+            Assert.Equal(_expMemPoolTx.GetTransactionHash(), tx.GetTransactionHash());
+            return _addToMemPoolReturn;
+        }
 
         internal NetworkAddressWithTime[] addrsToReturn;
         public NetworkAddressWithTime[] GetNodeAddrs()

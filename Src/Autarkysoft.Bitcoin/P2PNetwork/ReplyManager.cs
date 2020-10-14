@@ -79,7 +79,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (!msg.TryGetPayloadType(out PayloadType plt))
             {
-                // Undefined payload type (this is a violation since other node knoes our protocol version)
+                // Undefined payload type (this is a violation since other node knows our protocol version)
                 nodeStatus.AddSmallViolation();
                 nodeStatus.UpdateTime();
                 return null;
@@ -290,7 +290,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Tx:
                     if (Deser(msg.PayloadData, out TxPayload tx))
                     {
-
+                        if (!settings.AddToMempool(tx.Tx))
+                        {
+                            nodeStatus.AddMediumViolation();
+                        }
                     }
                     break;
                 case PayloadType.Verack:
