@@ -1,5 +1,16 @@
-### Release ?.?.? (Next release)
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.1.0...master)
+### Next release
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.0.0...master)
+
+### Release 0.5.1 (2020-10-15)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.1.0...B0.6.0.0)
+* Lots of improvements in P2P protocol for handling different messages
+* Added new payload types enum
+* IClientSettings now contains everything that needs handling by nodes
+* Introduction of IStorage
+* Big refactor of IConsensus usage
+* Miner class now supports concurrency (caller can set the number of cores used for maximum efficiency)
+* Addition of a new method in `RandomNonceGenerator`
+* Various code improvements, optimization, bug fixes and some tests
 
 ### Release 0.5.1 (2020-09-29)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.0.0...B0.5.1.0)
