@@ -3,20 +3,28 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Denovo.Models;
-using System;
+using Denovo.MVVM;
+using Denovo.Services;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 
 namespace Denovo.ViewModels
 {
-    public class SettingsViewModel : VmWithSizeBase
+    public class ConfigurationViewModel : VmWithSizeBase
     {
-        public SettingsViewModel() : base(500, 600)
+        // This will make designer happy
+        public ConfigurationViewModel() : base(500, 600)
         {
-            Config = new Configuration();
-            ClientTypes = Enum.GetValues(typeof(ClientType)).Cast<ClientType>();
+            Config = new Configuration(NetworkType.MainNet);
+        }
+
+        public ConfigurationViewModel(Storage storage) : base(500, 600)
+        {
+            StorageMan = storage;
+
+            Config = StorageMan.ReadConfig();
             Config.PropertyChanged += Config_PropertyChanged;
         }
 
@@ -38,9 +46,10 @@ namespace Denovo.ViewModels
             }
         }
 
-
         public Configuration Config { get; set; }
-        public IEnumerable<ClientType> ClientTypes { get; set; }
+        public Storage StorageMan { get; set; }
+        public IEnumerable<ClientType> ClientTypes { get; } = EnumHelper.GetAllEnumValues<ClientType>();
+        public IEnumerable<PeerDiscoveryOption> PeerDiscoveryOptions { get; } = EnumHelper.GetAllEnumValues<PeerDiscoveryOption>();
 
         private string _desc;
         public string Desc
@@ -54,6 +63,11 @@ namespace Denovo.ViewModels
         {
             get => _isPruned;
             set => SetField(ref _isPruned, value);
+        }
+
+        public void Ok()
+        {
+            StorageMan.WriteConfig(Config);
         }
     }
 }

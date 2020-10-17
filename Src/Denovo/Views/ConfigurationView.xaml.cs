@@ -8,9 +8,9 @@ using Avalonia.Markup.Xaml;
 
 namespace Denovo.Views
 {
-    public class SettingsView : UserControl
+    public class ConfigurationView : UserControl
     {
-        public SettingsView()
+        public ConfigurationView()
         {
             this.InitializeComponent();
         }

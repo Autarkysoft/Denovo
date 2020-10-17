@@ -18,7 +18,7 @@
         <TextBox Text="{Binding IpAddress}" Width="200"/>
       </StackPanel>
       <Button Content="Connect" Command="{Binding Connect}" Width="100" HorizontalAlignment="Left"/>
-      <Button Content="Disconnect" Command="{Binding Disconnect}" Width="100" HorizontalAlignment="Left"/>
+      <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Width="100" HorizontalAlignment="Left"/>
       <Button Content="Config" Command="{Binding Config}" Width="100" HorizontalAlignment="Left"/>
 
       <TextBlock Text="{Binding Result}" TextWrapping="Wrap"/>

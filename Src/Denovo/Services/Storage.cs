@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using Denovo.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -150,6 +151,16 @@ namespace Denovo.Services
                     }
                 }
             }
+        }
+
+        public Configuration ReadConfig()
+        {
+            return ReadFile<Configuration>("Config") ?? new Configuration();
+        }
+
+        public void WriteConfig(Configuration config)
+        {
+            WriteFile(config, "Config");
         }
     }
 }

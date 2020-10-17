@@ -12,4 +12,10 @@ namespace Denovo.Models
         Spv,
         SpvElectrum
     }
+
+    public enum PeerDiscoveryOption
+    {
+        DNS,
+        CustomIP
+    }
 }

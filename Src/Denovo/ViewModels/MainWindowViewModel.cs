@@ -18,29 +18,53 @@ namespace Denovo.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
+        // TODO: idea:
+        //       Add a BanManager which would receive its rules from user (in config window) and can ban nodes
+        //       For example a node that was malicious before and its IP is stored locally.
+        //          a node that has a certain flag set and is causing problems (https://github.com/bitcoin/bitcoin/pull/10982/files)
+        //          a node with a certain user agent, version, ...
+        
+        // Make designer happy
         public MainWindowViewModel()
         {
-            AllNodes = new NodePool(5);
-            var clientSettings = new ClientSettings()
+        }
+
+        public MainWindowViewModel(bool initialize)
+        {
+            if (initialize)
             {
-                UserAgent = "/Denovo:0.1.0/",
-                Relay = false,
-                Network = NetworkType.MainNet,
-                Blockchain = new MockBlockChain()
-            };
-            WinMan = new WindowManager();
-            connector = new NodeConnector(AllNodes, clientSettings);
-            listener = new NodeListener(AllNodes, clientSettings);
+                // Later this has to be passed as a command line args that initializes this VM
+                // Right now TestNet is used for security reasons (project being in beta)
+                var network = NetworkType.TestNet;
 
-            listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
+                StorageMan = new Storage(network);
+                ConfigVm = new ConfigurationViewModel(StorageMan);
 
-            DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
+                AllNodes = new NodePool(5);
+                var clientSettings = new ClientSettings()
+                {
+                    UserAgent = "/Denovo:0.1.0/",
+                    Relay = false,
+                    Network = network,
+                    Blockchain = new MockBlockChain(),
+                    Storage = StorageMan
+                };
+                WinMan = new WindowManager();
+                connector = new NodeConnector(AllNodes, clientSettings);
+                listener = new NodeListener(AllNodes, clientSettings);
+
+                listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
+
+                DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
+            }
         }
 
         public NodePool AllNodes { get; set; }
 
         public IWindowManager WinMan { get; set; }
-        public void Config() => WinMan.ShowDialog(new SettingsViewModel());
+        public Storage StorageMan { get; set; }
+        public ConfigurationViewModel ConfigVm { get; set; }
+        public void Config() => WinMan.ShowDialog(ConfigVm);
 
         internal class MockBlockChain : IBlockchain
         {
@@ -81,12 +105,13 @@ namespace Denovo.ViewModels
             $"Send Cmpt ver: {SelectedNode.NodeStatus.SendCompactVer}{Environment.NewLine}" +
             $"Fee filter: {SelectedNode.NodeStatus.FeeFilter}{Environment.NewLine}" +
             $"Nonce: {SelectedNode.NodeStatus.Nonce}{Environment.NewLine}" +
+            $"Latency: {SelectedNode.NodeStatus.Latency.TotalMilliseconds} ms{Environment.NewLine}" +
             $"Violation: {((NodeStatus)SelectedNode.NodeStatus).Violation}{Environment.NewLine}";
 
 
         private readonly NodeConnector connector;
         private readonly NodeListener listener;
-        private const int testPortToUse = 8333;
+        private const int testPortToUse = 18333;
 
 
         private string _ip = "127.0.0.1";
@@ -128,7 +153,10 @@ namespace Denovo.ViewModels
         public bool CanDisconnect() => SelectedNode != null;
         public void Disconnect()
         {
-            AllNodes.Remove(SelectedNode);
+            if (!(SelectedNode is null))
+            {
+                AllNodes.Remove(SelectedNode);
+            }
         }
 
 

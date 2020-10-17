@@ -4,24 +4,28 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
              mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
-             x:Class="Denovo.Views.SettingsView"
+             x:Class="Denovo.Views.ConfigurationView"
              FontSize="16">
 
   <Design.DataContext>
-    <vm:SettingsViewModel/>
+    <vm:ConfigurationViewModel/>
   </Design.DataContext>
 
   <Grid RowDefinitions="*,auto">
     <TabControl>
       <TabItem Header="Client Type">
-        <Grid RowDefinitions="auto,*">
+        <Grid RowDefinitions="auto,auto,*">
           <StackPanel Orientation="Horizontal" Margin="5" Spacing="5" Grid.Row="0">
+            <TextBlock Text="Network:"/>
+            <TextBlock Text="{Binding Config.Network}"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Margin="5" Spacing="5" Grid.Row="1">
             <TextBlock Text="Select client type:"/>
             <ComboBox Items="{Binding ClientTypes}" SelectedItem="{Binding Config.SelectedClientType}" Width="120"/>
             <TextBlock Text="Pruned size:" IsVisible="{Binding ShowPruneSize}"/>
             <TextBox Text="{Binding Config.PrunedSize}" IsVisible="{Binding ShowPruneSize}" Width="75"/>
           </StackPanel>
-          <TextBlock Text="{Binding Desc}" TextWrapping="Wrap" Margin="5" Grid.Row="1"/>
+          <TextBlock Text="{Binding Desc}" TextWrapping="Wrap" Margin="5" Grid.Row="2"/>
         </Grid>
       </TabItem>
 
@@ -39,15 +43,19 @@
 
       <TabItem Header="Connection">
         <StackPanel Margin="5" Spacing="3">
-          <CheckBox Content="Allow incoming connections"/>
-          <CheckBox Content="Auto initial peer discovery"/>
-          <TextBox Watermark="IP list" UseFloatingWatermark="True" Height="100"/>
+          <CheckBox Content="Accept incoming connections"
+                    IsChecked="{Binding Config.AcceptIncoming}"/>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Initial peer discovery:"/>
+            <ComboBox Items="{Binding PeerDiscoveryOptions}" SelectedItem="{Binding Config.SelectedPeerDiscoveryOption}"/>
+          </StackPanel>
+          <TextBox Text="{Binding Config.PeerList}" AcceptsReturn="True" HorizontalAlignment="Left" Height="150" Width="400"/>
         </StackPanel>
       </TabItem>
     </TabControl>
 
     <StackPanel Orientation="Horizontal" Spacing="5" Margin="3" Grid.Row="1">
-      <Button Content="OK" Width="75"/>
+      <Button Content="OK" Command="{Binding Ok}" Width="75"/>
       <Button Content="Cancel" Width="75"/>
     </StackPanel>
   </Grid>
