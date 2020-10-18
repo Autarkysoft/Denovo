@@ -10,6 +10,11 @@
   <Design.DataContext>
     <vm:ConfigurationViewModel/>
   </Design.DataContext>
+  <UserControl.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+  </UserControl.Styles>
 
   <Grid RowDefinitions="*,auto">
     <TabControl>
@@ -31,11 +36,11 @@
 
       <TabItem Header="Paths">
         <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,auto">
-          <TextBlock Text="Blockchain path:" VerticalAlignment="Center" Margin="5" Grid.Column="0" Grid.Row="0"/>
+          <TextBlock Text="Blockchain path:" Margin="5" Grid.Column="0" Grid.Row="0"/>
           <TextBox Margin="5" Grid.Column="1" Grid.Row="0"/>
           <Button Content="Browse..." Margin="5" Grid.Column="2" Grid.Row="0"/>
 
-          <TextBlock Text="Wallet path:" VerticalAlignment="Center" Margin="5" Grid.Column="0" Grid.Row="1"/>
+          <TextBlock Text="Wallet path:" Margin="5" Grid.Column="0" Grid.Row="1"/>
           <TextBox Margin="5" Grid.Column="1" Grid.Row="1"/>
           <Button Content="Browse..." Margin="5" Grid.Column="2" Grid.Row="1"/>
         </Grid>
@@ -45,9 +50,20 @@
         <StackPanel Margin="5" Spacing="3">
           <CheckBox Content="Accept incoming connections"
                     IsChecked="{Binding Config.AcceptIncoming}"/>
-          <StackPanel Orientation="Horizontal">
+          <CheckBox Content="Enable relay"
+                    IsChecked="{Binding Config.Relay}"/>
+          <StackPanel Orientation="Horizontal" Spacing="5">
+            <TextBlock Text="Maximum number of connections:"/>
+            <TextBox Text="{Binding Config.MaxConnectionCount}" Width="50"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="5">
+            <TextBlock Text="User agent:"/>
+            <TextBox Text="{Binding Config.UserAgent}" Width="150"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="5">
             <TextBlock Text="Initial peer discovery:"/>
-            <ComboBox Items="{Binding PeerDiscoveryOptions}" SelectedItem="{Binding Config.SelectedPeerDiscoveryOption}"/>
+            <ComboBox Items="{Binding PeerDiscoveryOptions}" SelectedItem="{Binding Config.SelectedPeerDiscoveryOption}"
+                      Width="80"/>
           </StackPanel>
           <TextBox Text="{Binding Config.PeerList}" AcceptsReturn="True" HorizontalAlignment="Left" Height="150" Width="400"/>
         </StackPanel>

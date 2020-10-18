@@ -11,18 +11,23 @@ namespace Denovo.Models
 {
     public class Configuration : InpcBase
     {
+        // This ctor makes JSON deserialization possible
         public Configuration()
         {
-            SetPeerList();
         }
 
         public Configuration(NetworkType network)
         {
             Network = network;
+            SetPeerList();
+            UserAgent = "/Denovo:0.1.0/";
+            MaxConnectionCount = 10;
         }
 
 
-        public NetworkType Network { get; }
+        public bool IsDefault { get; set; }
+
+        public NetworkType Network { get; set; }
 
         private ClientType _clientType;
         public ClientType SelectedClientType
@@ -44,6 +49,13 @@ namespace Denovo.Models
         {
             get => _listen;
             set => SetField(ref _listen, value);
+        }
+
+        private bool _relay;
+        public bool Relay
+        {
+            get => _relay;
+            set => SetField(ref _relay, value);
         }
 
 
@@ -108,6 +120,21 @@ namespace Denovo.Models
         {
             get => _peers;
             set => SetField(ref _peers, value);
+        }
+
+
+        private string _ua;
+        public string UserAgent
+        {
+            get => _ua;
+            set => SetField(ref _ua, value);
+        }
+
+        private int _maxConn;
+        public int MaxConnectionCount
+        {
+            get => _maxConn;
+            set => SetField(ref _maxConn, value);
         }
     }
 }

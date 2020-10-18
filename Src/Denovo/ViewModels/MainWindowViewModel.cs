@@ -23,8 +23,10 @@ namespace Denovo.ViewModels
         //       For example a node that was malicious before and its IP is stored locally.
         //          a node that has a certain flag set and is causing problems (https://github.com/bitcoin/bitcoin/pull/10982/files)
         //          a node with a certain user agent, version, ...
-        
-        // Make designer happy
+
+        /// <summary>
+        /// This constructor is here to make designer happy and can be used for testing but nothing else.
+        /// </summary>
         public MainWindowViewModel()
         {
         }
@@ -35,19 +37,20 @@ namespace Denovo.ViewModels
             {
                 // Later this has to be passed as a command line args that initializes this VM
                 // Right now TestNet is used for security reasons (project being in beta)
+                //      string[] arguments = Environment.GetCommandLineArgs();
                 var network = NetworkType.TestNet;
 
                 StorageMan = new Storage(network);
                 ConfigVm = new ConfigurationViewModel(StorageMan);
 
-                AllNodes = new NodePool(5);
+                AllNodes = new NodePool(ConfigVm.Config.MaxConnectionCount);
                 var clientSettings = new ClientSettings()
                 {
-                    UserAgent = "/Denovo:0.1.0/",
-                    Relay = false,
+                    UserAgent = ConfigVm.Config.UserAgent,
+                    Relay = ConfigVm.Config.Relay,
                     Network = network,
                     Blockchain = new MockBlockChain(),
-                    Storage = StorageMan
+                    Storage = StorageMan,
                 };
                 WinMan = new WindowManager();
                 connector = new NodeConnector(AllNodes, clientSettings);

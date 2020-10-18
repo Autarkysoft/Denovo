@@ -67,6 +67,7 @@ namespace Denovo.ViewModels
 
         public void Ok()
         {
+            Config.IsDefault = false;
             StorageMan.WriteConfig(Config);
         }
     }

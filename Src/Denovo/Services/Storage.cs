@@ -65,9 +65,12 @@ namespace Denovo.Services
             {
                 Directory.CreateDirectory(mainDir);
             }
+
+            network = netType;
         }
 
 
+        private readonly NetworkType network;
         private readonly string mainDir;
 
         public string GetAppPath() => Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).LocalPath);
@@ -155,7 +158,7 @@ namespace Denovo.Services
 
         public Configuration ReadConfig()
         {
-            return ReadFile<Configuration>("Config") ?? new Configuration();
+            return ReadFile<Configuration>("Config") ?? new Configuration(network) { IsDefault = true };
         }
 
         public void WriteConfig(Configuration config)
