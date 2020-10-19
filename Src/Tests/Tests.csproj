@@ -52,10 +52,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Denovo\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Autarkysoft.Bitcoin\Autarkysoft.Bitcoin.csproj" />
     <ProjectReference Include="..\Denovo\Denovo.csproj" />
   </ItemGroup>
