@@ -142,5 +142,26 @@ namespace Tests.Bitcoin.ImprovementProposals
             Assert.False(b);
             Assert.Null(actualBips);
         }
+
+        public static IEnumerable<object[]> GetToStringCases()
+        {
+            yield return new object[] { new Version(1, 2, 3, 4), -1, "1.2.3.4" };
+            yield return new object[] { new Version(1, 2, 3, 4), 0, "1.2.3.4" };
+            yield return new object[] { new Version(1, 2, 3, 4), 1, "1" };
+            yield return new object[] { new Version(1, 2, 3, 4), 2, "1.2" };
+            yield return new object[] { new Version(1, 2, 3, 4), 3, "1.2.3" };
+            yield return new object[] { new Version(1, 2, 3, 4), 4, "1.2.3.4" };
+            yield return new object[] { new Version(1, 2, 3, 4), 5, "1.2.3.4" };
+            yield return new object[] { new Version(1, 2), 5, "1.2" };
+        }
+        [Theory]
+        [MemberData(nameof(GetToStringCases))]
+        public void ToString_VerFieldCount_Test(Version ver, int count, string exp)
+        {
+            var bip = new BIP0014("Foo", ver);
+            string actual = bip.ToString(count);
+            string expected = $"/Foo:{exp}/";
+            Assert.Equal(expected, actual);
+        }
     }
 }

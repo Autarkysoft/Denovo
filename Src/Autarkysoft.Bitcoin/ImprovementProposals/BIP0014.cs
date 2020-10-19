@@ -17,13 +17,11 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
     {
         /// <summary>
         /// Initializes a new instance of <see cref="BIP0014"/> using given parameters.
+        /// <para/>Client name and version are mandatory while comment is optional.
         /// </summary>
-        /// <remarks>
-        /// Note that we consider both client name and version to be mandatory and comment is the only optional part.
-        /// </remarks>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="FormatException"/>
-        /// <param name="name">Client name.</param>
+        /// <param name="name">Client name (can not be null or empty or contain any of the <see cref="ReservedChars"/>)</param>
         /// <param name="ver">
         /// Client version, if null then version will be set to 0.0, recommended form is Major.Minor.Revision.
         /// </param>
@@ -40,12 +38,15 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
 
-        private const string ReservedChars = "/:()";
+        /// <summary>
+        /// Reserved characters that can not be used in <see cref="ClientName"/> or <see cref="Comment"/> fields.
+        /// </summary>
+        public const string ReservedChars = "/:()";
         private const byte Separator = (byte)'/';
 
         private string _name;
         /// <summary>
-        /// Name of the client
+        /// Name of the client (it can not be null or empty or contain any of the <see cref="ReservedChars"/>)
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="FormatException"/>
@@ -54,7 +55,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             get => _name;
             set
             {
-                if (string.IsNullOrEmpty(value))
+                if (string.IsNullOrWhiteSpace(value))
                     throw new ArgumentNullException(nameof(ClientName), "Client name can not be null or empty.");
                 if (value.Any(c => ReservedChars.Contains(c)))
                     throw new FormatException($"Client name can not contain reserverd characters ({ReservedChars})");
@@ -65,7 +66,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
         private Version _ver;
         /// <summary>
-        /// Version of the client
+        /// Version of the client (if set to null, verion 0.0 is used instead)
         /// </summary>
         public Version ClientVersion
         {
@@ -93,13 +94,10 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
         /// <summary>
-        /// Returns byte array representation of this instance.
+        /// Returns byte array representation of this instance using /Name:Version(comment)/ format.
         /// </summary>
         /// <returns>An array of bytes.</returns>
-        public byte[] ToByteArray()
-        {
-            return Encoding.UTF8.GetBytes(ToString());
-        }
+        public byte[] ToByteArray() => Encoding.UTF8.GetBytes(ToString());
 
         /// <summary>
         /// Returns byte array representation of multiple instances of <see cref="BIP0014"/>.
@@ -191,14 +189,30 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         }
 
 
-        private byte[] GetBytes()
+        // Bytes without separators (/)
+        private byte[] GetBytes() => Encoding.UTF8.GetBytes(GetString());
+
+        // String without separators (/)
+        private string GetString(int c = -1)
         {
-            return Encoding.UTF8.GetBytes(GetString());
-        }
-        private string GetString()
-        {
+            string verStr;
+            try
+            {
+                if (c == 0)
+                {
+                    verStr = ClientVersion.ToString();
+                }
+                else
+                {
+                    verStr = ClientVersion.ToString(c);
+                }
+            }
+            catch
+            {
+                verStr = ClientVersion.ToString();
+            }
             // Name:Version(comment)
-            return $"{ClientName}:{ClientVersion.ToString()}{(string.IsNullOrWhiteSpace(Comment) ? "" : $"({Comment})")}";
+            return $"{ClientName}:{verStr}{(string.IsNullOrWhiteSpace(Comment) ? "" : $"({Comment})")}";
         }
 
         /// <summary>
@@ -206,9 +220,14 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <para/>/Name:Version(comment)/
         /// </summary>
         /// <returns>String result</returns>
-        public override string ToString()
-        {
-            return $"/{GetString()}/";
-        }
+        public override string ToString() => $"/{GetString()}/";
+
+        /// <summary>
+        /// Returns string represntation of this instance in the following format with the specified number of version components:
+        /// <para/>/Name:Version(comment)/
+        /// </summary>
+        /// <param name="versionFieldCount">Number of version components to use without throwing an exception</param>
+        /// <returns>String result</returns>
+        public string ToString(int versionFieldCount) => $"/{GetString(versionFieldCount)}/";
     }
 }
