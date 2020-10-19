@@ -4,8 +4,10 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.ImprovementProposals;
 using Denovo.MVVM;
 using System;
+using System.Reflection;
 
 namespace Denovo.Models
 {
@@ -18,9 +20,10 @@ namespace Denovo.Models
 
         public Configuration(NetworkType network)
         {
+            Version ver = Assembly.GetExecutingAssembly().GetName().Version;
             Network = network;
             SetPeerList();
-            UserAgent = "/Denovo:0.1.0/";
+            UserAgent = new BIP0014("Denovo", ver).ToString(3);
             MaxConnectionCount = 10;
         }
 
