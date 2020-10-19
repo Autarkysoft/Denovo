@@ -59,6 +59,12 @@ namespace Denovo.ViewModels
                 listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
 
                 DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
+
+                MyInfo = $"My node information:{Environment.NewLine}" +
+                    $"Network: {ConfigVm.Config.Network}{Environment.NewLine}" +
+                    $"User agent: {ConfigVm.Config.UserAgent}{Environment.NewLine}" +
+                    $"Protocol version: {clientSettings.ProtocolVersion}{Environment.NewLine}" +
+                    $"Max connection count: {clientSettings.MaxConnectionCount}{Environment.NewLine}";
             }
         }
 
@@ -68,6 +74,7 @@ namespace Denovo.ViewModels
         public Storage StorageMan { get; set; }
         public ConfigurationViewModel ConfigVm { get; set; }
         public void Config() => WinMan.ShowDialog(ConfigVm);
+        //public void Miner() => WinMan.ShowDialog(new MinerViewModel());
 
         internal class MockBlockChain : IBlockchain
         {
@@ -91,10 +98,11 @@ namespace Denovo.ViewModels
             }
         }
 
+        public string MyInfo { get; }
 
         [DependsOnProperty(nameof(SelectedNode))]
-        public string NodeInfo => SelectedNode is null ?
-            "Nothing is selected." :
+        public string PeerInfo => SelectedNode is null ?
+            "Select a node from the list to see its information." :
             $"UA: {SelectedNode.NodeStatus.UserAgent}{Environment.NewLine}" +
             $"IP: {SelectedNode.NodeStatus.IP}{Environment.NewLine}" +
             $"Prot. Ver.: {SelectedNode.NodeStatus.ProtocolVersion}{Environment.NewLine}" +
@@ -168,12 +176,8 @@ namespace Denovo.ViewModels
             get
             {
                 Version ver = Assembly.GetExecutingAssembly().GetName().Version;
-                string verInfo = ver.Major == 0 ?
-                    (ver.Minor == 0 ? "Version zero is incomplete [preview] release (high chance of having bugs)." :
-                    ver.Minor == 1 ? "First beta is a moderately stable version with little bugs but good chance of having more." :
-                    "Beta versions are moderately stable but have small chance of having unfound bugs.") :
-                    "Stable release";
-
+                string verInfo = "The current version is a showcase of different Bitcoin.Net features and is not" +
+                                 "yet a complete bitcoin client.";
                 return $"The current version is {ver.ToString(4)}{Environment.NewLine}{verInfo}";
             }
         }
