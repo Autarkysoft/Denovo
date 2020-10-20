@@ -13,6 +13,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public interface IReplyManager
     {
         /// <summary>
+        /// Builds and returns a new ping message
+        /// </summary>
+        /// <returns>A ping message</returns>
+        Message GetPingMsg();
+        /// <summary>
         /// Builds and returns a version message
         /// </summary>
         /// <returns>A version message</returns>

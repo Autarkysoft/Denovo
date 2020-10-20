@@ -15,6 +15,17 @@ namespace Tests.Bitcoin.P2PNetwork
 {
     public class MockReplyManager : IReplyManager
     {
+        internal Message pingMsg;
+        public Message GetPingMsg()
+        {
+            if (pingMsg is null)
+            {
+                Assert.True(false, "Ping message to return must be set first.");
+            }
+            return pingMsg;
+        }
+
+
         internal Message verMessage;
         public Message GetVersionMsg()
         {

@@ -29,6 +29,19 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         [Fact]
+        public void GetPingMsgTest()
+        {
+            var cs = new MockClientSettings() { _netType = NetworkType.TestNet, _buffLen = 10 };
+            var expectedPing = new Message(new PingPayload(1), NetworkType.TestNet);
+            var repMan = new MockReplyManager() { pingMsg = expectedPing };
+            MessageManager man = new MessageManager(cs, repMan, new NodeStatus());
+
+            var actualPing = man.GetPingMsg();
+
+            Assert.Same(expectedPing, actualPing);
+        }
+
+        [Fact]
         public void DataToSendTest()
         {
             var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };

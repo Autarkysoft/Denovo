@@ -23,6 +23,33 @@ namespace Tests.Bitcoin.P2PNetwork
 
 
         [Fact]
+        public void GetPingMsgTest()
+        {
+            var ns = new MockNodeStatus()
+            {
+                expPingNonce = RngReturnValue,
+                storePingReturn = true
+            };
+            var cs = new MockClientSettings()
+            {
+                _netType = NetworkType.TestNet
+            };
+
+            var rep = new ReplyManager(ns, cs)
+            {
+                rng = new MockNonceRng(RngReturnValue)
+            };
+
+
+            Message msg = rep.GetPingMsg();
+            FastStream actual = new FastStream();
+            msg.Serialize(actual);
+            byte[] expected = Helper.HexToBytes("0b11090770696e670000000000000000080000002a45a5d2d33e5fbae8a85801");
+
+            Assert.Equal(expected, actual.ToByteArray());
+        }
+
+        [Fact]
         public void GetVersionMsgTest()
         {
             var ns = new MockNodeStatus();

@@ -80,6 +80,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         /// <summary>
+        /// Builds and returns a new ping message
+        /// </summary>
+        /// <returns>A ping message</returns>
+        public Message GetPingMsg() => replyManager.GetPingMsg();
+
+        /// <summary>
         /// Sets <see cref="SocketAsyncEventArgs"/>'s buffer for a send operation 
         /// (caller must check <see cref="HasDataToSend"/> before calling this)
         /// </summary>

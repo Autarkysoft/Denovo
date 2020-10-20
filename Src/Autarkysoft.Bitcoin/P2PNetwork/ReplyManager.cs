@@ -39,6 +39,33 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         public IRandomNonceGenerator rng = new RandomNonceGenerator();
 
+        private Message[] GetSettingsMessages(Message extraMsg)
+        {
+            var result = new List<Message>(3);
+            if (!(extraMsg is null))
+            {
+                result.Add(extraMsg);
+            }
+            if (settings.Relay)
+            {
+                result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
+            }
+
+            result.Add(GetPingMsg());
+
+            return result.ToArray();
+        }
+
+        /// <inheritdoc/>
+        public Message GetPingMsg()
+        {
+            long nonce = rng.NextInt64();
+            // TODO: latency may have a small error this way (maybe the following line should be moved to Node class)
+            // Chances of nonce being repeated is 1 in 2^64 which is why the returned bool is ignored here
+            nodeStatus.StorePing(nonce);
+            return new Message(new PingPayload(nonce), settings.Network);
+        }
+
         /// <inheritdoc/>
         public Message GetVersionMsg() => GetVersionMsg(new NetworkAddress(settings.Services, IPAddress.Loopback, settings.Port));
 
@@ -310,26 +337,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             return result;
         }
 
-
-        private Message[] GetSettingsMessages(Message extraMsg)
-        {
-            var result = new List<Message>(3);
-            if (!(extraMsg is null))
-            {
-                result.Add(extraMsg);
-            }
-            if (settings.Relay)
-            {
-                result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
-            }
-
-            long nonce = rng.NextInt64();
-            // TODO: latency may have a small error this way (maybe the following line should be moved to Node class)
-            nodeStatus.StorePing(nonce);
-            result.Add(new Message(new PingPayload(nonce), settings.Network));
-
-            return result.ToArray();
-        }
 
         private Message[] CheckVerack()
         {
