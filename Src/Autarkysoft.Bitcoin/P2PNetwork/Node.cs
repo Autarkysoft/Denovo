@@ -42,13 +42,29 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             sendSAEA.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
 
             secondSendLimiter = new Semaphore(1, 1);
+
+            pingTimer = new System.Timers.Timer(TimeSpan.FromMinutes(1).TotalMilliseconds);
+            pingTimer.Elapsed += PingTimer_Elapsed;
+            pingTimer.Start();
         }
 
+
+        private void PingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            // Every 1 minute the LastSeen is checked but only if 2 minutes has passed a Ping will be sent
+            var msgMan = (MessageManager)sendSAEA.UserToken;
+            if (msgMan.NodeStatus.LastSeen.Subtract(DateTime.Now) >= TimeSpan.FromMinutes(2))
+            {
+                Message ping = ((MessageManager)sendSAEA.UserToken).GetPingMsg();
+                Send(ping);
+            }
+        }
 
         private Semaphore secondSendLimiter;
         private SocketAsyncEventArgs sendReceiveSAEA;
         private SocketAsyncEventArgs sendSAEA;
         private readonly IClientSettings settings;
+        private System.Timers.Timer pingTimer;
 
 
         /// <summary>
@@ -187,6 +203,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (disposing)
                 {
+                    // Dispose timer first to prevent it from raising its event and calling Send()
+                    pingTimer.Stop();
+                    pingTimer.Dispose();
+                    pingTimer = null;
+
                     // There are 2 SAEAs both using the same Socket, closing only one is enough.
                     CloseClientSocket(sendReceiveSAEA);
 
