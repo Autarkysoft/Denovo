@@ -43,7 +43,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             secondSendLimiter = new Semaphore(1, 1);
 
-            pingTimer = new System.Timers.Timer(TimeSpan.FromMinutes(1).TotalMilliseconds);
+            pingTimer = new System.Timers.Timer(TimeSpan.FromMinutes(1.1).TotalMilliseconds);
             pingTimer.Elapsed += PingTimer_Elapsed;
             pingTimer.Start();
         }
@@ -51,12 +51,20 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void PingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            // Every 1 minute the LastSeen is checked but only if 2 minutes has passed a Ping will be sent
+            // Every 1 minute (~66 sec) the LastSeen is checked but only if 2 minutes has passed a Ping will be sent
+            // this will make sure the connection to the other node is still alive while avoiding unnecessary Pings
             var msgMan = (MessageManager)sendSAEA.UserToken;
-            if (msgMan.NodeStatus.LastSeen.Subtract(DateTime.Now) >= TimeSpan.FromMinutes(2))
+            if (DateTime.Now.Subtract(msgMan.NodeStatus.LastSeen) >= TimeSpan.FromMinutes(2))
             {
-                Message ping = ((MessageManager)sendSAEA.UserToken).GetPingMsg();
-                Send(ping);
+                if (NodeStatus.HasTooManyUnansweredPings)
+                {
+                    NodeStatus.IsDisconnected = true;
+                }
+                else
+                {
+                    Message ping = msgMan.GetPingMsg();
+                    Send(ping);
+                }
             }
         }
 

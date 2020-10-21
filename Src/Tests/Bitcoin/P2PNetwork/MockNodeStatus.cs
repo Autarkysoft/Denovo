@@ -261,6 +261,16 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        internal bool? _tooManyPings;
+        public bool HasTooManyUnansweredPings
+        {
+            get
+            {
+                Assert.True(_tooManyPings.HasValue, UnexpectedCall);
+                return _tooManyPings.Value;
+            }
+        }
+
         internal long? expPingNonce;
         internal bool storePingReturn;
         public bool StorePing(long nonce)

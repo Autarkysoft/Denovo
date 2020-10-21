@@ -181,6 +181,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly Dictionary<long, DateTime> pings = new Dictionary<long, DateTime>(5);
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// With the default 2 minute ping interval and 5 cap this makes up for 10+ minutes of no Pong response.
+        /// Or this can mean a connected node that never answered any of the Ping messages.
+        /// </remarks>
+        public bool HasTooManyUnansweredPings => pings.Count >= 5;
+
+        /// <inheritdoc/>
         public bool StorePing(long nonce) => pings.TryAdd(nonce, DateTime.Now);
 
         /// <inheritdoc/>

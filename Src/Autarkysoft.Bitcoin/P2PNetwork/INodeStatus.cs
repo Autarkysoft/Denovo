@@ -83,6 +83,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         TimeSpan Latency { get; set; }
         /// <summary>
+        /// Returns if the other node hasn't answered to too many of our Ping messages.
+        /// </summary>
+        bool HasTooManyUnansweredPings { get; }
+        /// <summary>
         /// Stores the random nonce of the sent ping message to this node alongside current time for further reference.
         /// Return value indicates whether the nonce wasn't added before.
         /// </summary>
