@@ -28,7 +28,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 throw new ArgumentNullException(nameof(block), "Block can not be null.");
 
             FastStream stream = new FastStream(Constants.BlockHeaderSize);
-            block.SerializeHeader(stream);
+            block.Header.Serialize(stream);
             BlockHeader = stream.ToByteArray();
         }
 

@@ -17,7 +17,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         {
             Block blk = new Block();
             // TestNet block #1,670,926
-            blk.TryDeserializeHeader(new FastStreamReader(Helper.HexToBytes("00e0ff3ff79fa236e509c35d006c58546db4f27c4874e6dfa4dd5b30b01b1b000000000034310adae6b8d3cca58e56a42eb55ab3c17599cc696b133afe0e4c2c49ecfa2cb5b1795eb334011aabf54a10")), out _);
+            blk.Header.TryDeserialize(new FastStreamReader(Helper.HexToBytes("00e0ff3ff79fa236e509c35d006c58546db4f27c4874e6dfa4dd5b30b01b1b000000000034310adae6b8d3cca58e56a42eb55ab3c17599cc696b133afe0e4c2c49ecfa2cb5b1795eb334011aabf54a10")), out _);
             return blk;
         }
 
@@ -29,7 +29,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         {
             IBlock blk = GetBlock();
             uint expected = 424342955;
-            Assert.NotEqual(expected, blk.Nonce);
+            Assert.NotEqual(expected, blk.Header.Nonce);
 
             Miner miner = new Miner();
 
@@ -41,7 +41,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             bool success = await miner.Mine(blk, token, coreCount);
 
             Assert.True(success);
-            Assert.Equal(expected, blk.Nonce);
+            Assert.Equal(expected, blk.Header.Nonce);
             Assert.Equal("000000000000005befb0b49dec35738f6ad493f9c7a6e777d69836323f1cf5f2", blk.GetBlockID());
         }
 
@@ -49,9 +49,9 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         public async void Mine_CancelTest()
         {
             IBlock blk = GetBlock();
-            uint initialNonce = blk.Nonce;
-            uint initialTime = blk.BlockTime;
-            blk.Version++; // Change version so that miner can not find any result within reasonable time
+            uint initialNonce = blk.Header.Nonce;
+            uint initialTime = blk.Header.BlockTime;
+            blk.Header.Version++; // Change version so that miner can not find any result within reasonable time
 
             Miner miner = new Miner();
 
@@ -63,8 +63,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             Assert.False(success);
             // Make sure properties aren't changed
-            Assert.Equal(initialNonce, blk.Nonce);
-            Assert.Equal(initialTime, blk.BlockTime);
+            Assert.Equal(initialNonce, blk.Header.Nonce);
+            Assert.Equal(initialTime, blk.Header.BlockTime);
         }
     }
 }

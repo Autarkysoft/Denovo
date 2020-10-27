@@ -68,12 +68,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            if (block.NBits != chain.GetTarget(block.Height))
+            if (block.Header.NBits != chain.GetTarget(block.Height))
             {
                 error = "Block's target is not the same as current target.";
                 return false;
             }
-            if (block.GetBlockHash().ToBigInt(false, true) > block.NBits.ToBigInt())
+            if (block.GetBlockHash().ToBigInt(false, true) > block.Header.NBits.ToBigInt())
             {
                 error = "Wrong proof of work.";
                 return false;
@@ -104,7 +104,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
             }
 
-            if (!((ReadOnlySpan<byte>)block.MerkleRootHash).SequenceEqual(block.ComputeMerkleRoot()))
+            if (!((ReadOnlySpan<byte>)block.Header.MerkleRootHash).SequenceEqual(block.ComputeMerkleRoot()))
             {
                 error = "Block has invalid merkle root hash.";
                 return false;

@@ -9,7 +9,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     public class HeadersPayload : PayloadBase
     {
-        public IBlock[] Headers { get; set; }
+        public BlockHeader[] Headers { get; set; }
 
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.Headers;
@@ -23,7 +23,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             count.WriteToStream(stream);
             foreach (var hd in Headers)
             {
-                hd.SerializeHeader(stream);
+                hd.Serialize(stream);
                 // Block serialization of header doesn't add tx count since there is no need for it.
                 // However, in a header payload (for unknown reason) one extra byte indicating zero tx count
                 // is added to each block header.
@@ -45,11 +45,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            Headers = new Block[count];
+            Headers = new BlockHeader[count];
             for (int i = 0; i < (int)count; i++)
             {
-                Block temp = new Block();
-                if (!temp.TryDeserializeHeader(stream, out error))
+                var temp = new BlockHeader();
+                if (!temp.TryDeserialize(stream, out error))
                 {
                     return false;
                 }

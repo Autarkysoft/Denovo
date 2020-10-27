@@ -10,7 +10,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     public class MerkleBlockPayload : PayloadBase
     {
-        public Block BlockHeader { get; set; } = new Block();
+        public BlockHeader Header { get; set; } = new BlockHeader();
         private uint _txCount;
         public uint TransactionCount
         {
@@ -43,7 +43,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             CompactInt hashCount = new CompactInt(Hashes.Length);
             CompactInt flagsLength = new CompactInt(Flags.Length);
 
-            BlockHeader.SerializeHeader(stream);
+            Header.Serialize(stream);
             stream.Write(TransactionCount);
             hashCount.WriteToStream(stream);
             foreach (var item in Hashes)
@@ -65,7 +65,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
 
 
-            if (!BlockHeader.TryDeserializeHeader(stream, out error))
+            if (!Header.TryDeserialize(stream, out error))
             {
                 return false;
             }

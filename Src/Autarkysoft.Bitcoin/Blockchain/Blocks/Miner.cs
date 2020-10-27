@@ -12,14 +12,14 @@ using System.Threading.Tasks;
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 {
     /// <summary>
-    /// A block miner that finds and sets correct <see cref="IBlock"/> properties so that the resulting block header hash
-    /// is lower than the defined <see cref="IBlock.NBits"/> (ie. the target).
+    /// A block miner that finds and sets correct <see cref="IBlock.Header"/> properties so that the resulting block header hash
+    /// is lower than the defined <see cref="BlockHeader.NBits"/> (ie. the target).
     /// </summary>
     public class Miner
     {
         /// <summary>
-        /// Goes through all possible nonces to find the appropriate hash by changing <see cref="IBlock.Nonce"/> and
-        /// <see cref="IBlock.BlockTime"/>. Return value indicates success.
+        /// Goes through all possible nonces to find the appropriate hash by changing <see cref="BlockHeader.Nonce"/> and
+        /// <see cref="BlockHeader.BlockTime"/>. Return value indicates success.
         /// <para/>
         /// </summary>
         /// <param name="block">Block to mine (it has to be instantiated with all of its properties set to correct values)</param>
@@ -50,7 +50,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             {
                 // The for loop is using different time offsets in seconds to be added to the block time on each thread.
                 // Each thread is compting uint.max (or ~4.3 billion) hashes and could take minutes to complete.
-                await Task.Run(() => Parallel.For(0, 120, options, (i, state) => Mine(block, i, state, options)));
+                await Task.Run(() => Parallel.For(0, 120, options, (i, state) => Mine(block.Header, i, state, options)));
             }
             catch (OperationCanceledException)
             {
@@ -60,7 +60,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             return true;
         }
 
-        private unsafe bool Mine(IBlock block, int timeOffset, ParallelLoopState state, ParallelOptions options)
+        private unsafe bool Mine(BlockHeader block, int timeOffset, ParallelLoopState state, ParallelOptions options)
         {
             /*** Target ***/
             uint[] targetArr = block.NBits.ToUInt32Array();

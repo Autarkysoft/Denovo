@@ -16,20 +16,7 @@ namespace Tests.Bitcoin.Blockchain
     {
         public virtual int Height { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public int BlockSize { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual int Version { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual byte[] PreviousBlockHeaderHash
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
-        public virtual byte[] MerkleRootHash
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
-        public virtual uint BlockTime { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual Target NBits { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual uint Nonce { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual BlockHeader Header { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual ITransaction[] TransactionList
         {
             get => throw new NotImplementedException();
@@ -41,18 +28,16 @@ namespace Tests.Bitcoin.Blockchain
         public virtual byte[] GetBlockHash() => throw new NotImplementedException();
         public virtual string GetBlockID() => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
-        public virtual void SerializeHeader(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
-        public virtual bool TryDeserializeHeader(FastStreamReader stream, out string error) => throw new NotImplementedException();
     }
 
 
 
     public class MockBlockIdBlock : MockBlockBase
     {
-        public MockBlockIdBlock(byte[] txHashToReturn)
+        public MockBlockIdBlock(byte[] blockHashToReturn)
         {
-            TxHash = txHashToReturn;
+            hash = blockHashToReturn;
         }
 
         public MockBlockIdBlock(string txIdToReturn) : this(Helper.HexToBytes(txIdToReturn, true))
@@ -60,25 +45,25 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
-        private readonly byte[] TxHash;
+        private readonly byte[] hash;
 
 
         public override byte[] GetBlockHash()
         {
-            if (TxHash == null)
+            if (hash == null)
             {
-                Assert.True(false, "Mock transaction doesn't have any tx hash set.");
+                Assert.True(false, "Mock block doesn't have any block hash set.");
             }
-            return TxHash;
+            return hash;
         }
 
         public override string GetBlockID()
         {
-            if (TxHash == null)
+            if (hash == null)
             {
-                Assert.True(false, "Mock transaction doesn't have any tx hash set.");
+                Assert.True(false, "Mock block doesn't have any block hash set.");
             }
-            return Helper.BytesToHex(TxHash.Reverse().ToArray());
+            return Helper.BytesToHex(hash.Reverse().ToArray());
         }
     }
 

@@ -28,22 +28,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// Initializes a new instance of <see cref="Block"/> using given parameters.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <param name="ver">Block version</param>
-        /// <param name="prevHd">Hash of previous block header</param>
-        /// <param name="merkle">Hash of merkle root</param>
-        /// <param name="blockTime">Block time</param>
-        /// <param name="nbits">Block target</param>
-        /// <param name="nonce">Block nonce</param>
+        /// <param name="header">Block header</param>
         /// <param name="txs">List of transactions</param>
-        public Block(int ver, byte[] prevHd, byte[] merkle, uint blockTime, Target nbits, uint nonce, ITransaction[] txs)
+        public Block(BlockHeader header, ITransaction[] txs)
         {
-            Version = ver;
-            PreviousBlockHeaderHash = prevHd;
-            MerkleRootHash = merkle;
-            BlockTime = blockTime;
-            NBits = nbits;
-            Nonce = nonce;
+            Header = header;
             TransactionList = txs;
         }
 
@@ -66,61 +55,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             set => _blockSize = value;
         }
 
-        /// <inheritdoc/>
-        public int Version { get; set; }
-
-        private byte[] _prvBlkHash = new byte[32];
+        private BlockHeader _header = new BlockHeader();
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] PreviousBlockHeaderHash
+        public BlockHeader Header
         {
-            get => _prvBlkHash;
+            get => _header;
             set
             {
                 if (value is null)
-                    throw new ArgumentNullException(nameof(PreviousBlockHeaderHash), "Previous block Header hash can not be null.");
-                if (value.Length != 32)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(PreviousBlockHeaderHash),
-                        "Previous block Header hash length is invalid.");
-                }
+                    throw new ArgumentNullException(nameof(Header));
 
-                _prvBlkHash = value;
+                _header = value;
             }
         }
-
-        private byte[] _merkle = new byte[32];
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] MerkleRootHash
-        {
-            get => _merkle;
-            set
-            {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(MerkleRootHash), "Merkle root hash can not be null.");
-                if (value.Length != 32)
-                    throw new ArgumentOutOfRangeException(nameof(MerkleRootHash), "Merkle root hash length is invalid.");
-
-                _merkle = value;
-            }
-        }
-
-        /// <inheritdoc/>
-        public uint BlockTime { get; set; }
-
-        private Target _nBits;
-        /// <inheritdoc/>
-        public Target NBits
-        {
-            get => _nBits;
-            set => _nBits = value;
-        }
-
-        /// <inheritdoc/>
-        public uint Nonce { get; set; }
 
         private ITransaction[] _txs = new ITransaction[0];
         /// <inheritdoc/>
@@ -142,7 +90,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public byte[] GetBlockHash()
         {
-            byte[] bytesToHash = SerializeHeader();
+            byte[] bytesToHash = Header.Serialize();
             using Sha256 hashFunc = new Sha256(true);
             return hashFunc.ComputeHash(bytesToHash);
         }
@@ -303,32 +251,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
-        public void SerializeHeader(FastStream stream)
-        {
-            stream.Write(Version);
-            stream.Write(PreviousBlockHeaderHash);
-            stream.Write(MerkleRootHash);
-            stream.Write(BlockTime);
-            NBits.WriteToStream(stream);
-            stream.Write(Nonce);
-        }
-
-        /// <summary>
-        /// Converts this block's header into its byte array representation.
-        /// </summary>
-        /// <returns>An array of bytes</returns>
-        public byte[] SerializeHeader()
-        {
-            FastStream stream = new FastStream(Constants.BlockHeaderSize);
-            SerializeHeader(stream);
-            return stream.ToByteArray();
-        }
-
-
-        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
-            SerializeHeader(stream);
+            Header.Serialize(stream);
 
             CompactInt txCount = new CompactInt(TransactionList.Length);
             txCount.WriteToStream(stream);
@@ -351,37 +276,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
-        public bool TryDeserializeHeader(FastStreamReader stream, out string error)
-        {
-            if (!stream.CheckRemaining(Constants.BlockHeaderSize))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
-
-            Version = stream.ReadInt32Checked();
-            _prvBlkHash = stream.ReadByteArray32Checked();
-            _merkle = stream.ReadByteArray32Checked();
-            BlockTime = stream.ReadUInt32Checked();
-
-            // TODO: add a TryReadChecked to Target
-            if (!Target.TryRead(stream, out _nBits, out error))
-            {
-                return false;
-            }
-
-            Nonce = stream.ReadUInt32Checked();
-
-            error = null;
-            return true;
-        }
-
-        /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out string error)
         {
             int start = stream.GetCurrentIndex();
 
-            if (!TryDeserializeHeader(stream, out error))
+            _header = new BlockHeader();
+            if (!_header.TryDeserialize(stream, out error))
             {
                 return false;
             }
