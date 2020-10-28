@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -270,7 +271,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Inv:
                     if (Deser(msg.PayloadData, out InvPayload inv))
                     {
-
+                        // TODO: it may be best if InvPayload sets this while deserializing to avoid using Linq
+                        if (!settings.Relay && inv.InventoryList.Any(x => x.InvType == InventoryType.Tx))
+                        {
+                            nodeStatus.AddBigViolation();
+                        }
                     }
                     break;
                 case PayloadType.MemPool:

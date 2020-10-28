@@ -247,6 +247,22 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
+                // Inv
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings() { _relay = true, _netType = NetworkType.MainNet },
+                new Message(new InvPayload(new Inventory[] { new Inventory(InventoryType.Tx, new byte[32]) }), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // Inv (no relay + tx type inv is a violation)
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, bigViolation = true },
+                new MockClientSettings() { _relay = false, _netType = NetworkType.MainNet },
+                new Message(new InvPayload(new Inventory[] { new Inventory(InventoryType.Tx, new byte[32]) }), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
                 // Ping
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
                 cs,
