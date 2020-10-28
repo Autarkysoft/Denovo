@@ -51,6 +51,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
             }
 
+            result.Add(new Message(new SendHeadersPayload(), settings.Network));
             result.Add(GetPingMsg());
 
             return result.ToArray();

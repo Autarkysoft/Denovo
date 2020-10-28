@@ -449,6 +449,7 @@ namespace Tests.Bitcoin.P2PNetwork
             ulong feeRateKiloSat = 123456_000;
             var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
             var ping = new Message(new PingPayload(RngReturnValue), NetworkType.MainNet);
+            var sendHdr = new Message(new SendHeadersPayload(), NetworkType.MainNet);
 
             yield return new object[]
             {
@@ -471,7 +472,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true,
                     _fee = feeRateSat
                 },
-                new Message[] { feeFilter, ping }
+                new Message[] { feeFilter, sendHdr, ping }
             };
             yield return new object[]
             {
@@ -508,7 +509,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true,
                     _fee = feeRateSat
                 },
-                new Message[] { feeFilter, ping }
+                new Message[] { feeFilter, sendHdr, ping }
             };
             yield return new object[]
             {
@@ -524,7 +525,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _netType = NetworkType.MainNet,
                     _relay = false, // No relay won't send FeeFilter
                 },
-                new Message[] { ping }
+                new Message[] { sendHdr, ping }
             };
             yield return new object[]
             {
@@ -597,6 +598,7 @@ namespace Tests.Bitcoin.P2PNetwork
             ulong feeRateKiloSat = 123456_000;
             var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
             var ping = new Message(new PingPayload(RngReturnValue), NetworkType.MainNet);
+            var sendHdr = new Message(new SendHeadersPayload(), NetworkType.MainNet);
 
             yield return new object[]
             {
@@ -648,7 +650,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _bchain = cs._bchain,
                     _relay = false, // No relay won't sent FeeFilter
                 },
-                msg, new Message[] { verak, ping }
+                msg, new Message[] { verak, sendHdr, ping }
             };
             yield return new object[]
             {
@@ -671,7 +673,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true, // With relay there should be a FeeFilter
                     _fee = feeRateSat
                 },
-                msg, new Message[] { verak, feeFilter, ping }
+                msg, new Message[] { verak, feeFilter, sendHdr, ping }
             };
             yield return new object[]
             {
