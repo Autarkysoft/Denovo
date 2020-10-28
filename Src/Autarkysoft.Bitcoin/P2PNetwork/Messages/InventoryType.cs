@@ -11,7 +11,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
     public enum InventoryType : uint
     {
         /// <summary>
-        /// (ERROR) Data can be ignored
+        /// (UNDEFINED) Data can be ignored
         /// </summary>
         Unknown = 0,
         /// <summary>
@@ -29,6 +29,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <summary>
         /// (MSG_CMPCT_BLOCK) 
         /// </summary>
-        CompactBlock = 4
+        CompactBlock = 4,
+        /// <summary>
+        /// (MSG_WTX) Inventory content is a 32 byte transaction witness hash
+        /// </summary>
+        WTx = 5,
+        /// <summary>
+        /// (MSG_WITNESS_BLOCK)
+        /// </summary>
+        WitnessBlock = Block | (1 << 30),
+        /// <summary>
+        /// (MSG_WITNESS_TX)
+        /// </summary>
+        WitnessTx = Tx | (1 << 30)
     }
 }
