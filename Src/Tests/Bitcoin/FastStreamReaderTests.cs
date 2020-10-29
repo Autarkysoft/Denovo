@@ -243,6 +243,41 @@ namespace Tests.Bitcoin
             Assert.Null(actual);
         }
 
+        [Theory]
+        [InlineData(0, 1, new byte[] { 0 })]
+        [InlineData(0, 1, new byte[] { 0, 2, 3 })]
+        [InlineData(1, 1, new byte[] { 1, 2, 3 })]
+        [InlineData(252, 1, new byte[] { 252 })]
+        [InlineData(252, 1, new byte[] { 252, 2, 3 })]
+        [InlineData(253, 3, new byte[] { 253, 253, 0 })]
+        [InlineData(515, 3, new byte[] { 253, 3, 2 })]
+        [InlineData(ushort.MaxValue, 3, new byte[] { 253, 255, 255 })]
+        public void TryReadSmallCompactIntTest(int expected, int expPos, byte[] ba)
+        {
+            var stream = new FastStreamReader(ba);
+            bool b = stream.TryReadSmallCompactInt(out int actual);
+
+            Assert.True(b);
+            Assert.Equal(expected, actual);
+            Helper.ComparePrivateField(stream, "position", expPos);
+        }
+        [Theory]
+        [InlineData(new byte[] { })]
+        [InlineData(new byte[] { 253 })]
+        [InlineData(new byte[] { 253, 255 })]
+        [InlineData(new byte[] { 253, 0, 0 })]
+        [InlineData(new byte[] { 253, 252, 0 })]
+        [InlineData(new byte[] { 254 })]
+        [InlineData(new byte[] { 255 })]
+        [InlineData(new byte[] { 254, 1 })]
+        [InlineData(new byte[] { 254, 255, 255, 255, 255 })] // Valid CompactInt but rejected by this method
+        [InlineData(new byte[] { 255, 255, 255, 255, 255, 255, 255, 255, 255 })] // same as above
+        public void TryReadSmallCompactInt_FailTest(byte[] ba)
+        {
+            var stream = new FastStreamReader(ba);
+            bool b = stream.TryReadSmallCompactInt(out _);
+            Assert.False(b);
+        }
 
         [Fact]
         public void ReadByteCheckedTest()
