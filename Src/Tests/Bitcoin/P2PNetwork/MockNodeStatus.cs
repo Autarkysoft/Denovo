@@ -176,6 +176,22 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        internal bool? _sendHdrToReturn;
+        internal bool? _sendHdrToSet;
+        public bool SendHeaders
+        {
+            get
+            {
+                Assert.True(_sendHdrToReturn.HasValue, UnexpectedCall);
+                return _sendHdrToReturn.Value;
+            }
+            set
+            {
+                Assert.True(_sendHdrToSet.HasValue, UnexpectedCall);
+                Assert.Equal(_sendHdrToSet.Value, value);
+            }
+        }
+
         internal bool? _disconnect;
         public bool ShouldDisconnect
         {

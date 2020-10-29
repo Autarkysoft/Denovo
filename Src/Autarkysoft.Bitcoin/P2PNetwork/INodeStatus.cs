@@ -59,6 +59,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         ulong SendCompactVer { get; set; }
         /// <summary>
+        /// Gets or sets if this nodes wants to receive block headers first
+        /// </summary>
+        bool SendHeaders { get; set; }
+        /// <summary>
         /// Returns if the connection to this node should be terminated due to excessive violations
         /// </summary>
         bool ShouldDisconnect { get; }

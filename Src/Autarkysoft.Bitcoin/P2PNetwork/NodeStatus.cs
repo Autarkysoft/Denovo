@@ -128,6 +128,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
         }
 
+        private bool _sendHdr;
+        /// <inheritdoc/>
+        public bool SendHeaders
+        {
+            get => _sendHdr;
+            set => SetField(ref _sendHdr, value);
+        }
+
         private DateTime _lastSeen;
         /// <inheritdoc/>
         public DateTime LastSeen

@@ -304,6 +304,28 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
+                // SendHeaders
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, _sendHdrToReturn = false, _sendHdrToSet = true
+                },
+                cs,
+                new Message(new SendHeadersPayload(), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // SendHeaders (it is a violation to send it again)
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, _sendHdrToReturn = true, smallViolation = true
+                },
+                cs,
+                new Message(new SendHeadersPayload(), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
                 // Tx
                 new MockNodeStatus()
                 {

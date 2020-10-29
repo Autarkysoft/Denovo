@@ -319,6 +319,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     break;
                 case PayloadType.SendHeaders:
                     // Empty payload
+                    if (nodeStatus.SendHeaders)
+                    {
+                        // It's a violation if the other node "spams" the same settings more than once.
+                        nodeStatus.AddSmallViolation();
+                    }
+                    else
+                    {
+                        nodeStatus.SendHeaders = true;
+                    }
                     break;
                 case PayloadType.Tx:
                     if (Deser(msg.PayloadData, out TxPayload tx))
