@@ -4,12 +4,61 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using System;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
+    /// <summary>
+    /// A message payload containing multiple block headers.
+    /// <para/> Sent: in response to <see cref="GetHeadersPayload"/>
+    /// </summary>
     public class HeadersPayload : PayloadBase
     {
-        public BlockHeader[] Headers { get; set; }
+        /// <summary>
+        /// Initializes an empty instance of <see cref="HeadersPayload"/> used for deserialization.
+        /// </summary>
+        public HeadersPayload()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="HeadersPayload"/> using the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="headers">Headers to use (array must contain between 1 and <see cref="MaxCount"/> items)</param>
+        public HeadersPayload(BlockHeader[] headers)
+        {
+            Headers = headers;
+        }
+
+        /// <summary>
+        /// Maximum number of allowed <see cref="BlockHeader"/>s in this payload type
+        /// </summary>
+        /// <remarks>
+        /// https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L97-L99
+        /// </remarks>
+        public const int MaxCount = 2000;
+
+        private BlockHeader[] _hds;
+        /// <summary>
+        /// An array of block headers (must contain between 1 and <see cref="MaxCount"/> items)
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public BlockHeader[] Headers
+        {
+            get => _hds;
+            set
+            {
+                if (value is null || value.Length == 0)
+                    throw new ArgumentNullException(nameof(Headers), "Array can not be null or empty.");
+                if (value.Length > MaxCount)
+                    throw new ArgumentOutOfRangeException(nameof(Headers), $"Headers count must be smaller than {MaxCount}");
+
+                _hds = value;
+            }
+        }
 
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.Headers;
@@ -40,29 +89,33 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
+            // The following method is correct since max is 2000
+            if (!stream.TryReadSmallCompactInt(out int count))
             {
+                error = "Invalid CompactInt format.";
                 return false;
             }
 
-            Headers = new BlockHeader[count];
-            for (int i = 0; i < (int)count; i++)
+            if (count > MaxCount)
+            {
+                error = "Header count is too big.";
+                return false;
+            }
+
+            _hds = new BlockHeader[count];
+            for (int i = 0; i < _hds.Length; i++)
             {
                 var temp = new BlockHeader();
                 if (!temp.TryDeserialize(stream, out error))
                 {
                     return false;
                 }
-                Headers[i] = temp;
+                _hds[i] = temp;
 
-                if (!stream.TryReadByte(out byte zero))
+                // Headers messages contain a tx count that is not used anywhere specially since it is always set to 0!
+                // https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L3455
+                if (!CompactInt.TryRead(stream, out _, out error))
                 {
-                    error = Err.EndOfStream;
-                    return false;
-                }
-                if (zero != 0)
-                {
-                    error = "Transaction count in a headers message must be zero.";
                     return false;
                 }
             }
