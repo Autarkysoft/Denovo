@@ -24,10 +24,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         internal Node(IClientSettings cs, Socket socket)
         {
             settings = cs;
-            NodeStatus = new NodeStatus()
+            NodeStatus = new NodeStatus();
+            if (socket.RemoteEndPoint is IPEndPoint ep)
             {
-                IP = socket.RemoteEndPoint is IPEndPoint ep ? ep.Address : IPAddress.Loopback
-            };
+                NodeStatus.IP = ep.Address;
+                NodeStatus.Port = (ushort)ep.Port;
+            }
 
             var repMan = new ReplyManager(NodeStatus, cs);
 

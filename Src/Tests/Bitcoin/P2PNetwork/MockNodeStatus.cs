@@ -40,6 +40,22 @@ namespace Tests.Bitcoin.P2PNetwork
             set => Assert.Equal(_ip, value);
         }
 
+        internal ushort? _portToReturn;
+        internal ushort? _portToSet;
+        public ushort Port
+        {
+            get
+            {
+                Assert.True(_portToReturn.HasValue, UnexpectedCall);
+                return _portToReturn.Value;
+            }
+            set
+            {
+                Assert.True(_portToSet.HasValue, UnexpectedCall);
+                Assert.Equal(_portToSet.Value, value);
+            }
+        }
+
         internal int? _protVer;
         public int ProtocolVersion
         {

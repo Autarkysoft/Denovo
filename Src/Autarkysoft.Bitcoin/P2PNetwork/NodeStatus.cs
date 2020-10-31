@@ -52,6 +52,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             set => SetField(ref _ip, value);
         }
 
+        private ushort _port;
+        /// <inheritdoc/>
+        public ushort Port
+        {
+            get => _port;
+            set => SetField(ref _port, value);
+        }
+
         private int _protVer;
         /// <inheritdoc/>
         public int ProtocolVersion

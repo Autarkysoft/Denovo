@@ -19,6 +19,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         IPAddress IP { get; set; }
         /// <summary>
+        /// Port of this node
+        /// </summary>
+        ushort Port { get; set; }
+        /// <summary>
         /// Gets or sets the protocol version that this node supports 
         /// announced in <see cref="Messages.MessagePayloads.VersionPayload"/>
         /// </summary>
