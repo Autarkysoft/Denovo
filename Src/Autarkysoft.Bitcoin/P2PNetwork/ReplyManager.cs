@@ -69,7 +69,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         /// <inheritdoc/>
-        public Message GetVersionMsg() => GetVersionMsg(new NetworkAddress(settings.Services, IPAddress.Loopback, settings.Port));
+        // Node constructor sets the IP and port on INodeStatus
+        // TODO: this is bitcoin-core's behavior, it can be changed if needed
+        public Message GetVersionMsg() => GetVersionMsg(new NetworkAddress(0, nodeStatus.IP, nodeStatus.Port));
 
         /// <inheritdoc/>
         public Message GetVersionMsg(NetworkAddress recvAddr)
@@ -80,7 +82,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 Services = settings.Services,
                 Timestamp = settings.Time,
                 ReceivingNodeNetworkAddress = recvAddr,
-                TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.Loopback, settings.Port),
+                // TODO: IP and port zero are bitcoin-core's behavior, it can be changed if needed
+                TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.IPv6Any, 0),
                 Nonce = (ulong)rng.NextInt64(),
                 UserAgent = settings.UserAgent,
                 StartHeight = settings.Blockchain.Height,
@@ -184,6 +187,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         }
                         else
                         {
+                            // Fee filter can be updated multiple times as the other node's mempool size changes
                             nodeStatus.FeeFilter = feeFilter.FeeRate;
                         }
                     }
@@ -397,7 +401,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     result = new Message[2]
                     {
                         new Message(new VerackPayload(), settings.Network),
-                        GetVersionMsg(version.TransmittingNodeNetworkAddress)
+                        GetVersionMsg()
                     };
                     break;
                 case HandShakeState.Sent:
