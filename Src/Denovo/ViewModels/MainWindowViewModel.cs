@@ -74,7 +74,7 @@ namespace Denovo.ViewModels
         public Storage StorageMan { get; set; }
         public ConfigurationViewModel ConfigVm { get; set; }
         public void Config() => WinMan.ShowDialog(ConfigVm);
-        //public void Miner() => WinMan.ShowDialog(new MinerViewModel());
+        public void Miner() => WinMan.ShowDialog(new MinerViewModel());
 
         internal class MockBlockChain : IBlockchain
         {

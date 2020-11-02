@@ -1,0 +1,41 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Denovo.Views.MinerView">
+
+  <Design.DataContext>
+    <vm:MinerViewModel/>
+  </Design.DataContext>
+
+  <Grid RowDefinitions="auto,auto,auto,auto,100">
+    <StackPanel Orientation="Horizontal" Spacing="5" Grid.Row="0">
+      <Button Content="Start mining" Command="{Binding StartMining}" Width="100"/>
+      <Button Content="Stop mining" Command="{Binding StopMining}" Width="100"/>
+      <TextBox Text="{Binding BlockHeight}" Width="80"/>
+    </StackPanel>
+    
+    <TextBox Text="{Binding PreviousBlockHex}" Height="100" TextWrapping="Wrap" AcceptsReturn="True" Margin="3" Grid.Row="1"/>
+
+    <ListBox Height="200" Items="{Binding AllNodes}"
+             SelectedItem="{Binding SelectedNode}"
+             Margin="3" Grid.Row="2">
+      <ListBox.DataTemplates>
+        <DataTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding NodeStatus.HandShake}"/>
+            <TextBlock Text="{Binding NodeStatus.IP}"/>
+            <TextBlock Text="{Binding NodeStatus.StartHeight}"/>
+            <TextBlock Text="{Binding NodeStatus.UserAgent}"/>
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.DataTemplates>
+    </ListBox>
+
+    <TextBlock Text="{Binding NodeInfo}" Margin="3" Grid.Row="3"/>
+    <TextBox Text="{Binding BlockHex}" TextWrapping="Wrap" Margin="3" Grid.Row="4"/>
+
+  </Grid>
+</UserControl>
