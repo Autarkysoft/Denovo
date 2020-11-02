@@ -10,7 +10,7 @@
   <Design.DataContext>
     <vm:MainWindowViewModel/>
   </Design.DataContext>
-  
+
   <!--The following 2 StackPanels can be removed when Denovo is more mature-->
   <StackPanel Orientation="Vertical" Spacing="30" Margin="5">
     <StackPanel Orientation="Vertical">
@@ -39,9 +39,14 @@
             <DataTemplate>
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="{Binding NodeStatus.HandShake}"/>
-                <TextBlock Text="{Binding NodeStatus.IP}"/>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="{Binding NodeStatus.IP}"/>
+                  <TextBlock Text=":"/>
+                  <TextBlock Text="{Binding NodeStatus.Port}"/>
+                </StackPanel>
                 <TextBlock Text="{Binding NodeStatus.StartHeight}"/>
                 <TextBlock Text="{Binding NodeStatus.UserAgent}"/>
+                <TextBlock Text="{Binding NodeStatus.Violation}"/>
               </StackPanel>
             </DataTemplate>
           </ListBox.DataTemplates>
