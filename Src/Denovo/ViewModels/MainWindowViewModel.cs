@@ -82,6 +82,9 @@ namespace Denovo.ViewModels
             public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
             public Target GetTarget(int height) => throw new NotImplementedException();
             public bool ProcessBlock(IBlock block) => true;
+            public void ProcessHeaders(BlockHeader[] headers)
+            {
+            }
         }
 
 
@@ -105,6 +108,7 @@ namespace Denovo.ViewModels
             "Select a node from the list to see its information." :
             $"UA: {SelectedNode.NodeStatus.UserAgent}{Environment.NewLine}" +
             $"IP: {SelectedNode.NodeStatus.IP}{Environment.NewLine}" +
+            $"Port: {SelectedNode.NodeStatus.Port}{Environment.NewLine}" +
             $"Prot. Ver.: {SelectedNode.NodeStatus.ProtocolVersion}{Environment.NewLine}" +
             $"Handshake: {SelectedNode.NodeStatus.HandShake}{Environment.NewLine}" +
             $"Last seen: {SelectedNode.NodeStatus.LastSeen}{Environment.NewLine}" +

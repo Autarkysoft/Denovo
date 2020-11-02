@@ -269,7 +269,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Headers:
                     if (Deser(msg.PayloadData, out HeadersPayload hdrs))
                     {
-
+                        settings.ProcessHeaders(hdrs.Headers);
                     }
                     break;
                 case PayloadType.Inv:

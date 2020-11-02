@@ -57,6 +57,16 @@ namespace Tests.Bitcoin.Blockchain
             return blkProcessSuccess;
         }
 
+        internal BlockHeader[] _expHeaders;
+        public void ProcessHeaders(BlockHeader[] headers)
+        {
+            Assert.Equal(_expHeaders.Length, headers.Length);
+            for (int i = 0; i < headers.Length; i++)
+            {
+                Assert.Equal(_expHeaders[i].Serialize(), headers[i].Serialize());
+            }
+        }
+
 #pragma warning restore CS0649 // Field is never assigned to
     }
 }

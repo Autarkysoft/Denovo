@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Encoders;
@@ -166,6 +167,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 Storage.WriteAddrs(nodeAddresses);
             }
+        }
+
+        /// <inheritdoc/>
+        public void ProcessHeaders(BlockHeader[] headers)
+        {
+            // TODO: add lock, decide next message and rejection,... here
+            Blockchain.ProcessHeaders(headers);
         }
     }
 }

@@ -40,5 +40,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="block">Block to process</param>
         /// <returns>True if the block was valid; otherwise false.</returns>
         bool ProcessBlock(IBlock block);
+        /// <summary>
+        /// Process given block headers and update the header database
+        /// </summary>
+        /// <param name="headers">An array of block headers</param>
+        void ProcessHeaders(BlockHeader[] headers);
     }
 }

@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Threading;
@@ -100,5 +101,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="nodeAddresses">List of timestamped nodes network addresses</param>
         void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses);
+        /// <summary>
+        /// Process the given block header array
+        /// </summary>
+        /// <param name="headers">An array of block headers</param>
+        void ProcessHeaders(BlockHeader[] headers);
     }
 }
