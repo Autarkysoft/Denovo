@@ -40,7 +40,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// Maximum number of hashes allowed in the hash list
         /// </summary>
         /// <remarks>
-        /// https://github.com/bitcoin/bitcoin/blob/ec0453cd57736df33e9f50c004d88bea10428ad5/src/net_processing.cpp#L71-L72
+        /// https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L71-L72
         /// </remarks>
         protected virtual int MaximumHashes => 101;
 

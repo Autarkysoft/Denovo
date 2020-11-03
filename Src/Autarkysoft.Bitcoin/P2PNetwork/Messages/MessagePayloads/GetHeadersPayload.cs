@@ -28,6 +28,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L97-L99
+        /// </remarks>
         protected override int MaximumHashes => 2000;
 
         /// <inheritdoc/>
