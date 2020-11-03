@@ -1,7 +1,5 @@
 [![Build Status](https://travis-ci.org/Autarkysoft/Denovo.svg?branch=master)](https://travis-ci.org/Autarkysoft/Denovo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Autarkysoft/Denovo/blob/master/License)  
-[![NuGet](https://img.shields.io/nuget/v/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
-[![NuGet](https://img.shields.io/nuget/dt/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
 
 <p align="center">
     <b>The Revolution Will Not Be Centralized</b>
@@ -11,14 +9,23 @@
 </p>
 
 # Denovo
-Denovo is a stand alone bitcoin client written completely in C# and from scratch and with only one dependency for GUI. Using the latest 
-[.net core](https://github.com/dotnet/core) version with [AvaloniaUI](https://github.com/AvaloniaUI/Avalonia) it can run on any 
-operating systems.  
-- Development is not started yet.
-- Current version `0.0.0.0` (check the [versioning convention](https://github.com/Autarkysoft/Conventions/blob/master/Versioning.md)
-for more information).
+[![Version](https://img.shields.io/badge/dynamic/xml?color=orange&label=version&query=%2F%2FAssemblyVersion%5B1%5D&url=https%3A%2F%2Fgithub.com%2FAutarkysoft%2FDenovo%2Fraw%2Fmaster%2FSrc%2FDenovo%2FDenovo.csproj&style=for-the-badge)](https://github.com/Autarkysoft/Denovo/blob/master/Src/Autarkysoft.Bitcoin/Autarkysoft.Bitcoin.csproj)
+[![Target](https://img.shields.io/badge/dynamic/xml?color=%23512bd4&label=target&query=%2F%2FTargetFramework%5B1%5D&url=https%3A%2F%2Fgithub.com%2FAutarkysoft%2FDenovo%2Fraw%2Fmaster%2FSrc%2FDenovo%2FDenovo.csproj&logo=.net&style=for-the-badge)](https://github.com/Autarkysoft/Denovo/blob/master/Src/Autarkysoft.Bitcoin/Autarkysoft.Bitcoin.csproj) 
+
+Denovo will eventually be a very flexible and easy to use tool with lots of features from a simple offline tool to handle keys and transaction signing to a full client
+capable of working as a full node or a SPV node and ultimately a second layer node (such as Lightning network node).  
+Currently Denovo is in beta and has very limited features listed below:  
+* **TestNet miner:** a simple but powerful miner to mine testnet blocks and broadcast them used only for testing things that can not
+be tested otherwise.  
+
+Using the latest [.net core](https://github.com/dotnet/core) version with [AvaloniaUI](https://github.com/AvaloniaUI/Avalonia)
+Denovo can run on any operating systems.  
 
 # Bitcoin.Net
+[![NuGet](https://img.shields.io/nuget/v/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
+[![NuGet](https://img.shields.io/nuget/dt/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
+[![Target](https://img.shields.io/badge/dynamic/xml?color=%23512bd4&label=target&query=%2F%2FTargetFramework%5B1%5D&url=https%3A%2F%2Fraw.githubusercontent.com%2FAutarkysoft%2FDenovo%2Fmaster%2FSrc%2FAutarkysoft.Bitcoin%2FAutarkysoft.Bitcoin.csproj&logo=.net&style=for-the-badge)](https://github.com/Autarkysoft/Denovo/blob/master/Src/Autarkysoft.Bitcoin/Autarkysoft.Bitcoin.csproj)
+
 The backbone of Denovo, Bitcoin.net is a stand alone bitcoin library written completely in C# and from scratch (no code translating)
 with no dependencies. 
 It is released as a different project so that it could be used by any other third party projects.  

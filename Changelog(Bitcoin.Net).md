@@ -1,7 +1,15 @@
 ### Next release
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.1.0...master)
 
-### Release 0.5.1 (2020-10-15)
+### Release 0.6.1 (2020-10-15)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.0.0...B0.6.1.0)
+* BIP-14: you can now set how many version components to return in ToString() method
+* Block headers is a separate class now
+* Multiple improvements in P2PNetwork for handling messages, violations, etc.
+* ReplyManger will send the correct IP and port in version message now.
+* Some optimization, bug fixes and tests
+
+### Release 0.6.0 (2020-10-15)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.5.1.0...B0.6.0.0)
 * Lots of improvements in P2P protocol for handling different messages
 * Added new payload types enum
