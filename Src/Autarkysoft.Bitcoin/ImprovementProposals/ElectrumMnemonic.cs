@@ -198,7 +198,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
         }
 
-        private readonly int[][] CJK_INTERVALS = new int[][]
+        private static readonly int[][] CJK_INTERVALS = new int[][]
         {
             new int[] { 0x4E00, 0x9FFF }, // CJK Unified Ideographs
             new int[] { 0x3400, 0x4DBF }, // CJK Unified Ideographs Extension A
@@ -231,7 +231,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             new int[] { 0xA490, 0xA4CF }, // Yi Radicals
         };
 
-        private bool IsCJK(char c)
+        private static bool IsCJK(char c)
         {
             int val = c;
             foreach (var item in CJK_INTERVALS)
@@ -244,7 +244,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             return false;
         }
 
-        private string RemoveDiacritics(string text)
+        private static string RemoveDiacritics(string text)
         {
             return new string(
                 text.Normalize(System.Text.NormalizationForm.FormD)
@@ -253,8 +253,18 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                     .ToArray());
         }
 
-        private string Normalize(string text)
+        /// <summary>
+        /// Normalizes the input string (passphrase or mnemonic) as defined by Electrum
+        /// </summary>
+        /// <param name="text">Text to normalize</param>
+        /// <returns>The normalized result</returns>
+        public static string Normalize(string text)
         {
+            if (text is null)
+            {
+                return string.Empty;
+            }
+
             string norm = RemoveDiacritics(text.Normalize(NormalizationForm.FormKD).ToLower());
             norm = string.Join(' ', norm.Split(" ", StringSplitOptions.RemoveEmptyEntries));
             // Remove whitespaces between CJK
