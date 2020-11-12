@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
+
 namespace Autarkysoft.Bitcoin.Blockchain
 {
     /// <summary>
@@ -68,5 +70,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Returns if Segregated Witness soft fork is enabled
         /// </summary>
         bool IsSegWitEnabled { get; }
+
+        /// <summary>
+        /// Builds and returns the genesis block based on <see cref="NetworkType"/>.
+        /// </summary>
+        /// <returns>Genesis block</returns>
+        IBlock GetGenesisBlock();
     }
 }

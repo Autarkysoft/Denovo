@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -122,6 +123,14 @@ namespace Tests.Bitcoin.Blockchain
                 Assert.True(strictDer.HasValue, UnexpectedCall);
                 return strictDer.Value;
             }
+        }
+
+
+        internal IBlock _genesis;
+        public IBlock GetGenesisBlock()
+        {
+            Assert.NotNull(_genesis);
+            return _genesis;
         }
 
 #pragma warning restore CS0649 // Field is never assigned to

@@ -3,7 +3,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Text;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -70,10 +76,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 default:
                     throw new ArgumentException("Network type is not defined.");
             }
+
+            network = netType;
         }
 
 
         private readonly int bip16, bip34, bip65, bip66, bip112, seg;
+        private readonly NetworkType network;
         private int _height;
 
         /// <inheritdoc/>
@@ -137,5 +146,81 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         /// <inheritdoc/>
         public bool IsSegWitEnabled => BlockHeight >= seg;
+
+
+        /// <inheritdoc/>
+        public IBlock GetGenesisBlock()
+        {
+            return network switch
+            {
+                NetworkType.MainNet => CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50_0000_0000),
+                NetworkType.TestNet => CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50_0000_0000),
+                NetworkType.RegTest => CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, 50_0000_0000),
+                _ => throw new ArgumentException(Err.InvalidNetwork),
+            };
+        }
+
+        /// <inheritdoc/>
+        public Block CreateGenesisBlock(uint time, uint nonce, Target nbits, int version, ulong reward)
+        {
+            string timestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
+            byte[] tsBytes = Encoding.UTF8.GetBytes(timestamp);
+            byte[] sigData = new byte[8 + tsBytes.Length];
+            Buffer.BlockCopy(Base16.Decode("04ffff001d010445"), 0, sigData, 0, 8);
+            Buffer.BlockCopy(tsBytes, 0, sigData, 8, tsBytes.Length);
+            var sigScr = new SignatureScript(sigData);
+
+            var pubOps = new IOperation[]
+            {
+                new PushDataOp(Base16.Decode("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f")),
+                new CheckSigOp()
+            };
+            var pubScr = new PubkeyScript(pubOps);
+            return CreateGenesisBlock(version, time, nbits, nonce, 1, sigScr, reward, pubScr);
+        }
+
+        /// <inheritdoc/>
+        public Block CreateGenesisBlock(int blkVer, uint time, Target nbits, uint nonce, int txVer,
+                                        ISignatureScript sigScr, ulong reward, IPubkeyScript pubScr)
+        {
+            var header = new BlockHeader()
+            {
+                Version = blkVer,
+                PreviousBlockHeaderHash = new byte[32],
+                BlockTime = time,
+                NBits = nbits,
+                Nonce = nonce
+            };
+
+            var coinbase = new Transaction()
+            {
+                Version = txVer,
+                TxInList = new TxIn[1]
+                {
+                    new TxIn()
+                    {
+                        TxHash = new byte[32],
+                        Index = uint.MaxValue,
+                        Sequence = uint.MaxValue,
+                        SigScript = sigScr
+                    }
+                },
+                TxOutList = new TxOut[1]
+                {
+                    new TxOut(reward, pubScr)
+                },
+                LockTime = 0
+            };
+
+            return CreateGenesisBlock(header, coinbase);
+        }
+
+        /// <inheritdoc/>
+        public Block CreateGenesisBlock(BlockHeader header, ITransaction coinbase)
+        {
+            var result = new Block(header, new ITransaction[] { coinbase });
+            result.Header.MerkleRootHash = result.ComputeMerkleRoot();
+            return result;
+        }
     }
 }

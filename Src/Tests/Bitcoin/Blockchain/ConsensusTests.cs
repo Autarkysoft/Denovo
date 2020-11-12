@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
 using Xunit;
 
@@ -110,6 +111,22 @@ namespace Tests.Bitcoin.Blockchain
         {
             Consensus cs = new Consensus(height, NetworkType.MainNet);
             Assert.Equal(expected, cs.IsSegWitEnabled);
+        }
+
+        [Theory]
+        [InlineData(NetworkType.MainNet, "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")]
+        [InlineData(NetworkType.TestNet, "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")]
+        [InlineData(NetworkType.RegTest, "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")]
+        public void GetGenesisBlockTest(NetworkType net, string expectedID)
+        {
+            Consensus cs = new Consensus(123, net);
+            IBlock genesis = cs.GetGenesisBlock();
+
+            string actualID = genesis.GetBlockID();
+            byte[] expectedMerkle = Helper.HexToBytes("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b", true);
+
+            Assert.Equal(expectedID, actualID);
+            Assert.Equal(expectedMerkle, genesis.Header.MerkleRootHash);
         }
     }
 }
