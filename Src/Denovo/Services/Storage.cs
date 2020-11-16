@@ -141,17 +141,18 @@ namespace Denovo.Services
             {
                 if (localAddrs is null)
                 {
-                    localAddrs = new HashSet<NetworkAddressWithTime>(addrs);
-                    WriteFile(localAddrs.ToArray(), NodeAddrs, GetAddrJsonOps());
-                }
-                else
-                {
-                    int count = localAddrs.Count;
-                    localAddrs.UnionWith(addrs);
-                    if (localAddrs.Count != count)
+                    if (File.Exists(Path.Combine(mainDir, $"{NodeAddrs}.json")))
                     {
-                        WriteFile(localAddrs.ToArray(), NodeAddrs, GetAddrJsonOps());
+                        var temp = ReadFile<NetworkAddressWithTime[]>(NodeAddrs, GetAddrJsonOps());
+                        localAddrs = new HashSet<NetworkAddressWithTime>(temp);
                     }
+                }
+
+                int count = localAddrs.Count;
+                localAddrs.UnionWith(addrs);
+                if (localAddrs.Count != count)
+                {
+                    WriteFile(localAddrs.ToArray(), NodeAddrs, GetAddrJsonOps());
                 }
             }
         }
