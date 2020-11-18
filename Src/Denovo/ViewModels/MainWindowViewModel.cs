@@ -39,6 +39,13 @@ namespace Denovo.ViewModels
                 // Right now TestNet is used for security reasons (project being in beta)
                 //      string[] arguments = Environment.GetCommandLineArgs();
                 var network = NetworkType.TestNet;
+                port = network switch
+                {
+                    NetworkType.MainNet => Constants.MainNetPort,
+                    NetworkType.TestNet => Constants.TestNetPort,
+                    NetworkType.RegTest => Constants.RegTestPort,
+                    _ => throw new ArgumentException(),
+                };
 
                 StorageMan = new Storage(network);
                 ConfigVm = new ConfigurationViewModel(StorageMan);
@@ -56,7 +63,7 @@ namespace Denovo.ViewModels
                 connector = new NodeConnector(AllNodes, clientSettings);
                 listener = new NodeListener(AllNodes, clientSettings);
 
-                listener.StartListen(new IPEndPoint(IPAddress.Any, testPortToUse));
+                listener.StartListen(new IPEndPoint(IPAddress.Any, port));
 
                 DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
 
@@ -126,7 +133,7 @@ namespace Denovo.ViewModels
 
         private readonly NodeConnector connector;
         private readonly NodeListener listener;
-        private const int testPortToUse = 18333;
+        private readonly int port;
 
 
         private string _ip = "127.0.0.1";
@@ -150,7 +157,7 @@ namespace Denovo.ViewModels
                 Result = string.Empty;
                 if (IPAddress.TryParse(IpAddress, out IPAddress ip))
                 {
-                    Task.Run(() => connector.StartConnect(new IPEndPoint(ip, testPortToUse)));
+                    Task.Run(() => connector.StartConnect(new IPEndPoint(ip, port)));
                 }
                 else
                 {
