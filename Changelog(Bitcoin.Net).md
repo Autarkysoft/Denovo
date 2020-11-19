@@ -1,7 +1,7 @@
 ### Next release
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.1.0...master)
 
-### Release 0.6.1 (2020-10-15)
+### Release 0.6.1 (2020-11-03)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.0.0...B0.6.1.0)
 * BIP-14: you can now set how many version components to return in ToString() method
 * Block headers is a separate class now
