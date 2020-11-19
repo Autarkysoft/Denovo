@@ -336,8 +336,23 @@ namespace Tests.Bitcoin.P2PNetwork
                 },
                 new MockClientSettings()
                 {
+                    _relay = true,
                     _expMemPoolTx = tx,
                     _addToMemPoolReturn = true
+                },
+                new Message(new TxPayload(tx), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // Tx
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.Finished, updateTime = true, bigViolation = true
+                },
+                new MockClientSettings()
+                {
+                    _relay = false,
                 },
                 new Message(new TxPayload(tx), NetworkType.MainNet),
                 null

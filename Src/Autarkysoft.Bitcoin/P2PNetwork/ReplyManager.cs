@@ -171,6 +171,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.FeeFilter:
                     if (Deser(msg.PayloadData, out FeeFilterPayload feeFilter))
                     {
+                        // Note that settings.Relay is not checked, we may not relay transactions but we can send our own txs
+                        // that have to honor the other node's fee preference.
                         if (!nodeStatus.Relay)
                         {
                             // A node that doesn't relay txs doesn't need a fee filter!
@@ -334,7 +336,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     }
                     break;
                 case PayloadType.Tx:
-                    if (Deser(msg.PayloadData, out TxPayload tx))
+                    if (!settings.Relay)
+                    {
+                        nodeStatus.AddBigViolation();
+                    }
+                    else if (Deser(msg.PayloadData, out TxPayload tx))
                     {
                         if (!settings.AddToMempool(tx.Tx))
                         {
