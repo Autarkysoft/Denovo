@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Denovo.Models;
 using System;
@@ -105,6 +106,53 @@ namespace Denovo.Services
         public void WriteConfig(Configuration config)
         {
             fileMan.WriteJson(config, "Config", null);
+        }
+
+        public BlockHeader[] ReadHeaders()
+        {
+            byte[] data = fileMan.ReadData("Headers");
+            if (data is null || data.Length % Constants.BlockHeaderSize != 0)
+            {
+                return null;
+            }
+            else
+            {
+                var result = new BlockHeader[data.Length / Constants.BlockHeaderSize];
+                var stream = new FastStreamReader(data);
+                for (int i = 0; i < result.Length; i++)
+                {
+                    var temp = new BlockHeader();
+                    if (temp.TryDeserialize(stream, out _))
+                    {
+                        result[i] = temp;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                return result;
+            }
+        }
+
+        public void AppendBlockHeaders(BlockHeader[] headers)
+        {
+            var stream = new FastStream(headers.Length * Constants.BlockHeaderSize);
+            foreach (var item in headers)
+            {
+                item.Serialize(stream);
+            }
+            fileMan.AppendData(stream.ToByteArray(), "Headers");
+        }
+
+        public void WriteBlockHeaders(BlockHeader[] headers)
+        {
+            var stream = new FastStream(headers.Length * Constants.BlockHeaderSize);
+            foreach (var item in headers)
+            {
+                item.Serialize(stream);
+            }
+            fileMan.WriteData(stream.ToByteArray(), "Headers");
         }
     }
 }
