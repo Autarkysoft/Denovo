@@ -109,6 +109,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public long Time => UnixTimeStamp.GetEpochUtcNow();
         /// <inheritdoc/>
         public ushort Port { get; set; }
+        /// <inheritdoc/>
+        public bool AcceptIncomingConnections { get; set; }
+        /// <inheritdoc/>
+        public string[] DnsSeeds { get; set; }
 
         /// <inheritdoc/>
         public int BufferLength { get; }

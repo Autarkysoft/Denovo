@@ -63,6 +63,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Port that this client listens to and makes connection over
         /// </summary>
         ushort Port { get; set; }
+        /// <summary>
+        /// Gets or sets whether the client should have an open <see cref="System.Net.Sockets.Socket"/> to listen for incoming
+        /// connections.
+        /// </summary>
+        bool AcceptIncomingConnections { get; set; }
+        /// <summary>
+        /// List of DNS seeds
+        /// </summary>
+        string[] DnsSeeds { get; set; }
 
         /// <summary>
         /// Length of the buffer in bytes used by each <see cref="System.Net.Sockets.SocketAsyncEventArgs"/>

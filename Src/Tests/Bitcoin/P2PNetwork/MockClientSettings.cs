@@ -141,6 +141,28 @@ namespace Tests.Bitcoin.P2PNetwork
             set => throw new NotImplementedException();
         }
 
+        internal bool? _listen;
+        public bool AcceptIncomingConnections
+        {
+            get
+            {
+                Assert.True(_listen.HasValue, UnexpectedCall);
+                return _listen.Value;
+            }
+            set => throw new NotImplementedException();
+        }
+
+        internal string[] _dns;
+        public string[] DnsSeeds
+        {
+            get
+            {
+                Assert.False(_dns is null, UnexpectedCall);
+                return _dns;
+            }
+            set => throw new NotImplementedException();
+        }
+
         internal int _buffLen;
         public int BufferLength
         {
