@@ -94,6 +94,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public IStorage Storage { get; set; }
 
         /// <inheritdoc/>
+        public bool IsCatchingUp { get; set; }
+        /// <inheritdoc/>
         public int ProtocolVersion { get; set; }
         /// <inheritdoc/>
         public bool Relay { get; set; }

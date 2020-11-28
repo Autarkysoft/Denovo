@@ -54,6 +54,17 @@ namespace Tests.Bitcoin.P2PNetwork
             set => throw new NotImplementedException();
         }
 
+        internal bool? _catchup;
+        public bool IsCatchingUp
+        {
+            get
+            {
+                Assert.True(_catchup.HasValue, UnexpectedCall);
+                return _catchup.Value;
+            }
+            set => throw new NotImplementedException();
+        }
+
         internal int _protoVer;
         public int ProtocolVersion
         {

@@ -32,6 +32,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         IStorage Storage { get; set; }
 
         /// <summary>
+        /// Returns if the client is behind and has to sync its blockchain first.
+        /// </summary>
+        bool IsCatchingUp { get; set; }
+
+
+        /// <summary>
         /// Protocol version that the client supports
         /// </summary>
         int ProtocolVersion { get; set; }
