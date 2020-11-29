@@ -79,10 +79,18 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             yield return new object[]
             {
                 new FastStreamReader(new byte[5] { 1, 0, 0, 0, 253 }),
-                "First byte 253 needs to be followed by at least 2 byte."
+                "Count is too big or an invalid CompactInt."
+            };
+
+            yield return new object[]
+            {
+                // Valid CompactInt but invalid when using FastStreamReader.TryReadSmallCompactInt() (it is too big)
+                new FastStreamReader(new byte[9] { 1, 0, 0, 0, 0xfe, 0x00, 0x00, 0x01, 0x00 }),
+                "Count is too big or an invalid CompactInt."
             };
             yield return new object[]
             {
+                // Count = 2001
                 new FastStreamReader(new byte[7] { 1, 0, 0, 0, 0xfd, 0xd1, 0x07 }),
                 "Only 2000 hashes are accepted."
             };

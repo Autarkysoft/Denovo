@@ -141,8 +141,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
+            if (!stream.TryReadSmallCompactInt(out int count))
             {
+                error = "Count is too big or an invalid CompactInt.";
                 return false;
             }
             if (count > MaximumHashes)
@@ -150,14 +151,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 error = $"Only {MaximumHashes} hashes are accepted.";
                 return false;
             }
-            int iCount = (int)count;
-            if (!stream.CheckRemaining((iCount * 32) + 32))
+            if (!stream.CheckRemaining((count * 32) + 32))
             {
                 error = Err.EndOfStream;
                 return false;
             }
 
-            _hashes = new byte[iCount][];
+            _hashes = new byte[count][];
             for (int i = 0; i < _hashes.Length; i++)
             {
                 _hashes[i] = stream.ReadByteArray32Checked();
