@@ -242,7 +242,7 @@ namespace Autarkysoft.Bitcoin
 
         /// <summary>
         /// Reads and returns a 32-bit signed integer using the <see cref="CompactInt"/> definition.
-        /// <para/>Node: This only works for integers smaller than <see cref="ushort.MaxValue"/> (65535) which is almost all
+        /// <para/>Note: This only works for integers smaller than <see cref="ushort.MaxValue"/> (65535) which is almost all
         /// places that <see cref="CompactInt"/> is used. This method is slightly faster since it avoids multiple casts and
         /// integer arithmetic.
         /// <para/>For general purpose use <see cref="CompactInt.TryRead(FastStreamReader, out CompactInt, out string)"/>
