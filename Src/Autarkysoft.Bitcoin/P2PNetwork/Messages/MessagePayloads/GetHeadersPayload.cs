@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
+
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     /// <summary>
@@ -26,12 +28,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         {
         }
 
-
+        /// <summary>
+        /// Initializes a new instance of <see cref="GetHeadersPayload"/> using the given parameters.
+        /// </summary>
         /// <inheritdoc/>
-        /// <remarks>
-        /// https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L97-L99
-        /// </remarks>
-        protected override int MaximumHashes => 2000;
+        public GetHeadersPayload(int ver, BlockHeader[] headers, BlockHeader stopHash) : base(ver, headers, stopHash)
+        {
+        }
+
 
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.GetHeaders;

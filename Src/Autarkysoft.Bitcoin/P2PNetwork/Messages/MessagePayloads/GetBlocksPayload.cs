@@ -3,7 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
+using System.Linq;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
@@ -37,12 +39,26 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <summary>
+        /// Initializes a new instance of <see cref="GetBlocksPayload"/> using the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="ver">Protocol version</param>
+        /// <param name="headers">List of headers (hash of each header will be used)</param>
+        /// <param name="stopHash">Stop hash (can be null)</param>
+        public GetBlocksPayload(int ver, BlockHeader[] headers, BlockHeader stopHash)
+            : this(ver, headers.Select(hd => hd.GetHash()).ToArray(), stopHash is null ? new byte[32] : stopHash.GetHash())
+        {
+        }
+
+
+        /// <summary>
         /// Maximum number of hashes allowed in the hash list
         /// </summary>
         /// <remarks>
-        /// https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L71-L72
+        /// https://github.com/bitcoin/bitcoin/blob/81d5af42f4dba5b68a597536cad7f61894dc22a3/src/net_processing.cpp#L71-L72
         /// </remarks>
-        protected virtual int MaximumHashes => 101;
+        public const int MaximumHashes = 101;
 
         private int _ver;
         /// <summary>

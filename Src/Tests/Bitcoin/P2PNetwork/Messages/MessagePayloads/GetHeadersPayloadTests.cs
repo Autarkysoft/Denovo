@@ -19,8 +19,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetHeadersPayload(-1, new byte[1][], new byte[32]));
             Assert.Contains("Version can not be negative.", ex.Message);
 
-            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetHeadersPayload(1, new byte[2001][], new byte[32]));
-            Assert.Contains("Only a maximum of 2000 hashes are allowed.", ex.Message);
+            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetHeadersPayload(1, new byte[102][], new byte[32]));
+            Assert.Contains("Only a maximum of 101 hashes are allowed.", ex.Message);
 
             ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetHeadersPayload(1, new byte[1][], new byte[33]));
             Assert.Contains("Stop hash length must be 32 bytes.", ex.Message);
@@ -90,9 +90,9 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             };
             yield return new object[]
             {
-                // Count = 2001
-                new FastStreamReader(new byte[7] { 1, 0, 0, 0, 0xfd, 0xd1, 0x07 }),
-                "Only 2000 hashes are accepted."
+                // Count = 102
+                new FastStreamReader(new byte[5] { 1, 0, 0, 0, 102 }),
+                "Only 101 hashes are accepted."
             };
             yield return new object[]
             {
