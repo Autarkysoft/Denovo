@@ -88,12 +88,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
-        public byte[] GetBlockHash()
-        {
-            byte[] bytesToHash = Header.Serialize();
-            using Sha256 hashFunc = new Sha256(true);
-            return hashFunc.ComputeHash(bytesToHash);
-        }
+        public byte[] GetBlockHash() => Header.GetHash();
 
         /// <inheritdoc/>
         public string GetBlockID()

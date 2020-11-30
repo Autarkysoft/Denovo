@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
@@ -109,6 +110,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// </summary>
         public uint Nonce { get; set; }
 
+        /// <summary>
+        /// Returns hash of this header using the defined hash function.
+        /// </summary>
+        /// <returns>32 byte block header hash</returns>
+        public byte[] GetHash()
+        {
+            byte[] bytesToHash = Serialize();
+            using Sha256 hashFunc = new Sha256(true);
+            return hashFunc.ComputeHash(bytesToHash);
+        }
 
         /// <inheritdoc/>
         public void Serialize(FastStream stream)
