@@ -4,7 +4,11 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 {
@@ -85,6 +89,57 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         public EllipticCurvePoint ToPoint()
         {
             return point;
+        }
+
+        /// <summary>
+        /// Encrypts a message with this public key using Elliptic Curve Integrated Encryption Scheme (ECIES)
+        /// with AES-128-CBC as cipher and HMAC-SHA256 as MAC.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="message">Message to encrypt</param>
+        /// <param name="magic">
+        /// [Default value = BIE1]
+        /// A magic string added to encrypted result before computing its HMAC-SHA256
+        /// </param>
+        /// <returns>Encrypted result as a base-64 encoded string</returns>
+        public string Encrypt(string message, string magic = "BIE1")
+        {
+            if (message is null)
+                throw new ArgumentNullException(nameof(message), "Mesage can not be null.");
+            if (magic is null)
+                throw new ArgumentNullException(nameof(magic), "Magic can not be null.");
+
+            byte[] magicBytes = Encoding.UTF8.GetBytes(magic);
+
+            // TODO: investigate if this can become deterministic (it can't be based on message or pubkey
+            //       otherwise the ephemeral key is revealed)
+            PrivateKey ephemeral = new PrivateKey(new SharpRandom());
+
+            byte[] ecdhKey = new PublicKey(calc.Multiply(ephemeral.ToBigInt(), point)).ToByteArray(true);
+            using Sha512 sha512 = new Sha512();
+            byte[] key = sha512.ComputeHash(ecdhKey);
+
+            Aes aes = new AesManaged
+            {
+                KeySize = 128,
+                Key = key.SubArray(16, 16),
+                Mode = CipherMode.CBC,
+                IV = key.SubArray(0, 16),
+                Padding = PaddingMode.PKCS7
+            };
+            using ICryptoTransform encryptor = aes.CreateEncryptor();
+            using MemoryStream encStream = new MemoryStream();
+            using CryptoStream cryptStream = new CryptoStream(encStream, encryptor, CryptoStreamMode.Write);
+            using (StreamWriter swEncrypt = new StreamWriter(cryptStream))
+            {
+                swEncrypt.Write(message);
+            }
+
+            byte[] encrypted = magicBytes.ConcatFast(ephemeral.ToPublicKey().ToByteArray(true)).ConcatFast(encStream.ToArray());
+            using HmacSha256 hmac = new HmacSha256();
+            byte[] mac = hmac.ComputeHash(encrypted, key.SubArray(32));
+
+            return encrypted.ConcatFast(mac).ToBase64();
         }
     }
 }

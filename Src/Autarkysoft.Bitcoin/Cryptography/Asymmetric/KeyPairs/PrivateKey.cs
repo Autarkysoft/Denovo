@@ -9,7 +9,9 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.IO;
 using System.Numerics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
@@ -325,6 +327,71 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             tx.WriteScriptSig(sig, ToPublicKey(), txToSpend, index, redeem);
         }
 
+
+        /// <summary>
+        /// Decrypts messages with this private key using Elliptic Curve Integrated Encryption Scheme (ECIES)
+        /// with AES-128-CBC as cipher and HMAC-SHA256 as MAC.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="encrypted">Encrypted message encoded using Base-64 encoding</param>
+        /// <param name="magic">
+        /// [Default value = BIE1]
+        /// A magic string added to encrypted result before computing its HMAC-SHA256
+        /// </param>
+        /// <returns>Decrypted message encoded using UTF8</returns>
+        public string Decrypt(string encrypted, string magic = "BIE1")
+        {
+            if (encrypted is null)
+                throw new ArgumentNullException(nameof(encrypted), "Encrypted string can not be null.");
+            if (magic is null)
+                throw new ArgumentNullException(nameof(magic), "Magic can not be null.");
+
+            // magic(? or 4) | pubkey(33) | enc(?, at least 16) | mac(32)
+            byte[] encBytes = Convert.FromBase64String(encrypted);
+            if (encBytes.Length < 81 + magic.Length)
+            {
+                throw new FormatException("Invalid encrypted length.");
+            }
+
+            byte[] expectedMagic = encBytes.SubArray(0, magic.Length);
+            byte[] ephemeralPubkeyBytes = encBytes.SubArray(magic.Length, 33);
+            byte[] ciphertext = encBytes.SubArray(33 + magic.Length, encBytes.Length - 32 - (33 + magic.Length));
+            byte[] expectedMac = encBytes.SubArrayFromEnd(32);
+            if (!((Span<byte>)expectedMagic).SequenceEqual(Encoding.UTF8.GetBytes(magic)))
+            {
+                throw new FormatException("Invalid magic bytes.");
+            }
+
+            if (!PublicKey.TryRead(ephemeralPubkeyBytes, out PublicKey ephemeralPubkey))
+            {
+                throw new FormatException("Invalid public key (not on curve or invalid first byte).");
+            }
+
+            byte[] ecdhKey = new PublicKey(calc.Multiply(ToBigInt(), ephemeralPubkey.ToPoint())).ToByteArray(true);
+
+            var key = new Sha512().ComputeHash(ecdhKey);
+
+            using HmacSha256 hmac = new HmacSha256();
+            Span<byte> actualMac = hmac.ComputeHash(encBytes.SubArray(0, encBytes.Length - 32), key.SubArray(32));
+            if (!actualMac.SequenceEqual(expectedMac))
+            {
+                throw new FormatException("Invalid MAC.");
+            }
+
+            Aes aes = new AesManaged
+            {
+                KeySize = 128,
+                Key = key.SubArray(16, 16),
+                Mode = CipherMode.CBC,
+                IV = key.SubArray(0, 16),
+                Padding = PaddingMode.PKCS7
+            };
+            using ICryptoTransform decryptor = aes.CreateDecryptor();
+            using MemoryStream msEncrypt = new MemoryStream(ciphertext);
+            using CryptoStream csDecrypt = new CryptoStream(msEncrypt, decryptor, CryptoStreamMode.Read);
+            using StreamReader srDecrypt = new StreamReader(csDecrypt);
+            return srDecrypt.ReadToEnd();
+        }
 
 
         private bool isDisposed = false;
