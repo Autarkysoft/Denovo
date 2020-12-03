@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
@@ -47,13 +48,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 result.Add(extraMsg);
             }
-            if (settings.Relay)
+            if (settings.IsCatchingUp)
             {
-                result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
+                BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator(10);
+                result.Add(new Message(new GetHeadersPayload(settings.ProtocolVersion, headers, null), settings.Network));
             }
+            else
+            {
+                if (settings.Relay)
+                {
+                    result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
+                }
 
-            result.Add(new Message(new SendHeadersPayload(), settings.Network));
-            result.Add(GetPingMsg());
+                result.Add(new Message(new SendHeadersPayload(), settings.Network));
+                result.Add(GetPingMsg());
+            }
 
             return result.ToArray();
         }

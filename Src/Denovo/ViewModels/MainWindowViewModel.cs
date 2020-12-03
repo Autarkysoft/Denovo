@@ -58,7 +58,11 @@ namespace Denovo.ViewModels
                     Network = network,
                     Blockchain = new MockBlockChain(),
                     Storage = StorageMan,
+                    AcceptIncomingConnections = ConfigVm.Config.AcceptIncoming,
+                    MaxConnectionCount = ConfigVm.Config.MaxConnectionCount,
+                    IsCatchingUp = false // We don't want to sync
                 };
+                
                 WinMan = new WindowManager();
                 connector = new NodeConnector(AllNodes, clientSettings);
                 listener = new NodeListener(AllNodes, clientSettings);
@@ -85,12 +89,19 @@ namespace Denovo.ViewModels
 
         internal class MockBlockChain : IBlockchain
         {
+            private readonly IConsensus consensus = new Consensus();
+
             public int Height => 0;
             public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
             public Target GetTarget(int height) => throw new NotImplementedException();
             public bool ProcessBlock(IBlock block) => true;
             public void ProcessHeaders(BlockHeader[] headers)
             {
+            }
+
+            public BlockHeader[] GetBlockHeaderLocator(int max)
+            {
+                return new BlockHeader[1] { consensus.GetGenesisBlock().Header };
             }
         }
 

@@ -67,6 +67,16 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
+        internal int expectedMaxHeadrLocator = -1;
+        internal BlockHeader[] headerLocatorToReturn;
+        public BlockHeader[] GetBlockHeaderLocator(int max)
+        {
+            Assert.True(expectedMaxHeadrLocator != -1, UnexpectedCall);
+            Assert.True(!(headerLocatorToReturn is null), UnexpectedCall);
+
+            return headerLocatorToReturn;
+        }
+
 #pragma warning restore CS0649 // Field is never assigned to
     }
 }

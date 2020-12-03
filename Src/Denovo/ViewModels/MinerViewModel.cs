@@ -30,7 +30,8 @@ namespace Denovo.ViewModels
                 Relay = false,
                 Network = NetworkType.TestNet,
                 Blockchain = new MockBlockChain(),
-                Storage = new Storage(NetworkType.TestNet)
+                Storage = new Storage(NetworkType.TestNet),
+                IsCatchingUp = false
             };
             connector = new NodeConnector(AllNodes, clientSettings);
         }
@@ -44,6 +45,11 @@ namespace Denovo.ViewModels
             public bool ProcessBlock(IBlock block) => true;
             public void ProcessHeaders(BlockHeader[] headers)
             {
+            }
+
+            public BlockHeader[] GetBlockHeaderLocator(int max)
+            {
+                throw new NotImplementedException();
             }
         }
 

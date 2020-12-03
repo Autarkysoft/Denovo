@@ -45,5 +45,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// </summary>
         /// <param name="headers">An array of block headers</param>
         void ProcessHeaders(BlockHeader[] headers);
+
+        /// <summary>
+        /// Returns an array of <see cref="BlockHeader"/>s from the tip to be used in 
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.GetHeadersPayload"/> for initial sync.
+        /// </summary>
+        /// <param name="max">Maximum number of items to return (min will be 1)</param>
+        /// <returns>An array of <see cref="BlockHeader"/> with at least 1 and at most <paramref name="max"/> items.</returns>
+        BlockHeader[] GetBlockHeaderLocator(int max);
     }
 }

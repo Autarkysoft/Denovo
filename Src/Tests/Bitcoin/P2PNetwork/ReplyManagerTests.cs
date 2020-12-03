@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
@@ -13,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Tests.Bitcoin.Blockchain;
+using Tests.Bitcoin.Blockchain.Blocks;
 using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
@@ -501,11 +503,14 @@ namespace Tests.Bitcoin.P2PNetwork
         public static IEnumerable<object[]> GetVerackCases()
         {
             var cs = new MockClientSettings();
+            int mockProtoVer = 674;
             ulong feeRateSat = 123456;
             ulong feeRateKiloSat = 123456_000;
             var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
             var ping = new Message(new PingPayload(RngReturnValue), NetworkType.MainNet);
             var sendHdr = new Message(new SendHeadersPayload(), NetworkType.MainNet);
+            BlockHeader hdr = BlockHeaderTests.GetSampleBlockHeader();
+            var getHdrs = new Message(new GetHeadersPayload(mockProtoVer, new BlockHeader[] { hdr }, null), NetworkType.MainNet);
 
             yield return new object[]
             {
@@ -525,10 +530,35 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
+                    _catchup = false,
                     _relay = true,
                     _fee = feeRateSat
                 },
                 new Message[] { feeFilter, sendHdr, ping }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true,
+                    _protoVer = mockProtoVer,
+                    _bchain = new MockBlockchain()
+                    {
+                        expectedMaxHeadrLocator = 10,
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                    _relay = true,
+                    _fee = feeRateSat
+                },
+                new Message[] { getHdrs }
             };
             yield return new object[]
             {
@@ -562,6 +592,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
+                    _catchup = false,
                     _relay = true,
                     _fee = feeRateSat
                 },
@@ -579,6 +610,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
+                    _catchup = false,
                     _relay = false, // No relay won't send FeeFilter
                 },
                 new Message[] { sendHdr, ping }
@@ -632,6 +664,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public static IEnumerable<object[]> GetVersionCases()
         {
+            int mockProtoVer = 527;
             var cs = new MockClientSettings()
             {
                 _protoVer = 123,
@@ -655,6 +688,8 @@ namespace Tests.Bitcoin.P2PNetwork
             var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
             var ping = new Message(new PingPayload(RngReturnValue), NetworkType.MainNet);
             var sendHdr = new Message(new SendHeadersPayload(), NetworkType.MainNet);
+            BlockHeader hdr = BlockHeaderTests.GetSampleBlockHeader();
+            var getHdrs = new Message(new GetHeadersPayload(mockProtoVer, new BlockHeader[] { hdr }, null), NetworkType.MainNet);
 
             yield return new object[]
             {
@@ -707,8 +742,35 @@ namespace Tests.Bitcoin.P2PNetwork
                     _netType = cs._netType,
                     _bchain = cs._bchain,
                     _relay = false, // No relay won't sent FeeFilter
+                    _catchup = false,
                 },
                 msg, new Message[] { verak, sendHdr, ping }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus(verPl)
+                {
+                    _handShakeToReturn = HandShakeState.SentAndConfirmed,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _protoVer = mockProtoVer,
+                    _services = cs._services,
+                    _time = cs._time,
+                    _port = cs._port,
+                    _ua = cs._ua,
+                    _netType = cs._netType,
+                    _bchain = new MockBlockchain()
+                    {
+                        expectedMaxHeadrLocator = 10,
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                    _catchup = true,
+                },
+                msg, new Message[] { verak, getHdrs }
             };
             yield return new object[]
             {
@@ -729,7 +791,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _netType = cs._netType,
                     _bchain = cs._bchain,
                     _relay = true, // With relay there should be a FeeFilter
-                    _fee = feeRateSat
+                    _fee = feeRateSat,
+                    _catchup = false
                 },
                 msg, new Message[] { verak, feeFilter, sendHdr, ping }
             };
