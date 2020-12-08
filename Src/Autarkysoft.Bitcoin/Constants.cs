@@ -133,5 +133,13 @@ namespace Autarkysoft.Bitcoin
         /// Maximum allowed number of items in the <see cref="P2PNetwork.Messages.MessagePayloads.AddrPayload.Addresses"/> list
         /// </summary>
         public const int MaxAddrCount = 1000;
+        /// <summary>
+        /// Maximum number of hashes allowed in located used in <see cref="P2PNetwork.Messages.MessagePayloads.GetHeadersPayload"/>
+        /// and <see cref="P2PNetwork.Messages.MessagePayloads.GetBlocksPayload"/>
+        /// </summary>
+        /// <remarks>
+        /// https://github.com/bitcoin/bitcoin/blob/81d5af42f4dba5b68a597536cad7f61894dc22a3/src/net_processing.cpp#L71-L72
+        /// </remarks>
+        public const int MaxLocatorCount = 101;
     }
 }
