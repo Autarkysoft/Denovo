@@ -1,9 +1,8 @@
-﻿// Denovo
+﻿// Autarkysoft.Bitcoin
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
@@ -15,10 +14,16 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace Denovo.Services
+namespace Autarkysoft.Bitcoin
 {
+    /// <summary>
+    /// Implementation of a full verifying node
+    /// </summary>
     public class FullClient
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="FullClient"/> with default properties.
+        /// </summary>
         public FullClient()
         {
             AllNodes = new NodePool(Settings.MaxConnectionCount);
@@ -26,6 +31,11 @@ namespace Denovo.Services
             Rng = new RandomNonceGenerator();
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="FullClient"/> using the given parameters.
+        /// </summary>
+        /// <param name="settings">Client settings</param>
+        /// <param name="nodes">Node pool</param>
         public FullClient(IClientSettings settings, NodePool nodes)
         {
             Settings = settings;
@@ -43,10 +53,25 @@ namespace Denovo.Services
 
         private const int DnsDigCount = 3;
 
+        /// <summary>
+        /// List of all nodes (peers) connected to this client.
+        /// </summary>
         public NodePool AllNodes { get; set; }
+        /// <summary>
+        /// Settings used in this client
+        /// </summary>
         public IClientSettings Settings { get; set; }
+        /// <summary>
+        /// Blockchain
+        /// </summary>
         public IBlockchain Blockchain { get; set; }
+        /// <summary>
+        /// Storage instance
+        /// </summary>
         public IStorage Storage { get; set; }
+        /// <summary>
+        /// A weak random number generator
+        /// </summary>
         public IRandomNonceGenerator Rng { get; set; }
 
 
@@ -79,7 +104,9 @@ namespace Denovo.Services
             return result.ToArray();
         }
 
-
+        /// <summary>
+        /// Start this client by selecting a random peer's IP address and connecting to it.
+        /// </summary>
         public async void Start()
         {
             // When client starts, whether the blockchain is not synced at all (0 blocks) or partly synced (some blocks) or

@@ -1,9 +1,8 @@
-﻿// Denovo
+﻿// Autarkysoft.Bitcoin
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.P2PNetwork;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,21 +11,38 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 
-namespace Denovo.Services
+namespace Autarkysoft.Bitcoin.P2PNetwork
 {
     /// <summary>
     /// Thread safe observable collection of <see cref="Node"/>s.
     /// </summary>
     public class NodePool : IList<Node>, INotifyCollectionChanged, INotifyPropertyChanged, IDisposable
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="NodePool"/> with default capacity of 10 and
+        /// current SynchronizationContext.
+        /// </summary>
         public NodePool() : this(10)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="NodePool"/> with the specified initial capacity and
+        /// current SynchronizationContext.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="capacity">Initial capacity to use</param>
         public NodePool(int capacity) : this(capacity, SynchronizationContext.Current)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="NodePool"/> using the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="capacity"></param>
+        /// <param name="c"></param>
         public NodePool(int capacity, SynchronizationContext c)
         {
             if (capacity < 0)
@@ -43,10 +59,11 @@ namespace Denovo.Services
         private int size, version;
         private readonly SynchronizationContext context;
         private readonly object lockObj = new object();
-        private readonly SemaphoreSlim monitor = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim monitor = new SemaphoreSlim(1, 1);
 
-
+        /// <inheritdoc/>
         public event NotifyCollectionChangedEventHandler CollectionChanged;
+        /// <inheritdoc/>
         protected event PropertyChangedEventHandler PropertyChanged;
         event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged
         {
@@ -121,6 +138,7 @@ namespace Denovo.Services
         }
 
 
+        /// <inheritdoc/>
         public Node this[int index]
         {
             get
@@ -143,6 +161,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public int Count
         {
             get
@@ -154,30 +173,11 @@ namespace Denovo.Services
             }
         }
 
-        public bool IsFixedSize => false;
+        /// <inheritdoc/>
         public bool IsReadOnly => false;
-        // TODO: should this be set to false and SyncRoot to throw exception?
-        public bool IsSynchronized => true;
 
 
-        private object _syncRoot;
-        public object SyncRoot
-        {
-            get
-            {
-                if (_syncRoot is null)
-                {
-                    lock (lockObj)
-                    {
-                        _syncRoot = items.SyncRoot;
-                    }
-                }
-
-                return _syncRoot;
-            }
-        }
-
-
+        /// <inheritdoc/>
         public void Add(Node item)
         {
             lock (lockObj)
@@ -213,6 +213,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public void Clear()
         {
             lock (lockObj)
@@ -227,6 +228,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public bool Contains(Node item)
         {
             lock (lockObj)
@@ -235,6 +237,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public void CopyTo(Node[] array, int arrayIndex)
         {
             lock (lockObj)
@@ -243,6 +246,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public int IndexOf(Node item)
         {
             lock (lockObj)
@@ -252,6 +256,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public void Insert(int index, Node item)
         {
             lock (lockObj)
@@ -273,6 +278,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public bool Remove(Node item)
         {
             lock (lockObj)
@@ -298,6 +304,7 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public void RemoveAt(int index)
         {
             lock (lockObj)
@@ -318,17 +325,36 @@ namespace Denovo.Services
             }
         }
 
+        /// <inheritdoc/>
         public IEnumerator<Node> GetEnumerator() => new Enumerator<Node>(this);
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        /// <inheritdoc/>
         public void Dispose()
         {
-            ((IDisposable)monitor).Dispose();
+            lock (lockObj)
+            {
+                if (!(items is null))
+                {
+                    foreach (var item in items)
+                    {
+                        item.Dispose();
+                    }
+                    items = null;
+                }
+            }
+            if (!(monitor is null))
+            {
+                monitor.Dispose();
+                monitor = null;
+            }
         }
 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public struct Enumerator<T> : IEnumerator<T>, IEnumerator where T : Node
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             internal Enumerator(NodePool pool)
             {
@@ -343,6 +369,7 @@ namespace Denovo.Services
             private int index;
             private readonly int version;
 
+            /// <inheritdoc/>
             public bool MoveNext()
             {
                 var localList = list;
@@ -368,6 +395,7 @@ namespace Denovo.Services
                 return false;
             }
 
+            /// <inheritdoc/>
             public T Current { get; private set; }
 
             object IEnumerator.Current
@@ -393,7 +421,7 @@ namespace Denovo.Services
                 Current = default;
             }
 
-
+            /// <inheritdoc/>
             public void Dispose()
             {
             }
