@@ -50,7 +50,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
             if (settings.IsCatchingUp)
             {
-                BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator(10);
+                BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator();
+                if (headers.Length > GetHeadersPayload.MaximumHashes)
+                {
+                    // This should never happen but since IBlockchain is a dependency we have to check it here
+                    // to prevent an exception being thrown.
+                    BlockHeader[] temp = new BlockHeader[GetHeadersPayload.MaximumHashes];
+                    Array.Copy(headers, 0, temp, 0, temp.Length);
+                    headers = temp;
+                }
                 result.Add(new Message(new GetHeadersPayload(settings.ProtocolVersion, headers, null), settings.Network));
             }
             else
@@ -274,7 +282,20 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.GetHeaders:
                     if (Deser(msg.PayloadData, out GetHeadersPayload getHdrs))
                     {
+                        BlockHeader[] hds = settings.Blockchain.GetMissingHeaders(getHdrs.Hashes, getHdrs.StopHash);
+                        if (!(hds is null))
+                        {
+                            if (hds.Length > HeadersPayload.MaxCount)
+                            {
+                                // This should never happen but since IBlockchain is a dependency we have to check it here
+                                // to prevent an exception being thrown.
+                                BlockHeader[] temp = new BlockHeader[HeadersPayload.MaxCount];
+                                Array.Copy(hds, 0, temp, 0, temp.Length);
+                                hds = temp;
+                            }
 
+                            result = new Message[1] { new Message(new HeadersPayload(hds), settings.Network) };
+                        }
                     }
                     break;
                 case PayloadType.Headers:

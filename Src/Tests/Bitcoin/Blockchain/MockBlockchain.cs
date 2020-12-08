@@ -67,14 +67,32 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        internal int expectedMaxHeadrLocator = -1;
         internal BlockHeader[] headerLocatorToReturn;
-        public BlockHeader[] GetBlockHeaderLocator(int max)
+        public BlockHeader[] GetBlockHeaderLocator()
         {
-            Assert.True(expectedMaxHeadrLocator != -1, UnexpectedCall);
             Assert.True(!(headerLocatorToReturn is null), UnexpectedCall);
-
             return headerLocatorToReturn;
+        }
+
+        internal BlockHeader[] missingHeadersToReturn;
+        internal byte[][] expCompareHashes;
+        internal byte[] expStopHash;
+        public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
+        {
+            Assert.False(expCompareHashes is null, UnexpectedCall);
+            Assert.False(expStopHash is null, UnexpectedCall);
+            Assert.False(missingHeadersToReturn is null, UnexpectedCall);
+            Assert.False(hashesToCompare is null, UnexpectedCall);
+            Assert.False(stopHash is null, UnexpectedCall);
+
+            Assert.Equal(expCompareHashes.Length, hashesToCompare.Length);
+            for (int i = 0; i < expCompareHashes.Length; i++)
+            {
+                Assert.Equal(expCompareHashes[i], hashesToCompare[i]);
+            }
+            Assert.Equal(expStopHash, stopHash);
+
+            return missingHeadersToReturn;
         }
 
 #pragma warning restore CS0649 // Field is never assigned to

@@ -47,7 +47,12 @@ namespace Denovo.ViewModels
             {
             }
 
-            public BlockHeader[] GetBlockHeaderLocator(int max)
+            public BlockHeader[] GetBlockHeaderLocator()
+            {
+                throw new NotImplementedException();
+            }
+
+            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
             {
                 throw new NotImplementedException();
             }

@@ -50,8 +50,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Returns an array of <see cref="BlockHeader"/>s from the tip to be used in 
         /// <see cref="P2PNetwork.Messages.MessagePayloads.GetHeadersPayload"/> for initial sync.
         /// </summary>
-        /// <param name="max">Maximum number of items to return (min will be 1)</param>
-        /// <returns>An array of <see cref="BlockHeader"/> with at least 1 and at most <paramref name="max"/> items.</returns>
-        BlockHeader[] GetBlockHeaderLocator(int max);
+        /// <returns>An array of <see cref="BlockHeader"/> with at least 1 item.</returns>
+        BlockHeader[] GetBlockHeaderLocator();
+        /// <summary>
+        /// Compares this client's local header list with the given hashes and will return headers that are missing.
+        /// </summary>
+        /// <param name="hashesToCompare">Header hashes to compare with local headers</param>
+        /// <param name="stopHash">Hash of the header to stop at</param>
+        /// <returns>An array of missing block headers</returns>
+        BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash);
     }
 }

@@ -552,7 +552,6 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     _bchain = new MockBlockchain()
                     {
-                        expectedMaxHeadrLocator = 10,
                         headerLocatorToReturn = new BlockHeader[] { hdr }
                     },
                     _relay = true,
@@ -765,7 +764,6 @@ namespace Tests.Bitcoin.P2PNetwork
                     _netType = cs._netType,
                     _bchain = new MockBlockchain()
                     {
-                        expectedMaxHeadrLocator = 10,
                         headerLocatorToReturn = new BlockHeader[] { hdr }
                     },
                     _catchup = true,

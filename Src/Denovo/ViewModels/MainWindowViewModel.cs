@@ -38,7 +38,7 @@ namespace Denovo.ViewModels
                 // Later this has to be passed as a command line args that initializes this VM
                 // Right now TestNet is used for security reasons (project being in beta)
                 //      string[] arguments = Environment.GetCommandLineArgs();
-                var network = NetworkType.TestNet;
+                var network = NetworkType.MainNet;
                 port = network switch
                 {
                     NetworkType.MainNet => Constants.MainNetPort,
@@ -60,9 +60,9 @@ namespace Denovo.ViewModels
                     Storage = StorageMan,
                     AcceptIncomingConnections = ConfigVm.Config.AcceptIncoming,
                     MaxConnectionCount = ConfigVm.Config.MaxConnectionCount,
-                    IsCatchingUp = false // We don't want to sync
+                    IsCatchingUp = true // We don't want to sync
                 };
-                
+
                 WinMan = new WindowManager();
                 connector = new NodeConnector(AllNodes, clientSettings);
                 listener = new NodeListener(AllNodes, clientSettings);
@@ -99,9 +99,14 @@ namespace Denovo.ViewModels
             {
             }
 
-            public BlockHeader[] GetBlockHeaderLocator(int max)
+            public BlockHeader[] GetBlockHeaderLocator()
             {
-                return new BlockHeader[1] { consensus.GetGenesisBlock().Header };
+                throw new NotImplementedException();
+            }
+
+            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
+            {
+                throw new NotImplementedException();
             }
         }
 
