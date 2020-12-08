@@ -35,7 +35,7 @@ namespace Denovo.Services
     /// </summary>
     public class Storage : IDenovoStorage
     {
-        public Storage(NetworkType netType, IFileManager fileManager = null)
+        public Storage(NetworkType netType, IDenovoFileManager fileManager = null)
         {
             fileMan = fileManager ?? new FileManager(netType);
             network = netType;
@@ -43,7 +43,7 @@ namespace Denovo.Services
 
 
         private readonly NetworkType network;
-        private readonly IFileManager fileMan;
+        private readonly IDenovoFileManager fileMan;
 
         private HashSet<NetworkAddressWithTime> localAddrs;
         private readonly object addrLock = new object();

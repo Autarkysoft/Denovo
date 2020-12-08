@@ -12,7 +12,7 @@ using System.Text.Json;
 
 namespace Denovo.Services
 {
-    public class FileManager : IFileManager
+    public class FileManager : IDenovoFileManager
     {
         /// <exception cref="UnauthorizedAccessException"/>
         public FileManager(NetworkType netType)
