@@ -1,5 +1,18 @@
 ### Next release
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.1.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.7.0.0...master)
+
+### Release 0.7.0 (2020-12-09)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.1.0...B0.7.0.0)
+* Introduce FullClient
+* Add an implementation of `IBlockchain`
+* Add NodePool (a thread safe observable collection of `Node`s)
+* Introduce `IFileManager` (planning to remove IStorage entirely)
+* Add ECIES, new methods to encrypt and decrypt messages with Elliptic Curve Integrated Encryption Scheme
+* String normalization method used by Electrum mnemonic is now `public static`
+* IConsensus instance can now build genesis blocks
+* Some additional node violation cases
+* Some improvements in `ReplyManager`
+* Various code improvements, optimization, bug fixes and some tests
 
 ### Release 0.6.1 (2020-11-03)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.0.0...B0.6.1.0)
