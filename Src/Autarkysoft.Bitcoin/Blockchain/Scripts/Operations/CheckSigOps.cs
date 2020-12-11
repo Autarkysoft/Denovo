@@ -165,7 +165,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            if (n < 0 || n > 20)
+            if (n < 0 || n > Constants.MaxMultisigPubkeyCount)
             {
                 error = "Invalid number of public keys in multi-sig.";
                 return false;

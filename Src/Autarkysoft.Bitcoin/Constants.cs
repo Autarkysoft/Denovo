@@ -79,6 +79,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int MaxSigOpCount = 80_000;
         /// <summary>
+        /// Maximum allowed number of public keys per script
+        /// </summary>
+        public const int MaxMultisigPubkeyCount = 20;
+        /// <summary>
         /// The factor by which values (eg. size, SigOpCount, ...) are multiplied 
         /// </summary>
         public const int WitnessScaleFactor = 4;
