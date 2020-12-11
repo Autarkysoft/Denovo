@@ -37,6 +37,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private const string HeadersFile = "Headers";
         private readonly List<BlockHeader> headers;
+        private readonly object mainLock = new object();
 
         /// <summary>
         /// File manager responsible for handling data
@@ -63,14 +64,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
             else
             {
-                var result = new BlockHeader[hadba.Length / Constants.BlockHeaderSize];
+                int count = hadba.Length / Constants.BlockHeaderSize;
                 var stream = new FastStreamReader(hadba);
-                for (int i = 0; i < result.Length; i++)
+                for (int i = 0; i < count; i++)
                 {
                     var temp = new BlockHeader();
                     if (temp.TryDeserialize(stream, out _))
                     {
-                        result[i] = temp;
+                        headers.Add(temp);
                     }
                     else
                     {
@@ -121,7 +122,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         public void ProcessHeaders(BlockHeader[] headers)
         {
+            lock (mainLock)
+            {
 
+            }
 
             throw new NotImplementedException();
         }
@@ -156,47 +160,50 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
         {
-            int index = -1;
-            if (hashesToCompare.Length == 0)
+            lock (mainLock)
             {
-                index = headers.FindIndex(x => ((ReadOnlySpan<byte>)stopHash).SequenceEqual(x.GetHash()));
-                if (index < 0)
+                int index = -1;
+                if (hashesToCompare.Length == 0)
                 {
-                    return null;
-                }
-            }
-            else
-            {
-                // hash order is from biggest height to the lowest
-                foreach (byte[] item in hashesToCompare)
-                {
-                    index = headers.FindIndex(x => ((ReadOnlySpan<byte>)item).SequenceEqual(x.GetHash()));
-                    if (index >= 0)
+                    index = headers.FindIndex(x => ((ReadOnlySpan<byte>)stopHash).SequenceEqual(x.GetHash()));
+                    if (index < 0)
                     {
-                        // If the biggest height hash is found the lower ones must be the same (skip checking).
+                        return null;
+                    }
+                }
+                else
+                {
+                    // hash order is from biggest height to the lowest
+                    foreach (byte[] item in hashesToCompare)
+                    {
+                        index = headers.FindIndex(x => ((ReadOnlySpan<byte>)item).SequenceEqual(x.GetHash()));
+                        if (index >= 0)
+                        {
+                            // If the biggest height hash is found the lower ones must be the same (skip checking).
+                            break;
+                        }
+                    }
+                }
+
+                if (index == -1)
+                {
+                    // If no common hash were found, we fall back to genesis block (block at index 0)
+                    index = 0;
+                }
+
+                var result = new List<BlockHeader>(HeadersPayload.MaxCount);
+                while (result.Count < HeadersPayload.MaxCount && index < headers.Count)
+                {
+                    BlockHeader toAdd = headers[index++];
+                    result.Add(toAdd);
+                    if (((ReadOnlySpan<byte>)stopHash).SequenceEqual(toAdd.GetHash()))
+                    {
                         break;
                     }
                 }
-            }
 
-            if (index == -1)
-            {
-                // If no common hash were found, we fall back to genesis block (block at index 0)
-                index = 0;
+                return result.ToArray();
             }
-
-            var result = new List<BlockHeader>(HeadersPayload.MaxCount);
-            while (result.Count < HeadersPayload.MaxCount && index < headers.Count)
-            {
-                BlockHeader toAdd = headers[index++];
-                result.Add(toAdd);
-                if (((ReadOnlySpan<byte>)stopHash).SequenceEqual(toAdd.GetHash()))
-                {
-                    break;
-                }
-            }
-
-            return result.ToArray();
         }
     }
 }
