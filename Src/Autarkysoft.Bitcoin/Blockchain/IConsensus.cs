@@ -72,6 +72,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         bool IsSegWitEnabled { get; }
 
         /// <summary>
+        /// Minimum allowed block version
+        /// </summary>
+        int MinBlockVersion { get; }
+
+        /// <summary>
         /// Builds and returns the genesis block based on <see cref="NetworkType"/>.
         /// </summary>
         /// <returns>Genesis block</returns>

@@ -114,6 +114,21 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         [Theory]
+        [InlineData(1, 1)]
+        [InlineData(227930, 1)]
+        [InlineData(227931, 2)] // BIP-34
+        [InlineData(363724, 2)]
+        [InlineData(363725, 3)] // BIP-66
+        [InlineData(388380, 3)]
+        [InlineData(388381, 4)] // BIP-65
+        [InlineData(600000, 4)] // BIP-65
+        public void MinBlockVersion(int height, int expected)
+        {
+            Consensus cs = new Consensus(height, NetworkType.MainNet);
+            Assert.Equal(expected, cs.MinBlockVersion);
+        }
+
+        [Theory]
         [InlineData(NetworkType.MainNet, "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")]
         [InlineData(NetworkType.TestNet, "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")]
         [InlineData(NetworkType.RegTest, "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")]

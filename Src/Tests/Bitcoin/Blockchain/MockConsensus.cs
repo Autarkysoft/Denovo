@@ -126,6 +126,16 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
+        internal int? _minVer;
+        public int MinBlockVersion
+        {
+            get
+            {
+                Assert.True(_minVer.HasValue, UnexpectedCall);
+                return _minVer.Value;
+            }
+        }
+
         internal IBlock _genesis;
         public IBlock GetGenesisBlock()
         {

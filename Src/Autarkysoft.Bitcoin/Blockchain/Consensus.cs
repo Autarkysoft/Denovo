@@ -38,8 +38,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="netType">Network type</param>
         public Consensus(int height, NetworkType netType)
         {
-            BlockHeight = height;
-
             // https://github.com/bitcoin/bitcoin/blob/544709763e1f45148d1926831e07ff03487673ee/src/chainparams.cpp
             switch (netType)
             {
@@ -77,11 +75,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     throw new ArgumentException("Network type is not defined.");
             }
 
+            BlockHeight = height;
             network = netType;
         }
 
 
         private readonly int bip16, bip34, bip65, bip66, bip112, seg;
+        private int minBlkVer;
         private readonly NetworkType network;
         private int _height;
 
@@ -96,6 +96,23 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     throw new ArgumentOutOfRangeException(nameof(BlockHeight), "Block height can not be negative.");
 
                 _height = value;
+
+                if (value >= bip65)
+                {
+                    minBlkVer = 4;
+                }
+                else if (value >= bip66)
+                {
+                    minBlkVer = 3;
+                }
+                else if (value >= bip34)
+                {
+                    minBlkVer = 2;
+                }
+                else
+                {
+                    minBlkVer = 1;
+                }
             }
         }
 
@@ -146,6 +163,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         /// <inheritdoc/>
         public bool IsSegWitEnabled => BlockHeight >= seg;
+
+        /// <inheritdoc/>
+        public int MinBlockVersion => minBlkVer;
 
 
         /// <inheritdoc/>
