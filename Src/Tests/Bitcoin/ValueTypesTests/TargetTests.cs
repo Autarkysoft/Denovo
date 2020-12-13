@@ -15,26 +15,43 @@ namespace Tests.Bitcoin.ValueTypesTests
     public class TargetTests
     {
         private const uint Example = 0x1d00ffffU;
+        private const uint NotNegative = 0x00800000U;
 
         [Fact]
         public void ConstructorTests()
         {
-            Target ti = new Target(Example);
-            Target tu = new Target((int)Example);
-            Helper.ComparePrivateField(ti, "value", Example);
-            Helper.ComparePrivateField(tu, "value", Example);
+            Target ti1 = new Target((int)Example);
+            Target tu1 = new Target(Example);
+            Helper.ComparePrivateField(ti1, "value", Example);
+            Helper.ComparePrivateField(tu1, "value", Example);
+
+            Target ti2 = new Target(0);
+            Target tu2 = new Target(0U);
+            Helper.ComparePrivateField(ti2, "value", 0U);
+            Helper.ComparePrivateField(tu2, "value", 0U);
 
             int negI = -1;
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(negI));
             Assert.Contains("Target value can not be negative.", ex.Message);
-
-            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(0x2100ffff));
-            Assert.Contains("Target is only defined for 256 bit numbers, so the first byte can not be bigger than 32.", ex.Message);
-
-            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(0));
-            Assert.Contains("First byte of target can not be smaller than 3.", ex.Message);
         }
 
+        [Theory]
+        [InlineData(0x04800001U, true)]
+        [InlineData(0x23000001U, false)]
+        [InlineData(0x22000100U, false)]
+        [InlineData(0x21010000U, false)]
+        public void Constructor_ExceptionTests(uint val, bool isNeg)
+        {
+            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(val));
+            if (isNeg)
+            {
+                Assert.Contains("Target value can not be negative.", ex.Message);
+            }
+            else
+            {
+                Assert.Contains("Target is defined as a 256-bit number (value overflow).", ex.Message);
+            }
+        }
 
         public static IEnumerable<object[]> GetReadCases()
         {
@@ -42,6 +59,27 @@ namespace Tests.Bitcoin.ValueTypesTests
             yield return new object[] { new byte[] { 0xff, 0xff, 0x00, 0x1d, 0x00, 0xff }, 0x1d00ffffU };
             yield return new object[] { new byte[] { 0xcb, 0x04, 0x04, 0x1b }, 0x1b0404cbU };
             yield return new object[] { new byte[] { 0x9b, 0x0d, 0x1f, 0x17 }, 387911067U }; // 0x171f0d9b from block #586540
+
+            yield return new object[] { new byte[] { 0x00, 0x00, 0x80, 0x00 }, 0x00800000U };
+
+            yield return new object[] { new byte[] { 0, 0, 0, 0 }, 0 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x12, 0x00 }, 0x00123456 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x00, 0x01 }, 0x01003456 };
+            yield return new object[] { new byte[] { 0x56, 0x00, 0x00, 0x02 }, 0x02000056 };
+            yield return new object[] { new byte[] { 0x00, 0x00, 0x00, 0x03 }, 0x03000000 };
+            yield return new object[] { new byte[] { 0x00, 0x00, 0x00, 0x04 }, 0x04000000 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x92, 0x00 }, 0x00923456 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x80, 0x01 }, 0x01803456 };
+            yield return new object[] { new byte[] { 0x56, 0x00, 0x80, 0x02 }, 0x02800056 };
+            yield return new object[] { new byte[] { 0x00, 0x00, 0x80, 0x03 }, 0x03800000 };
+            yield return new object[] { new byte[] { 0x00, 0x00, 0x80, 0x04 }, 0x04800000 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x12, 0x01 }, 0x01123456 };
+            yield return new object[] { new byte[] { 0x00, 0x80, 0x00, 0x02 }, 0x02008000 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x12, 0x02 }, 0x02123456 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x12, 0x03 }, 0x03123456 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x12, 0x04 }, 0x04123456 };
+            yield return new object[] { new byte[] { 0x34, 0x92, 0x00, 0x05 }, 0x05009234 };
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x12, 0x20 }, 0x20123456 };
         }
         [Theory]
         [MemberData(nameof(GetReadCases))]
@@ -62,15 +100,43 @@ namespace Tests.Bitcoin.ValueTypesTests
             yield return new object[] { new byte[] { 0xcb }, 0, Err.EndOfStream };
             yield return new object[]
             {
-                new byte[] { 0xcb, 0x04, 0x04, 0x21 },
+                new byte[] { 0x01, 0x00, 0x80, 0x04 },
                 4,
-                "Target is only defined for 256 bit numbers, so the first byte can not be bigger than 32."
+                "Target can not be negative."
             };
             yield return new object[]
             {
-                new byte[] { 0xcb, 0x04, 0x04, 0x02 },
+                new byte[] { 0x01, 0x00, 0x80, 0x03 },
                 4,
-                "Target's first byte can not be smaller than 3."
+                "Target can not be negative."
+            };
+            yield return new object[]
+            {
+                new byte[] { 0x00, 0x01, 0x80, 0x02 },
+                4,
+                "Target can not be negative."
+            };
+
+            yield return new object[]
+            {
+                // 0x01fedcba
+                new byte[] { 0xba, 0xdc, 0xfe, 0x01 },
+                4,
+                "Target can not be negative."
+            };
+            yield return new object[]
+            {
+                // 0x04923456
+                new byte[] { 0x56, 0x34, 0x92, 0x04 },
+                4,
+                "Target can not be negative."
+            };
+            yield return new object[]
+            {
+                // 0xff123456
+                new byte[] { 0x56, 0x34, 0x12, 0xff },
+                4,
+                "Target is defined as a 256-bit number (value overflow)."
             };
         }
 
@@ -84,7 +150,7 @@ namespace Tests.Bitcoin.ValueTypesTests
             Assert.False(b);
             Assert.Equal(expError, error);
             Helper.ComparePrivateField(stream, "position", finalPos);
-            Helper.ComparePrivateField(actual, "value", 0x03_00_00_00U);
+            Helper.ComparePrivateField(actual, "value", 0U);
         }
 
         [Fact]
@@ -94,18 +160,35 @@ namespace Tests.Bitcoin.ValueTypesTests
 
             Assert.False(b);
             Assert.Equal("Stream can not be null.", error);
-            Helper.ComparePrivateField(actual, "value", 0x03_00_00_00U);
+            Helper.ComparePrivateField(actual, "value", 0U);
         }
 
 
-        [Fact]
-        public void ToBigIntTest()
+        [Theory]
+        [InlineData(0x1d00ffff, "00000000FFFF0000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x00000000, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x00123456, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x01003456, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x02000056, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x03000000, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x04000000, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x00923456, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x01803456, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x02800056, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x03800000, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x04800000, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x01123456, "0000000000000000000000000000000000000000000000000000000000000012")]
+        [InlineData(0x02123456, "0000000000000000000000000000000000000000000000000000000000001234")]
+        [InlineData(0x03123456, "0000000000000000000000000000000000000000000000000000000000123456")]
+        [InlineData(0x04123456, "0000000000000000000000000000000000000000000000000000000012345600")]
+        [InlineData(0x05009234, "0000000000000000000000000000000000000000000000000000000092340000")]
+        [InlineData(0x20123456, "1234560000000000000000000000000000000000000000000000000000000000")]
+        public void ToBigIntTest(uint val, string hex)
         {
-            Target tar = new Target(0x1d00ffffU);
+            Target tar = new Target(val);
 
             BigInteger actual = tar.ToBigInt();
-            BigInteger expected = BigInteger.Parse("00000000FFFF0000000000000000000000000000000000000000000000000000",
-                                                   NumberStyles.HexNumber);
+            BigInteger expected = BigInteger.Parse(hex, NumberStyles.HexNumber);
 
             Assert.Equal(expected, actual);
         }
@@ -124,24 +207,35 @@ namespace Tests.Bitcoin.ValueTypesTests
             Assert.Equal(expected, actual);
         }
 
-        [Fact]
-        public void ToUInt32ArrayTest1()
+        public static IEnumerable<object[]> GetToUintCases()
         {
-            Target tar = new Target(0x1b0404cbU);
-
-            uint[] actual = tar.ToUInt32Array();
-            uint[] expected = { 0, 0x000404cb, 0, 0, 0, 0, 0, 0 };
-
-            Assert.Equal(expected, actual);
+            yield return new object[] { 0, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x00123456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x01003456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x02000056, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x03000000, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x04000000, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x00923456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x01803456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x02800056, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x03800000, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x04800000, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x01123456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0x00000012 } };
+            yield return new object[] { 0x02123456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0x00001234 } };
+            yield return new object[] { 0x03123456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0x00123456 } };
+            yield return new object[] { 0x04123456, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0x12345600 } };
+            yield return new object[] { 0x05009234, new uint[] { 0, 0, 0, 0, 0, 0, 0, 0x92340000 } };
+            yield return new object[] { 0x20123456, new uint[] { 0x12345600, 0, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x1d00ffff, new uint[] { 0, 0xffff0000, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x1b0404cbU, new uint[] { 0, 0x000404cb, 0, 0, 0, 0, 0, 0 } };
+            yield return new object[] { 0x090404cbU, new uint[] { 0, 0, 0, 0, 0, 0x000004, 0x04cb0000, 0 } };
         }
-        [Fact]
-        public void ToUInt32ArrayTest2()
+        [Theory]
+        [MemberData(nameof(GetToUintCases))]
+        public void ToUInt32ArrayTest(uint val, uint[] expected)
         {
-            Target tar = new Target(0x090404cbU);
-
+            Target tar = new Target(val);
             uint[] actual = tar.ToUInt32Array();
-            uint[] expected = { 0, 0, 0, 0, 0, 0x000004, 0x04cb0000, 0 };
-
             Assert.Equal(expected, actual);
         }
 

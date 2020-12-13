@@ -5,6 +5,7 @@
 
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin
 {
@@ -24,7 +25,18 @@ namespace Autarkysoft.Bitcoin
         {
             if (val < 0)
                 throw new ArgumentOutOfRangeException(nameof(val), "Target value can not be negative.");
-            CheckFirstByte((uint)val);
+
+            int firstByte = val >> 24;
+            uint masked = (uint)(val & 0x007fffff);
+            if (firstByte <= 3)
+            {
+                masked >>= 8 * (3 - firstByte);
+            }
+
+            if (IsNegative(masked, (uint)val))
+                throw new ArgumentOutOfRangeException(nameof(val), "Target value can not be negative.");
+            if (WillOverflow(firstByte, masked))
+                throw new ArgumentOutOfRangeException(nameof(val), "Target is defined as a 256-bit number (value overflow).");
 
             value = (uint)val;
         }
@@ -36,9 +48,32 @@ namespace Autarkysoft.Bitcoin
         /// <param name="val">Value to use</param>
         public Target(uint val)
         {
-            CheckFirstByte(val);
+            int firstByte = (int)(val >> 24);
+            uint masked = val & 0x007fffff;
+            if (firstByte <= 3)
+            {
+                masked >>= 8 * (3 - firstByte);
+            }
+
+            if (IsNegative(masked, val))
+                throw new ArgumentOutOfRangeException(nameof(val), "Target value can not be negative.");
+            if (WillOverflow(firstByte, masked))
+                throw new ArgumentOutOfRangeException(nameof(val), "Target is defined as a 256-bit number (value overflow).");
 
             value = val;
+        }
+
+
+        private Target(uint val, bool ignore)
+        {
+            if (ignore)
+            {
+                value = val;
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
         }
 
 
@@ -46,32 +81,26 @@ namespace Autarkysoft.Bitcoin
         // Don't rename (reflection used in tests).
         private readonly uint value;
 
-        private const uint Min = 0x03_00_00_00;
+        // Difficulty formula: 0xAABBCCDD -> 0xBBCCDD * 2^(8*(0xAA-3))
+        // 2^n is shift left by n
+        // Long form is 32 bytes or 256 bits.
+        // If (BB!=0) then 3 byte or 24 bits is already set
+        //   so we can't shift more than 256-24=232 bits
+        //   so n has to be 232 tops -> 8*(0xAA-3)=232 -> 0xAA=32
+        // If (BB==0 but CC!=0) then 2 bytes or 16 bits is already set
+        //   256-16=240 => 8*(0xAA-3)=240 -> 0xAA=33
+        // If (BB==0 & CC==0 but DD!=0) then 1 byte or 8 bits is already set
+        //   256-8=248 => 8*(0xAA-3)=248 -> 0xAA=34
+        //
+        // If (0xAA-3 <= 0) the shift is opposite (shift right) and will never overflow
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool WillOverflow(int firstByte, uint masked) => masked != 0 &&
+                                                                        ((firstByte > 34) ||
+                                                                         (firstByte > 33 && masked > 0x000000ff) ||
+                                                                         (firstByte > 32 && masked > 0x0000ffff));
 
-
-        private static void CheckFirstByte(uint val)
-        {
-            // Difficulty formula: 0xAABBCCDD -> 0xBBCCDD * 2^(8*(0xAA-3))
-            // 2^n is shift left by n
-            // Long form is 32 bytes or 256 bits.
-            // If (BB!=0) then 3 byte or 24 bits is already set
-            //   so we can't shift more than 256-24=232 bits
-            //   so n has to be 232 tops -> 8*(0xAA-3)=232 -> 0xAA=32
-            //
-            // If (0xAA-3 <= 0) although the target may still be a valid value it is too small to be real
-
-            uint firstByte = val >> 24;
-
-            if (firstByte > 32)
-            {
-                throw new ArgumentOutOfRangeException("Target is only defined for 256 bit numbers, " +
-                    "so the first byte can not be bigger than 32.");
-            }
-            if (firstByte < 3)
-            {
-                throw new ArgumentOutOfRangeException("First byte of target can not be smaller than 3.");
-            }
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsNegative(uint masked, uint val) => (masked != 0 && (val & 0x00800000) != 0);
 
 
         /// <summary>
@@ -86,33 +115,39 @@ namespace Autarkysoft.Bitcoin
         {
             if (stream is null)
             {
-                result = Min;
+                result = 0;
                 error = "Stream can not be null.";
                 return false;
             }
             if (!stream.TryReadUInt32(out uint val))
             {
-                result = Min;
+                result = 0;
                 error = Err.EndOfStream;
                 return false;
             }
 
-            uint firstByte = val >> 24;
-
-            if (firstByte > 32)
+            int firstByte = (int)(val >> 24);
+            uint masked = val & 0x007fffff;
+            if (firstByte <= 3)
             {
-                error = "Target is only defined for 256 bit numbers, so the first byte can not be bigger than 32.";
-                result = Min;
-                return false;
-            }
-            if (firstByte < 3)
-            {
-                error = "Target's first byte can not be smaller than 3.";
-                result = Min;
-                return false;
+                masked >>= 8 * (3 - firstByte);
             }
 
-            result = new Target(val);
+            if (IsNegative(masked, val))
+            {
+                error = "Target can not be negative.";
+                result = 0;
+                return false;
+            }
+
+            if (WillOverflow(firstByte, masked))
+            {
+                error = "Target is defined as a 256-bit number (value overflow).";
+                result = 0;
+                return false;
+            }
+
+            result = new Target(val, true);
             error = null;
             return true;
         }
@@ -135,7 +170,17 @@ namespace Autarkysoft.Bitcoin
         /// <returns>BigInteger result</returns>
         public BigInteger ToBigInt()
         {
-            return (value & 0x00ffffff) * BigInteger.Pow(2, 8 * ((byte)(value >> 24) - 3));
+            int shift = (int)(value >> 24);
+            uint masked = value & 0x007fffff;
+            if (shift <= 3)
+            {
+                // https://github.com/bitcoin/bitcoin/blob/b18978066d875707af8e15edf225d3e52b5ade05/src/arith_uint256.cpp#L207-L209
+                return masked >> 8 * (3 - shift);
+            }
+            else
+            {
+                return masked * BigInteger.Pow(2, 8 * (shift - 3));
+            }
         }
 
         /// <summary>
@@ -160,20 +205,28 @@ namespace Autarkysoft.Bitcoin
         public uint[] ToUInt32Array()
         {
             uint[] result = new uint[32 / 4];
+            int firstByte = (int)(value >> 24);
+            if (firstByte <= 3)
+            {
+                uint masked = value & 0x007fffff;
+                result[^1] = masked >> 8 * (3 - firstByte);
+                return result;
+            }
+
             /*** Target ***/
             // if bits = XXYYYYYY then target = YYYYYY * 2^(8*(XX-3))
             // a * 2^k is the same as a << k
-            int shift = 8 * ((byte)(value >> 24) - 3);
+            int shift = 8 * (firstByte - 3);
             // We have 3 bytes that we need to shift left and since we are using UInt32, 3 bytes (24 bit) can fall in 1 item or 2 max.
             // Each 32 bit shift moves to next index from the end. Each remainder is the shift of the remaining 3 bytes.
             // if the remainder is bigger than 8 bits the shifted 24 bits will go in next item.
             // 00000000_XXXXXXXX_XXXXXXXX_XXXXXXXX << 9 => 00000000_00000000_00000000_0000000X XXXXXXXX_XXXXXXXX_XXXXXXX0_00000000
             int index = shift / 32;
             int remShift = shift % 32;
-            result[result.Length - 1 - index] = (value & 0x00ffffff) << remShift;
+            result[result.Length - 1 - index] = (value & 0x007fffff) << remShift;
             if (remShift > 8)
             {
-                result[result.Length - 2 - index] = (value & 0x00ffffff) >> (32 - remShift);
+                result[result.Length - 2 - index] = (value & 0x007fffff) >> (32 - remShift);
             }
 
             return result;
@@ -186,7 +239,8 @@ namespace Autarkysoft.Bitcoin
         /// <returns>Difficulty value</returns>
         public BigInteger ToDifficulty(Target max)
         {
-            return max.ToBigInt() / ToBigInt();
+            BigInteger big = ToBigInt();
+            return big == 0 ? 0 : max.ToBigInt() / ToBigInt();
         }
 
         /// <summary>
