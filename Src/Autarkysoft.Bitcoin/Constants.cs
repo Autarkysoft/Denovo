@@ -23,6 +23,14 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const ulong TotalSupply = 21_000_000_0000_0000;
         /// <summary>
+        /// Number of blocks between each difficulty adjustment
+        /// </summary>
+        public const int DifficultyAdjustmentInterval = 2016;
+        /// <summary>
+        /// 2 weeks in seconds
+        /// </summary>
+        public const uint PowTargetTimespan = 2 * 7 * 24 * 60 * 60;
+        /// <summary>
         /// Number of times to retry setting random bytes using <see cref="Cryptography.IRandomNumberGenerator"/>.
         /// </summary>
         /// <remarks>
