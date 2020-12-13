@@ -18,7 +18,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         private const uint NotNegative = 0x00800000U;
 
         [Fact]
-        public void ConstructorTests()
+        public void ConstructorTest()
         {
             Target ti1 = new Target((int)Example);
             Target tu1 = new Target(Example);
@@ -40,7 +40,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [InlineData(0x23000001U, false)]
         [InlineData(0x22000100U, false)]
         [InlineData(0x21010000U, false)]
-        public void Constructor_ExceptionTests(uint val, bool isNeg)
+        public void Constructor_ExceptionTest(uint val, bool isNeg)
         {
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(val));
             if (isNeg)
@@ -51,6 +51,30 @@ namespace Tests.Bitcoin.ValueTypesTests
             {
                 Assert.Contains("Target is defined as a 256-bit number (value overflow).", ex.Message);
             }
+        }
+
+        [Theory]
+        [InlineData(0x1d00ffff, "00000000FFFF0000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x1b0404cb, "00000000000404CB000000000000000000000000000000000000000000000000")]
+        [InlineData(0x00000000, "0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x01120000, "0000000000000000000000000000000000000000000000000000000000000012")]
+        [InlineData(0x02123400, "0000000000000000000000000000000000000000000000000000000000001234")]
+        [InlineData(0x03123456, "0000000000000000000000000000000000000000000000000000000000123456")]
+        [InlineData(0x04123456, "0000000000000000000000000000000000000000000000000000000012345600")]
+        [InlineData(0x05009234, "0000000000000000000000000000000000000000000000000000000092340000")]
+        [InlineData(0x20123456, "1234560000000000000000000000000000000000000000000000000000000000")]
+        public void Constructor_FromBigIntTest(uint expected, string hex)
+        {
+            BigInteger big = BigInteger.Parse(hex, NumberStyles.HexNumber);
+            Target tar = new Target(big);
+            Helper.ComparePrivateField(tar, "value", expected);
+        }
+
+        [Fact]
+        public void Constructor_FromBigInt_ExceptionTest()
+        {
+            BigInteger big = BigInteger.Pow(2, 256);
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Target(big));
         }
 
         public static IEnumerable<object[]> GetReadCases()
@@ -166,6 +190,7 @@ namespace Tests.Bitcoin.ValueTypesTests
 
         [Theory]
         [InlineData(0x1d00ffff, "00000000FFFF0000000000000000000000000000000000000000000000000000")]
+        [InlineData(0x1b0404cb, "00000000000404CB000000000000000000000000000000000000000000000000")]
         [InlineData(0x00000000, "0000000000000000000000000000000000000000000000000000000000000000")]
         [InlineData(0x00123456, "0000000000000000000000000000000000000000000000000000000000000000")]
         [InlineData(0x01003456, "0000000000000000000000000000000000000000000000000000000000000000")]

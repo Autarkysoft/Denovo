@@ -63,6 +63,58 @@ namespace Autarkysoft.Bitcoin
             value = val;
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="Target"/> using a 256-bit integer.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="val">Value to use (must be at most 256 bits)</param>
+        public Target(BigInteger val)
+        {
+            byte[] ba = val.ToByteArray(true, false);
+            if (ba.Length > 32)
+                throw new ArgumentOutOfRangeException(nameof(val), "Value can not be bigger than 256 bits.");
+
+            int shift = val == 0 ? 0 : ba.Length;
+            int rem = 0;
+            if (ba.Length >= 3)
+            {
+                if ((ba[^1] & 0x80) != 0)
+                {
+                    shift++;
+                    rem = ba[^1] << 8 | ba[^2];
+                }
+                else
+                {
+                    rem = ba[^1] << 16 | ba[^2] << 8 | ba[^3];
+                }
+            }
+            else if (ba.Length == 2)
+            {
+                if ((ba[^1] & 0x80) != 0)
+                {
+                    shift++;
+                    rem = ba[^1] << 8 | ba[^2];
+                }
+                else
+                {
+                    rem = ba[^1] << 16 | ba[^2] << 8;
+                }
+            }
+            else if (ba.Length == 1)
+            {
+                if ((ba[^1] & 0x80) != 0)
+                {
+                    shift++;
+                    rem = ba[^1] << 8;
+                }
+                else
+                {
+                    rem = ba[^1] << 16;
+                }
+            }
+
+            value = (uint)((shift << 24) | rem);
+        }
 
         private Target(uint val, bool ignore)
         {
