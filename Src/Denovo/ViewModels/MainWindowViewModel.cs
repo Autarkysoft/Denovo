@@ -56,7 +56,7 @@ namespace Denovo.ViewModels
                     UserAgent = ConfigVm.Config.UserAgent,
                     Relay = ConfigVm.Config.Relay,
                     Network = network,
-                    Blockchain = new MockBlockChain(),
+                    Blockchain = new Blockchain(new FileManager(network), new Consensus(0, network)),
                     Storage = StorageMan,
                     AcceptIncomingConnections = ConfigVm.Config.AcceptIncoming,
                     MaxConnectionCount = ConfigVm.Config.MaxConnectionCount,
@@ -86,29 +86,6 @@ namespace Denovo.ViewModels
         public ConfigurationViewModel ConfigVm { get; set; }
         public void Config() => WinMan.ShowDialog(ConfigVm);
         public void Miner() => WinMan.ShowDialog(new MinerViewModel());
-
-        internal class MockBlockChain : IBlockchain
-        {
-            private readonly IConsensus consensus = new Consensus();
-
-            public int Height => 0;
-            public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
-            public Target GetTarget(int height) => throw new NotImplementedException();
-            public bool ProcessBlock(IBlock block) => true;
-            public void ProcessHeaders(BlockHeader[] headers)
-            {
-            }
-
-            public BlockHeader[] GetBlockHeaderLocator()
-            {
-                throw new NotImplementedException();
-            }
-
-            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
-            {
-                throw new NotImplementedException();
-            }
-        }
 
 
         private Node _selNode;

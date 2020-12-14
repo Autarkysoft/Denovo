@@ -41,10 +41,11 @@ namespace Denovo.ViewModels
         {
             public int Height => 0;
             public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
-            public Target GetTarget(int height) => throw new NotImplementedException();
+            public Target GetNextTarget() => throw new NotImplementedException();
             public bool ProcessBlock(IBlock block) => true;
-            public void ProcessHeaders(BlockHeader[] headers)
+            public BlockProcessResult ProcessHeaders(BlockHeader[] headers)
             {
+                return BlockProcessResult.Success;
             }
 
             public BlockHeader[] GetBlockHeaderLocator()

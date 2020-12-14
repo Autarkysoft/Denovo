@@ -39,13 +39,9 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         internal Target? targetToReturn;
-        internal int expectedTargetHeight = -1;
-        public Target GetTarget(int height)
+        public Target GetNextTarget()
         {
             Assert.True(targetToReturn.HasValue, UnexpectedCall);
-            Assert.True(expectedTargetHeight != -1, UnexpectedCall);
-
-            Assert.Equal(expectedTargetHeight, height);
             return targetToReturn.Value;
         }
 
@@ -58,13 +54,17 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         internal BlockHeader[] _expHeaders;
-        public void ProcessHeaders(BlockHeader[] headers)
+        internal BlockProcessResult? _expHdrProcessResult;
+        public BlockProcessResult ProcessHeaders(BlockHeader[] headers)
         {
             Assert.Equal(_expHeaders.Length, headers.Length);
+            Assert.True(_expHdrProcessResult.HasValue, UnexpectedCall);
             for (int i = 0; i < headers.Length; i++)
             {
                 Assert.Equal(_expHeaders[i].Serialize(), headers[i].Serialize());
             }
+
+            return _expHdrProcessResult.Value;
         }
 
         internal BlockHeader[] headerLocatorToReturn;

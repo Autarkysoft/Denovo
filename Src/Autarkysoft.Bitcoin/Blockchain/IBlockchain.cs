@@ -26,11 +26,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         int FindHeight(ReadOnlySpan<byte> prevHash);
 
         /// <summary>
-        /// Returns the expected target for the given block height.
+        /// Returns the next difficulty target based on the best stored chain.
         /// </summary>
-        /// <param name="height">Block height</param>
-        /// <returns>Target</returns>
-        Target GetTarget(int height);
+        /// <returns>Next difficulty target</returns>
+        Target GetNextTarget();
 
         /// <summary>
         /// Processes the given block by validating the header, transactions,... and adds it to the database.
@@ -44,7 +43,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Process given block headers and update the header database
         /// </summary>
         /// <param name="headers">An array of block headers</param>
-        void ProcessHeaders(BlockHeader[] headers);
+        /// <returns>Result of processing the given headers</returns>
+        BlockProcessResult ProcessHeaders(BlockHeader[] headers);
 
         /// <summary>
         /// Returns an array of <see cref="BlockHeader"/>s from the tip to be used in 
