@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using System;
 using System.Linq;
+using System.Numerics;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -26,56 +27,52 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <summary>
         /// Initializes a new instance of <see cref="BlockVerifier"/> using the given parameters.
         /// </summary>
-        /// <param name="blockchain">Blockchain data base</param>
         /// <param name="txVerifier">Transaction verifier</param>
         /// <param name="consensus">Consensus rules</param>
-        public BlockVerifier(IBlockchain blockchain, ITransactionVerifier txVerifier, IConsensus consensus)
+        public BlockVerifier(ITransactionVerifier txVerifier, IConsensus consensus)
         {
-            chain = blockchain;
             txVer = txVerifier;
             this.consensus = consensus;
         }
 
 
 
-        private readonly IBlockchain chain;
         private readonly ITransactionVerifier txVer;
         private readonly IConsensus consensus;
 
 
 
         /// <summary>
+        /// Verifies validity of thegiven <see cref="BlockHeader"/> by performing basic verifications (verion, target and PoW).
+        /// Return value indicates succcess.
+        /// <para/><see cref="IConsensus"/> dependency has to be updated by the caller before calling this method.
+        /// </summary>
+        /// <param name="header">Block header to verify</param>
+        /// <param name="expectedTarget">The target that this header must have (calculated considering difficulty adjustment)</param>
+        /// <returns>True if the given block header was valid; otherwise false.</returns>
+        public bool VerifyHeader(BlockHeader header, Target expectedTarget)
+        {
+            BigInteger tar = header.NBits.ToBigInt();
+            return header.Version >= consensus.MinBlockVersion &&
+                   header.NBits != 0 && // TODO: possible pointless check
+                   tar <= consensus.PowLimit && // TODO: possible pointless check (next line should be enough)
+                   header.NBits == expectedTarget &&
+                   new BigInteger(header.GetHash(), isUnsigned: true, isBigEndian: false) <= tar;
+        }
+
+        /// <summary>
         /// Verifies validity of the given block. Return value indicates succcess.
+        /// <para/>Header has to be verified before using <see cref="VerifyHeader(BlockHeader, Target)"/> method.
+        /// <para/><see cref="IConsensus"/> dependency has to be updated by the caller before calling this method.
         /// </summary>
         /// <param name="block">Block to use</param>
         /// <param name="error">Error message (null if valid, otherwise contains information about the reason).</param>
-        /// <returns>True if block header was valid, otherwise false.</returns>
+        /// <returns>True if block was valid, otherwise false.</returns>
         public bool Verify(IBlock block, out string error)
         {
             if (block.Height < 0)
             {
                 error = "Block height is not set.";
-                return false;
-            }
-            // Set/change consensus rule
-            consensus.BlockHeight = block.Height;
-
-            // We can only verify _new_ blocks since verification requires an up to date UTXO set.
-            // In case of a split (orphan,...) the caller must update IBlockchain and IUtxo first.
-            if (block.Height != chain.Height + 1)
-            {
-                error = "Block is not new.";
-                return false;
-            }
-
-            if (block.Header.NBits != chain.GetTarget(block.Height))
-            {
-                error = "Block's target is not the same as current target.";
-                return false;
-            }
-            if (block.GetBlockHash().ToBigInt(false, true) > block.Header.NBits.ToBigInt())
-            {
-                error = "Wrong proof of work.";
                 return false;
             }
 
