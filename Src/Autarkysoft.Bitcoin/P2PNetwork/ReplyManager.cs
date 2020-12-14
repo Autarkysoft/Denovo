@@ -280,7 +280,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     }
                     break;
                 case PayloadType.GetHeaders:
-                    if (Deser(msg.PayloadData, out GetHeadersPayload getHdrs))
+                    if (!settings.IsCatchingUp && Deser(msg.PayloadData, out GetHeadersPayload getHdrs))
                     {
                         BlockHeader[] hds = settings.Blockchain.GetMissingHeaders(getHdrs.Hashes, getHdrs.StopHash);
                         if (!(hds is null))
