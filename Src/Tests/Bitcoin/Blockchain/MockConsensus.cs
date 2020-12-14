@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using System.Numerics;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -133,6 +134,16 @@ namespace Tests.Bitcoin.Blockchain
             {
                 Assert.True(_minVer.HasValue, UnexpectedCall);
                 return _minVer.Value;
+            }
+        }
+
+        internal BigInteger? _powLimit;
+        public BigInteger PowLimit
+        {
+            get
+            {
+                Assert.True(_powLimit.HasValue, UnexpectedCall);
+                return _powLimit.Value;
             }
         }
 

@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using System.Numerics;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -75,6 +76,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Minimum allowed block version
         /// </summary>
         int MinBlockVersion { get; }
+
+        /// <summary>
+        /// Proof of work limit
+        /// </summary>
+        BigInteger PowLimit { get; }
 
         /// <summary>
         /// Builds and returns the genesis block based on <see cref="NetworkType"/>.

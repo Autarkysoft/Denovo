@@ -9,6 +9,8 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Globalization;
+using System.Numerics;
 using System.Text;
 
 namespace Autarkysoft.Bitcoin.Blockchain
@@ -42,6 +44,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             switch (netType)
             {
                 case NetworkType.MainNet:
+                    powLimit = BigInteger.Parse("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 170060;
@@ -52,6 +55,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     seg = 481824;
                     break;
                 case NetworkType.TestNet:
+                    powLimit = BigInteger.Parse("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 1718436;
@@ -62,6 +66,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     seg = 834624;
                     break;
                 case NetworkType.RegTest:
+                    powLimit = BigInteger.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
                     MaxSigOpCount = 80000;
                     HalvingInterval = 150;
                     bip16 = 0;
@@ -82,6 +87,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private readonly int bip16, bip34, bip65, bip66, bip112, seg;
         private int minBlkVer;
+        private readonly BigInteger powLimit;
         private readonly NetworkType network;
         private int _height;
 
@@ -167,6 +173,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         public int MinBlockVersion => minBlkVer;
 
+        /// <inheritdoc/>
+        public BigInteger PowLimit => powLimit;
 
         /// <inheritdoc/>
         public IBlock GetGenesisBlock()
