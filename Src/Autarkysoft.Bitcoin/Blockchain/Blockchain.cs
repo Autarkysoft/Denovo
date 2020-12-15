@@ -46,11 +46,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="fileMan">File manager</param>
+        /// <param name="blockVerifier">Block verifier</param>
         /// <param name="consensus">Consensus rules</param>
-        public Blockchain(IFileManager fileMan, IConsensus consensus)
+        public Blockchain(IFileManager fileMan, BlockVerifier blockVerifier, IConsensus consensus)
         {
             FileMan = fileMan ?? throw new ArgumentNullException(nameof(fileMan));
             Consensus = consensus ?? throw new ArgumentNullException(nameof(consensus));
+            BlockVer = blockVerifier ?? throw new ArgumentNullException(nameof(blockVerifier));
 
             // TODO: find a better initial capacity
             headerList = new List<BlockHeader>(700_000);

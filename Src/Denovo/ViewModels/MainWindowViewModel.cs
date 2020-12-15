@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Denovo.MVVM;
 using Denovo.Services;
@@ -51,12 +50,13 @@ namespace Denovo.ViewModels
                 ConfigVm = new ConfigurationViewModel(StorageMan);
 
                 AllNodes = new NodePool(ConfigVm.Config.MaxConnectionCount);
+                var consensus = new Consensus(0, network);
                 var clientSettings = new ClientSettings()
                 {
                     UserAgent = ConfigVm.Config.UserAgent,
                     Relay = ConfigVm.Config.Relay,
                     Network = network,
-                    Blockchain = new Blockchain(new FileManager(network), new Consensus(0, network)),
+                    Blockchain = new Blockchain(new FileManager(network), new BlockVerifier(null, consensus), consensus),
                     Storage = StorageMan,
                     AcceptIncomingConnections = ConfigVm.Config.AcceptIncoming,
                     MaxConnectionCount = ConfigVm.Config.MaxConnectionCount,
