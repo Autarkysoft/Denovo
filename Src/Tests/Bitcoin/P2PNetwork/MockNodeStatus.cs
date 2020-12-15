@@ -209,7 +209,7 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         internal bool? _disconnect;
-        public bool ShouldDisconnect
+        public bool HasTooManyViolations
         {
             get
             {
@@ -344,6 +344,12 @@ namespace Tests.Bitcoin.P2PNetwork
         internal bool updateTime = false;
 
         public event EventHandler DisconnectEvent;
+
+        internal bool expectDisconnect = false;
+        public void SignalDisconnect()
+        {
+            Assert.True(expectDisconnect, UnexpectedCall);
+        }
 
         public void UpdateTime()
         {

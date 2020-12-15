@@ -26,10 +26,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             get => _v;
             set
             {
-                _v = value;
-                if (ShouldDisconnect)
+                if (SetField(ref _v, value))
                 {
-                    RaiseDisconnectEvent();
+                    IsDisconnected = Violation >= DisconnectThreshold;
+                    if (IsDisconnected)
+                    {
+                        RaiseDisconnectEvent();
+                    }
                 }
             }
         }
@@ -165,13 +168,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public bool IsDisconnected
         {
             get => _isDead;
-            set
-            {
-                if (SetField(ref _isDead, value) && value)
-                {
-                    RaiseDisconnectEvent();
-                }
-            }
+            set => SetField(ref _isDead, value);
         }
 
         /// <inheritdoc/>
@@ -222,9 +219,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         /// <inheritdoc/>
-        public bool ShouldDisconnect => Violation >= DisconnectThreshold;
+        public bool HasTooManyViolations => Violation >= DisconnectThreshold;
 
+        /// <inheritdoc/>
         private void RaiseDisconnectEvent() => DisconnectEvent?.Invoke(this, EventArgs.Empty);
+
+        /// <inheritdoc/>
+        public void SignalDisconnect()
+        {
+            IsDisconnected = true;
+            RaiseDisconnectEvent();
+        }
 
         /// <inheritdoc/>
         public void UpdateTime() => LastSeen = DateTime.Now;

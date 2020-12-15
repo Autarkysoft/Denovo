@@ -67,10 +67,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         bool SendHeaders { get; set; }
         /// <summary>
-        /// Returns if the connection to this node should be terminated due to excessive violations
-        /// </summary>
-        bool ShouldDisconnect { get; }
-        /// <summary>
         /// Last time this node was communicated with
         /// </summary>
         DateTime LastSeen { get; }
@@ -82,6 +78,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Returns if this node was disconnected (it is safe to be disposed)
         /// </summary>
         bool IsDisconnected { get; set; }
+        /// <summary>
+        /// Returns if the connection to this node should be terminated due to excessive violations
+        /// </summary>
+        bool HasTooManyViolations { get; }
         /// <summary>
         /// Returns if the addr message was sent to this node (prevents multiple requests from each nodes)
         /// </summary>
@@ -113,6 +113,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// or simply dead connection)
         /// </summary>
         event EventHandler DisconnectEvent;
+        /// <summary>
+        /// Raises the disconnect event to signal disconnecting from this node.
+        /// </summary>
+        void SignalDisconnect();
         /// <summary>
         /// Changes <see cref="LastSeen"/> to current time
         /// </summary>

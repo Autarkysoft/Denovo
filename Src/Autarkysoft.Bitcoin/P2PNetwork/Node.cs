@@ -60,7 +60,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (NodeStatus.HasTooManyUnansweredPings)
                 {
-                    NodeStatus.IsDisconnected = true;
+                    NodeStatus.SignalDisconnect();
                 }
                 else
                 {
@@ -128,7 +128,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     msgMan.SetSendBuffer(recEventArgs);
                     StartSend(recEventArgs);
                 }
-                else if (!NodeStatus.ShouldDisconnect)
+                else if (!NodeStatus.HasTooManyViolations || NodeStatus.IsDisconnected)
                 {
                     StartReceive(recEventArgs);
                 }
@@ -172,7 +172,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 {
                     secondSendLimiter.Release();
                 }
-                else if (!NodeStatus.ShouldDisconnect)
+                else if (!NodeStatus.HasTooManyViolations || NodeStatus.IsDisconnected)
                 {
                     StartReceive(sendEventArgs);
                 }
