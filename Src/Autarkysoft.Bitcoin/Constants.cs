@@ -131,6 +131,24 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int P2PProtocolVersion = 70015;
         /// <summary>
+        /// Minimum protocol version that we connect to.
+        /// <para/>These are bitcoin core clients with versions &#60; 0.3.18
+        /// which don't support the Headers and GetHeaders messages
+        /// </summary>
+        public const int P2PMinProtoVer = 31800;
+        /// <summary>
+        /// Protocol version where BIP-31 (Pong message) was enabled
+        /// </summary>
+        public const int P2PBip31ProtVer = 60000;
+        /// <summary>
+        /// Protocol version where BIP-130 (SendHeaders message) was enabled
+        /// </summary>
+        public const int P2PBip130ProtVer = 70012;
+        /// <summary>
+        /// Protocol version where BIP-133 (FeeFilter message) was enabled
+        /// </summary>
+        public const int P2PBip133ProtVer = 70013;
+        /// <summary>
         /// Length of P2P message headers (4 magic + 12 command + 4 payloadSize + 4 checksum)
         /// </summary>
         public const int MessageHeaderSize = 24;
