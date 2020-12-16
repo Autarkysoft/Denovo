@@ -197,8 +197,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     // The previous block is not the last block we have. We have to check whether the rest
                     // of the headers are the same or on a fork.
                     // We had A B C D1 the headers are B C D2
-                    lstIndex++;
-                    for (; lstIndex < headerList.Count && arrIndex < headers.Length; lstIndex++, arrIndex++)
+                    for (lstIndex++; lstIndex < headerList.Count && arrIndex < headers.Length; lstIndex++, arrIndex++)
                     {
                         if (!((ReadOnlySpan<byte>)headerList[lstIndex].GetHash()).SequenceEqual(headers[arrIndex].GetHash()))
                         {
@@ -218,9 +217,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     for (int i = arrIndex; i < headers.Length; i++)
                     {
                         Consensus.BlockHeight = headerList.Count;
-                        if (BlockVer.VerifyHeader(headers[arrIndex], GetNextTarget()))
+                        if (BlockVer.VerifyHeader(headers[i], GetNextTarget()))
                         {
-                            headerList.Add(headers[arrIndex]);
+                            headerList.Add(headers[i]);
                             count++;
                         }
                         else
