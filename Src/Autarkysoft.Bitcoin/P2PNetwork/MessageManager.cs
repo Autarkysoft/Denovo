@@ -209,6 +209,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 rcvHolder = new byte[rcvLen];
                                 Buffer.BlockCopy(buffer, offset, rcvHolder, 0, rcvLen);
                             }
+                            else if (res == Message.ReadResult.InvalidNetwork)
+                            {
+                                NodeStatus.AddBigViolation();
+                                rcvHolder = null;
+                            }
                             else
                             {
                                 // Invalid message was received (checksum, network or payload size overflow)
