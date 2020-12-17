@@ -522,47 +522,6 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 new MockNodeStatus()
                 {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    expPingNonce = RngReturnValue
-                },
-                new MockClientSettings()
-                {
-                    _netType = NetworkType.MainNet,
-                    _catchup = false,
-                    _relay = true,
-                    _fee = feeRateSat
-                },
-                new Message[] { feeFilter, sendHdr, ping }
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    expPingNonce = RngReturnValue
-                },
-                new MockClientSettings()
-                {
-                    _netType = NetworkType.MainNet,
-                    _catchup = true,
-                    _protoVer = mockProtoVer,
-                    _bchain = new MockBlockchain()
-                    {
-                        headerLocatorToReturn = new BlockHeader[] { hdr }
-                    },
-                    _relay = true,
-                    _fee = feeRateSat
-                },
-                new Message[] { getHdrs }
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
                     _handShakeToReturn = HandShakeState.Sent,
                     _handShakeToSet = HandShakeState.SentAndConfirmed,
                     updateTime = true
@@ -583,45 +542,333 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 new MockNodeStatus()
                 {
-                    _handShakeToReturn = HandShakeState.SentAndReceived,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    expPingNonce = RngReturnValue
-                },
-                new MockClientSettings()
-                {
-                    _netType = NetworkType.MainNet,
-                    _catchup = false,
-                    _relay = true,
-                    _fee = feeRateSat
-                },
-                new Message[] { feeFilter, sendHdr, ping }
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.SentAndReceived,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    expPingNonce = RngReturnValue
-                },
-                new MockClientSettings()
-                {
-                    _netType = NetworkType.MainNet,
-                    _catchup = false,
-                    _relay = false, // No relay won't send FeeFilter
-                },
-                new Message[] { sendHdr, ping }
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
                     _handShakeToReturn = HandShakeState.Finished, mediumViolation = true, updateTime = true
                 },
                 cs,
                 null
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = false, // No feefilter
+                },
+                null
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = true, // No feefilter becaue of protocol version
+                },
+                null
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip31ProtVer, // No ping, no feefilter, no sendheaders
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = false, // No feefilter
+                },
+                null
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip31ProtVer + 1, // ping, no feefilter, no sendheaders
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = true, // No feefilter becaue of protocol version
+                },
+                new Message[] { ping }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip130ProtVer - 1, // ping, no feefilter, no sendheaders
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = true, // No feefilter becaue of protocol version
+                },
+                new Message[] { ping }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip130ProtVer, // ping, no feefilter, sendheaders
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = true, // No feefilter becaue of protocol version
+                },
+                new Message[] { ping, sendHdr }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip133ProtVer - 1, // ping, no feefilter, sendheaders
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = true, // No feefilter becaue of protocol version
+                },
+                new Message[] { ping, sendHdr }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = false, // No feefilter
+                },
+                new Message[] { ping, sendHdr }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
+                    expPingNonce = RngReturnValue
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = false, // No sync (getheaders)
+                    _relay = true, // feefilter
+                    _fee = feeRateSat
+                },
+                new Message[] { ping, sendHdr, feeFilter }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PMinProtoVer, // No ping, No feefilter, No sendheaders
+                    _servs = NodeServiceFlags.NodeNone | NodeServiceFlags.NodeGetUtxo |
+                             NodeServiceFlags.NodeBloom | NodeServiceFlags.NodeWitness |
+                             NodeServiceFlags.NodeXThin | NodeServiceFlags.NodeCompactFilters, // All except Network and Limited
+                    expectDiscSignal = true
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true, // Start sync (getheaders)
+                    _relay = false, // No feefilter
+                },
+                null
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PMinProtoVer, // No ping, No feefilter, No sendheaders
+                    _servs = NodeServiceFlags.NodeNetwork
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true, // Start sync (getheaders)
+                    _relay = false, // No feefilter
+                    _protoVer = mockProtoVer,
+                    _bchain = new MockBlockchain()
+                    {
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                },
+                new Message[] { getHdrs }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip31ProtVer, // No ping, No feefilter, No sendheaders
+                    _servs = NodeServiceFlags.NodeNetworkLimited
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true, // Start sync (getheaders)
+                    _relay = false, // No feefilter
+                    _protoVer = mockProtoVer,
+                    _bchain = new MockBlockchain()
+                    {
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                },
+                new Message[] { getHdrs }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip31ProtVer + 1, // ping, No feefilter, No sendheaders
+                    _servs = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited,
+                    expPingNonce = RngReturnValue,
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true, // Start sync (getheaders)
+                    _relay = false, // No feefilter
+                    _protoVer = mockProtoVer,
+                    _bchain = new MockBlockchain()
+                    {
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                },
+                new Message[] { ping, getHdrs }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip130ProtVer, // ping, No feefilter, sendheaders
+                    _servs = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited,
+                    expPingNonce = RngReturnValue,
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true, // Start sync (getheaders) => no sendheaders
+                    _relay = false, // No feefilter
+                    _protoVer = mockProtoVer,
+                    _bchain = new MockBlockchain()
+                    {
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                },
+                new Message[] { ping, getHdrs }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
+                    _servs = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited,
+                    expPingNonce = RngReturnValue,
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true, // Start sync (getheaders) => no sendheaders
+                    _relay = false, // No feefilter
+                    _protoVer = mockProtoVer,
+                    _bchain = new MockBlockchain()
+                    {
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                },
+                new Message[] { ping, getHdrs }
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus()
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    _handShakeToSet = HandShakeState.Finished,
+                    updateTime = true,
+                    _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
+                    _servs = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited,
+                    expPingNonce = RngReturnValue,
+                },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _catchup = true, // Start sync (getheaders) => no sendheaders, no feefilter
+                    _relay = true, // feefilter
+                    _protoVer = mockProtoVer,
+                    _bchain = new MockBlockchain()
+                    {
+                        headerLocatorToReturn = new BlockHeader[] { hdr }
+                    },
+                },
+                new Message[] { ping, getHdrs }
             };
         }
         [Theory]
@@ -677,18 +924,56 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             var verPl = new VersionPayload();
             Assert.True(verPl.TryDeserialize(new FastStreamReader(Helper.HexToBytes("721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001")), out string error), error);
+            var verPlLowVer = new VersionPayload()
+            {
+                Version = 1,
+                Services = verPl.Services,
+                ReceivingNodeNetworkAddress = verPl.ReceivingNodeNetworkAddress,
+                TransmittingNodeNetworkAddress = verPl.TransmittingNodeNetworkAddress,
+                Nonce = verPl.Nonce,
+                Timestamp = verPl.Timestamp,
+                UserAgent = verPl.UserAgent,
+                StartHeight = verPl.StartHeight,
+                Relay = verPl.Relay
+            };
             var msg = new Message(verPl, NetworkType.MainNet);
             var rcv = new NetworkAddress(NodeServiceFlags.NodeNone, IPAddress.Parse("203.0.113.192"), 444);
             var trs = new NetworkAddress(cs.Services, IPAddress.IPv6Any, 0);
             var verak = new Message(new VerackPayload(), NetworkType.MainNet);
             var ver = new Message(new VersionPayload(123, 456, rcv, trs, 0x0158a8e8ba5f3ed3, "foo", 12345, true), NetworkType.MainNet);
-            ulong feeRateSat = 123456;
-            ulong feeRateKiloSat = 123456_000;
-            var feeFilter = new Message(new FeeFilterPayload(feeRateKiloSat), NetworkType.MainNet);
             var ping = new Message(new PingPayload(RngReturnValue), NetworkType.MainNet);
-            var sendHdr = new Message(new SendHeadersPayload(), NetworkType.MainNet);
-            BlockHeader hdr = BlockHeaderTests.GetSampleBlockHeader();
-            var getHdrs = new Message(new GetHeadersPayload(mockProtoVer, new BlockHeader[] { hdr }, null), NetworkType.MainNet);
+
+
+            yield return new object[]
+            {
+                new MockNodeStatus(verPl)
+                {
+                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                    mediumViolation = true,
+                    updateTime = true
+                },
+                cs, msg, null
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus(verPl)
+                {
+                    _handShakeToReturn = HandShakeState.SentAndReceived,
+                    mediumViolation = true,
+                    updateTime = true
+                },
+                cs, msg, null
+            };
+            yield return new object[]
+            {
+                new MockNodeStatus(verPl)
+                {
+                    _handShakeToReturn = HandShakeState.Finished,
+                    mediumViolation = true,
+                    updateTime = true
+                },
+                cs, msg, null
+            };
 
             yield return new object[]
             {
@@ -701,16 +986,6 @@ namespace Tests.Bitcoin.P2PNetwork
                     updateTime = true
                 },
                 cs, msg, new Message[] { verak, ver }
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus(verPl)
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    mediumViolation = true,
-                    updateTime = true
-                },
-                cs, msg, null
             };
             yield return new object[]
             {
@@ -743,77 +1018,22 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = false, // No relay won't sent FeeFilter
                     _catchup = false,
                 },
-                msg, new Message[] { verak, sendHdr, ping }
+                msg, new Message[] { verak, ping }
             };
             yield return new object[]
             {
-                new MockNodeStatus(verPl)
+                new MockNodeStatus(verPlLowVer) // Protocol version is too low so the node is disconnected
                 {
                     _handShakeToReturn = HandShakeState.SentAndConfirmed,
-                    _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
-                    expPingNonce = RngReturnValue
+                    expectDiscSignal = true
                 },
-                new MockClientSettings()
-                {
-                    _protoVer = mockProtoVer,
-                    _services = cs._services,
-                    _time = cs._time,
-                    _port = cs._port,
-                    _ua = cs._ua,
-                    _netType = cs._netType,
-                    _bchain = new MockBlockchain()
-                    {
-                        headerLocatorToReturn = new BlockHeader[] { hdr }
-                    },
-                    _catchup = true,
-                },
-                msg, new Message[] { verak, getHdrs }
+                cs,
+                new Message(verPlLowVer, NetworkType.MainNet),
+                null
             };
-            yield return new object[]
-            {
-                new MockNodeStatus(verPl)
-                {
-                    _handShakeToReturn = HandShakeState.SentAndConfirmed,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    expPingNonce = RngReturnValue
-                },
-                new MockClientSettings()
-                {
-                    _protoVer = cs._protoVer,
-                    _services = cs._services,
-                    _time = cs._time,
-                    _port = cs._port,
-                    _ua = cs._ua,
-                    _netType = cs._netType,
-                    _bchain = cs._bchain,
-                    _relay = true, // With relay there should be a FeeFilter
-                    _fee = feeRateSat,
-                    _catchup = false
-                },
-                msg, new Message[] { verak, feeFilter, sendHdr, ping }
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus(verPl)
-                {
-                    _handShakeToReturn = HandShakeState.SentAndReceived,
-                    mediumViolation = true,
-                    updateTime = true
-                },
-                cs, msg, null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus(verPl)
-                {
-                    _handShakeToReturn = HandShakeState.Finished,
-                    mediumViolation = true,
-                    updateTime = true
-                },
-                cs, msg, null
-            };
+
+            // Settings messages are similar to CheckVerackTest
         }
         [Theory]
         [MemberData(nameof(GetVersionCases))]
@@ -850,6 +1070,8 @@ namespace Tests.Bitcoin.P2PNetwork
 
             // Mock either doesn't have any h.s. to set or if it did set h.s. it was checked and then turned to null
             Assert.Null(ns._handShakeToSet);
+
+            Assert.False(ns.expectDiscSignal, "SignalDisconnect() was never called.");
         }
     }
 }

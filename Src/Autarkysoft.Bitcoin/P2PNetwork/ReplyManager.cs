@@ -48,8 +48,23 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 result.Add(extraMsg);
             }
+
+            if (nodeStatus.ProtocolVersion > Constants.P2PBip31ProtVer)
+            {
+                // We don't bother sending ping to a node that doesn't support nonce in ping/pong messages.
+                // This will set default value for latency and this node will be ignored when latency is used later.
+                result.Add(GetPingMsg());
+            }
+
             if (settings.IsCatchingUp)
             {
+                if (!nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) && 
+                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetworkLimited))
+                {
+                    nodeStatus.SignalDisconnect();
+                    return null;
+                }
+
                 BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator();
                 if (headers.Length > GetHeadersPayload.MaximumHashes)
                 {
@@ -63,16 +78,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
             else
             {
-                if (settings.Relay)
+                if (nodeStatus.ProtocolVersion >= Constants.P2PBip130ProtVer)
+                {
+                    result.Add(new Message(new SendHeadersPayload(), settings.Network));
+                }
+
+                if (settings.Relay && nodeStatus.ProtocolVersion >= Constants.P2PBip133ProtVer)
                 {
                     result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
                 }
-
-                result.Add(new Message(new SendHeadersPayload(), settings.Network));
-                result.Add(GetPingMsg());
             }
 
-            return result.ToArray();
+            return result.Count == 0 ? null : result.ToArray();
         }
 
         /// <inheritdoc/>
@@ -428,6 +445,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 return null;
             }
 
+            if (version.Version < Constants.P2PMinProtoVer)
+            {
+                nodeStatus.SignalDisconnect();
+                return null;
+            }
+
+            nodeStatus.ProtocolVersion = version.Version;
+            nodeStatus.Services = version.Services;
+            nodeStatus.Nonce = version.Nonce;
+            nodeStatus.UserAgent = version.UserAgent;
+            nodeStatus.StartHeight = version.StartHeight;
+            nodeStatus.Relay = version.Relay;
+
             Message[] result = null;
 
             switch (nodeStatus.HandShake)
@@ -459,13 +489,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 default:
                     break;
             }
-
-            nodeStatus.ProtocolVersion = version.Version;
-            nodeStatus.Services = version.Services;
-            nodeStatus.Nonce = version.Nonce;
-            nodeStatus.UserAgent = version.UserAgent;
-            nodeStatus.StartHeight = version.StartHeight;
-            nodeStatus.Relay = version.Relay;
 
             return result;
         }

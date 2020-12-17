@@ -208,13 +208,13 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
-        internal bool? _disconnect;
+        internal bool? _hasManyViolation;
         public bool HasTooManyViolations
         {
             get
             {
-                Assert.True(_disconnect.HasValue, UnexpectedCall);
-                return _disconnect.Value;
+                Assert.True(_hasManyViolation.HasValue, UnexpectedCall);
+                return _hasManyViolation.Value;
             }
         }
 
@@ -345,10 +345,11 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public event EventHandler DisconnectEvent;
 
-        internal bool expectDisconnect = false;
+        internal bool expectDiscSignal = false;
         public void SignalDisconnect()
         {
-            Assert.True(expectDisconnect, UnexpectedCall);
+            Assert.True(expectDiscSignal, UnexpectedCall);
+            expectDiscSignal = false;
         }
 
         public void UpdateTime()
