@@ -48,6 +48,17 @@ namespace Tests
             }
         }
 
+        public static void SetPrivateField<InstanceType, FieldType>(InstanceType instance, string fieldName, FieldType toSet)
+        {
+            FieldInfo fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (fi is null)
+            {
+                Assert.True(false, "The private field was not found.");
+            }
+
+            fi.SetValue(instance, toSet);
+        }
+
         public static void CheckNullPrivateField<InstanceType>(InstanceType instance, string fieldName)
         {
             FieldInfo fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);

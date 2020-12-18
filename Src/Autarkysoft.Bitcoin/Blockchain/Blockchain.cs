@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
@@ -255,6 +256,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 var result = new List<BlockHeader>(32);
                 int step = 1;
                 int index = headerList.Count - 1;
+                long timeDiff = UnixTimeStamp.GetEpochUtcNow() - headerList[^1].BlockTime;
+                if (timeDiff <= TimeSpan.FromHours(24).TotalSeconds)
+                {
+                    // If blockchain is already in sync (or isn't that far behind) don't include the last header
+                    // so that we receive at least one header response
+                    index--;
+                }
                 // Add first 10 headers from the tip in reverse order then increase the steps exponetially
                 // until we run out of headers
                 while (index >= 0)
