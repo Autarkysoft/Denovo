@@ -157,7 +157,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             _merkle = stream.ReadByteArray32Checked();
             BlockTime = stream.ReadUInt32Checked();
 
-            // TODO: add a TryReadChecked to Target
             if (!Target.TryRead(stream, out _nBits, out error))
             {
                 return false;
