@@ -58,23 +58,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             if (settings.IsCatchingUp)
             {
-                if (!nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) && 
+                if (!nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) &&
                     !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetworkLimited))
                 {
                     nodeStatus.SignalDisconnect();
                     return null;
                 }
 
-                BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator();
-                if (headers.Length > GetHeadersPayload.MaximumHashes)
-                {
-                    // This should never happen but since IBlockchain is a dependency we have to check it here
-                    // to prevent an exception being thrown.
-                    BlockHeader[] temp = new BlockHeader[GetHeadersPayload.MaximumHashes];
-                    Array.Copy(headers, 0, temp, 0, temp.Length);
-                    headers = temp;
-                }
-                result.Add(new Message(new GetHeadersPayload(settings.ProtocolVersion, headers, null), settings.Network));
+                result.Add(GetLocatorMessage());
             }
             else
             {
@@ -90,6 +81,20 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
 
             return result.Count == 0 ? null : result.ToArray();
+        }
+
+        private Message GetLocatorMessage()
+        {
+            BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator();
+            if (headers.Length > GetHeadersPayload.MaximumHashes)
+            {
+                // This should never happen but since IBlockchain is a dependency we have to check it here
+                // to prevent an exception being thrown.
+                BlockHeader[] temp = new BlockHeader[GetHeadersPayload.MaximumHashes];
+                Array.Copy(headers, 0, temp, 0, temp.Length);
+                headers = temp;
+            }
+            return new Message(new GetHeadersPayload(settings.ProtocolVersion, headers, null), settings.Network);
         }
 
         /// <inheritdoc/>
@@ -318,7 +323,32 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Headers:
                     if (Deser(msg.PayloadData, out HeadersPayload hdrs))
                     {
-                        settings.ProcessHeaders(hdrs.Headers);
+                        Blockchain.BlockProcessResult processResult = settings.Blockchain.ProcessHeaders(hdrs.Headers);
+                        switch (processResult)
+                        {
+                            case Blockchain.BlockProcessResult.UnknownBlocks:
+                                nodeStatus.AddSmallViolation();
+                                result = new Message[1] { GetLocatorMessage() };
+                                break;
+                            case Blockchain.BlockProcessResult.InvalidBlocks:
+                                if (settings.IsCatchingUp)
+                                {
+                                    nodeStatus.SignalDisconnect();
+                                }
+                                else
+                                {
+                                    nodeStatus.AddMediumViolation();
+                                }
+                                break;
+                            case Blockchain.BlockProcessResult.ForkBlocks:
+                                break;
+                            case Blockchain.BlockProcessResult.Success:
+                                if (hdrs.Headers.Length == HeadersPayload.MaxCount)
+                                {
+                                    result = new Message[1] { GetLocatorMessage() };
+                                }
+                                break;
+                        }
                     }
                     break;
                 case PayloadType.Inv:
