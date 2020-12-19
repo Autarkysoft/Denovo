@@ -109,7 +109,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void StartReceive(SocketAsyncEventArgs recEventArgs)
         {
-            if (!recEventArgs.AcceptSocket.ReceiveAsync(recEventArgs))
+            if (!isDisposed && !recEventArgs.AcceptSocket.ReceiveAsync(recEventArgs))
             {
                 ProcessReceive(recEventArgs);
             }
@@ -123,14 +123,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 var msgMan = recEventArgs.UserToken as MessageManager;
                 msgMan.ReadBytes(recEventArgs);
 
-                if (msgMan.HasDataToSend)
+                if (!NodeStatus.HasTooManyViolations || !NodeStatus.IsDisconnected)
                 {
-                    msgMan.SetSendBuffer(recEventArgs);
-                    StartSend(recEventArgs);
-                }
-                else if (!NodeStatus.HasTooManyViolations || NodeStatus.IsDisconnected)
-                {
-                    StartReceive(recEventArgs);
+                    if (msgMan.HasDataToSend)
+                    {
+                        msgMan.SetSendBuffer(recEventArgs);
+                        StartSend(recEventArgs);
+                    }
+                    else
+                    {
+                        StartReceive(recEventArgs);
+                    }
                 }
             }
             else
@@ -152,7 +155,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         internal void StartSend(SocketAsyncEventArgs sendEventArgs)
         {
-            if (!sendEventArgs.AcceptSocket.SendAsync(sendEventArgs))
+            if (!isDisposed && !sendEventArgs.AcceptSocket.SendAsync(sendEventArgs))
             {
                 ProcessSend(sendEventArgs);
             }
@@ -172,7 +175,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 {
                     secondSendLimiter.Release();
                 }
-                else if (!NodeStatus.HasTooManyViolations || NodeStatus.IsDisconnected)
+                else if (!NodeStatus.HasTooManyViolations || !NodeStatus.IsDisconnected)
                 {
                     StartReceive(sendEventArgs);
                 }
@@ -189,9 +192,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             try
             {
-                srEventArgs.AcceptSocket.Shutdown(SocketShutdown.Both);
-                srEventArgs.AcceptSocket.Close();
-                NodeStatus.IsDisconnected = true;
+                NodeStatus.SignalDisconnect();
+                srEventArgs?.AcceptSocket?.Shutdown(SocketShutdown.Both);
+                srEventArgs?.AcceptSocket?.Close();
             }
             catch (Exception)
             {
@@ -214,23 +217,34 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 if (disposing)
                 {
                     // Dispose timer first to prevent it from raising its event and calling Send()
-                    pingTimer.Stop();
-                    pingTimer.Dispose();
-                    pingTimer = null;
+                    if (!(pingTimer is null))
+                    {
+                        pingTimer.Stop();
+                        pingTimer.Dispose();
+                        pingTimer = null;
+                    }
 
                     // There are 2 SAEAs both using the same Socket, closing only one is enough.
-                    CloseClientSocket(sendReceiveSAEA);
+                    if (!(sendReceiveSAEA is null))
+                    {
+                        CloseClientSocket(sendReceiveSAEA);
 
-                    sendReceiveSAEA.AcceptSocket = null;
-                    sendReceiveSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                        sendReceiveSAEA.AcceptSocket = null;
+                        sendReceiveSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
 
-                    sendSAEA.AcceptSocket = null;
-                    sendSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                        settings.SendReceivePool.Push(sendReceiveSAEA);
+                    }
 
-                    settings.SendReceivePool.Push(sendReceiveSAEA);
-                    settings.SendReceivePool.Push(sendSAEA);
-                    sendReceiveSAEA = null;
-                    sendSAEA = null;
+                    if (!(sendSAEA is null))
+                    {
+                        sendSAEA.AcceptSocket = null;
+                        sendSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+
+
+                        settings.SendReceivePool.Push(sendSAEA);
+                        sendReceiveSAEA = null;
+                        sendSAEA = null;
+                    }
 
                     if (!(secondSendLimiter is null))
                         secondSendLimiter.Dispose();
