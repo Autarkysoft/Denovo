@@ -218,7 +218,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     for (int i = arrIndex; i < headers.Length; i++)
                     {
                         Consensus.BlockHeight = headerList.Count;
-                        if (BlockVer.VerifyHeader(headers[i], GetNextTarget()))
+                        if (((ReadOnlySpan<byte>)headers[i].PreviousBlockHeaderHash).SequenceEqual(headerList[^1].GetHash()) &&
+                            BlockVer.VerifyHeader(headers[i], GetNextTarget()))
                         {
                             headerList.Add(headers[i]);
                             count++;
