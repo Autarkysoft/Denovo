@@ -219,6 +219,8 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData(BIP0039.WordLists.Japanese, "あいこくしん")]
         [InlineData(BIP0039.WordLists.Korean, "가격")]
         [InlineData(BIP0039.WordLists.Spanish, "ábaco")]
+        [InlineData(BIP0039.WordLists.Czech, "abdikace")]
+        [InlineData(BIP0039.WordLists.Portuguese, "abacate")]
         public void GetAllWordsTest(BIP0039.WordLists wl, string first)
         {
             string[] actual = BIP0039.GetAllWords(wl);

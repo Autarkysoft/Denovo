@@ -50,6 +50,7 @@
     <None Remove="ImprovementProposals\BIP0039WordLists\Italian.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\Japanese.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\Korean.txt" />
+    <None Remove="ImprovementProposals\BIP0039WordLists\Portuguese.txt" />
     <None Remove="ImprovementProposals\BIP0039WordLists\Spanish.txt" />
   </ItemGroup>
 
@@ -62,6 +63,7 @@
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Italian.txt" />
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Japanese.txt" />
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Korean.txt" />
+    <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Portuguese.txt" />
     <EmbeddedResource Include="ImprovementProposals\BIP0039WordLists\Spanish.txt" />
   </ItemGroup>
 

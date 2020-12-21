@@ -211,7 +211,8 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             Japanese,
             Korean,
             Spanish,
-            Czech
+            Czech,
+            Portuguese
         }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
