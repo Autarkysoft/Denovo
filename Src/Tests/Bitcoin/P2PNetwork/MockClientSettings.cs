@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
@@ -242,11 +241,6 @@ namespace Tests.Bitcoin.P2PNetwork
             }
 
             Assert.Equal(expectedStream.ToByteArray(), actualStream.ToByteArray());
-        }
-
-        public void ProcessHeaders(BlockHeader[] headers)
-        {
-            throw new NotImplementedException();
         }
 
 #pragma warning restore CS0649 // Field is never assigned to
