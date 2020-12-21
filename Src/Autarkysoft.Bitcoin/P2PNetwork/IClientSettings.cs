@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System.Net;
 using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -115,5 +116,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="nodeAddresses">List of timestamped nodes network addresses</param>
         void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses);
+
+        /// <summary>
+        /// Returns best known IP address of this client (<see cref="IPAddress.Loopback"/> if nothing is found).
+        /// </summary>
+        /// <returns>Best known IP address</returns>
+        IPAddress GetMyIP();
+        /// <summary>
+        /// Updates this client's IP address.
+        /// </summary>
+        /// <param name="addr">IP address to use</param>
+        void UpdateMyIP(IPAddress addr);
     }
 }

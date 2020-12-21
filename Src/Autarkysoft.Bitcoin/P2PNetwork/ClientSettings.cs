@@ -9,6 +9,9 @@ using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
@@ -172,6 +175,36 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             if (!(Storage is null))
             {
                 Storage.WriteAddrs(nodeAddresses);
+            }
+        }
+
+
+        /// <summary>
+        /// A list of IP addresses that other peers claimed are ours with the number of times each were received.
+        /// </summary>
+        public Dictionary<IPAddress, int> localIP = new Dictionary<IPAddress, int>(3);
+
+        /// <inheritdoc/>
+        public IPAddress GetMyIP()
+        {
+            if (localIP.Count > 0)
+            {
+                KeyValuePair<IPAddress, int> best = localIP.Aggregate((a, b) => a.Value > b.Value ? a : b);
+                if (best.Value > 3)
+                {
+                    // at least 4 nodes have approved this IP
+                    return best.Key;
+                }
+            }
+            return IPAddress.Loopback;
+        }
+
+        /// <inheritdoc/>
+        public void UpdateMyIP(IPAddress addr)
+        {
+            if (!IPAddress.IsLoopback(addr) && !localIP.TryAdd(addr, 0))
+            {
+                localIP[addr]++;
             }
         }
     }

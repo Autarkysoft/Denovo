@@ -9,6 +9,7 @@ using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
+using System.Net;
 using System.Threading;
 using Xunit;
 
@@ -241,6 +242,19 @@ namespace Tests.Bitcoin.P2PNetwork
             }
 
             Assert.Equal(expectedStream.ToByteArray(), actualStream.ToByteArray());
+        }
+
+        internal IPAddress myIpToReturn;
+        public IPAddress GetMyIP()
+        {
+            Assert.NotNull(myIpToReturn);
+            return myIpToReturn;
+        }
+
+        internal IPAddress expUpdateAddr;
+        public void UpdateMyIP(IPAddress addr)
+        {
+            Assert.Equal(expUpdateAddr, addr);
         }
 
 #pragma warning restore CS0649 // Field is never assigned to

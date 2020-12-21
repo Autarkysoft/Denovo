@@ -512,6 +512,7 @@ namespace Tests.Bitcoin.P2PNetwork
             BlockHeader hdr = BlockHeaderTests.GetSampleBlockHeader();
             var getHdrs = new Message(new GetHeadersPayload(mockProtoVer, new BlockHeader[] { hdr }, null), NetworkType.MainNet);
 
+
             yield return new object[]
             {
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.None, mediumViolation = true, updateTime = true },
@@ -560,7 +561,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                 },
                 null
             };
@@ -577,7 +578,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = true, // No feefilter becaue of protocol version
+                    _relay = true, // No feefilter becaue of protocol version, addr
+                    myIpToReturn = IPAddress.Loopback // No addr
                 },
                 null
             };
@@ -594,7 +596,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                 },
                 null
             };
@@ -612,7 +614,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = true, // No feefilter becaue of protocol version
+                    _relay = true, // No feefilter becaue of protocol version, addr
+                    myIpToReturn = IPAddress.Loopback // No addr
                 },
                 new Message[] { ping }
             };
@@ -630,7 +633,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = true, // No feefilter becaue of protocol version
+                    _relay = true, // No feefilter becaue of protocol version, addr
+                    myIpToReturn = IPAddress.Loopback // No addr
                 },
                 new Message[] { ping }
             };
@@ -648,7 +652,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = true, // No feefilter becaue of protocol version
+                    _relay = true, // No feefilter becaue of protocol version, addr
+                    myIpToReturn = IPAddress.Loopback // No addr
                 },
                 new Message[] { ping, sendHdr }
             };
@@ -666,7 +671,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = true, // No feefilter becaue of protocol version
+                    _relay = true, // No feefilter becaue of protocol version, addr
+                    myIpToReturn = IPAddress.Loopback // No addr
                 },
                 new Message[] { ping, sendHdr }
             };
@@ -684,7 +690,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                 },
                 new Message[] { ping, sendHdr }
             };
@@ -702,7 +708,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = false, // No sync (getheaders)
-                    _relay = true, // feefilter
+                    _relay = true, // feefilter, addr
+                    myIpToReturn = IPAddress.Loopback, // No addr
                     _fee = feeRateSat
                 },
                 new Message[] { ping, sendHdr, feeFilter }
@@ -724,7 +731,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = true, // Start sync (getheaders)
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                 },
                 null
             };
@@ -742,7 +749,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = true, // Start sync (getheaders)
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
                     _bchain = new MockBlockchain()
                     {
@@ -765,7 +772,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = true, // Start sync (getheaders)
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
                     _bchain = new MockBlockchain()
                     {
@@ -789,7 +796,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = true, // Start sync (getheaders)
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
                     _bchain = new MockBlockchain()
                     {
@@ -813,7 +820,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = true, // Start sync (getheaders) => no sendheaders
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
                     _bchain = new MockBlockchain()
                     {
@@ -837,7 +844,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = true, // Start sync (getheaders) => no sendheaders
-                    _relay = false, // No feefilter
+                    _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
                     _bchain = new MockBlockchain()
                     {
@@ -861,7 +868,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _catchup = true, // Start sync (getheaders) => no sendheaders, no feefilter
-                    _relay = true, // feefilter
+                    _relay = true, // feefilter, addr
+                    myIpToReturn = IPAddress.Loopback, // No addr
                     _protoVer = mockProtoVer,
                     _bchain = new MockBlockchain()
                     {
@@ -908,9 +916,75 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.Null(ns._handShakeToSet);
         }
 
+        public static IEnumerable<object[]> GetAddrCases()
+        {
+            yield return new object[] { IPAddress.Loopback, null };
+            yield return new object[] { IPAddress.IPv6Loopback, null };
+            yield return new object[]
+            {
+                IPAddress.Parse("1.2.3.4"),
+                new NetworkAddressWithTime(NodeServiceFlags.NodeBloom, IPAddress.Parse("1.2.3.4"), 11, 0)
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetAddrCases))]
+        public void GetSettingsMessages_Addr_Test(IPAddress ipToReturn, NetworkAddressWithTime expected)
+        {
+            var ns = new MockNodeStatus()
+            {
+                _handShakeToReturn = HandShakeState.ReceivedAndReplied,
+                _handShakeToSet = HandShakeState.Finished,
+                updateTime = true,
+                _protVer = Constants.P2PBip31ProtVer, // No ping, no feefilter, no sendheaders
+            };
+            var cs = new MockClientSettings()
+            {
+                _netType = NetworkType.MainNet,
+                _catchup = false, // No getheaders
+                _relay = true, // feefilter, addr
+                myIpToReturn = ipToReturn,
+                _services = NodeServiceFlags.NodeBloom,
+                _port = 11
+            };
+            var rep = new ReplyManager(ns, cs);
+            var msg = new Message(new VerackPayload(), NetworkType.MainNet);
+
+            Message[] actual = rep.GetReply(msg);
+            if (expected is null)
+            {
+                Assert.Null(actual);
+            }
+            else
+            {
+                Assert.Single(actual);
+                Assert.True(actual[0].TryGetPayloadType(out PayloadType actualPlType));
+                Assert.Equal(PayloadType.Addr, actualPlType);
+
+                var actualPL = new AddrPayload();
+                Assert.True(actualPL.TryDeserialize(new FastStreamReader(actual[0].PayloadData), out string error), error);
+                Assert.Single(actualPL.Addresses);
+                Assert.Equal(expected.NodeIP, actualPL.Addresses[0].NodeIP);
+                Assert.Equal(expected.NodePort, actualPL.Addresses[0].NodePort);
+                Assert.Equal(expected.NodeServices, actualPL.Addresses[0].NodeServices);
+                Assert.NotEqual(0U, actualPL.Addresses[0].Time);
+            }
+
+            // Mock will change the following bool to false if it were called.
+            Assert.False(ns.updateTime, "UpdateTime() was never called");
+
+            // Mock either doesn't have any h.s. to set or if it did set h.s. it was checked and then turned to null
+            Assert.Null(ns._handShakeToSet);
+
+            // Mock will change the following bool to false if it were called.
+            Assert.False(ns.updateTime, "UpdateTime() was never called");
+
+            // Mock either doesn't have any h.s. to set or if it did set h.s. it was checked and then turned to null
+            Assert.Null(ns._handShakeToSet);
+        }
+
+
         public static IEnumerable<object[]> GetVersionCases()
         {
-            int mockProtoVer = 527;
             var cs = new MockClientSettings()
             {
                 _protoVer = 123,

@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Cryptography;
+using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
@@ -77,6 +78,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 if (settings.Relay && nodeStatus.ProtocolVersion >= Constants.P2PBip133ProtVer)
                 {
                     result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
+                }
+
+                if (settings.Relay)
+                {
+                    var myIp = settings.GetMyIP();
+                    if (!IPAddress.IsLoopback(myIp))
+                    {
+                        uint time = (uint)UnixTimeStamp.GetEpochUtcNow();
+                        var myAddr = new NetworkAddressWithTime(settings.Services, myIp, settings.Port, time);
+                        result.Add(new Message(new AddrPayload(new NetworkAddressWithTime[1] { myAddr }), settings.Network));
+                    }
                 }
             }
 
