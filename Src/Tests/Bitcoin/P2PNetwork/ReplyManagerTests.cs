@@ -985,6 +985,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public static IEnumerable<object[]> GetVersionCases()
         {
+            var mockIp = IPAddress.Parse("198.27.100.9");
             var cs = new MockClientSettings()
             {
                 _protoVer = 123,
@@ -994,7 +995,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 _ua = "foo",
                 _relay = true,
                 _netType = NetworkType.MainNet,
-                _bchain = new MockBlockchain() { _height = 12345 }
+                _bchain = new MockBlockchain() { _height = 12345 },
+                expUpdateAddr = mockIp
             };
             var verPl = new VersionPayload();
             Assert.True(verPl.TryDeserialize(new FastStreamReader(Helper.HexToBytes("721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001")), out string error), error);
@@ -1011,7 +1013,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 Relay = verPl.Relay
             };
             var msg = new Message(verPl, NetworkType.MainNet);
-            var rcv = new NetworkAddress(NodeServiceFlags.NodeNone, IPAddress.Parse("203.0.113.192"), 444);
+            var rcv = new NetworkAddress(NodeServiceFlags.NodeNone, mockIp, 444);
             var trs = new NetworkAddress(cs.Services, IPAddress.IPv6Any, 0);
             var verak = new Message(new VerackPayload(), NetworkType.MainNet);
             var ver = new Message(new VersionPayload(123, 456, rcv, trs, 0x0158a8e8ba5f3ed3, "foo", 12345, true), NetworkType.MainNet);
@@ -1055,7 +1057,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _handShakeToReturn = HandShakeState.None,
                     _handShakeToSet = HandShakeState.ReceivedAndReplied,
-                    _ip = IPAddress.Parse("203.0.113.192"),
+                    _ip = mockIp,
                     _portToReturn = 444,
                     updateTime = true
                 },
@@ -1088,6 +1090,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _port = cs._port,
                     _ua = cs._ua,
                     _netType = cs._netType,
+                    expUpdateAddr = cs.expUpdateAddr,
                     _bchain = cs._bchain,
                     _relay = false, // No relay won't sent FeeFilter
                     _catchup = false,

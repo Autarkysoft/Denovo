@@ -499,6 +499,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             nodeStatus.UserAgent = version.UserAgent;
             nodeStatus.StartHeight = version.StartHeight;
             nodeStatus.Relay = version.Relay;
+            settings.UpdateMyIP(version.ReceivingNodeNetworkAddress.NodeIP);
 
             Message[] result = null;
 
