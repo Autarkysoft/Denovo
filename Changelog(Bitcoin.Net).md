@@ -1,6 +1,20 @@
 ### Next release
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.7.0.0...master)
 
+### Release 0.8.0 (2020-12-22)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.7.0.0...B0.8.0.0)
+* Improvments mainly in `ReplyManager` and `Blockchain` for handling communication and header verification
+* Target stuct is improved to handle edge cases in compliance with consensus rules
+* IConsensus has a couple of new properties and methods
+* Multiple new Constants are added
+* NodeStatus properties are pure properties and new method is used to signal disconnect instead
+* Block headers are now processed directly through IBlockchain instead of IClientSettings
+* Client can now store and report its own IP address after receiving Version messages
+* Client is now capable of downloading, verifying and storing the entire block headers
+* Client's communication is based on INode's protocol version
+* Added a new word list: Portuguese (affects BIP-39, ElectrumMnemonic but not defined for BIP85)
+* Various bug fixes, tests and some improvements
+
 ### Release 0.7.0 (2020-12-09)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.6.1.0...B0.7.0.0)
 * Introduce FullClient
