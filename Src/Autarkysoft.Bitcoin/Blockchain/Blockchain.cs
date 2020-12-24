@@ -183,7 +183,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             lock (mainLock)
             {
                 // Find index of the block that the first header in the array references
-                int lstIndex = headerList.FindIndex(x =>
+                int lstIndex = headerList.FindLastIndex(x =>
                                         ((ReadOnlySpan<byte>)headers[0].PreviousBlockHeaderHash).SequenceEqual(x.GetHash()));
 
                 int arrIndex = 0;
