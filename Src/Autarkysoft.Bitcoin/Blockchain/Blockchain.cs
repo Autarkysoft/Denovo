@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Encoders;
+using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
@@ -79,6 +80,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Block verifier
         /// </summary>
         public BlockVerifier BlockVer { get; set; }
+        /// <summary>
+        /// Client time
+        /// </summary>
+        public IClientTime Time { get; set; }
 
 
         /// <inheritdoc/>
@@ -175,6 +180,28 @@ namespace Autarkysoft.Bitcoin.Blockchain
             throw new NotImplementedException();
         }
 
+        private long GetMedianTimePast(int startIndex)
+        {
+            // Select at most 11 blocks from the tip (it can be less if current height is <11)
+            var times = new List<long>(11);
+            for (int i = 0; i < 11 && startIndex >= 0; i++, startIndex--)
+            {
+                times.Add(headerList[startIndex].BlockTime);
+            }
+
+            times.Sort();
+            // Return the middle item (count is smaller than 11 for early blocks)
+            return times[times.Count / 2];
+        }
+
+        private bool ProcessHeader(BlockHeader header, BlockHeader prvHeader, int height, Target nextTarget)
+        {
+            Consensus.BlockHeight = height;
+            return ((ReadOnlySpan<byte>)header.PreviousBlockHeaderHash).SequenceEqual(prvHeader.GetHash()) &&
+                   header.BlockTime > GetMedianTimePast(height - 1) &&
+                   header.BlockTime <= Time.Now + Constants.MaxFutureBlockTime &&
+                   BlockVer.VerifyHeader(header, nextTarget);
+        }
 
         /// <inheritdoc/>
         public BlockProcessResult ProcessHeaders(BlockHeader[] headers)
@@ -217,9 +244,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     int count = 0;
                     for (int i = arrIndex; i < headers.Length; i++)
                     {
-                        Consensus.BlockHeight = headerList.Count;
-                        if (((ReadOnlySpan<byte>)headers[i].PreviousBlockHeaderHash).SequenceEqual(headerList[^1].GetHash()) &&
-                            BlockVer.VerifyHeader(headers[i], GetNextTarget()))
+                        if (ProcessHeader(headers[i], headerList[^1], headerList.Count, GetNextTarget()))
                         {
                             headerList.Add(headers[i]);
                             count++;
