@@ -62,6 +62,11 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int BlockHeaderSize = 80;
         /// <summary>
+        /// Maximum amount of time that a block timestamp is allowed to exceed the
+        /// current network-adjusted time before the block will be accepted.
+        /// </summary>
+        public const long MaxFutureBlockTime = 2 * 60 * 60;
+        /// <summary>
         /// Maximum allowed length of the scripts in bytes
         /// </summary>
         public const int MaxScriptLength = 10_000;
