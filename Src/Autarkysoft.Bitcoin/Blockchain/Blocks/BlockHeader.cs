@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
+using Autarkysoft.Bitcoin.Encoders;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
@@ -110,15 +111,43 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// </summary>
         public uint Nonce { get; set; }
 
+
+        private byte[] hash;
+
         /// <summary>
         /// Returns hash of this header using the defined hash function.
+        /// <para/>Note that after the first call to this function, the hash result will be stored to avoid future repeated
+        /// computation. If any of the properties change this function has to be called with <paramref name="recompute"/> = true
+        /// to force re-computation of the hash.
         /// </summary>
+        /// <param name="recompute">
+        /// [Default alue = false] Indicates whether the hash should be recomputed or the cached value is still valid
+        /// </param>
         /// <returns>32 byte block header hash</returns>
-        public byte[] GetHash()
+        public byte[] GetHash(bool recompute = false)
         {
-            byte[] bytesToHash = Serialize();
-            using Sha256 hashFunc = new Sha256(true);
-            return hashFunc.ComputeHash(bytesToHash);
+            if (recompute || hash is null)
+            {
+                byte[] bytesToHash = Serialize();
+                using Sha256 hashFunc = new Sha256(true);
+                hash = hashFunc.ComputeHash(bytesToHash);
+            }
+
+            return hash;
+        }
+
+        /// <summary>
+        /// Returns hash of this block as a base-16 encoded string.
+        /// </summary>
+        /// <param name="recompute">
+        /// [Default alue = false] Indicates whether the hash should be recomputed or the cached value is still valid
+        /// </param>
+        /// <returns>Base-16 encoded block hash</returns>
+        public string GetID(bool recompute)
+        {
+            byte[] hashRes = GetHash(recompute);
+            Array.Reverse(hashRes);
+            return Base16.Encode(hashRes);
         }
 
         /// <inheritdoc/>

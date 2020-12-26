@@ -42,7 +42,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             Assert.True(success);
             Assert.Equal(expected, blk.Header.Nonce);
-            Assert.Equal("000000000000005befb0b49dec35738f6ad493f9c7a6e777d69836323f1cf5f2", blk.GetBlockID());
+            Assert.Equal("000000000000005befb0b49dec35738f6ad493f9c7a6e777d69836323f1cf5f2", blk.GetBlockID(false));
         }
 
         [Fact]

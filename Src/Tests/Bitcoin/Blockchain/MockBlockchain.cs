@@ -49,7 +49,7 @@ namespace Tests.Bitcoin.Blockchain
         internal bool blkProcessSuccess;
         public bool ProcessBlock(IBlock block)
         {
-            Assert.Equal(expProcessBlk, block.GetBlockID());
+            Assert.Equal(expProcessBlk, block.GetBlockID(false));
             return blkProcessSuccess;
         }
 

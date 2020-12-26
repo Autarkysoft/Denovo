@@ -88,15 +88,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
-        public byte[] GetBlockHash() => Header.GetHash();
+        public byte[] GetBlockHash(bool recompute = false) => Header.GetHash(recompute);
 
         /// <inheritdoc/>
-        public string GetBlockID()
-        {
-            byte[] hashRes = GetBlockHash();
-            Array.Reverse(hashRes);
-            return Base16.Encode(hashRes);
-        }
+        public string GetBlockID(bool recompute = false) => Header.GetID(recompute);
 
 
         /// <inheritdoc/>

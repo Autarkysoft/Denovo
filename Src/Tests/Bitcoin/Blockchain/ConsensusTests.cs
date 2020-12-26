@@ -137,7 +137,7 @@ namespace Tests.Bitcoin.Blockchain
             Consensus cs = new Consensus(123, net);
             IBlock genesis = cs.GetGenesisBlock();
 
-            string actualID = genesis.GetBlockID();
+            string actualID = genesis.GetBlockID(false);
             byte[] expectedMerkle = Helper.HexToBytes("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b", true);
 
             Assert.Equal(expectedID, actualID);

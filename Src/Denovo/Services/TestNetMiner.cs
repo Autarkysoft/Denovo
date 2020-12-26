@@ -74,7 +74,7 @@ namespace Denovo.Services
                     Version = prev.Header.Version,
                     BlockTime = (uint)UnixTimeStamp.TimeToEpoch(DateTime.UtcNow.AddMinutes(22)),
                     NBits = 0x1d00ffffU,
-                    PreviousBlockHeaderHash = prev.GetBlockHash(),
+                    PreviousBlockHeaderHash = prev.GetBlockHash(false),
                 },
                 TransactionList = new Transaction[] { coinbase }
             };

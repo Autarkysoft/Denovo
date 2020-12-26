@@ -25,8 +25,8 @@ namespace Tests.Bitcoin.Blockchain
 
         public virtual byte[] ComputeMerkleRoot() => throw new NotImplementedException();
         public virtual byte[] ComputeWitnessMerkleRoot(byte[] commitment) => throw new NotImplementedException();
-        public virtual byte[] GetBlockHash() => throw new NotImplementedException();
-        public virtual string GetBlockID() => throw new NotImplementedException();
+        public virtual byte[] GetBlockHash(bool recompute) => throw new NotImplementedException();
+        public virtual string GetBlockID(bool recompute) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
     }
@@ -48,7 +48,7 @@ namespace Tests.Bitcoin.Blockchain
         private readonly byte[] hash;
 
 
-        public override byte[] GetBlockHash()
+        public override byte[] GetBlockHash(bool recompute)
         {
             if (hash == null)
             {
@@ -57,7 +57,7 @@ namespace Tests.Bitcoin.Blockchain
             return hash;
         }
 
-        public override string GetBlockID()
+        public override string GetBlockID(bool recompute)
         {
             if (hash == null)
             {

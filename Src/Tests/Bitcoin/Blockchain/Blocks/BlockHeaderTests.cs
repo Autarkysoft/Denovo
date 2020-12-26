@@ -53,6 +53,33 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
 
         [Fact]
+        public void GetHashTest()
+        {
+            var hdr = GetSampleBlockHeader();
+            byte[] actualHash1 = hdr.GetHash();
+            Assert.Equal(GetSampleBlockHash(), actualHash1);
+
+            // Change any property to have a different hash
+            hdr.Version++;
+
+            byte[] actualHash2 = hdr.GetHash();
+            // Hash doesn't change until explicitly asked
+            Assert.Equal(actualHash2, actualHash1);
+
+            byte[] actualHash3 = hdr.GetHash(true);
+            Assert.NotEqual(actualHash3, actualHash1);
+        }
+
+        [Fact]
+        public void GetHash_NullFieldTest()
+        {
+            var hdr = GetSampleBlockHeader();
+            // Requesting re-hash while the stored value is null
+            byte[] actualHash1 = hdr.GetHash(true);
+            Assert.Equal(GetSampleBlockHash(), actualHash1);
+        }
+
+        [Fact]
         public void SerializeTest()
         {
             BlockHeader hd = GetSampleBlockHeader();
