@@ -63,7 +63,7 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 _protoVer = 123,
                 _services = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness,
-                _time = 456,
+                _time = new MockClientTime() { _now = 456 },
                 _ua = "foo",
                 _relay = true,
                 _netType = NetworkType.TestNet,
@@ -985,12 +985,14 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public static IEnumerable<object[]> GetVersionCases()
         {
+            var verPl = new VersionPayload();
+            Assert.True(verPl.TryDeserialize(new FastStreamReader(Helper.HexToBytes("721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001")), out string error), error);
             var mockIp = IPAddress.Parse("198.27.100.9");
             var cs = new MockClientSettings()
             {
                 _protoVer = 123,
                 _services = NodeServiceFlags.All,
-                _time = 456,
+                _time = new MockClientTime() { _now = 456, _updateTime = verPl.Timestamp },
                 _port = 789,
                 _ua = "foo",
                 _relay = true,
@@ -998,8 +1000,6 @@ namespace Tests.Bitcoin.P2PNetwork
                 _bchain = new MockBlockchain() { _height = 12345 },
                 expUpdateAddr = mockIp
             };
-            var verPl = new VersionPayload();
-            Assert.True(verPl.TryDeserialize(new FastStreamReader(Helper.HexToBytes("721101000100000000000000bc8f5e5400000000010000000000000000000000000000000000ffffc61b6409208d010000000000000000000000000000000000ffffcb0071c0208d128035cbc97953f80f2f5361746f7368693a302e392e332fcf05050001")), out string error), error);
             var verPlLowVer = new VersionPayload()
             {
                 Version = 1,

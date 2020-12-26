@@ -51,12 +51,18 @@ namespace Denovo.ViewModels
 
                 AllNodes = new NodePool(ConfigVm.Config.MaxConnectionCount);
                 var consensus = new Consensus(0, network);
+                var time = new ClientTime();
+                time.WrongClockEvent += Time_WrongClockEvent;
                 var clientSettings = new ClientSettings()
                 {
                     UserAgent = ConfigVm.Config.UserAgent,
                     Relay = ConfigVm.Config.Relay,
                     Network = network,
-                    Blockchain = new Blockchain(new FileManager(network), new BlockVerifier(null, consensus), consensus),
+                    Time = time,
+                    Blockchain = new Blockchain(new FileManager(network), new BlockVerifier(null, consensus), consensus)
+                    {
+                        Time = time
+                    },
                     Storage = StorageMan,
                     AcceptIncomingConnections = ConfigVm.Config.AcceptIncoming,
                     MaxConnectionCount = ConfigVm.Config.MaxConnectionCount,
@@ -77,6 +83,11 @@ namespace Denovo.ViewModels
                     $"Protocol version: {clientSettings.ProtocolVersion}{Environment.NewLine}" +
                     $"Max connection count: {clientSettings.MaxConnectionCount}{Environment.NewLine}";
             }
+        }
+
+        private void Time_WrongClockEvent(object sender, EventArgs e)
+        {
+            Result = "The computer's clock is possibly wrong.";
         }
 
         public NodePool AllNodes { get; set; }

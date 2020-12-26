@@ -86,8 +86,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         /// <inheritdoc/>
-        public IBlockchain Blockchain { get; set; }
+        public IClientTime Time { get; set; }
 
+        /// <inheritdoc/>
+        public IBlockchain Blockchain { get; set; }
 
         /// <inheritdoc/>
         public IMemoryPool MemPool { get; set; }
@@ -109,8 +111,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public NetworkType Network { get; set; }
         /// <inheritdoc/>
         public NodeServiceFlags Services { get; set; }
-        /// <inheritdoc/>
-        public long Time => UnixTimeStamp.GetEpochUtcNow();
         /// <inheritdoc/>
         public ushort Port { get; set; }
         /// <inheritdoc/>
@@ -182,29 +182,44 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// A list of IP addresses that other peers claimed are ours with the number of times each were received.
         /// </summary>
-        public Dictionary<IPAddress, int> localIP = new Dictionary<IPAddress, int>(3);
+        public Dictionary<IPAddress, int> localIP = new Dictionary<IPAddress, int>(MaxIpCapacity);
+        private readonly object ipLock = new object();
+        private const int MaxIpCapacity = 4;
 
         /// <inheritdoc/>
         public IPAddress GetMyIP()
         {
-            if (localIP.Count > 0)
+            lock (ipLock)
             {
-                KeyValuePair<IPAddress, int> best = localIP.Aggregate((a, b) => a.Value > b.Value ? a : b);
-                if (best.Value > 3)
+                if (localIP.Count > 0)
                 {
-                    // at least 4 nodes have approved this IP
-                    return best.Key;
+                    KeyValuePair<IPAddress, int> best = localIP.Aggregate((a, b) => a.Value > b.Value ? a : b);
+                    if (best.Value > 3)
+                    {
+                        // at least 4 nodes have approved this IP
+                        return best.Key;
+                    }
                 }
+                return IPAddress.Loopback;
             }
-            return IPAddress.Loopback;
         }
 
         /// <inheritdoc/>
         public void UpdateMyIP(IPAddress addr)
         {
-            if (!IPAddress.IsLoopback(addr) && !localIP.TryAdd(addr, 0))
+            lock (ipLock)
             {
-                localIP[addr]++;
+                // Prevent the dictionary from becoming too big.
+                if (localIP.Count >= MaxIpCapacity)
+                {
+                    KeyValuePair<IPAddress, int> smallest = localIP.Aggregate((a, b) => a.Value < b.Value ? a : b);
+                    localIP.Remove(smallest.Key);
+                }
+
+                if (!IPAddress.IsLoopback(addr) && !localIP.TryAdd(addr, 0))
+                {
+                    localIP[addr]++;
+                }
             }
         }
     }

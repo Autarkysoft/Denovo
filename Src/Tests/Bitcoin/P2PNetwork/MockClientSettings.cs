@@ -21,6 +21,20 @@ namespace Tests.Bitcoin.P2PNetwork
 
         private const string UnexpectedCall = "Unexpected call was made";
 
+        internal IClientTime _time;
+        public IClientTime Time
+        {
+            get
+            {
+                Assert.False(_time is null, UnexpectedCall);
+                return _time;
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         internal IBlockchain _bchain;
         public IBlockchain Blockchain
         {
@@ -129,16 +143,6 @@ namespace Tests.Bitcoin.P2PNetwork
                 return _services.Value;
             }
             set => throw new NotImplementedException();
-        }
-
-        internal long _time;
-        public long Time
-        {
-            get
-            {
-                Assert.True(_time != 0, UnexpectedCall);
-                return _time;
-            }
         }
 
         internal ushort _port;

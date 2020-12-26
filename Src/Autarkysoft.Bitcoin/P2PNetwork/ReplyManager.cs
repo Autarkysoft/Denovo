@@ -131,7 +131,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 Version = settings.ProtocolVersion,
                 Services = settings.Services,
-                Timestamp = settings.Time,
+                Timestamp = settings.Time.Now,
                 ReceivingNodeNetworkAddress = recvAddr,
                 // TODO: IP and port zero are bitcoin-core's behavior, it can be changed if needed
                 TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.IPv6Any, 0),
@@ -500,6 +500,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             nodeStatus.StartHeight = version.StartHeight;
             nodeStatus.Relay = version.Relay;
             settings.UpdateMyIP(version.ReceivingNodeNetworkAddress.NodeIP);
+            settings.Time.UpdateTime(version.Timestamp);
 
             Message[] result = null;
 

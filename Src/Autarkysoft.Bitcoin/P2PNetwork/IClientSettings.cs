@@ -17,6 +17,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public interface IClientSettings
     {
         /// <summary>
+        /// Gets or sets the client time
+        /// </summary>
+        IClientTime Time { get; set; }
+
+        /// <summary>
         /// Gets or sets the blockchain instance to be shared among all node instances
         /// </summary>
         IBlockchain Blockchain { get; set; }
@@ -61,10 +66,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Services this client supports
         /// </summary>
         NodeServiceFlags Services { get; set; }
-        /// <summary>
-        /// Returns the current UTC time as an epoch timestamp
-        /// </summary>
-        long Time { get; }
         /// <summary>
         /// Port that this client listens to and makes connection over
         /// </summary>
