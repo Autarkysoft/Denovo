@@ -214,6 +214,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             if (!isDisposed)
             {
+                isDisposed = true;
                 if (disposing)
                 {
                     // Dispose timer first to prevent it from raising its event and calling Send()
@@ -233,6 +234,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         sendReceiveSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
 
                         settings.SendReceivePool.Push(sendReceiveSAEA);
+                        sendReceiveSAEA = null;
                     }
 
                     if (!(sendSAEA is null))
@@ -240,9 +242,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         sendSAEA.AcceptSocket = null;
                         sendSAEA.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
 
-
                         settings.SendReceivePool.Push(sendSAEA);
-                        sendReceiveSAEA = null;
                         sendSAEA = null;
                     }
 
@@ -252,8 +252,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                     settings.MaxConnectionEnforcer.Release();
                 }
-
-                isDisposed = true;
             }
         }
 
