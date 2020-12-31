@@ -6,7 +6,6 @@
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography;
-using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Collections.Generic;
@@ -96,6 +95,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         /// <inheritdoc/>
         public IStorage Storage { get; set; }
+
+        /// <inheritdoc/>
+        public ClientState State { get; set; }
 
         /// <inheritdoc/>
         public bool IsCatchingUp { get; set; }

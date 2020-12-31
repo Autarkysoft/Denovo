@@ -114,7 +114,8 @@ namespace Autarkysoft.Bitcoin
             // a "map" (ie. the block headers) to figure out what the local blockchain status actually is (behind, same
             // or ahead).
             // The message/reply mangers have to handle the sync process and raise an event to add more peers to the pool.
-            Settings.IsCatchingUp = true;
+            Settings.State = ClientState.HeadersSync;
+
             bool supportsIpV6 = Socket.OSSupportsIPv6;
             NetworkAddressWithTime[] addrs = Storage.ReadAddrs();
             if (addrs is null)

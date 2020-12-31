@@ -68,6 +68,23 @@ namespace Tests.Bitcoin.P2PNetwork
             set => throw new NotImplementedException();
         }
 
+
+        internal ClientState? _stateToReturn;
+        internal ClientState? _stateToSet;
+        public ClientState State
+        {
+            get
+            {
+                Assert.True(_stateToReturn.HasValue, UnexpectedCall);
+                return _stateToReturn.Value;
+            }
+            set
+            {
+                Assert.True(_stateToSet.HasValue, UnexpectedCall);
+                Assert.Equal(_stateToSet.Value, value);
+            }
+        }
+
         internal bool? _catchup;
         public bool IsCatchingUp
         {

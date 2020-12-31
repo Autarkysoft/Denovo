@@ -37,6 +37,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         IStorage Storage { get; set; }
 
         /// <summary>
+        /// Gets or sets the current client state
+        /// </summary>
+        ClientState State { get; set; }
+
+        /// <summary>
         /// Returns if the client is behind and has to sync its blockchain first.
         /// </summary>
         bool IsCatchingUp { get; set; }
