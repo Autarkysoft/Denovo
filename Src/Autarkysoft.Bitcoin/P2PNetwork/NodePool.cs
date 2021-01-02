@@ -64,12 +64,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         /// <inheritdoc/>
-        protected event PropertyChangedEventHandler PropertyChanged;
-        event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged
-        {
-            add { PropertyChanged += value; }
-            remove { PropertyChanged -= value; }
-        }
+        public event PropertyChangedEventHandler PropertyChanged;
 
 
         private void CheckIndex(int index)
@@ -95,7 +90,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             monitor.Wait();
             context.Send(state =>
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Count"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }, null);
@@ -107,7 +102,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             monitor.Wait();
             context.Send(state =>
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Count"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
             }, null);
@@ -119,7 +114,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             monitor.Wait();
             context.Send(state =>
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Count"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
             }, null);
@@ -162,16 +157,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         /// <inheritdoc/>
-        public int Count
-        {
-            get
-            {
-                lock (lockObj)
-                {
-                    return size;
-                }
-            }
-        }
+        public int Count => size;
 
         /// <inheritdoc/>
         public bool IsReadOnly => false;
@@ -186,7 +172,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 items[size] = item;
                 version++;
                 item.NodeStatus.DisconnectEvent += NodeStatus_DisconnectEvent;
-                OnNotifyItemAdded(item, size++);
+                Interlocked.Increment(ref size);
+                OnNotifyItemAdded(item, size);
             }
         }
 
@@ -290,7 +277,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 }
 
                 Node removedVal = items[index];
-                size--;
+                Interlocked.Decrement(ref size);
                 if (index < size)
                 {
                     Array.Copy(items, index + 1, items, index, size - index);
@@ -312,7 +299,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 CheckIndex(index);
 
                 Node removedVal = items[index];
-                size--;
+                Interlocked.Decrement(ref size);
                 if (index < size)
                 {
                     Array.Copy(items, index + 1, items, index, size - index);
