@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -24,11 +25,8 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// Initializes a new instance of <see cref="FullClient"/> with default properties.
         /// </summary>
-        public FullClient()
+        public FullClient() : this(new ClientSettings(), new NodePool())
         {
-            AllNodes = new NodePool(Settings.MaxConnectionCount);
-            Settings = new ClientSettings();
-            Rng = new RandomNonceGenerator();
         }
 
         /// <summary>
@@ -45,6 +43,8 @@ namespace Autarkysoft.Bitcoin
             {
                 listener = new NodeListener(AllNodes, settings);
             }
+
+            Rng = new RandomNonceGenerator();
         }
 
 
@@ -116,7 +116,8 @@ namespace Autarkysoft.Bitcoin
             // The message/reply mangers have to handle the sync process and raise an event to add more peers to the pool.
             Settings.State = ClientState.HeadersSync;
 
-            bool supportsIpV6 = Socket.OSSupportsIPv6;
+            bool supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
+
             NetworkAddressWithTime[] addrs = Storage.ReadAddrs();
             if (addrs is null)
             {
