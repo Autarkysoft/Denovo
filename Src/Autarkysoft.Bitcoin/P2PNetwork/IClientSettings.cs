@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System;
 using System.Net;
 using System.Threading;
 
@@ -40,6 +41,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Gets or sets the current client state
         /// </summary>
         ClientState State { get; set; }
+
+        /// <summary>
+        /// An event to be raised when the initial header sync is over (signals start of adding new nodes, 
+        /// downloading missing blocks, etc).
+        /// </summary>
+        event EventHandler HeaderSyncEndEvent;
+        /// <summary>
+        /// An event to be raised when the initial block sync is over (signals start of listening for connections if needed,
+        /// starting memory pool, etc).
+        /// </summary>
+        event EventHandler BlockSyncEndEvent;
 
         /// <summary>
         /// Returns if the client is behind and has to sync its blockchain first.

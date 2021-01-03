@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -96,8 +97,33 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public IStorage Storage { get; set; }
 
+        private ClientState _state = ClientState.None;
         /// <inheritdoc/>
-        public ClientState State { get; set; }
+        public ClientState State
+        {
+            get => _state;
+            set
+            {
+                if (_state != value) // This should never be false
+                {
+                    _state = value;
+                    if (_state == ClientState.BlocksSync)
+                    {
+                        HeaderSyncEndEvent?.Invoke(this, EventArgs.Empty);
+                    }
+                    else if (_state == ClientState.Synchronize)
+                    {
+                        BlockSyncEndEvent?.Invoke(this, EventArgs.Empty);
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public event EventHandler HeaderSyncEndEvent;
+        /// <inheritdoc/>
+        public event EventHandler BlockSyncEndEvent;
+
 
         /// <inheritdoc/>
         public bool IsCatchingUp { get; set; }

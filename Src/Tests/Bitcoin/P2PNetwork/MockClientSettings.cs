@@ -85,6 +85,9 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
+        public event EventHandler HeaderSyncEndEvent;
+        public event EventHandler BlockSyncEndEvent;
+
         internal bool? _catchup;
         public bool IsCatchingUp
         {
