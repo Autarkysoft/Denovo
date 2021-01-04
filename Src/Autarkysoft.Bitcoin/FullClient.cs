@@ -45,8 +45,24 @@ namespace Autarkysoft.Bitcoin
             }
 
             Rng = new RandomNonceGenerator();
+
+            Settings.Blockchain.HeaderSyncEndEvent += Blockchain_HeaderSyncEndEvent;
+            Settings.Blockchain.BlockSyncEndEvent += Blockchain_BlockSyncEndEvent;
         }
 
+
+        private void Blockchain_HeaderSyncEndEvent(object sender, EventArgs e)
+        {
+            // Increase the number of connections to max connection and start dowloading blocks
+        }
+
+        private void Blockchain_BlockSyncEndEvent(object sender, EventArgs e)
+        {
+            if (!(listener is null))
+            {
+                listener.StartListen(new IPEndPoint(IPAddress.Any, Settings.Port));
+            }
+        }
 
         private readonly NodeListener listener;
         private readonly NodeConnector connector;
@@ -114,11 +130,11 @@ namespace Autarkysoft.Bitcoin
             // a "map" (ie. the block headers) to figure out what the local blockchain status actually is (behind, same
             // or ahead).
             // The message/reply mangers have to handle the sync process and raise an event to add more peers to the pool.
-            Settings.State = ClientState.HeadersSync;
+            Settings.Blockchain.State = BlockchainState.HeadersSync;
 
             bool supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
 
-            NetworkAddressWithTime[] addrs = Storage.ReadAddrs();
+            NetworkAddressWithTime[] addrs = Settings.GetNodeAddrs();
             if (addrs is null)
             {
                 // Dig a small number of DNS seeds that are randomly chosen.
@@ -145,7 +161,7 @@ namespace Autarkysoft.Bitcoin
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var addr = addrs[indexes[i]];
+                        NetworkAddressWithTime addr = addrs[indexes[i]];
                         if (!supportsIpV6 && addr.NodeIP.AddressFamily == AddressFamily.InterNetworkV6)
                         {
                             continue;
@@ -153,11 +169,6 @@ namespace Autarkysoft.Bitcoin
                         connector.StartConnect(new IPEndPoint(addr.NodeIP, addr.NodePort));
                     }
                 });
-            }
-
-            if (!(listener is null))
-            {
-                listener.StartListen(new IPEndPoint(IPAddress.Any, Settings.Port));
             }
         }
     }

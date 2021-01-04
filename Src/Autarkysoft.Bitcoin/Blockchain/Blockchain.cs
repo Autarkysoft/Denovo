@@ -85,6 +85,33 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// </summary>
         public IClientTime Time { get; set; }
 
+        private BlockchainState _state = BlockchainState.None;
+        /// <inheritdoc/>
+        public BlockchainState State
+        {
+            get => _state;
+            set
+            {
+                if (_state != value) // This should never be false
+                {
+                    _state = value;
+                    if (_state == BlockchainState.BlocksSync)
+                    {
+                        HeaderSyncEndEvent?.Invoke(this, EventArgs.Empty);
+                    }
+                    else if (_state == BlockchainState.Synchronized)
+                    {
+                        BlockSyncEndEvent?.Invoke(this, EventArgs.Empty);
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public event EventHandler HeaderSyncEndEvent;
+        /// <inheritdoc/>
+        public event EventHandler BlockSyncEndEvent;
+
 
         /// <inheritdoc/>
         public int Height => headerList.Count - 1;

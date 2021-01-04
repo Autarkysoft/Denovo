@@ -17,6 +17,25 @@ namespace Tests.Bitcoin.Blockchain
 
         private const string UnexpectedCall = "Unexpected call was made";
 
+        internal BlockchainState? _stateToReturn;
+        internal BlockchainState? _stateToSet;
+        public BlockchainState State
+        {
+            get
+            {
+                Assert.True(_stateToReturn.HasValue, UnexpectedCall);
+                return _stateToReturn.Value;
+            }
+            set
+            {
+                Assert.True(_stateToSet.HasValue, UnexpectedCall);
+                Assert.Equal(_stateToSet.Value, value);
+            }
+        }
+
+        public event EventHandler HeaderSyncEndEvent;
+        public event EventHandler BlockSyncEndEvent;
+
         internal int _height = -1;
         public int Height
         {

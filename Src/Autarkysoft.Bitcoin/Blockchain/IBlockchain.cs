@@ -14,6 +14,21 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public interface IBlockchain
     {
         /// <summary>
+        /// Gets or sets the current blockchain state
+        /// </summary>
+        public BlockchainState State { get; set; }
+        /// <summary>
+        /// An event to be raised when the initial header sync is over (signals start of adding new nodes, 
+        /// downloading missing blocks, etc).
+        /// </summary>
+        event EventHandler HeaderSyncEndEvent;
+        /// <summary>
+        /// An event to be raised when the initial block sync is over (signals start of listening for connections
+        /// if needed, starting memory pool, etc).
+        /// </summary>
+        event EventHandler BlockSyncEndEvent;
+
+        /// <summary>
         /// Returns the best block height (tip of the stored chain)
         /// </summary>
         int Height { get; }

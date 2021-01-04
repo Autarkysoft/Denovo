@@ -40,6 +40,12 @@ namespace Denovo.ViewModels
         internal class MockBlockChain : IBlockchain
         {
             public int Height => 0;
+
+            public BlockchainState State { get => BlockchainState.None; set => throw new NotImplementedException(); }
+
+            public event EventHandler HeaderSyncEndEvent;
+            public event EventHandler BlockSyncEndEvent;
+
             public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
             public Target GetNextTarget() => throw new NotImplementedException();
             public bool ProcessBlock(IBlock block) => true;

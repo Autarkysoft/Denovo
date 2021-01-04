@@ -3,12 +3,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-namespace Autarkysoft.Bitcoin.P2PNetwork
+namespace Autarkysoft.Bitcoin.Blockchain
 {
     /// <summary>
     /// Full client's current state
     /// </summary>
-    public enum ClientState
+    public enum BlockchainState
     {
         /// <summary>
         /// Not started yet
@@ -26,6 +26,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Fully synchronize client that has to only download new blocks and can provide history to other peers,
         /// has a mempool, ...
         /// </summary>
-        Synchronize
+        Synchronized
     }
 }
