@@ -38,6 +38,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private SocketAsyncEventArgsPool connectPool;
         private ICollection<Node> peers;
         private readonly IClientSettings settings;
+        /// <summary>
+        /// Occurs when Connect fails
+        /// </summary>
+        public event EventHandler ConnectFailureEvent;
 
 
         /// <summary>
@@ -75,6 +79,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 connectEventArgs.AcceptSocket.Close();
                 settings.MaxConnectionEnforcer.Release();
+                ConnectFailureEvent?.Invoke(this, null);
             }
 
             // Remove "connect" SAEA socket before putting it back in pool to be used for the next connect operation.
