@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Encoders;
+using Autarkysoft.Bitcoin.P2PNetwork;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +20,8 @@ namespace Tests.Bitcoin.Blockchain
     {
         private static Autarkysoft.Bitcoin.Blockchain.Blockchain GetChain(IFileManager fman, BlockVerifier bver, IConsensus c)
         {
-            return new Autarkysoft.Bitcoin.Blockchain.Blockchain(fman, bver, c);
+            // TODO: we can mock Time too
+            return new Autarkysoft.Bitcoin.Blockchain.Blockchain(fman, bver, c) { Time = new ClientTime() };
         }
 
         private static IEnumerable<BlockHeader> GetHeaders(int count)
