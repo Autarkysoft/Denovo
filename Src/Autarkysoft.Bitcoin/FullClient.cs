@@ -46,14 +46,31 @@ namespace Autarkysoft.Bitcoin
 
             Rng = new RandomNonceGenerator();
 
+            supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
+
+            connector.ConnectFailureEvent += Connector_ConnectFailureEvent;
+
             Settings.Blockchain.HeaderSyncEndEvent += Blockchain_HeaderSyncEndEvent;
             Settings.Blockchain.BlockSyncEndEvent += Blockchain_BlockSyncEndEvent;
+            AllNodes.ItemRemovedEvent += AllNodes_ItemRemovedEvent;
         }
 
+
+        private void Connector_ConnectFailureEvent(object sender, EventArgs e)
+        {
+            // TODO: remove the IP that couldn't be connected from the peer list
+            ConnectToMorePeers();
+        }
+
+        private void AllNodes_ItemRemovedEvent(object sender, EventArgs e)
+        {
+            ConnectToMorePeers();
+        }
 
         private void Blockchain_HeaderSyncEndEvent(object sender, EventArgs e)
         {
             // Increase the number of connections to max connection and start dowloading blocks
+            ConnectToMorePeers();
         }
 
         private void Blockchain_BlockSyncEndEvent(object sender, EventArgs e)
@@ -64,8 +81,10 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+
         private readonly NodeListener listener;
         private readonly NodeConnector connector;
+        private readonly bool supportsIpV6;
 
         private const int DnsDigCount = 3;
 
@@ -120,22 +139,69 @@ namespace Autarkysoft.Bitcoin
             return result.ToArray();
         }
 
-        /// <summary>
-        /// Start this client by selecting a random peer's IP address and connecting to it.
-        /// </summary>
-        public async void Start()
+        private void ConnectToMorePeers()
         {
-            // When client starts, whether the blockchain is not synced at all (0 blocks) or partly synced (some blocks) or
-            // fully synced (all blocks to the actual tip), the connection always starts with 1 other node to download
-            // a "map" (ie. the block headers) to figure out what the local blockchain status actually is (behind, same
-            // or ahead).
-            // The message/reply mangers have to handle the sync process and raise an event to add more peers to the pool.
-            Settings.Blockchain.State = BlockchainState.HeadersSync;
+            if (Settings.Blockchain.State == BlockchainState.HeadersSync && AllNodes.Count < 1)
+            {
+                // Connect to one and only one peer
+                ConnectToSignlePeer();
+            }
+            else if (Settings.Blockchain.State == BlockchainState.BlocksSync ||
+                     Settings.Blockchain.State == BlockchainState.Synchronized)
+            {
+                // Connect to max connection number of peers
+                ConnecToMultiplePeers(Settings.MaxConnectionCount - AllNodes.Count);
+            }
+        }
 
-            bool supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
+        private async void ConnecToMultiplePeers(int max)
+        {
+            if (max <= 0)
+            {
+                return;
+            }
 
             NetworkAddressWithTime[] addrs = Settings.GetNodeAddrs();
-            if (addrs is null)
+            if (addrs is null || addrs.Length == 0)
+            {
+                // Dig a small number of DNS seeds that are randomly chosen.
+                IPAddress[] ips = await DigDnsSeeds(false);
+                if (ips is null)
+                {
+                    // If random dig failed, dig all of them.
+                    ips = await DigDnsSeeds(true);
+                    if (ips is null)
+                    {
+                        // TODO: we need some sort of message manager or logger to post results, errors,... to
+                        return;
+                    }
+                }
+
+                int[] indices = Rng.GetDistinct(0, ips.Length, Math.Min(ips.Length, max));
+                foreach (var index in indices)
+                {
+                    await Task.Run(() => connector.StartConnect(new IPEndPoint(ips[index], Settings.Port)));
+                }
+            }
+            else
+            {
+                int[] indices = Rng.GetDistinct(0, addrs.Length, Math.Min(addrs.Length, max));
+                foreach (var index in indices)
+                {
+                    if (!supportsIpV6 && addrs[index].NodeIP.AddressFamily != AddressFamily.InterNetwork)
+                    {
+                        continue;
+                    }
+                    await Task.Run(() => connector.StartConnect(new IPEndPoint(addrs[index].NodeIP, addrs[index].NodePort)));
+                }
+            }
+        }
+
+
+        private async void ConnectToSignlePeer()
+        {
+            NetworkAddressWithTime[] addrs = Settings.GetNodeAddrs();
+            if (addrs is null || addrs.Length == 0)
             {
                 // Dig a small number of DNS seeds that are randomly chosen.
                 IPAddress[] ips = await DigDnsSeeds(false);
@@ -155,21 +221,31 @@ namespace Autarkysoft.Bitcoin
             }
             else
             {
-                int max = Math.Min(Settings.MaxConnectionCount, addrs.Length);
-                var indexes = Rng.GetDistinct(0, addrs.Length, max);
-                await Task.Run(() =>
+                do
                 {
-                    for (int i = 0; i < max; i++)
+                    int index = Rng.NextInt32() % addrs.Length;
+                    if (!supportsIpV6 && addrs[index].NodeIP.AddressFamily != AddressFamily.InterNetwork)
                     {
-                        NetworkAddressWithTime addr = addrs[indexes[i]];
-                        if (!supportsIpV6 && addr.NodeIP.AddressFamily == AddressFamily.InterNetworkV6)
-                        {
-                            continue;
-                        }
-                        connector.StartConnect(new IPEndPoint(addr.NodeIP, addr.NodePort));
+                        continue;
                     }
-                });
+                    await Task.Run(() => connector.StartConnect(new IPEndPoint(addrs[index].NodeIP, addrs[index].NodePort)));
+                    break;
+                } while (true);
             }
+        }
+
+        /// <summary>
+        /// Start this client by selecting a random peer's IP address and connecting to it.
+        /// </summary>
+        public void Start()
+        {
+            // When client starts, whether the blockchain is not synced at all (0 blocks) or partly synced (some blocks) or
+            // fully synced (all blocks to the actual tip), the connection always starts with 1 other node to download
+            // a "map" (ie. the block headers) to figure out what the local blockchain status actually is (behind, same
+            // or ahead).
+            // The message/reply mangers have to handle the sync process and raise an event to add more peers to the pool.
+            Settings.Blockchain.State = BlockchainState.HeadersSync;
+            ConnectToSignlePeer();
         }
     }
 }

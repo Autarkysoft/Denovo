@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
-using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
@@ -264,6 +263,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                 if (arrIndex == headers.Length)
                 {
+                    // No new headers were received
+                    ChangeState(0);
                     return BlockProcessResult.Success;
                 }
                 else
@@ -290,6 +291,17 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
         }
 
+        private void ChangeState(int length)
+        {
+            if (length < HeadersPayload.MaxCount &&
+                State == BlockchainState.HeadersSync &&
+                Time.Now - headerList[^1].BlockTime <= TimeSpan.FromHours(24).TotalSeconds)
+            {
+                State = BlockchainState.BlocksSync;
+            }
+        }
+
+
         private void AppendHeadrs(IEnumerable<BlockHeader> headers, int count)
         {
             var stream = new FastStream(count * Constants.BlockHeaderSize);
@@ -309,7 +321,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 var result = new List<BlockHeader>(32);
                 int step = 1;
                 int index = headerList.Count - 1;
-                long timeDiff = UnixTimeStamp.GetEpochUtcNow() - headerList[^1].BlockTime;
+                long timeDiff = Time.Now - headerList[^1].BlockTime;
                 if (timeDiff <= TimeSpan.FromHours(24).TotalSeconds)
                 {
                     // If blockchain is already in sync (or isn't that far behind) don't include the last header
