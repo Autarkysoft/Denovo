@@ -65,6 +65,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
+        /// <summary>
+        /// Occurs when one or more items are removed.
+        /// </summary>
+        public event EventHandler ItemRemovedEvent;
 
 
         private void CheckIndex(int index)
@@ -90,6 +94,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             monitor.Wait();
             context.Send(state =>
             {
+                ItemRemovedEvent?.Invoke(this, null);
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
@@ -114,6 +119,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             monitor.Wait();
             context.Send(state =>
             {
+                ItemRemovedEvent?.Invoke(this, null);
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
