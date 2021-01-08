@@ -34,6 +34,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
 
         /// <summary>
+        /// Size of each inventory object (4 byte type + 32 byte hash)
+        /// </summary>
+        public const int Size = 36;
+
+        /// <summary>
         /// Type of this inventory
         /// </summary>
         public InventoryType InvType { get; set; }
@@ -75,19 +80,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
-            if (!stream.TryReadUInt32(out uint val))
+            if (!stream.CheckRemaining(Size))
             {
                 error = Err.EndOfStream;
                 return false;
             }
-            // Don't be strict about inv. type being valid here, the caller (eg. MessageManager) can decide to reject it.
-            InvType = (InventoryType)val;
 
-            if (!stream.TryReadByteArray(32, out _hash))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
+            // Don't be strict about inv. type being valid here, the caller (eg. MessageManager) can decide to reject it.
+            InvType = (InventoryType)stream.ReadUInt32Checked();
+            _hash = stream.ReadByteArray32Checked();
 
             error = null;
             return true;
