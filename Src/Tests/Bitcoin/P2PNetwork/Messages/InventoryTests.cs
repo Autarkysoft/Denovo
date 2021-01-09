@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork.Messages
 {
-    public class InventoryTest
+    public class InventoryTests
     {
         [Fact]
         public void ConstructorTest()

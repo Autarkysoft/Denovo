@@ -31,8 +31,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             InventoryList = items;
         }
 
-
-        private const int MaxInvCount = 50_000;
+        /// <summary>
+        /// Maximum number of inventory items in a payload.
+        /// <para/>https://github.com/bitcoin/bitcoin/blob/68196a891056f98c1df0debacf09fb2ea4682a43/src/net_processing.cpp#L73-L74
+        /// </summary>
+        public const int MaxInvCount = 50_000;
 
         private Inventory[] _invList;
         /// <summary>
@@ -48,7 +51,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 if (value == null || value.Length == 0)
                     throw new ArgumentNullException(nameof(InventoryList), "Hash can not be null.");
                 if (value.Length > MaxInvCount)
-                    throw new ArgumentOutOfRangeException(nameof(InventoryList), "Hash must be 32 bytes.");
+                    throw new ArgumentOutOfRangeException(nameof(InventoryList), $"List can only contain {MaxInvCount} items.");
 
                 _invList = value;
             }
@@ -79,8 +82,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
+            // This works because 50k is smaller than ushort.Max
+            if (!stream.TryReadSmallCompactInt(out int count))
             {
+                error = "Count is too big or an invalid CompactInt.";
                 return false;
             }
             if (count > MaxInvCount)
@@ -89,15 +94,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            InventoryList = new Inventory[(int)count];
-            for (int i = 0; i < InventoryList.Length; i++)
+            _invList = new Inventory[count];
+            for (int i = 0; i < _invList.Length; i++)
             {
-                Inventory temp = new Inventory();
+                var temp = new Inventory();
                 if (!temp.TryDeserialize(stream, out error))
                 {
                     return false;
                 }
-                InventoryList[i] = temp;
+                _invList[i] = temp;
             }
 
             error = null;
