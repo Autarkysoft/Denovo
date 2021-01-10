@@ -3,9 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Cryptography;
-using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
@@ -44,10 +44,33 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private Message[] GetSettingsMessages(Message extraMsg)
         {
-            var result = new List<Message>(3);
+            var result = new List<Message>(6);
             if (!(extraMsg is null))
             {
                 result.Add(extraMsg);
+            }
+
+            if (settings.Blockchain.State == BlockchainState.HeadersSync)
+            {
+                // We can only sync headers with a peer that is a full or full pruned node
+                if (!nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) &&
+                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetworkLimited))
+                {
+                    nodeStatus.SignalDisconnect();
+                    return null;
+                }
+            }
+            else if (settings.Blockchain.State == BlockchainState.BlocksSync)
+            {
+                // We can only sync blocks with a full node that also has witnesses (any node not having
+                // witness is not a "full" node since it can't provide the full blocks)
+                if (nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetworkLimited) ||
+                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) ||
+                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeWitness))
+                {
+                    nodeStatus.SignalDisconnect();
+                    return null;
+                }
             }
 
             if (nodeStatus.ProtocolVersion > Constants.P2PBip31ProtVer)
@@ -57,35 +80,31 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 result.Add(GetPingMsg());
             }
 
-            if (settings.IsCatchingUp)
+            if (nodeStatus.ProtocolVersion >= Constants.P2PBip130ProtVer)
             {
-                if (!nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) &&
-                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetworkLimited))
-                {
-                    nodeStatus.SignalDisconnect();
-                    return null;
-                }
-
-                result.Add(GetLocatorMessage());
+                result.Add(new Message(new SendHeadersPayload(), settings.Network));
             }
-            else
-            {
-                if (nodeStatus.ProtocolVersion >= Constants.P2PBip130ProtVer)
-                {
-                    result.Add(new Message(new SendHeadersPayload(), settings.Network));
-                }
 
+            // Always send GetHeaders message during handshake
+            result.Add(GetLocatorMessage());
+
+
+            if (settings.Blockchain.State == BlockchainState.Synchronized)
+            {
+                // We don't listen or relay anything when client is not yet fully synchronized
+                // FeeFilter
                 if (settings.Relay && nodeStatus.ProtocolVersion >= Constants.P2PBip133ProtVer)
                 {
                     result.Add(new Message(new FeeFilterPayload(settings.MinTxRelayFee * 1000), settings.Network));
                 }
 
+                // Addr (protocol versions we connect to support this message type)
                 if (settings.Relay)
                 {
-                    var myIp = settings.GetMyIP();
+                    IPAddress myIp = settings.GetMyIP();
                     if (!IPAddress.IsLoopback(myIp))
                     {
-                        uint time = (uint)UnixTimeStamp.GetEpochUtcNow();
+                        uint time = (uint)settings.Time.Now;
                         var myAddr = new NetworkAddressWithTime(settings.Services, myIp, settings.Port, time);
                         result.Add(new Message(new AddrPayload(new NetworkAddressWithTime[1] { myAddr }), settings.Network));
                     }
@@ -95,6 +114,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             return result.Count == 0 ? null : result.ToArray();
         }
 
+        
         private Message GetLocatorMessage()
         {
             BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator();
@@ -335,14 +355,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Headers:
                     if (Deser(msg.PayloadData, out HeadersPayload hdrs))
                     {
-                        Blockchain.BlockProcessResult processResult = settings.Blockchain.ProcessHeaders(hdrs.Headers);
+                        // TODO: handle hdrs.Length == 0
+                        BlockProcessResult processResult = settings.Blockchain.ProcessHeaders(hdrs.Headers);
                         switch (processResult)
                         {
-                            case Blockchain.BlockProcessResult.UnknownBlocks:
+                            case BlockProcessResult.UnknownBlocks:
                                 nodeStatus.AddSmallViolation();
                                 result = new Message[1] { GetLocatorMessage() };
                                 break;
-                            case Blockchain.BlockProcessResult.InvalidBlocks:
+                            case BlockProcessResult.InvalidBlocks:
                                 if (settings.IsCatchingUp)
                                 {
                                     nodeStatus.SignalDisconnect();
@@ -352,9 +373,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                     nodeStatus.AddMediumViolation();
                                 }
                                 break;
-                            case Blockchain.BlockProcessResult.ForkBlocks:
+                            case BlockProcessResult.ForkBlocks:
                                 break;
-                            case Blockchain.BlockProcessResult.Success:
+                            case BlockProcessResult.Success:
                                 if (hdrs.Headers.Length == HeadersPayload.MaxCount)
                                 {
                                     result = new Message[1] { GetLocatorMessage() };
