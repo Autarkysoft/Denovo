@@ -5,7 +5,9 @@
 
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System;
 using System.Net;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
@@ -81,6 +83,46 @@ namespace Tests.Bitcoin.P2PNetwork
 
             ns.SendCompactVer = 1;
             Assert.Equal(2UL, ns.SendCompactVer);
+        }
+
+        [Fact]
+        public async void ReStartDisconnectTimerTest()
+        {
+            var ns = new NodeStatus();
+            ns.StartDisconnectTimer(TimeSpan.FromSeconds(3).TotalMilliseconds);
+            Assert.False(ns.IsDisconnected);
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            ns.ReStartDisconnectTimer();
+            Assert.False(ns.IsDisconnected);
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            ns.ReStartDisconnectTimer();
+            Assert.False(ns.IsDisconnected);
+
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            Assert.True(ns.IsDisconnected);
+        }
+
+        [Fact]
+        public async void StartDisconnectTimerTest()
+        {
+            var ns = new NodeStatus();
+            ns.StartDisconnectTimer(TimeSpan.FromSeconds(2).TotalMilliseconds);
+            Assert.False(ns.IsDisconnected);
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            Assert.True(ns.IsDisconnected);
+        }
+
+        [Fact]
+        public async void StopDisconnectTimerTest()
+        {
+            var ns = new NodeStatus();
+            ns.StartDisconnectTimer(TimeSpan.FromSeconds(2).TotalMilliseconds);
+            Assert.False(ns.IsDisconnected);
+            ns.StopDisconnectTimer();
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            Assert.False(ns.IsDisconnected);
         }
     }
 }

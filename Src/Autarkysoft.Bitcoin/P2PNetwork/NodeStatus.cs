@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Timers;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
@@ -17,6 +18,22 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// </summary>
     public class NodeStatus : INodeStatus, INotifyPropertyChanged
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="NodeStatus"/>.
+        /// </summary>
+        public NodeStatus()
+        {
+            discTimer = new Timer();
+            discTimer.Elapsed += DiscTimer_Elapsed;
+        }
+
+
+        private void DiscTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            SignalDisconnect();
+            discTimer.Stop();
+        }
+
         private int _v;
         /// <summary>
         /// Returns the violation score of this node
@@ -41,6 +58,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private const int MediumV = 20;
         private const int BigV = 50;
         private const int DisconnectThreshold = 100;
+
+        private Timer discTimer;
 
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
@@ -180,7 +199,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 lock (discLock)
                 {
-                    SetField(ref _isDead, value); 
+                    SetField(ref _isDead, value);
                 }
             }
         }
@@ -243,6 +262,46 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             IsDisconnected = true;
             RaiseDisconnectEvent();
+        }
+
+        /// <inheritdoc/>
+        public void DisposeDisconnectTimer()
+        {
+            if (!(discTimer is null))
+            {
+                discTimer.Stop();
+                discTimer.Dispose();
+                discTimer = null;
+            }
+        }
+
+        /// <inheritdoc/>
+        public void ReStartDisconnectTimer()
+        {
+            if (!(discTimer is null))
+            {
+                discTimer.Stop();
+                discTimer.Start();
+            }
+        }
+
+        /// <inheritdoc/>
+        public void StartDisconnectTimer(double interval)
+        {
+            if (!(discTimer is null))
+            {
+                discTimer.Interval = interval;
+                discTimer.Start();
+            }
+        }
+
+        /// <inheritdoc/>
+        public void StopDisconnectTimer()
+        {
+            if (!(discTimer is null))
+            {
+                discTimer.Stop();
+            }
         }
 
         /// <inheritdoc/>

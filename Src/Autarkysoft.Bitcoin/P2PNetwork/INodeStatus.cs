@@ -117,6 +117,27 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Raises the disconnect event to signal disconnecting from this node.
         /// </summary>
         void SignalDisconnect();
+
+        /// <summary>
+        /// Disposes the disconnect timer (useful to free up resources).
+        /// </summary>
+        void DisposeDisconnectTimer();
+        /// <summary>
+        /// Restarts the disconnect timer
+        /// </summary>
+        void ReStartDisconnectTimer();
+        /// <summary>
+        /// Starts the disconnect timer to call <see cref="SignalDisconnect"/> when the <paramref name="interval"/>
+        /// is reached to shut down this peer. Useful for disconnecting peers that don't reply to important messages
+        /// such as during initial synchronization.
+        /// </summary>
+        /// <param name="interval">The timer's interval in milliseconds</param>
+        void StartDisconnectTimer(double interval);
+        /// <summary>
+        /// Stops the disconnect timer
+        /// </summary>
+        void StopDisconnectTimer();
+
         /// <summary>
         /// Changes <see cref="LastSeen"/> to current time
         /// </summary>

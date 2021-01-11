@@ -15,6 +15,7 @@ namespace Tests.Bitcoin.P2PNetwork
     public class MockNodeStatus : INodeStatus
     {
 #pragma warning disable CS0649 // Field is never assigned to
+#pragma warning disable CS0067 // Field is never used
         public MockNodeStatus()
         {
         }
@@ -341,8 +342,6 @@ namespace Tests.Bitcoin.P2PNetwork
             smallViolation = false;
         }
 
-        internal bool updateTime = false;
-
         public event EventHandler DisconnectEvent;
 
         internal bool expectDiscSignal = false;
@@ -352,6 +351,38 @@ namespace Tests.Bitcoin.P2PNetwork
             expectDiscSignal = false;
         }
 
+        internal bool disposeTimer = false;
+        public void DisposeDisconnectTimer()
+        {
+            Assert.True(disposeTimer, UnexpectedCall);
+            disposeTimer = false;
+        }
+
+        internal bool restartTimer = false;
+        public void ReStartDisconnectTimer()
+        {
+            Assert.True(restartTimer, UnexpectedCall);
+            restartTimer = false;
+        }
+
+        internal bool startTimer = false;
+        internal double timerInterval;
+        public void StartDisconnectTimer(double interval)
+        {
+            Assert.True(startTimer, UnexpectedCall);
+            Assert.True(timerInterval != 0, UnexpectedCall);
+            Assert.Equal(timerInterval, interval);
+            startTimer = false;
+        }
+
+        internal bool stopTimer = false;
+        public void StopDisconnectTimer()
+        {
+            Assert.True(stopTimer, UnexpectedCall);
+            stopTimer = false;
+        }
+
+        internal bool updateTime = false;
         public void UpdateTime()
         {
             Assert.True(updateTime, UnexpectedCall);
@@ -359,5 +390,6 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
 #pragma warning restore CS0649 // Field is never assigned to
+#pragma warning restore CS0067 // Field is never used
     }
 }
