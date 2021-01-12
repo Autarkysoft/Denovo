@@ -29,7 +29,7 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// 2 weeks in seconds
         /// </summary>
-        public const uint PowTargetTimespan = 2 * 7 * 24 * 60 * 60;
+        public const uint PowTargetTimespan = TimeConstants.TwoWeeks_Seconds;
         /// <summary>
         /// Number of times to retry setting random bytes using <see cref="Cryptography.IRandomNumberGenerator"/>.
         /// </summary>
@@ -176,5 +176,26 @@ namespace Autarkysoft.Bitcoin
         /// https://github.com/bitcoin/bitcoin/blob/81d5af42f4dba5b68a597536cad7f61894dc22a3/src/net_processing.cpp#L71-L72
         /// </remarks>
         public const int MaxLocatorCount = 101;
+    }
+
+
+
+    /// <summary>
+    /// Globally used constant time values.
+    /// </summary>
+    public struct TimeConstants
+    {
+        /// <summary>
+        /// 2 weeks in seconds
+        /// </summary>
+        public const int TwoWeeks_Seconds = 2 * 7 * 24 * 60 * 60;
+        /// <summary>
+        /// 1 minute in milliseconds
+        /// </summary>
+        public const double Onemin_Milliseconds = 60_000;
+        /// <summary>
+        /// 2 minutes in milliseconds
+        /// </summary>
+        public const double TwoMin_Milliseconds = 120_000;
     }
 }
