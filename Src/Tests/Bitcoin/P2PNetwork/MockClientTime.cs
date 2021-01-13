@@ -12,6 +12,7 @@ namespace Tests.Bitcoin.P2PNetwork
     class MockClientTime : IClientTime
     {
 #pragma warning disable CS0649 // Field is never assigned to
+#pragma warning disable CS0067 // Field is never used
         private const string UnexpectedCall = "Unexpected call was made";
 
         internal long? _now;
@@ -33,5 +34,6 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.Equal(_updateTime.Value, time);
         }
 #pragma warning restore CS0649 // Field is never assigned to
+#pragma warning restore CS0067 // Field is never used
     }
 }

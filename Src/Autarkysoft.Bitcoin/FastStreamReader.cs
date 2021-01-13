@@ -16,7 +16,7 @@ namespace Autarkysoft.Bitcoin
     /// the <see cref="CheckRemaining(int)"/> method can be called by the user to check remaining bytes, then instead of calling
     /// TryRead* methods (that perform the same check for each individual object) the Read* method should be called that skips
     /// the size check.
-    /// See <see cref="Blockchain.Blocks.Block.TryDeserializeHeader(FastStreamReader, out string)"/> for example of how
+    /// See <see cref="Blockchain.Blocks.BlockHeader.TryDeserialize(FastStreamReader, out string)"/> for example of how
     /// this should be used.
     /// </summary>
     public class FastStreamReader

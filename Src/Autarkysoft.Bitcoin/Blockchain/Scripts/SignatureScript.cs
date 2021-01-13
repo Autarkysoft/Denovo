@@ -14,7 +14,7 @@ using System.Linq;
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// The script that is used in <see cref="Blockchain.Transactions.TxIn"/> as the signature or unlocking script.
+    /// The script that is used in <see cref="TxIn"/> as the signature or unlocking script.
     /// Implements <see cref="ISignatureScript"/> and inherits from <see cref="Script"/>.
     /// </summary>
     public class SignatureScript : Script, ISignatureScript
