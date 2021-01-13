@@ -41,7 +41,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Occurs when Connect fails
         /// </summary>
-        public event EventHandler ConnectFailureEvent;
+        public event EventHandler<IPAddress> ConnectFailureEvent;
 
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 connectEventArgs.AcceptSocket.Close();
                 settings.MaxConnectionEnforcer.Release();
-                ConnectFailureEvent?.Invoke(this, null);
+                ConnectFailureEvent?.Invoke(this, ((IPEndPoint)connectEventArgs.RemoteEndPoint).Address);
             }
 
             // Remove "connect" SAEA socket before putting it back in pool to be used for the next connect operation.

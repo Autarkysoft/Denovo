@@ -112,6 +112,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </returns>
         NetworkAddressWithTime[] GetNodeAddrs();
         /// <summary>
+        /// Removes the peer from peer list that has the given IP address.
+        /// </summary>
+        /// <param name="ip">IP address of the peer to remove</param>
+        void RemoveNodeAddr(IPAddress ip);
+        /// <summary>
         /// Updates the list of node IP addresses (should also handle storing to disk).
         /// </summary>
         /// <param name="nodeAddresses">List of timestamped nodes network addresses</param>

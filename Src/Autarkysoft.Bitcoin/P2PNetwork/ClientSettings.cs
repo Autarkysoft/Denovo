@@ -170,6 +170,23 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         /// <inheritdoc/>
+        public void RemoveNodeAddr(IPAddress ip)
+        {
+            NetworkAddressWithTime[] all = GetNodeAddrs();
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].NodeIP.Equals(ip))
+                {
+                    var temp = new NetworkAddressWithTime[all.Length - 1];
+                    Array.Copy(all, 0, temp, 0, i);
+                    Array.Copy(all, i + 1, temp, i, all.Length - i - 1);
+                    UpdateNodeAddrs(temp);
+                    break;
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses)
         {
             if (!(Storage is null))

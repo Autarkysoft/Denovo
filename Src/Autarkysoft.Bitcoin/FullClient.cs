@@ -56,9 +56,9 @@ namespace Autarkysoft.Bitcoin
         }
 
 
-        private void Connector_ConnectFailureEvent(object sender, EventArgs e)
+        private void Connector_ConnectFailureEvent(object sender, IPAddress e)
         {
-            // TODO: remove the IP that couldn't be connected from the peer list
+            Settings.RemoveNodeAddr(e);
             ConnectToMorePeers();
         }
 

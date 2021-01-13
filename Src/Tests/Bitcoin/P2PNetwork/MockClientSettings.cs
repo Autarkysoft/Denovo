@@ -228,6 +228,12 @@ namespace Tests.Bitcoin.P2PNetwork
             return addrsToReturn;
         }
 
+        internal IPAddress ipToRemove;
+        public void RemoveNodeAddr(IPAddress ip)
+        {
+            Assert.Equal(ipToRemove, ip);
+        }
+
         internal NetworkAddressWithTime[] addrsToReceive;
         public void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses)
         {
