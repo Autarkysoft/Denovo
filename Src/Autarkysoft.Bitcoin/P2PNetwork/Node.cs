@@ -250,6 +250,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         secondSendLimiter.Dispose();
                     secondSendLimiter = null;
 
+                    if (settings.Blockchain.State == Blockchain.BlockchainState.BlocksSync && NodeStatus.BlocksToGet.Count != 0)
+                    {
+                        settings.Blockchain.PutMissingHeightsBack(NodeStatus.BlocksToGet);
+                    }
+
                     settings.MaxConnectionEnforcer.Release();
                 }
             }

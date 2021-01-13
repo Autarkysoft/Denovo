@@ -59,6 +59,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     nodeStatus.SignalDisconnect();
                     return null;
                 }
+
+                // During initial sync we want a peer that responds quickly, 1 min is way above the
+                // average response time for `Headers`.
+                // The ReplyManager handling Headers message has to handle restart/stop of timer
+                nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
             }
             else if (settings.Blockchain.State == BlockchainState.BlocksSync)
             {
@@ -71,6 +76,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     nodeStatus.SignalDisconnect();
                     return null;
                 }
+
+                nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
+            }
+            else
+            {
+                // Any time other than initial sync we give more time to the peer to reply to GetHeaders
+                nodeStatus.StartDisconnectTimer(TimeConstants.TwoMin_Milliseconds);
             }
 
             if (nodeStatus.ProtocolVersion > Constants.P2PBip31ProtVer)
@@ -114,7 +126,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             return result.Count == 0 ? null : result.ToArray();
         }
 
-        
+
         private Message GetLocatorMessage()
         {
             BlockHeader[] headers = settings.Blockchain.GetBlockHeaderLocator();
@@ -127,6 +139,21 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 headers = temp;
             }
             return new Message(new GetHeadersPayload(settings.ProtocolVersion, headers, null), settings.Network);
+        }
+
+        private Message[] GetMissingBlockMessage()
+        {
+            byte[][] hashes = settings.Blockchain.GetMissingBlockHashes(nodeStatus);
+            if (hashes is null || hashes.Length == 0)
+            {
+                return null;
+            }
+
+            Inventory[] invs = hashes.Select(x => new Inventory(InventoryType.WitnessBlock, x)).ToArray();
+            return new Message[]
+            {
+               new Message(new GetDataPayload(invs), settings.Network)
+            };
         }
 
         /// <inheritdoc/>
@@ -213,9 +240,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     // TODO: add violation if the protocol version is above the one that disabled this type
                     break;
                 case PayloadType.Block:
+                    if (settings.Blockchain.State == BlockchainState.HeadersSync)
+                    {
+                        // Don't process any blocks when syncing the headers from one node (initial sync)
+                        nodeStatus.UpdateTime();
+                        return null;
+                    }
+
                     if (Deser(msg.PayloadData, out BlockPayload blk))
                     {
-                        if (!settings.Blockchain.ProcessBlock(blk.BlockData))
+                        if (!settings.Blockchain.ProcessBlock(blk.BlockData, nodeStatus))
                         {
                             nodeStatus.AddMediumViolation();
                         }
@@ -328,13 +362,27 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.GetCFilters:
                     break;
                 case PayloadType.GetData:
+                    if (settings.Blockchain.State != BlockchainState.Synchronized)
+                    {
+                        nodeStatus.UpdateTime();
+                        // If client is syncing it can't provide data to peers
+                        return null;
+                    }
+
                     if (Deser(msg.PayloadData, out GetDataPayload getData))
                     {
 
                     }
                     break;
                 case PayloadType.GetHeaders:
-                    if (!settings.IsCatchingUp && Deser(msg.PayloadData, out GetHeadersPayload getHdrs))
+                    if (settings.Blockchain.State == BlockchainState.HeadersSync)
+                    {
+                        nodeStatus.UpdateTime();
+                        // If the client is syncing its headers it can't provide headers
+                        return null;
+                    }
+
+                    if (Deser(msg.PayloadData, out GetHeadersPayload getHdrs))
                     {
                         BlockHeader[] hds = settings.Blockchain.GetMissingHeaders(getHdrs.Hashes, getHdrs.StopHash);
                         if (!(hds is null))
@@ -355,15 +403,25 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 case PayloadType.Headers:
                     if (Deser(msg.PayloadData, out HeadersPayload hdrs))
                     {
-                        // TODO: handle hdrs.Length == 0
+                        if (hdrs.Headers.Length == 0)
+                        {
+                            nodeStatus.UpdateTime();
+                            // Header locator will always create a request that will fetch at least one header.
+                            // Additionally sending an empty header array is a violation on its own.
+                            nodeStatus.AddMediumViolation();
+                            return null;
+                        }
+
                         BlockProcessResult processResult = settings.Blockchain.ProcessHeaders(hdrs.Headers);
                         switch (processResult)
                         {
                             case BlockProcessResult.UnknownBlocks:
                                 nodeStatus.AddSmallViolation();
+                                nodeStatus.ReStartDisconnectTimer();
                                 result = new Message[1] { GetLocatorMessage() };
                                 break;
                             case BlockProcessResult.InvalidBlocks:
+                                nodeStatus.StopDisconnectTimer();
                                 if (settings.IsCatchingUp)
                                 {
                                     nodeStatus.SignalDisconnect();
@@ -378,7 +436,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             case BlockProcessResult.Success:
                                 if (hdrs.Headers.Length == HeadersPayload.MaxCount)
                                 {
+                                    nodeStatus.ReStartDisconnectTimer();
                                     result = new Message[1] { GetLocatorMessage() };
+                                }
+                                else if (settings.Blockchain.State == BlockchainState.HeadersSync)
+                                {
+                                    nodeStatus.SignalDisconnect();
+                                }
+                                else if (settings.Blockchain.State == BlockchainState.BlocksSync)
+                                {
+                                    nodeStatus.StopDisconnectTimer();
+                                    result = GetMissingBlockMessage();
+                                    nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
                                 }
                                 break;
                         }

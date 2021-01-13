@@ -4,7 +4,9 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.P2PNetwork;
 using System;
+using System.Collections.Generic;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -52,8 +54,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// The return value indicates evaluation success.
         /// </summary>
         /// <param name="block">Block to process</param>
+        /// <param name="nodeStatus"></param>
         /// <returns>True if the block was valid; otherwise false.</returns>
-        bool ProcessBlock(IBlock block);
+        bool ProcessBlock(IBlock block, INodeStatus nodeStatus);
         /// <summary>
         /// Process given block headers and update the header database
         /// </summary>
@@ -74,5 +77,16 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="stopHash">Hash of the header to stop at</param>
         /// <returns>An array of missing block headers</returns>
         BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash);
+        /// <summary>
+        /// Puts the remaining heights that the peer failed to provide back in the stack of missing heights.
+        /// </summary>
+        /// <param name="heights">List of missing heights</param>
+        void PutMissingHeightsBack(List<int> heights);
+        /// <summary>
+        /// Returns an array of missing block hashes
+        /// </summary>
+        /// <param name="nodeStatus">Peer state (used to set the expected block heights)</param>
+        /// <returns>An array of missing block hashes</returns>
+        byte[][] GetMissingBlockHashes(INodeStatus nodeStatus);
     }
 }

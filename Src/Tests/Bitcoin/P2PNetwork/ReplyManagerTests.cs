@@ -132,6 +132,22 @@ namespace Tests.Bitcoin.P2PNetwork
                     _netType = NetworkType.MainNet,
                     _bchain = new MockBlockchain()
                     {
+                        _stateToReturn = BlockchainState.HeadersSync
+                    }
+                },
+                new Message(new BlockPayload(mockBlock), NetworkType.MainNet),
+                null
+            };
+            yield return new object[]
+            {
+                // Block
+                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                    _bchain = new MockBlockchain()
+                    {
+                        _stateToReturn = BlockchainState.BlocksSync,
                         expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
                         blkProcessSuccess = true
                     }
@@ -148,6 +164,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _netType = NetworkType.MainNet,
                     _bchain = new MockBlockchain()
                     {
+                        _stateToReturn = BlockchainState.Synchronized,
                         expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
                         blkProcessSuccess = false
                     }
@@ -427,7 +444,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 smallViolation = true,
                 updateTime = true
             };
-            var rep = new ReplyManager(ns, new ClientSettings());
+            var chain = new MockBlockchain() { _stateToReturn = BlockchainState.Synchronized };
+            var rep = new ReplyManager(ns, new MockClientSettings() { _relay = true, _bchain = chain });
 
             Message[] actual = rep.GetReply(msg);
             Assert.Null(actual);
@@ -695,6 +713,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     updateTime = true,
                     _servs = NodeServiceFlags.NodeNetwork, // OK for syncing headers
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                    startTimer = true,
+                    timerInterval = TimeConstants.OneMin_Milliseconds, // HeaderSync uses 1 min
                 },
                 new MockClientSettings()
                 {
@@ -717,6 +737,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     updateTime = true,
                     _servs = NodeServiceFlags.NodeNetworkLimited, // OK for syncing headers
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                    startTimer = true,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -739,6 +761,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     updateTime = true,
                     _servs = NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeBloom | NodeServiceFlags.NodeXThin,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                    startTimer = true,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -763,6 +787,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     updateTime = true,
                     _servs = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                    startTimer = true,
+                    timerInterval = TimeConstants.OneMin_Milliseconds, // BlockSync uses 1 min
                 },
                 new MockClientSettings()
                 {
@@ -786,6 +812,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds, // FullSync uses 2 min
                 },
                 new MockClientSettings()
                 {
@@ -804,6 +832,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -823,6 +853,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip31ProtVer, // No ping, no feefilter, no sendheaders
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -841,7 +873,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip31ProtVer + 1, // ping, no feefilter, no sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -861,7 +895,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip130ProtVer - 1, // ping, no feefilter, no sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -881,7 +917,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip130ProtVer, // ping, no feefilter, sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -901,7 +939,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip133ProtVer - 1, // ping, no feefilter, sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -921,7 +961,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -940,7 +982,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -961,7 +1005,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -984,7 +1030,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -1146,7 +1194,9 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.SentAndConfirmed,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
-                    expPingNonce = RngReturnValue
+                    expPingNonce = RngReturnValue,
+                    startTimer = true,
+                    timerInterval = TimeConstants.TwoMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {

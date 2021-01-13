@@ -13,6 +13,7 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using Denovo.MVVM;
 using Denovo.Services;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,18 +49,19 @@ namespace Denovo.ViewModels
 
             public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
             public Target GetNextTarget() => throw new NotImplementedException();
-            public bool ProcessBlock(IBlock block) => true;
-            public BlockProcessResult ProcessHeaders(BlockHeader[] headers)
-            {
-                return BlockProcessResult.Success;
-            }
+            public bool ProcessBlock(IBlock block, INodeStatus nodeStatus) => true;
+            public BlockProcessResult ProcessHeaders(BlockHeader[] headers) => BlockProcessResult.Success;
 
-            public BlockHeader[] GetBlockHeaderLocator()
+            public BlockHeader[] GetBlockHeaderLocator() => throw new NotImplementedException();
+
+            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
             {
                 throw new NotImplementedException();
             }
 
-            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
+            public byte[][] GetMissingBlockHashes(INodeStatus nodeStatus) => null;
+
+            public void PutMissingHeightsBack(List<int> heights)
             {
                 throw new NotImplementedException();
             }

@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -14,6 +15,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// </summary>
     public interface INodeStatus
     {
+        // TODO: should this be the block hashes?
+        /// <summary>
+        /// List of block heights to download
+        /// </summary>
+        List<int> BlocksToGet { get; }
+
         /// <summary>
         /// IP address of this node
         /// </summary>

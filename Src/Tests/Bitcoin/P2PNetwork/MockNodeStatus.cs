@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using Xunit;
 
@@ -33,6 +34,8 @@ namespace Tests.Bitcoin.P2PNetwork
 
 
         private const string UnexpectedCall = "Unexpected call was made";
+
+        public List<int> BlocksToGet => throw new NotImplementedException();
 
         internal IPAddress _ip;
         public IPAddress IP

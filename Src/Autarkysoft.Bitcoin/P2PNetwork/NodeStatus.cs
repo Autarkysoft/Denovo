@@ -34,6 +34,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             discTimer.Stop();
         }
 
+        /// <inheritdoc/>
+        public List<int> BlocksToGet { get; } = new List<int>(16);
+
         private int _v;
         /// <summary>
         /// Returns the violation score of this node

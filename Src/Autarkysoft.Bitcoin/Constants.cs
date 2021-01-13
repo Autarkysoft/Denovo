@@ -192,7 +192,7 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// 1 minute in milliseconds
         /// </summary>
-        public const double Onemin_Milliseconds = 60_000;
+        public const double OneMin_Milliseconds = 60_000;
         /// <summary>
         /// 2 minutes in milliseconds
         /// </summary>

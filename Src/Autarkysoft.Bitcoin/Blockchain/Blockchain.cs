@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Autarkysoft.Bitcoin.Blockchain
@@ -200,10 +201,60 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
+        private Stack<int> missingHeights;
+
         /// <inheritdoc/>
-        public bool ProcessBlock(IBlock block)
+        public void PutMissingHeightsBack(List<int> heights)
         {
-            throw new NotImplementedException();
+            lock (mainLock)
+            {
+                foreach (var item in heights)
+                {
+                    missingHeights.Push(item);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public byte[][] GetMissingBlockHashes(INodeStatus nodeStatus)
+        {
+            lock (mainLock)
+            {
+                if (missingHeights is null)
+                {
+                    missingHeights = new Stack<int>(Enumerable.Range(1, headerList.Count).Reverse());
+                }
+                if (missingHeights.Count == 0)
+                {
+                    return null;
+                }
+
+                int max = missingHeights.Count < 16 ? missingHeights.Count : 16;
+                var lst = new List<byte[]>(max);
+                for (int i = 0; i < max; i++)
+                {
+                    int h = missingHeights.Pop();
+                    nodeStatus.BlocksToGet.Add(h);
+                    lst.Add(headerList[h].GetHash(false));
+                }
+
+                return lst.ToArray();
+            }
+        }
+
+        /// <inheritdoc/>
+        public bool ProcessBlock(IBlock block, INodeStatus nodeStatus)
+        {
+            if (State == BlockchainState.BlocksSync)
+            {
+                // Find index of the block that the first header in the array references
+                int height = headerList.FindLastIndex(x =>
+                                        ((ReadOnlySpan<byte>)block.Header.GetHash(false)).SequenceEqual(x.GetHash()));
+                nodeStatus.BlocksToGet.Remove(height);
+                // TODO: process this block!
+            }
+
+            return true;
         }
 
         private long GetMedianTimePast(int startIndex)
@@ -291,6 +342,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
         }
 
+        // TODO: client can get stuck during header sync if the peer sends the same old headers over and over again
         private void ChangeState(int length)
         {
             if (length < HeadersPayload.MaxCount &&

@@ -6,7 +6,9 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.P2PNetwork;
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -14,6 +16,7 @@ namespace Tests.Bitcoin.Blockchain
     public class MockBlockchain : IBlockchain
     {
 #pragma warning disable CS0649 // Field is never assigned to
+#pragma warning disable CS0067 // Field is never used
 
         private const string UnexpectedCall = "Unexpected call was made";
 
@@ -66,8 +69,9 @@ namespace Tests.Bitcoin.Blockchain
 
         internal string expProcessBlk;
         internal bool blkProcessSuccess;
-        public bool ProcessBlock(IBlock block)
+        public bool ProcessBlock(IBlock block, INodeStatus nodeStatus)
         {
+            Assert.NotNull(nodeStatus);
             Assert.Equal(expProcessBlk, block.GetBlockID(false));
             return blkProcessSuccess;
         }
@@ -114,6 +118,19 @@ namespace Tests.Bitcoin.Blockchain
             return missingHeadersToReturn;
         }
 
+        internal byte[][] missingBlkHash;
+        public byte[][] GetMissingBlockHashes(INodeStatus nodeStatus)
+        {
+            Assert.NotNull(missingBlkHash);
+            return missingBlkHash;
+        }
+
+        public void PutMissingHeightsBack(List<int> heights)
+        {
+            throw new NotImplementedException();
+        }
+
 #pragma warning restore CS0649 // Field is never assigned to
+#pragma warning restore CS0067 // Field is never used
     }
 }
