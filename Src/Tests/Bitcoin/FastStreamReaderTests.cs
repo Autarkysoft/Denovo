@@ -17,6 +17,18 @@ namespace Tests.Bitcoin
         {
             byte[] data = { 1, 2, 3 };
             var stream = new FastStreamReader(data);
+            // Make sure data is NOT cloned (default behavior)
+            data[0] = 255;
+
+            Helper.ComparePrivateField(stream, "data", new byte[] { 255, 2, 3 });
+            Helper.ComparePrivateField(stream, "position", 0);
+        }
+
+        [Fact]
+        public void Constructor_ClonedTest()
+        {
+            byte[] data = { 1, 2, 3 };
+            var stream = new FastStreamReader(data, true);
             // Make sure data is copied/cloned
             data[0] = 255;
 

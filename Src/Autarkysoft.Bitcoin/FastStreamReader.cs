@@ -26,12 +26,15 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="ba">Data to use</param>
-        public FastStreamReader(byte[] ba)
+        /// <param name="clone">
+        /// [Default value = false] Determines whether to clone the given byte array or use the same reference
+        /// </param>
+        public FastStreamReader(byte[] ba, bool clone = false)
         {
             if (ba == null)
                 throw new ArgumentNullException(nameof(ba), "Can not instantiate a stream with null bytes.");
 
-            data = ba.CloneByteArray();
+            data = clone ? ba.CloneByteArray() : ba;
             position = 0;
         }
 
