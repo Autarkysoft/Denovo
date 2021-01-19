@@ -3,14 +3,85 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Net;
+using Tests.Bitcoin.Blockchain;
 using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
 {
     public class ClientSettingsTests
     {
+        [Theory]
+        [InlineData(NodeServiceFlags.NodeNone, BlockchainState.HeadersSync, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork, BlockchainState.HeadersSync, true)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited, BlockchainState.HeadersSync, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork, BlockchainState.BlocksSync, false)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited, BlockchainState.BlocksSync, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness, BlockchainState.BlocksSync, true)]
+        public void HasNeededServicesTest(NodeServiceFlags flags, BlockchainState state, bool expected)
+        {
+            var cs = new ClientSettings()
+            {
+                Blockchain = new MockBlockchain() { _stateToReturn = state }
+            };
+            bool actual = cs.HasNeededServices(flags);
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(NodeServiceFlags.NodeNone, false)]
+        [InlineData(NodeServiceFlags.NodeBloom | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeGetUtxo, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeGetUtxo, true)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited, true)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeGetUtxo, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeWitness, true)]
+        public void IsGoodForHeaderSyncTest(NodeServiceFlags flags, bool expected)
+        {
+            var cs = new ClientSettings();
+            bool actual = cs.IsGoodForHeaderSync(flags);
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(NodeServiceFlags.NodeNone, false)]
+        [InlineData(NodeServiceFlags.NodeBloom | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeGetUtxo, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeGetUtxo, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited, false)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited, false)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeGetUtxo, false)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeWitness, false)]
+        public void IsGoodForBlockSyncTest(NodeServiceFlags flags, bool expected)
+        {
+            var cs = new ClientSettings();
+            bool actual = cs.IsGoodForBlockSync(flags);
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(NodeServiceFlags.NodeNone, false)]
+        [InlineData(NodeServiceFlags.NodeBloom | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeGetUtxo, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeGetUtxo, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited, true)]
+        [InlineData(NodeServiceFlags.NodeNetworkLimited, true)]
+        public void IsPrunedTest(NodeServiceFlags flags, bool expected)
+        {
+            var cs = new ClientSettings();
+            bool actual = cs.IsPruned(flags);
+            Assert.Equal(expected, actual);
+        }
+
+
         [Fact]
         public void UpdateMyIP_GetMyIP_Test()
         {
