@@ -212,6 +212,44 @@ namespace Tests.Bitcoin.P2PNetwork
         public SocketAsyncEventArgsPool SendReceivePool => throw new NotImplementedException();
 
 
+        internal NodeServiceFlags? expHasNeededServicesFlags;
+        internal bool _hasNeededServices;
+        public bool HasNeededServices(NodeServiceFlags flags)
+        {
+            Assert.True(expHasNeededServicesFlags.HasValue, UnexpectedCall);
+            Assert.Equal(expHasNeededServicesFlags.Value, flags);
+            return _hasNeededServices;
+        }
+
+        internal NodeServiceFlags? expIsGoodForHeaderSyncFlags;
+        internal bool _isGoodForHeaderSync;
+        public bool IsGoodForHeaderSync(NodeServiceFlags flags)
+        {
+            Assert.True(expIsGoodForHeaderSyncFlags.HasValue, UnexpectedCall);
+            Assert.Equal(expIsGoodForHeaderSyncFlags.Value, flags);
+            return _isGoodForHeaderSync;
+        }
+
+        internal NodeServiceFlags? expIsGoodForBlockSyncFlags;
+        internal bool _isGoodForBlockSync;
+        public bool IsGoodForBlockSync(NodeServiceFlags flags)
+        {
+            Assert.True(expIsGoodForBlockSyncFlags.HasValue, UnexpectedCall);
+            Assert.Equal(expIsGoodForBlockSyncFlags.Value, flags);
+            return _isGoodForBlockSync;
+        }
+
+        internal NodeServiceFlags? expIsPrunedFlags;
+        internal bool _isPruned;
+        public bool IsPruned(NodeServiceFlags flags)
+        {
+            Assert.True(expIsPrunedFlags.HasValue, UnexpectedCall);
+            Assert.Equal(expIsPrunedFlags.Value, flags);
+            return _isPruned;
+        }
+
+
+
         internal ITransaction _expMemPoolTx;
         internal bool _addToMemPoolReturn;
         public bool AddToMempool(ITransaction tx)

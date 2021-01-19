@@ -98,11 +98,42 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         SocketAsyncEventArgsPool SendReceivePool { get; }
 
         /// <summary>
+        /// Returns if the provided service flags contains services that are needed for syncing based on
+        /// <see cref="IBlockchain"/>'s current state.
+        /// </summary>
+        /// <param name="flags">Flags to check</param>
+        /// <returns>True if the required services are available; otherwise false.</returns>
+        bool HasNeededServices(NodeServiceFlags flags);
+        /// <summary>
+        /// Returns if the provided service flags contains services that are needed for syncing block headers.
+        /// <para/>Requires: <see cref="NodeServiceFlags.NodeNetwork"/> or <see cref="NodeServiceFlags.NodeNetworkLimited"/>
+        /// bits
+        /// </summary>
+        /// <param name="flags">Flags to check</param>
+        /// <returns>True if the required services are available; otherwise false.</returns>
+        bool IsGoodForHeaderSync(NodeServiceFlags flags);
+        /// <summary>
+        /// Returns if the provided service flags contains services that are needed for syncing blocks.
+        /// <para/>Requires: <see cref="NodeServiceFlags.NodeNetwork"/> and <see cref="NodeServiceFlags.NodeWitness"/>
+        /// bits but but no <see cref="NodeServiceFlags.NodeNetworkLimited"/> bit.
+        /// </summary>
+        /// <param name="flags">Flags to check</param>
+        /// <returns>True if the required services are available; otherwise false.</returns>
+        bool IsGoodForBlockSync(NodeServiceFlags flags);
+        /// <summary>
+        /// Returns if the provided service flags contains <see cref="NodeServiceFlags.NodeNetworkLimited"/>
+        /// indicating the peer is a pruned node.
+        /// </summary>
+        /// <param name="flags">Flags to check</param>
+        /// <returns>True if the required services are available; otherwise false.</returns>
+        bool IsPruned(NodeServiceFlags flags);
+
+        /// <summary>
         /// Adds the given transaction to memory pool
         /// </summary>
         /// <param name="tx"></param>
         /// <returns></returns>
-        public bool AddToMempool(ITransaction tx);
+        bool AddToMempool(ITransaction tx);
         /// <summary>
         /// Returns an array of known node network addresses to this client.
         /// </summary>

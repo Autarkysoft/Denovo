@@ -127,6 +127,32 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public SocketAsyncEventArgsPool SendReceivePool { get; }
 
+
+        private const ulong HdrSyncMask = (ulong)(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited);
+        private const ulong BlkSyncMask = (ulong)(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness);
+
+        /// <inheritdoc/>
+        public bool HasNeededServices(NodeServiceFlags flags)
+        {
+            if (Blockchain.State == BlockchainState.HeadersSync)
+            {
+                return IsGoodForHeaderSync(flags);
+            }
+            else if (Blockchain.State == BlockchainState.BlocksSync)
+            {
+                return IsGoodForBlockSync(flags);
+            }
+
+            // TODO: additional conditions can be added here
+            return true;
+        }
+        /// <inheritdoc/>
+        public bool IsGoodForHeaderSync(NodeServiceFlags flags) => ((ulong)flags & HdrSyncMask) != 0;
+        /// <inheritdoc/>
+        public bool IsGoodForBlockSync(NodeServiceFlags flags) => ((ulong)flags & BlkSyncMask) == BlkSyncMask && !IsPruned(flags);
+        /// <inheritdoc/>
+        public bool IsPruned(NodeServiceFlags flags) => flags.HasFlag(NodeServiceFlags.NodeNetworkLimited);
+
         /// <inheritdoc/>
         public bool AddToMempool(ITransaction tx)
         {
