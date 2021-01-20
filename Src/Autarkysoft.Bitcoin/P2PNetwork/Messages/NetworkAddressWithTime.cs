@@ -36,6 +36,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         }
 
 
+        /// <summary>
+        /// Total size of any <see cref="NetworkAddressWithTime"/> instance (4+ (8 + 16 + 2))
+        /// </summary>
+        public new const int Size = NetworkAddress.Size + 4;
+
         private uint _time;
         /// <summary>
         /// Unix epoch time. Added in protocol version 31402

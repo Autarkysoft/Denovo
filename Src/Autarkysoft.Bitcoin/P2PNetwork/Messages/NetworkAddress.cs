@@ -36,6 +36,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
 
         /// <summary>
+        /// Total size of any <see cref="NetworkAddress"/> instance (8 + 16 + 2)
+        /// </summary>
+        public const int Size = 26;
+
+        /// <summary>
         /// The services that this node supports
         /// </summary>
         public NodeServiceFlags NodeServices { get; set; }
@@ -76,7 +81,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
-            if (!stream.CheckRemaining(8 + 16 + 2))
+            if (!stream.CheckRemaining(Size))
             {
                 error = Err.EndOfStream;
                 return false;
