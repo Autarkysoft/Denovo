@@ -80,6 +80,28 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         }
 
         [Fact]
+        public void GetIDTest()
+        {
+            var hdr = GetSampleBlockHeader();
+            string actual1 = hdr.GetID(false);
+            // Call again to make sure the hash field is not changed
+            string actual2 = hdr.GetID(false);
+            string expected = GetSampleBlockHex();
+
+            Assert.Equal(expected, actual1);
+            Assert.Equal(expected, actual2);
+
+            hdr.Version++;
+            // Hash doesn't change until explicitly asked
+            string actual3 = hdr.GetID(false);
+            // Hash is re-computed and is changed
+            string actual4 = hdr.GetID(true);
+
+            Assert.Equal(expected, actual3);
+            Assert.NotEqual(expected, actual4);
+        }
+
+        [Fact]
         public void SerializeTest()
         {
             BlockHeader hd = GetSampleBlockHeader();

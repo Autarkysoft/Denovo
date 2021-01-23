@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Linq;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 {
@@ -146,8 +147,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         public string GetID(bool recompute)
         {
             byte[] hashRes = GetHash(recompute);
-            Array.Reverse(hashRes);
-            return Base16.Encode(hashRes);
+            return Base16.Encode(hashRes.Reverse().ToArray());
         }
 
         /// <inheritdoc/>
