@@ -108,6 +108,27 @@ namespace Tests.Bitcoin
             Assert.Equal(2, stream.GetCurrentIndex());
         }
 
+        [Fact]
+        public void SkipTest()
+        {
+            var stream = new FastStreamReader(new byte[10]);
+            Assert.Equal(0, stream.GetCurrentIndex());
+
+            stream.Skip(0);
+            Assert.Equal(0, stream.GetCurrentIndex());
+
+            stream.Skip(1);
+            Assert.Equal(1, stream.GetCurrentIndex());
+
+            stream.Skip(4);
+            Assert.Equal(5, stream.GetCurrentIndex());
+
+            stream.Skip(7);
+            Assert.Equal(12, stream.GetCurrentIndex());
+
+            Assert.False(stream.CheckRemaining(1));
+        }
+
         [Theory]
         [InlineData(new byte[] { 1 }, new byte[] { 1 }, false, true)]
         [InlineData(new byte[] { 1 }, new byte[] { 2 }, false, false)]
