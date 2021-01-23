@@ -38,6 +38,16 @@ namespace Autarkysoft.Bitcoin.Cryptography
 
         /// <inheritdoc/>
         /// <exception cref="ObjectDisposedException"/>
+        public int NextInt32(int min, int max)
+        {
+            if (isDisposed)
+                throw new ObjectDisposedException(nameof(RandomNonceGenerator));
+
+            return rng.Next(min, max);
+        }
+
+        /// <inheritdoc/>
+        /// <exception cref="ObjectDisposedException"/>
         public long NextInt64()
         {
             if (isDisposed)
@@ -56,7 +66,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(RandomNonceGenerator));
             if (min < 0 || max < 0 || count < 0)
-                throw new ArgumentOutOfRangeException("Parameters can not be negative.");
+                throw new ArgumentOutOfRangeException("min-max-count", "Parameters can not be negative.");
             if (min >= max)
                 throw new ArgumentOutOfRangeException(nameof(min), "Min value should be smaller than max value.");
             if (count > max - min)

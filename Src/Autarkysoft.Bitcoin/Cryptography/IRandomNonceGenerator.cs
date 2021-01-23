@@ -19,6 +19,14 @@ namespace Autarkysoft.Bitcoin.Cryptography
         /// <returns>The randomly generated 32-bit signed integer</returns>
         int NextInt32();
         /// <summary>
+        /// Returns a new 32-bit signed integer between <paramref name="min"/> and <paramref name="max"/> values
+        /// [<paramref name="min"/>, <paramref name="max"/>) generated using a random number generator.
+        /// </summary>
+        /// <param name="min">Minimum value (inclusive)</param>
+        /// <param name="max">Maximum value (exclusive)</param>
+        /// <returns></returns>
+        int NextInt32(int min, int max);
+        /// <summary>
         /// Returns a new 64-bit signed integer generated using a random number generator.
         /// </summary>
         /// <returns>The randomly generated 64-bit signed integer</returns>

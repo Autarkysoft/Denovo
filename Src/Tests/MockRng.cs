@@ -41,6 +41,8 @@ namespace Tests
         private readonly int val32;
         public int NextInt32() => val32;
 
+        public int NextInt32(int min, int max) => val32;
+
         private readonly long val64;
         public long NextInt64() => val64;
 

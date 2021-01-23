@@ -22,6 +22,17 @@ namespace Tests.Bitcoin.Cryptography
         }
 
         [Fact]
+        public void NextInt32_MinMaxTest()
+        {
+            using var rng = new RandomNonceGenerator();
+            int min = 1;
+            int max = 5;
+            int actual = rng.NextInt32(min, max);
+            Assert.True(actual >= min);
+            Assert.True(actual < max);
+        }
+
+        [Fact]
         public void NextInt64Test()
         {
             using var rng = new RandomNonceGenerator();
@@ -63,6 +74,7 @@ namespace Tests.Bitcoin.Cryptography
             rng.Dispose();
 
             Assert.Throws<ObjectDisposedException>(() => rng.NextInt32());
+            Assert.Throws<ObjectDisposedException>(() => rng.NextInt32(1, 2));
             Assert.Throws<ObjectDisposedException>(() => rng.NextInt64());
             Assert.Throws<ObjectDisposedException>(() => rng.GetDistinct(0, 10, 2));
         }
