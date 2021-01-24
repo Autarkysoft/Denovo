@@ -186,9 +186,19 @@ namespace Autarkysoft.Bitcoin
     public struct TimeConstants
     {
         /// <summary>
-        /// 2 weeks in seconds
+        /// 1 second in milliseconds
         /// </summary>
-        public const int TwoWeeks_Seconds = 2 * 7 * 24 * 60 * 60;
+        public const int OneSecond_Milliseconds = 1_000;
+
+        /// <summary>
+        /// 5 seconds in milliseconds
+        /// </summary>
+        public const int FiveSeconds_Milliseconds = 5_000;
+        /// <summary>
+        /// 10 seconds in milliseconds
+        /// </summary>
+        public const int TenSeconds_Milliseconds = 10_000;
+
         /// <summary>
         /// 1 minute in milliseconds
         /// </summary>
@@ -197,5 +207,15 @@ namespace Autarkysoft.Bitcoin
         /// 2 minutes in milliseconds
         /// </summary>
         public const double TwoMin_Milliseconds = 120_000;
+
+        /// <summary>
+        /// 1 day in seconds
+        /// </summary>
+        public const int OneDay_Seconds = 1 * 24 * 60 * 60;
+
+        /// <summary>
+        /// 2 weeks in seconds
+        /// </summary>
+        public const int TwoWeeks_Seconds = 2 * 7 * 24 * 60 * 60;
     }
 }
