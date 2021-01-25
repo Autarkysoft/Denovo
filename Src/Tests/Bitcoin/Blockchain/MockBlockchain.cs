@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -118,16 +119,14 @@ namespace Tests.Bitcoin.Blockchain
             return missingHeadersToReturn;
         }
 
-        internal byte[][] missingBlkHash;
-        public byte[][] GetMissingBlockHashes(INodeStatus nodeStatus)
-        {
-            Assert.NotNull(missingBlkHash);
-            return missingBlkHash;
-        }
-
-        public void PutMissingHeightsBack(List<int> heights)
+        public void PutBackMissingBlocks(List<Inventory> blockInvs)
         {
             throw new NotImplementedException();
+        }
+
+        public void SetMissingBlockHashes(INodeStatus nodeStatus)
+        {
+            Assert.NotNull(nodeStatus);
         }
 
 #pragma warning restore CS0649 // Field is never assigned to

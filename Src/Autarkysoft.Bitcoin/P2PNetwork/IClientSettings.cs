@@ -17,6 +17,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public interface IClientSettings
     {
         /// <summary>
+        /// List of all nodes (peers) connected to this client.
+        /// </summary>
+        NodePool AllNodes { get; set; }
+        /// <summary>
         /// Gets or sets the client time
         /// </summary>
         IClientTime Time { get; set; }
@@ -30,11 +34,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// Gets or sets the memory pool instance that is shared by all node instances
         /// </summary>
         IMemoryPool MemPool { get; set; }
-
-        /// <summary>
-        /// Gets or sets the database to be shared and used between all node instances
-        /// </summary>
-        IStorage Storage { get; set; }
 
         /// <summary>
         /// Returns if the client is behind and has to sync its blockchain first.
@@ -134,14 +133,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="tx"></param>
         /// <returns></returns>
         bool AddToMempool(ITransaction tx);
+
         /// <summary>
-        /// Returns an array of known node network addresses to this client.
+        /// Returns between <paramref name="min"/> and <paramref name="max"/> number of <see cref="NetworkAddressWithTime"/>s.
+        /// If the node address file is not found or is corrupted, returns null.
         /// </summary>
-        /// <returns>
-        /// An array of <see cref="NetworkAddressWithTime"/> (may contain more items than <see cref="Constants.MaxAddrCount"/>
-        /// limit)
-        /// </returns>
-        NetworkAddressWithTime[] GetNodeAddrs();
+        /// <param name="min">Minimum number of addresses to return</param>
+        /// <param name="max">Maximum number of addresses to return</param>
+        /// <param name="skipCheck">
+        /// True to skip checking the returned values  (for Addr message), false to check the IP and service flags (for connection)
+        /// </param>
+        /// <returns>Null or at least <paramref name="min"/> and at most <paramref name="max"/> number of addresses</returns>
+        NetworkAddressWithTime[] GetRandomNodeAddrs(int min, int max, bool skipCheck);
         /// <summary>
         /// Removes the peer from peer list that has the given IP address.
         /// </summary>

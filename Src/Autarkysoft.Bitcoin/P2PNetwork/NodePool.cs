@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Net;
 using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -66,9 +67,45 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
         /// <summary>
-        /// Occurs when one or more items are removed.
+        /// The event to be raised when a new peer is added or an existing one is removed from the list.
+        /// <para/>Note: it should not be used in UI (use <see cref="CollectionChanged"/> event instead).
         /// </summary>
-        public event EventHandler ItemRemovedEvent;
+        public event EventHandler<AddRemoveEventArgs> AddRemoveEvent;
+
+        /// <summary>
+        /// Provides data for the <see cref="AddRemoveEvent"/>
+        /// </summary>
+        public class AddRemoveEventArgs : EventArgs
+        {
+            /// <summary>
+            /// Initializes a new instance of <see cref="AddRemoveEventArgs"/> with the given action.
+            /// </summary>
+            /// <param name="action">Action that caused the event</param>
+            public AddRemoveEventArgs(CollectionAction action)
+            {
+                Action = action;
+            }
+
+            /// <summary>
+            /// Returns the action that caused this event.
+            /// </summary>
+            public CollectionAction Action { get; }
+        }
+
+        /// <summary>
+        /// Describes the action that caused <see cref="AddRemoveEvent"/>.
+        /// </summary>
+        public enum CollectionAction
+        {
+            /// <summary>
+            /// A peer was added to the collection.
+            /// </summary>
+            Add,
+            /// <summary>
+            /// A peer was removed from the collection.
+            /// </summary>
+            Remove
+        }
 
 
         private void CheckIndex(int index)
@@ -94,7 +131,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             monitor.Wait();
             context.Send(state =>
             {
-                ItemRemovedEvent?.Invoke(this, null);
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
@@ -105,6 +141,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private void OnNotifyItemAdded(Node item, int index)
         {
             monitor.Wait();
+            AddRemoveEvent?.Invoke(this, new AddRemoveEventArgs(CollectionAction.Add));
             context.Send(state =>
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
@@ -117,9 +154,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private void OnNotifyItemRemoved(Node item, int index)
         {
             monitor.Wait();
+            AddRemoveEvent?.Invoke(this, new AddRemoveEventArgs(CollectionAction.Remove));
             context.Send(state =>
             {
-                ItemRemovedEvent?.Invoke(this, null);
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
@@ -231,6 +268,22 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         /// <inheritdoc/>
+        public bool Contains(IPAddress item)
+        {
+            lock (lockObj)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    if (items[i].NodeStatus.IP.Equals(item))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        /// <inheritdoc/>
         public void CopyTo(Node[] array, int arrayIndex)
         {
             lock (lockObj)
@@ -276,7 +329,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             lock (lockObj)
             {
-                int index = IndexOf(item);
+                int index = Array.IndexOf(items, item);
                 if (index < 0)
                 {
                     return false;

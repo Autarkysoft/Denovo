@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
@@ -165,6 +166,30 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         /// <inheritdoc/>
+        public Target GetNextTarget(BlockHeader first, BlockHeader last)
+        {
+            uint timeDiff = last.BlockTime - first.BlockTime;
+            if (timeDiff < Constants.PowTargetTimespan / 4)
+            {
+                timeDiff = Constants.PowTargetTimespan / 4;
+            }
+            if (timeDiff > Constants.PowTargetTimespan * 4)
+            {
+                timeDiff = Constants.PowTargetTimespan * 4;
+            }
+
+            BigInteger newTar = last.NBits.ToBigInt();
+            newTar *= timeDiff;
+            newTar /= Constants.PowTargetTimespan;
+            if (newTar > Consensus.PowLimit)
+            {
+                newTar = Consensus.PowLimit;
+            }
+
+            return new Target(newTar);
+        }
+
+        /// <inheritdoc/>
         public Target GetNextTarget()
         {
             // TODO: difficulty calculation is different for testnet
@@ -176,69 +201,51 @@ namespace Autarkysoft.Bitcoin.Blockchain
             else
             {
                 int h = (height - 1) - (Constants.DifficultyAdjustmentInterval - 1);
-                var first = headerList[h];
-                var last = headerList[^1];
-                var timeDiff = last.BlockTime - first.BlockTime;
-                if (timeDiff < Constants.PowTargetTimespan / 4)
-                {
-                    timeDiff = Constants.PowTargetTimespan / 4;
-                }
-                if (timeDiff > Constants.PowTargetTimespan * 4)
-                {
-                    timeDiff = Constants.PowTargetTimespan * 4;
-                }
-
-                BigInteger newTar = last.NBits.ToBigInt();
-                newTar *= timeDiff;
-                newTar /= Constants.PowTargetTimespan;
-                if (newTar > Consensus.PowLimit)
-                {
-                    newTar = Consensus.PowLimit;
-                }
-
-                return new Target(newTar);
+                BlockHeader first = headerList[h];
+                BlockHeader last = headerList[^1];
+                return GetNextTarget(first, last);
             }
         }
 
 
-        private Stack<int> missingHeights;
+        private Stack<byte[]> missingBlockHashes;
 
         /// <inheritdoc/>
-        public void PutMissingHeightsBack(List<int> heights)
+        public void PutBackMissingBlocks(List<Inventory> hashes)
         {
             lock (mainLock)
             {
-                foreach (var item in heights)
+                foreach (var item in hashes)
                 {
-                    missingHeights.Push(item);
+                    missingBlockHashes.Push(item.Hash);
                 }
             }
         }
 
         /// <inheritdoc/>
-        public byte[][] GetMissingBlockHashes(INodeStatus nodeStatus)
+        public void SetMissingBlockHashes(INodeStatus nodeStatus)
         {
             lock (mainLock)
             {
-                if (missingHeights is null)
+                if (missingBlockHashes is null)
                 {
-                    missingHeights = new Stack<int>(Enumerable.Range(1, headerList.Count).Reverse());
+                    missingBlockHashes = new Stack<byte[]>(headerList.Count);
+                    for (int i = headerList.Count - 1; i > 0; i--)
+                    {
+                        missingBlockHashes.Push(headerList[i].GetHash(false));
+                    }
                 }
-                if (missingHeights.Count == 0)
+                if (missingBlockHashes.Count == 0)
                 {
-                    return null;
+                    return;
                 }
 
-                int max = missingHeights.Count < 16 ? missingHeights.Count : 16;
-                var lst = new List<byte[]>(max);
+                int max = missingBlockHashes.Count < 16 ? missingBlockHashes.Count : 16;
                 for (int i = 0; i < max; i++)
                 {
-                    int h = missingHeights.Pop();
-                    nodeStatus.BlocksToGet.Add(h);
-                    lst.Add(headerList[h].GetHash(false));
+                    byte[] h = missingBlockHashes.Pop();
+                    nodeStatus.InvsToGet.Add(new Inventory(InventoryType.WitnessBlock, h));
                 }
-
-                return lst.ToArray();
             }
         }
 
@@ -247,11 +254,33 @@ namespace Autarkysoft.Bitcoin.Blockchain
         {
             if (State == BlockchainState.BlocksSync)
             {
+                byte[] blockHash = block.GetBlockHash(false);
+                int index = nodeStatus.InvsToGet.FindIndex(x => ((ReadOnlySpan<byte>)blockHash).SequenceEqual(x.Hash));
+                if (index < 0)
+                {
+                    nodeStatus.AddMediumViolation();
+                    return false;
+                }
+                else
+                {
+                    nodeStatus.InvsToGet.RemoveAt(index);
+                }
+
                 // Find index of the block that the first header in the array references
                 int height = headerList.FindLastIndex(x =>
                                         ((ReadOnlySpan<byte>)block.Header.GetHash(false)).SequenceEqual(x.GetHash()));
-                nodeStatus.BlocksToGet.Remove(height);
+
                 // TODO: process this block!
+                Consensus.BlockHeight = height;
+                if (BlockVer.Verify(block, out string error))
+                {
+                    //BlockVer.utxo
+                    //nodeStatus.BlocksToGet.Remove(height);
+                }
+                else
+                {
+
+                }
             }
 
             return true;

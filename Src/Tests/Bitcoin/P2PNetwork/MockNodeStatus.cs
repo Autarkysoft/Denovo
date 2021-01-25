@@ -35,7 +35,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
         private const string UnexpectedCall = "Unexpected call was made";
 
-        public List<int> BlocksToGet => throw new NotImplementedException();
+        public List<Inventory> InvsToGet => throw new NotImplementedException();
 
         internal IPAddress _ip;
         public IPAddress IP

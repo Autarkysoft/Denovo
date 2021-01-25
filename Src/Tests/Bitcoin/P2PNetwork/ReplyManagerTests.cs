@@ -89,22 +89,11 @@ namespace Tests.Bitcoin.P2PNetwork
         {
             var bc = new MockBlockchain();
             var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _bchain = bc };
-            var mockAddr0 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Loopback, 1010, 5678);
             var mockAddr1 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("200.2.3.4"), 23, 98);
             var mockAddr2 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("1.2.3.4"), 8080, 665412);
             var mockAddr3 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("99.77.88.66"), 444, 120000);
 
             var mockAddrs = new NetworkAddressWithTime[] { mockAddr1, mockAddr2, mockAddr3 };
-
-            var mockAddrs1000 = Enumerable.Repeat(mockAddr0, 997).ToList();
-            mockAddrs1000.AddRange(mockAddrs); // last 3 items are distict
-
-            var mockAddrs1002 = Enumerable.Repeat(mockAddr0, 999).ToList();
-            mockAddrs1002.AddRange(mockAddrs); // last 3 items are distict
-
-            var expAddr1002_1 = Enumerable.Repeat(mockAddr0, 999).ToList();
-            expAddr1002_1.Add(mockAddr1);
-            var expAddr1002_2 = new NetworkAddressWithTime[2] { mockAddr2, mockAddr3 };
 
             var mockBlock = new MockSerializableBlock(Helper.HexToBytes("01000000161126f0d39ec082e51bbd29a1dfb40b416b445ac8e493f88ce993860000000030e2a3e32abf1663a854efbef1b233c67c8cdcef5656fe3b4f28e52112469e9bae306849ffff001d16d1b42d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0116ffffffff0100f2052a01000000434104f5efde0c2d30ab28e3dbe804c1a4aaf13066f9b198a4159c76f8f79b3b20caf99f7c979ed6c71481061277a6fc8666977c249da99960c97c8d8714fda9f0e883ac00000000"));
 
@@ -210,64 +199,61 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                // GetAddr with smaller than max items
+                // GetAddr
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     addrsToReturn = mockAddrs,
+                    minRandAddr = 10,
+                    maxRandAddr = Constants.MaxAddrCount,
+                    randAddrSkipCheck = true
                 },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 new Message[1] { new Message(new AddrPayload(mockAddrs), NetworkType.MainNet) }
             };
             yield return new object[]
             {
-                // GetAddr with max items
+                // GetAddr (IClientSettings returns null)
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    addrsToReturn = mockAddrs1000.ToArray(),
+                    addrsToReturn = null,
+                    minRandAddr = 10,
+                    maxRandAddr = Constants.MaxAddrCount,
+                    randAddrSkipCheck = true
                 },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
-                new Message[1] { new Message(new AddrPayload(mockAddrs1000.ToArray()), NetworkType.MainNet) }
+                null
             };
             yield return new object[]
             {
-                // GetAddr with more than max items (needs 2 messages)
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
-                new MockClientSettings()
-                {
-                    _netType = NetworkType.MainNet,
-                    addrsToReturn = mockAddrs1002.ToArray(),
-                },
-                new Message(new GetAddrPayload(), NetworkType.MainNet),
-                new Message[2]
-                {
-                    new Message(new AddrPayload(expAddr1002_1.ToArray()), NetworkType.MainNet),
-                    new Message(new AddrPayload(expAddr1002_2), NetworkType.MainNet)
-                }
-            };
-            yield return new object[]
-            {
-                // GetAddr with 0 items (no reply message)
+                // GetAddr (IClientSettings returns empty array)
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     addrsToReturn = new NetworkAddressWithTime[0],
+                    minRandAddr = 10,
+                    maxRandAddr = Constants.MaxAddrCount,
+                    randAddrSkipCheck = true
                 },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 null
             };
             yield return new object[]
             {
-                // GetAddr but addr was already sent (no reply message)
+                // GetAddr (Addr is already sent)
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = true },
-                new MockClientSettings() { _netType = NetworkType.MainNet },
+                new MockClientSettings()
+                {
+                    _netType = NetworkType.MainNet,
+                },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
                 null
             };
+
             yield return new object[]
             {
                 // Inv
@@ -573,7 +559,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 null
             };
 
-            // Undesired peer service flags, has to disconnect during synchronization
+            // Undesired peer service flags (IClientSettings decides), has to disconnect
             yield return new object[]
             {
                 new MockNodeStatus()
@@ -581,124 +567,13 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
-                    _servs = NodeServiceFlags.NodeNone,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     expectDiscSignal = true
                 },
                 new MockClientSettings()
                 {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.HeadersSync }
-                },
-                null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    _servs = NodeServiceFlags.NodeNone | NodeServiceFlags.NodeWitness,
-                    expectDiscSignal = true
-                },
-                new MockClientSettings()
-                {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.HeadersSync }
-                },
-                null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    _servs = NodeServiceFlags.NodeNetworkLimited, // Disconnect from pruned nodes
-                    expectDiscSignal = true
-                },
-                new MockClientSettings()
-                {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.BlocksSync }
-                },
-                null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    _servs = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited, // Disconnect from pruned nodes
-                    expectDiscSignal = true
-                },
-                new MockClientSettings()
-                {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.BlocksSync }
-                },
-                null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    _servs = NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited, // Disconnect from pruned nodes
-                    expectDiscSignal = true
-                },
-                new MockClientSettings()
-                {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.BlocksSync }
-                },
-                null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    _servs = NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited,
-                    expectDiscSignal = true
-                },
-                new MockClientSettings()
-                {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.BlocksSync }
-                },
-                null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    _servs = NodeServiceFlags.NodeNetwork, // Disconnect from nodes that don't have witness
-                    expectDiscSignal = true
-                },
-                new MockClientSettings()
-                {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.BlocksSync }
-                },
-                null
-            };
-            yield return new object[]
-            {
-                new MockNodeStatus()
-                {
-                    _handShakeToReturn = HandShakeState.ReceivedAndReplied,
-                    _handShakeToSet = HandShakeState.Finished,
-                    updateTime = true,
-                    _servs = NodeServiceFlags.NodeXThin,
-                    expectDiscSignal = true
-                },
-                new MockClientSettings()
-                {
-                    _bchain = new MockBlockchain() { _stateToReturn = BlockchainState.BlocksSync }
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = false,
                 },
                 null
             };
@@ -711,15 +586,17 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
-                    _servs = NodeServiceFlags.NodeNetwork, // OK for syncing headers
+                    _servs = NodeServiceFlags.NodeGetUtxo, // Mock service flag, the dependency fake passes
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds, // HeaderSync uses 1 min
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true, // Dependency fake pass on given flag
                     _bchain = new MockBlockchain()
                     {
                         _stateToReturn = BlockchainState.HeadersSync,
@@ -735,7 +612,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
-                    _servs = NodeServiceFlags.NodeNetworkLimited, // OK for syncing headers
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
                     timerInterval = TimeConstants.OneMin_Milliseconds,
@@ -744,6 +621,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = new MockBlockchain()
                     {
                         _stateToReturn = BlockchainState.HeadersSync,
@@ -759,7 +638,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
-                    _servs = NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeBloom | NodeServiceFlags.NodeXThin,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
                     timerInterval = TimeConstants.OneMin_Milliseconds,
@@ -768,6 +647,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = new MockBlockchain()
                     {
                         _stateToReturn = BlockchainState.HeadersSync,
@@ -785,7 +666,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
-                    _servs = NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness,
+                    _servs = NodeServiceFlags.NodeGetUtxo, // Mock flag, dependency has to pass
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
                     timerInterval = TimeConstants.OneMin_Milliseconds, // BlockSync uses 1 min
@@ -794,6 +675,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true, // Fake pass
                     _bchain = new MockBlockchain()
                     {
                         _stateToReturn = BlockchainState.BlocksSync,
@@ -803,7 +686,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new Message[] { getHdrs }
             };
 
-            // Blockchain.State is FullSync (peer flags are ignored)
+            // Blockchain.State is FullSync (peer flags are always checked)
             yield return new object[]
             {
                 new MockNodeStatus()
@@ -811,15 +694,18 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds, // FullSync uses 2 min
+                    timerInterval = TimeConstants.OneMin_Milliseconds, // FullSync uses 2 min
                 },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true, // Fake pass
                     _bchain = syncBC
                 },
                 new Message[] { getHdrs }
@@ -831,9 +717,10 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -841,6 +728,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true, // No feefilter becaue of protocol version, addr
                     myIpToReturn = IPAddress.Loopback, // No addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true, // Fake pass
                     _bchain = syncBC
                 },
                 new Message[] { getHdrs }
@@ -852,15 +741,18 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip31ProtVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { getHdrs }
@@ -872,10 +764,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip31ProtVer + 1, // ping, no feefilter, no sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -883,6 +776,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true, // No feefilter becaue of protocol version, addr
                     myIpToReturn = IPAddress.Loopback, // No addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { ping, getHdrs }
@@ -894,10 +789,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip130ProtVer - 1, // ping, no feefilter, no sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -905,6 +801,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true, // No feefilter becaue of protocol version, addr
                     myIpToReturn = IPAddress.Loopback, // No addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { ping, getHdrs }
@@ -916,10 +814,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip130ProtVer, // ping, no feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -927,6 +826,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true, // No feefilter becaue of protocol version, addr
                     myIpToReturn = IPAddress.Loopback, // No addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { ping, sendHdr, getHdrs }
@@ -938,10 +839,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip133ProtVer - 1, // ping, no feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -949,6 +851,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = true, // No feefilter becaue of protocol version, addr
                     myIpToReturn = IPAddress.Loopback, // No addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { ping, sendHdr, getHdrs }
@@ -960,16 +864,19 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     _relay = false, // No feefilter, no addr
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { ping, sendHdr, getHdrs }
@@ -981,10 +888,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -993,6 +901,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     myIpToReturn = IPAddress.Loopback, // No addr
                     _fee = feeRateSat,
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { ping, sendHdr, getHdrs, feeFilter }
@@ -1004,10 +914,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -1016,6 +927,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     myIpToReturn = IPAddress.IPv6Loopback, // No addr
                     _fee = feeRateSat,
                     _protoVer = mockProtoVer,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _bchain = syncBC
                 },
                 new Message[] { ping, sendHdr, getHdrs, feeFilter }
@@ -1029,10 +942,11 @@ namespace Tests.Bitcoin.P2PNetwork
                     _handShakeToReturn = HandShakeState.ReceivedAndReplied,
                     _handShakeToSet = HandShakeState.Finished,
                     updateTime = true,
+                    _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -1042,6 +956,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _fee = feeRateSat,
                     _protoVer = mockProtoVer,
                     _bchain = syncBC,
+                    expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
+                    _hasNeededServices = true,
                     _services = NodeServiceFlags.NodeWitness,
                     _port = 123,
                     _time = new MockClientTime() { _now = 999 }
@@ -1196,7 +1112,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     updateTime = true,
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.TwoMin_Milliseconds,
+                    timerInterval = TimeConstants.OneMin_Milliseconds,
                 },
                 new MockClientSettings()
                 {
@@ -1213,6 +1129,8 @@ namespace Tests.Bitcoin.P2PNetwork
                         headerLocatorToReturn = new BlockHeader[] { hdr }
                     },
                     _relay = false, // No FeeFilter, no addr
+                    expHasNeededServicesFlags = verPl.Services,
+                    _hasNeededServices = true,
                 },
                 msg, new Message[] { verak, ping, getHdrs }
             };

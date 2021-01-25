@@ -21,6 +21,10 @@ namespace Tests.Bitcoin.P2PNetwork
 
         private const string UnexpectedCall = "Unexpected call was made";
 
+
+        public NodePool AllNodes { get; set; }
+
+
         internal IClientTime _time;
         public IClientTime Time
         {
@@ -260,9 +264,15 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         internal NetworkAddressWithTime[] addrsToReturn;
-        public NetworkAddressWithTime[] GetNodeAddrs()
+        internal int minRandAddr, maxRandAddr;
+        internal bool? randAddrSkipCheck;
+        public NetworkAddressWithTime[] GetRandomNodeAddrs(int min, int max, bool skipCheck)
         {
-            Assert.True(addrsToReturn != null, $"Unexpected call to {nameof(GetNodeAddrs)} method was made.");
+            Assert.Equal(minRandAddr, min);
+            Assert.Equal(maxRandAddr, max);
+            Assert.True(randAddrSkipCheck.HasValue, UnexpectedCall);
+            Assert.Equal(randAddrSkipCheck.Value, skipCheck);
+
             return addrsToReturn;
         }
 

@@ -95,6 +95,8 @@ namespace Autarkysoft.Bitcoin
         /// <param name="i">Number of bytes to skip</param>
         public void Skip(int i) => position += i;
 
+        internal void ChangePosition(int i) => position = i;
+
 
         /// <summary>
         /// Compares the given byte array with a sub array of buffer from current position and equal to given bytes length.

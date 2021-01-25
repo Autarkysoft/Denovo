@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Denovo.MVVM;
 using Denovo.Services;
@@ -46,27 +47,31 @@ namespace Denovo.ViewModels
                     _ => throw new ArgumentException(),
                 };
 
-                StorageMan = new Storage(network);
+                var StorageMan = new Storage(network);
                 ConfigVm = new ConfigurationViewModel(StorageMan);
 
                 AllNodes = new NodePool(ConfigVm.Config.MaxConnectionCount);
                 var consensus = new Consensus(0, network);
                 var time = new ClientTime();
                 time.WrongClockEvent += Time_WrongClockEvent;
+                var fileMan = new FileManager(network);
                 var clientSettings = new ClientSettings()
                 {
                     UserAgent = ConfigVm.Config.UserAgent,
                     Relay = ConfigVm.Config.Relay,
                     Network = network,
+                    AllNodes = AllNodes,
                     Time = time,
-                    Blockchain = new Blockchain(new FileManager(network), new BlockVerifier(null, consensus), consensus)
+                    FileMan = fileMan,
+                    Blockchain = new Blockchain(fileMan, new BlockVerifier(null, consensus), consensus)
                     {
-                        Time = time
+                        Time = time,
+                        State = BlockchainState.None
                     },
-                    Storage = StorageMan,
                     AcceptIncomingConnections = ConfigVm.Config.AcceptIncoming,
-                    MaxConnectionCount = ConfigVm.Config.MaxConnectionCount,
-                    IsCatchingUp = true // We don't want to sync
+                    MaxConnectionCount = 5,
+                    DnsSeeds = ConfigVm.Config.PeerList.Split(Environment.NewLine),
+                    Port = (ushort)port
                 };
 
                 WinMan = new WindowManager();
@@ -77,11 +82,18 @@ namespace Denovo.ViewModels
 
                 DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
 
+                //FullClient cl = new FullClient(clientSettings)
+                //{
+                //    Rng = new RandomNonceGenerator(),
+                //};
+                //cl.Start();
+
                 MyInfo = $"My node information:{Environment.NewLine}" +
-                    $"Network: {ConfigVm.Config.Network}{Environment.NewLine}" +
-                    $"User agent: {ConfigVm.Config.UserAgent}{Environment.NewLine}" +
-                    $"Protocol version: {clientSettings.ProtocolVersion}{Environment.NewLine}" +
-                    $"Max connection count: {clientSettings.MaxConnectionCount}{Environment.NewLine}";
+                         $"Network: {ConfigVm.Config.Network}{Environment.NewLine}" +
+                         $"User agent: {ConfigVm.Config.UserAgent}{Environment.NewLine}" +
+                         $"Protocol version: {clientSettings.ProtocolVersion}{Environment.NewLine}" +
+                         $"Max connection count: {clientSettings.MaxConnectionCount}{Environment.NewLine}" +
+                         $"Best block height: {clientSettings.Blockchain.Height}{Environment.NewLine}";
             }
         }
 
@@ -93,7 +105,6 @@ namespace Denovo.ViewModels
         public NodePool AllNodes { get; set; }
 
         public IWindowManager WinMan { get; set; }
-        public Storage StorageMan { get; set; }
         public ConfigurationViewModel ConfigVm { get; set; }
         public void Config() => WinMan.ShowDialog(ConfigVm);
         public void Miner() => WinMan.ShowDialog(new MinerViewModel());

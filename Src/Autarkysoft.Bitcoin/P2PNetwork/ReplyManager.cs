@@ -50,40 +50,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 result.Add(extraMsg);
             }
 
-            if (settings.Blockchain.State == BlockchainState.HeadersSync)
+            if (!settings.HasNeededServices(nodeStatus.Services))
             {
-                // We can only sync headers with a peer that is a full or full pruned node
-                if (!nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) &&
-                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetworkLimited))
-                {
-                    nodeStatus.SignalDisconnect();
-                    return null;
-                }
+                nodeStatus.SignalDisconnect();
+                return null;
+            }
 
-                // During initial sync we want a peer that responds quickly, 1 min is way above the
-                // average response time for `Headers`.
-                // The ReplyManager handling Headers message has to handle restart/stop of timer
-                nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
-            }
-            else if (settings.Blockchain.State == BlockchainState.BlocksSync)
-            {
-                // We can only sync blocks with a full node that also has witnesses (any node not having
-                // witness is not a "full" node since it can't provide the full blocks)
-                if (nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetworkLimited) ||
-                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeNetwork) ||
-                    !nodeStatus.Services.HasFlag(NodeServiceFlags.NodeWitness))
-                {
-                    nodeStatus.SignalDisconnect();
-                    return null;
-                }
+            // We want the other node to respond to our initial settings quickly to check headers.
+            // TODO: this may be a bad thing to enfoce on all nodes. Maybe force it based on Blockchain.State
+            nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
 
-                nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
-            }
-            else
-            {
-                // Any time other than initial sync we give more time to the peer to reply to GetHeaders
-                nodeStatus.StartDisconnectTimer(TimeConstants.TwoMin_Milliseconds);
-            }
+            //result.Add(new Message(new GetAddrPayload(), settings.Network));
 
             if (nodeStatus.ProtocolVersion > Constants.P2PBip31ProtVer)
             {
@@ -143,16 +120,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private Message[] GetMissingBlockMessage()
         {
-            byte[][] hashes = settings.Blockchain.GetMissingBlockHashes(nodeStatus);
-            if (hashes is null || hashes.Length == 0)
-            {
-                return null;
-            }
-
-            Inventory[] invs = hashes.Select(x => new Inventory(InventoryType.WitnessBlock, x)).ToArray();
+            settings.Blockchain.SetMissingBlockHashes(nodeStatus);
             return new Message[]
             {
-               new Message(new GetDataPayload(invs), settings.Network)
+               new Message(new GetDataPayload(nodeStatus.InvsToGet.ToArray()), settings.Network)
             };
         }
 
@@ -193,7 +164,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private bool Deser<T>(byte[] data, out T pl) where T : IMessagePayload, new()
         {
             pl = new T();
-            if (pl.TryDeserialize(new FastStreamReader(data), out _))
+            if (pl.TryDeserialize(new FastStreamReader(data), out string error))
             {
                 return true;
             }
@@ -319,28 +290,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     // Empty payload
                     if (!nodeStatus.IsAddrSent)
                     {
-                        NetworkAddressWithTime[] availableAddrs = settings.GetNodeAddrs();
-                        if (availableAddrs.Length != 0 && availableAddrs.Length <= Constants.MaxAddrCount)
-                        {
-                            result = new Message[1] { new Message(new AddrPayload(availableAddrs), settings.Network) };
-                        }
-                        else if (availableAddrs.Length != 0)
-                        {
-                            result = new Message[(int)Math.Ceiling((double)availableAddrs.Length / Constants.MaxAddrCount)];
-                            int offset = 0;
-                            int i = 0;
-                            while (offset < availableAddrs.Length)
-                            {
-                                int rem = availableAddrs.Length - offset;
-                                int count = rem > Constants.MaxAddrCount ? Constants.MaxAddrCount : rem;
-                                var temp = new NetworkAddressWithTime[count];
-                                Array.Copy(availableAddrs, offset, temp, 0, temp.Length);
-                                offset += count;
-                                result[i++] = new Message(new AddrPayload(temp), settings.Network);
-                            }
-                        }
-
                         nodeStatus.IsAddrSent = true;
+                        NetworkAddressWithTime[] availableAddrs = settings.GetRandomNodeAddrs(10, Constants.MaxAddrCount, true);
+                        if (!(availableAddrs is null) && availableAddrs.Length != 0)
+                        {
+                            result = new Message[] { new Message(new AddrPayload(availableAddrs), settings.Network) };
+                        }
                     }
                     break;
                 case PayloadType.GetBlocks:
@@ -422,7 +377,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 break;
                             case BlockProcessResult.InvalidBlocks:
                                 nodeStatus.StopDisconnectTimer();
-                                if (settings.IsCatchingUp)
+                                if (settings.Blockchain.State != BlockchainState.Synchronized)
                                 {
                                     nodeStatus.SignalDisconnect();
                                 }
@@ -438,10 +393,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 {
                                     nodeStatus.ReStartDisconnectTimer();
                                     result = new Message[1] { GetLocatorMessage() };
-                                }
-                                else if (settings.Blockchain.State == BlockchainState.HeadersSync)
-                                {
-                                    nodeStatus.SignalDisconnect();
                                 }
                                 else if (settings.Blockchain.State == BlockchainState.BlocksSync)
                                 {

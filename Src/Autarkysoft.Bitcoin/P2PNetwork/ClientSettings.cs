@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
@@ -82,11 +83,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 buffMan.SetBuffer(sArg);
                 SendReceivePool.Push(sArg);
             }
+
+            // TODO: find a better way for this
+            supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
+
+            Time = new ClientTime();
         }
 
 
+        private readonly bool supportsIpV6;
+
+        /// <inheritdoc/>
+        public NodePool AllNodes { get; set; }
+
         /// <inheritdoc/>
         public IClientTime Time { get; set; }
+
+        /// <inheritdoc/>
+        public IFileManager FileMan { get; set; }
 
         /// <inheritdoc/>
         public IBlockchain Blockchain { get; set; }
@@ -95,7 +109,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public IMemoryPool MemPool { get; set; }
 
         /// <inheritdoc/>
-        public IStorage Storage { get; set; }
+        public IRandomNonceGenerator Rng { get; set; } = new RandomNonceGenerator();
 
         /// <inheritdoc/>
         public bool IsCatchingUp { get; set; }
@@ -162,52 +176,113 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
 
+        private readonly object addrLock = new object();
+        private const string NodeAddrs = "NodeAddrs";
+
+
         /// <inheritdoc/>
-        public NetworkAddressWithTime[] GetNodeAddrs()
+        public NetworkAddressWithTime[] GetRandomNodeAddrs(int min, int max, bool skipCheck)
         {
-            if (!(Storage is null))
+            if (min < 0 || min > max)
             {
-                NetworkAddressWithTime[] allAddrs = Storage.ReadAddrs();
-                // TODO: this value can change or it could be set by the user. For not it is for testing
-                // Maximum number of items to return
-                int maxToReturn = 50;
-                if (allAddrs.Length <= maxToReturn)
+                return null;
+            }
+
+            lock (addrLock)
+            {
+                byte[] data = FileMan.ReadData(NodeAddrs);
+                if (data is null || data.Length % NetworkAddressWithTime.Size != 0)
                 {
-                    return allAddrs;
+                    // File doesn't exist or is corrupted
+                    return null;
                 }
                 else
                 {
-                    using var rng = new RandomNonceGenerator();
-                    int randCount = rng.NextInt32() % maxToReturn;
-                    int[] indices = rng.GetDistinct(0, allAddrs.Length, randCount == 0 ? maxToReturn : randCount);
-                    NetworkAddressWithTime[] result = new NetworkAddressWithTime[randCount];
-                    for (int i = 0; i < result.Length; i++)
+                    int total = data.Length / NetworkAddressWithTime.Size;
+                    int count = Rng.NextInt32(min, max);
+                    if (total < count)
                     {
-                        result[i] = allAddrs[indices[i]];
+                        count = total;
                     }
 
-                    return result;
+                    var result = new List<NetworkAddressWithTime>(count);
+                    var stream = new FastStreamReader(data);
+                    int[] indices = Rng.GetDistinct(0, total, count);
+                    for (int i = 0; i < indices.Length; i++)
+                    {
+                        stream.ChangePosition(indices[i] * NetworkAddressWithTime.Size);
+                        var addr = new NetworkAddressWithTime();
+                        if (addr.TryDeserialize(stream, out _))
+                        {
+                            if (skipCheck ||
+                                !AllNodes.Contains(addr.NodeIP) &&
+                                (supportsIpV6 || addr.NodeIP.AddressFamily != AddressFamily.InterNetworkV6) &&
+                                HasNeededServices(addr.NodeServices))
+                            {
+                                result.Add(addr);
+                            }
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }
+
+                    if (result.Count < count && total > count)
+                    {
+                        List<int> allIndices = new List<int>(Rng.GetDistinct(0, total, total));
+                        allIndices.RemoveAll(x => Array.IndexOf(indices, x) >= 0);
+                        if (allIndices.Count > 0)
+                        {
+                            for (int i = 0; i < indices.Length && result.Count < count; i++)
+                            {
+                                stream.ChangePosition(indices[i] * NetworkAddressWithTime.Size);
+                                var addr = new NetworkAddressWithTime();
+                                if (addr.TryDeserialize(stream, out _))
+                                {
+                                    if (skipCheck ||
+                                        !AllNodes.Contains(addr.NodeIP) &&
+                                        (supportsIpV6 || addr.NodeIP.AddressFamily != AddressFamily.InterNetworkV6) &&
+                                        HasNeededServices(addr.NodeServices))
+                                    {
+                                        result.Add(addr);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return result.ToArray();
                 }
             }
-            else
-            {
-                return new NetworkAddressWithTime[0];
-            }
         }
+
 
         /// <inheritdoc/>
         public void RemoveNodeAddr(IPAddress ip)
         {
-            NetworkAddressWithTime[] all = GetNodeAddrs();
-            for (int i = 0; i < all.Length; i++)
+            lock (addrLock)
             {
-                if (all[i].NodeIP.Equals(ip))
+                byte[] data = FileMan.ReadData(NodeAddrs);
+                if (!(data is null) && data.Length % NetworkAddressWithTime.Size == 0)
                 {
-                    var temp = new NetworkAddressWithTime[all.Length - 1];
-                    Array.Copy(all, 0, temp, 0, i);
-                    Array.Copy(all, i + 1, temp, i, all.Length - i - 1);
-                    UpdateNodeAddrs(temp);
-                    break;
+                    int total = data.Length / NetworkAddressWithTime.Size;
+                    var reader = new FastStreamReader(data);
+                    for (int i = 0; i < total; i++)
+                    {
+                        var addr = new NetworkAddressWithTime();
+                        if (addr.TryDeserialize(reader, out _) && addr.NodeIP.Equals(ip))
+                        {
+                            byte[] result = new byte[data.Length - NetworkAddressWithTime.Size];
+                            int startPos = i * NetworkAddressWithTime.Size;
+                            int EndPos = startPos + NetworkAddressWithTime.Size;
+                            Buffer.BlockCopy(data, 0, result, 0, startPos);
+                            Buffer.BlockCopy(data, EndPos, result, startPos, data.Length - EndPos);
+
+                            FileMan.WriteData(result, NodeAddrs);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -215,9 +290,65 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses)
         {
-            if (!(Storage is null))
+            lock (addrLock)
             {
-                Storage.WriteAddrs(nodeAddresses);
+                byte[] data = FileMan.ReadData(NodeAddrs);
+                if (data is null || data.Length % NetworkAddressWithTime.Size != 0)
+                {
+                    // File doesn't exist or is corrupted
+                    var stream = new FastStream(nodeAddresses.Length * NetworkAddressWithTime.Size);
+                    foreach (var item in nodeAddresses)
+                    {
+                        item.Serialize(stream);
+                    }
+                    FileMan.WriteData(stream.ToByteArray(), NodeAddrs);
+                }
+                else
+                {
+                    int total = data.Length / NetworkAddressWithTime.Size;
+                    var reader = new FastStreamReader(data);
+                    var toSkip = new List<int>(nodeAddresses.Length);
+                    for (int i = 0; i < total; i++)
+                    {
+                        var addr = new NetworkAddressWithTime();
+                        if (addr.TryDeserialize(reader, out _))
+                        {
+                            int index = Array.IndexOf(nodeAddresses, addr);
+                            if (index >= 0)
+                            {
+                                toSkip.Add(index);
+                            }
+                        }
+                    }
+
+                    var stream = new FastStream((nodeAddresses.Length - toSkip.Count) * NetworkAddressWithTime.Size);
+                    for (int i = 0; i < nodeAddresses.Length; i++)
+                    {
+                        if (!toSkip.Contains(i) && PingIp(nodeAddresses[i].NodeIP))
+                        {
+                            nodeAddresses[i].Serialize(stream);
+                        }
+                    }
+
+                    if (stream.GetSize() > 0)
+                    {
+                        FileMan.AppendData(stream.ToByteArray(), NodeAddrs);
+                    }
+                }
+            }
+        }
+
+        private bool PingIp(IPAddress nodeIP)
+        {
+            try
+            {
+                var ping = new Ping();
+                PingReply rep = ping.Send(nodeIP, TimeConstants.TenSeconds_Milliseconds);
+                return rep.Status == IPStatus.Success;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 

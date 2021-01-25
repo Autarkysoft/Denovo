@@ -15,11 +15,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// </summary>
     public interface INodeStatus
     {
-        // TODO: should this be the block hashes?
         /// <summary>
-        /// List of block heights to download
+        /// List of inventories that this peer has and we want to get
         /// </summary>
-        List<int> BlocksToGet { get; }
+        List<Inventory> InvsToGet { get; }
 
         /// <summary>
         /// IP address of this node

@@ -31,8 +31,8 @@ namespace Denovo.ViewModels
                 Relay = false,
                 Network = NetworkType.TestNet,
                 Blockchain = new MockBlockChain(),
-                Storage = new Storage(NetworkType.TestNet),
-                IsCatchingUp = false
+                Time = new ClientTime(),
+                FileMan = new FileManager(NetworkType.TestNet)
             };
             connector = new NodeConnector(AllNodes, clientSettings);
         }
@@ -40,9 +40,9 @@ namespace Denovo.ViewModels
 
         internal class MockBlockChain : IBlockchain
         {
-            public int Height => 0;
+            public int Height => 1;
 
-            public BlockchainState State { get => BlockchainState.None; set => throw new NotImplementedException(); }
+            public BlockchainState State { get => BlockchainState.None; set { } }
 
             public event EventHandler HeaderSyncEndEvent;
             public event EventHandler BlockSyncEndEvent;
@@ -52,19 +52,19 @@ namespace Denovo.ViewModels
             public bool ProcessBlock(IBlock block, INodeStatus nodeStatus) => true;
             public BlockProcessResult ProcessHeaders(BlockHeader[] headers) => BlockProcessResult.Success;
 
-            public BlockHeader[] GetBlockHeaderLocator() => throw new NotImplementedException();
-
-            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
+            public BlockHeader[] GetBlockHeaderLocator()
             {
-                throw new NotImplementedException();
+                return new BlockHeader[]
+                {
+                    new Consensus().GetGenesisBlock().Header
+                };
             }
 
-            public byte[][] GetMissingBlockHashes(INodeStatus nodeStatus) => null;
+            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash) => null;
 
-            public void PutMissingHeightsBack(List<int> heights)
-            {
-                throw new NotImplementedException();
-            }
+            public void SetMissingBlockHashes(INodeStatus nodeStatus) { }
+
+            public void PutBackMissingBlocks(List<Inventory> blockInvs) { }
         }
 
         public NodePool AllNodes { get; set; }
@@ -96,7 +96,7 @@ namespace Denovo.ViewModels
             $"Latency: {SelectedNode.NodeStatus.Latency.TotalMilliseconds} ms{Environment.NewLine}" +
             $"Violation: {((NodeStatus)SelectedNode.NodeStatus).Violation}{Environment.NewLine}";
 
-        private int _blkH = 1863465;
+        private int _blkH = 1905232;
         public int BlockHeight
         {
             get => _blkH;

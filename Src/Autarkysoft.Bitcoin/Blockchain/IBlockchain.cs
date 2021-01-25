@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
 
@@ -80,13 +81,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <summary>
         /// Puts the remaining heights that the peer failed to provide back in the stack of missing heights.
         /// </summary>
-        /// <param name="heights">List of missing heights</param>
-        void PutMissingHeightsBack(List<int> heights);
+        /// <param name="blockInvs">List of missing block inventories</param>
+        void PutBackMissingBlocks(List<Inventory> blockInvs);
         /// <summary>
         /// Returns an array of missing block hashes
         /// </summary>
         /// <param name="nodeStatus">Peer state (used to set the expected block heights)</param>
         /// <returns>An array of missing block hashes</returns>
-        byte[][] GetMissingBlockHashes(INodeStatus nodeStatus);
+        void SetMissingBlockHashes(INodeStatus nodeStatus);
     }
 }

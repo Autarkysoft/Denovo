@@ -35,7 +35,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         }
 
         /// <inheritdoc/>
-        public List<int> BlocksToGet { get; } = new List<int>(16);
+        public List<Inventory> InvsToGet { get; } = new List<Inventory>(16);
 
         private int _v;
         /// <summary>
