@@ -1,5 +1,20 @@
 ### Next release
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.7.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.9.0.0...master)
+
+### Release 0.9.0 (2021-00-00)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.8.0.0...B0.9.0.0)
+* Major changes in P2PNetwork namespace involving initial connection
+* Introduce `ClientTime` to get/set client time using other peers
+* Block headers now store their hash locally with an option to recalculate hash
+* Fix some issues in `Node` class when it got disconnected
+* Fix some issues in `NodePool` class with locks
+* Introduce `BlockchainState` and respective events to be raised when it changes
+* Peers are selected based on `BlockchainState` and their service flags, all handled by `ClientSettings`
+* Introduce a new timer for each peer to disconnect them when they are not responding to requests (this is important
+when syncing)
+* Improve the initial handshake to send "settings" messages based on protocol version of the peer
+* Add some new constants
+* Various optimization, tests and small improvements
 
 ### Release 0.8.0 (2020-12-22)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.7.0.0...B0.8.0.0)
