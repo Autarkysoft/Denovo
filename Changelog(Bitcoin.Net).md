@@ -1,7 +1,7 @@
 ### Next release
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.9.0.0...master)
 
-### Release 0.9.0 (2021-00-00)
+### Release 0.9.0 (2021-01-26)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.8.0.0...B0.9.0.0)
 * Major changes in P2PNetwork namespace involving initial connection
 * Introduce `ClientTime` to get/set client time using other peers
