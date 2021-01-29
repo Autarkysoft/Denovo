@@ -35,10 +35,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         IMemoryPool MemPool { get; set; }
 
-        /// <summary>
-        /// Returns if the client is behind and has to sync its blockchain first.
-        /// </summary>
-        bool IsCatchingUp { get; set; }
 
         /// <summary>
         /// Protocol version that the client supports

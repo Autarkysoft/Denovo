@@ -112,8 +112,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public IRandomNonceGenerator Rng { get; set; } = new RandomNonceGenerator();
 
         /// <inheritdoc/>
-        public bool IsCatchingUp { get; set; }
-        /// <inheritdoc/>
         public int ProtocolVersion { get; set; }
         /// <inheritdoc/>
         public bool Relay { get; set; }
