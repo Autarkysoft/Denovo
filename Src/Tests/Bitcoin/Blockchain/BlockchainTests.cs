@@ -24,12 +24,39 @@ namespace Tests.Bitcoin.Blockchain
             return new Autarkysoft.Bitcoin.Blockchain.Blockchain(fman, bver, c) { Time = new ClientTime() };
         }
 
+        private static Autarkysoft.Bitcoin.Blockchain.Blockchain GetChain()
+        {
+            var c = new Consensus();
+            var fman = new MockFileManager()
+            {
+                expReadFN = "Headers",
+                returnReadData = BlockHeaderTests.GetSampleBlockHeaderBytes(),
+            };
+            return GetChain(fman, new BlockVerifier(null, c), c);
+        }
+
         private static IEnumerable<BlockHeader> GetHeaders(int count)
         {
             for (int i = 0; i < count; i++)
             {
                 yield return new BlockHeader(i, new byte[32], new byte[32], 0, 0, 0);
             }
+        }
+
+
+        [Theory]
+        // https://github.com/bitcoin/bitcoin/blob/32b191fb66e644c690c94cbfdae6ddbc754769d7/src/test/pow_tests.cpp#L14-L60
+        [InlineData(1231006505, 1233061996, 0x1d00ffffU, 0x1d00ffffU)] // 0 & 2015
+        [InlineData(1261130161, 1262152739, 0x1d00ffffU, 0x1d00d86aU)] // 30240 & 32255
+        [InlineData(1279008237, 1279297671, 0x1c05a3f4U, 0x1c0168fdU)] // 66528 & 68543
+        [InlineData(1263163443, 1269211443, 0x1c387f6fU, 0x1d00e1fdU)] // Mocked & 46367
+        public void GetNextTargetTest(uint first, uint last, uint lastNBits, uint expNBits)
+        {
+            var chain = GetChain();
+            var hd1 = new BlockHeader() { BlockTime = first };
+            var hd2 = new BlockHeader() { BlockTime = last, NBits = lastNBits };
+            Target actual = chain.GetNextTarget(hd1, hd2);
+            Assert.Equal((Target)expNBits, actual);
         }
 
         public static IEnumerable<object[]> GetLocatorCases()
