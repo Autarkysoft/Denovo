@@ -13,6 +13,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
     /// Implementation of a weak random number generator using <see cref="Random"/> class useful for generating nonces in
     /// P2P messages and anywhere that doesn't require a cryptographically secure RNG.
     /// Implements <see cref="IRandomNonceGenerator"/>.
+    /// <para/>This class is thread-safe
     /// </summary>
     public class RandomNonceGenerator : IRandomNonceGenerator
     {
@@ -25,6 +26,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
         }
 
         private Random rng;
+        private readonly object lockObj = new object();
 
         /// <inheritdoc/>
         /// <exception cref="ObjectDisposedException"/>
@@ -33,7 +35,10 @@ namespace Autarkysoft.Bitcoin.Cryptography
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(RandomNonceGenerator));
 
-            return rng.Next();
+            lock (lockObj)
+            {
+                return rng.Next();
+            }
         }
 
         /// <inheritdoc/>
@@ -43,7 +48,10 @@ namespace Autarkysoft.Bitcoin.Cryptography
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(RandomNonceGenerator));
 
-            return rng.Next(min, max);
+            lock (lockObj)
+            {
+                return rng.Next(min, max);
+            }
         }
 
         /// <inheritdoc/>
@@ -53,9 +61,12 @@ namespace Autarkysoft.Bitcoin.Cryptography
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(RandomNonceGenerator));
 
-            byte[] temp = new byte[8];
-            rng.NextBytes(temp);
-            return BitConverter.ToInt64(temp);
+            lock (lockObj)
+            {
+                byte[] temp = new byte[8];
+                rng.NextBytes(temp);
+                return BitConverter.ToInt64(temp);
+            }
         }
 
         /// <inheritdoc/>
@@ -72,12 +83,15 @@ namespace Autarkysoft.Bitcoin.Cryptography
             if (count > max - min)
                 throw new ArgumentOutOfRangeException(nameof(count), "There aren't enough elements.");
 
-            HashSet<int> hs = new HashSet<int>(count);
-            while (hs.Count < count)
+            lock (lockObj)
             {
-                hs.Add(rng.Next(min, max));
+                HashSet<int> hs = new HashSet<int>(count);
+                while (hs.Count < count)
+                {
+                    hs.Add(rng.Next(min, max));
+                }
+                return hs.ToArray();
             }
-            return hs.ToArray();
         }
 
         private bool isDisposed = false;
@@ -86,8 +100,11 @@ namespace Autarkysoft.Bitcoin.Cryptography
         {
             if (!isDisposed)
             {
-                rng = null;
-                isDisposed = true;
+                lock (lockObj)
+                {
+                    rng = null;
+                    isDisposed = true;
+                }
             }
         }
     }
