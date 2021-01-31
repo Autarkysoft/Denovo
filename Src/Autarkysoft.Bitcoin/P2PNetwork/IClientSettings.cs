@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Net;
 using System.Threading;
@@ -35,6 +36,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         IMemoryPool MemPool { get; set; }
 
+        /// <summary>
+        /// A weak random number generator
+        /// </summary>
+        IRandomNonceGenerator Rng { get; set; }
 
         /// <summary>
         /// Protocol version that the client supports

@@ -35,13 +35,10 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             var cs = new MockClientSettings()
             {
-                _netType = NetworkType.TestNet
+                _netType = NetworkType.TestNet,
+                _rng = new MockNonceRng(RngReturnValue)
             };
-
-            var rep = new ReplyManager(ns, cs)
-            {
-                rng = new MockNonceRng(RngReturnValue)
-            };
+            var rep = new ReplyManager(ns, cs);
 
 
             Message msg = rep.GetPingMsg();
@@ -68,13 +65,11 @@ namespace Tests.Bitcoin.P2PNetwork
                 _ua = "foo",
                 _relay = true,
                 _netType = NetworkType.TestNet,
-                _bchain = new MockBlockchain() { _height = 12345 }
+                _bchain = new MockBlockchain() { _height = 12345 },
+                _rng = new MockNonceRng(RngReturnValue)
             };
 
-            var rep = new ReplyManager(ns, cs)
-            {
-                rng = new MockNonceRng(RngReturnValue)
-            };
+            var rep = new ReplyManager(ns, cs);
 
 
             Message msg = rep.GetVersionMsg();
@@ -778,7 +773,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = syncBC
+                    _bchain = syncBC,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[] { ping, getHdrs }
             };
@@ -803,7 +799,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = syncBC
+                    _bchain = syncBC,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[] { ping, getHdrs }
             };
@@ -828,7 +825,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = syncBC
+                    _bchain = syncBC,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[] { ping, sendHdr, getHdrs }
             };
@@ -853,7 +851,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = syncBC
+                    _bchain = syncBC,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[] { ping, sendHdr, getHdrs }
             };
@@ -877,7 +876,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = syncBC
+                    _bchain = syncBC,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[] { ping, sendHdr, getHdrs }
             };
@@ -903,7 +903,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = syncBC
+                    _bchain = syncBC,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[] { ping, sendHdr, getHdrs, feeFilter }
             };
@@ -929,7 +930,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = syncBC
+                    _bchain = syncBC,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[] { ping, sendHdr, getHdrs, feeFilter }
             };
@@ -960,7 +962,8 @@ namespace Tests.Bitcoin.P2PNetwork
                     _hasNeededServices = true,
                     _services = NodeServiceFlags.NodeWitness,
                     _port = 123,
-                    _time = new MockClientTime() { _now = 999 }
+                    _time = new MockClientTime() { _now = 999 },
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 new Message[]
                 {
@@ -976,10 +979,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [MemberData(nameof(GetVerackCases))]
         public void CheckVerackTest(MockNodeStatus ns, IClientSettings cs, Message[] expected)
         {
-            var rep = new ReplyManager(ns, cs)
-            {
-                rng = new MockNonceRng(RngReturnValue)
-            };
+            var rep = new ReplyManager(ns, cs);
             var msg = new Message(new VerackPayload(), NetworkType.MainNet);
 
             Message[] actual = rep.GetReply(msg);
@@ -1026,7 +1026,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 _relay = true,
                 _netType = NetworkType.MainNet,
                 _bchain = new MockBlockchain() { _height = 12345, _stateToReturn = BlockchainState.Synchronized },
-                expUpdateAddr = mockIp
+                expUpdateAddr = mockIp,
+                _rng = new MockNonceRng(RngReturnValue)
             };
             var verPlLowVer = new VersionPayload()
             {
@@ -1131,6 +1132,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _relay = false, // No FeeFilter, no addr
                     expHasNeededServicesFlags = verPl.Services,
                     _hasNeededServices = true,
+                    _rng = new MockNonceRng(RngReturnValue)
                 },
                 msg, new Message[] { verak, ping, getHdrs }
             };
@@ -1153,11 +1155,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [MemberData(nameof(GetVersionCases))]
         public void CheckVersionTest(MockNodeStatus ns, IClientSettings cs, Message msg, Message[] expected)
         {
-            var rep = new ReplyManager(ns, cs)
-            {
-                rng = new MockNonceRng(RngReturnValue)
-            };
-
+            var rep = new ReplyManager(ns, cs);
             Message[] actual = rep.GetReply(msg);
 
             if (expected is null)

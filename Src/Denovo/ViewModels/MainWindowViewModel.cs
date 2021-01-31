@@ -82,11 +82,8 @@ namespace Denovo.ViewModels
 
                 DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
 
-                //FullClient cl = new FullClient(clientSettings)
-                //{
-                //    Rng = new RandomNonceGenerator(),
-                //};
-                //cl.Start();
+                FullClient cl = new FullClient(clientSettings);
+                cl.Start();
 
                 MyInfo = $"My node information:{Environment.NewLine}" +
                          $"Network: {ConfigVm.Config.Network}{Environment.NewLine}" +

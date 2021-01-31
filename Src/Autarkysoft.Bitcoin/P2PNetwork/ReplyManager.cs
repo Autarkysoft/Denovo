@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
-using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
@@ -37,10 +36,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly INodeStatus nodeStatus;
         private readonly IClientSettings settings;
 
-        /// <summary>
-        /// A weak RNG to generate nonces for messages.
-        /// </summary>
-        public IRandomNonceGenerator rng = new RandomNonceGenerator();
 
         private Message[] GetSettingsMessages(Message extraMsg)
         {
@@ -130,7 +125,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public Message GetPingMsg()
         {
-            long nonce = rng.NextInt64();
+            long nonce = settings.Rng.NextInt64();
             // TODO: latency may have a small error this way (maybe the following line should be moved to Node class)
             // Chances of nonce being repeated is 1 in 2^64 which is why the returned bool is ignored here
             nodeStatus.StorePing(nonce);
@@ -153,7 +148,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 ReceivingNodeNetworkAddress = recvAddr,
                 // TODO: IP and port zero are bitcoin-core's behavior, it can be changed if needed
                 TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.IPv6Any, 0),
-                Nonce = (ulong)rng.NextInt64(),
+                Nonce = (ulong)settings.Rng.NextInt64(),
                 UserAgent = settings.UserAgent,
                 StartHeight = settings.Blockchain.Height,
                 Relay = settings.Relay

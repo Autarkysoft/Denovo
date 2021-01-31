@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
@@ -68,6 +69,17 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 Assert.NotNull(_storage);
                 return _storage;
+            }
+            set => throw new NotImplementedException();
+        }
+
+        internal MockNonceRng _rng;
+        public IRandomNonceGenerator Rng
+        {
+            get
+            {
+                Assert.NotNull(_rng);
+                return _rng;
             }
             set => throw new NotImplementedException();
         }

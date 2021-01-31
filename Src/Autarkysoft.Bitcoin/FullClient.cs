@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
@@ -40,8 +39,6 @@ namespace Autarkysoft.Bitcoin
             {
                 listener = new NodeListener(settings.AllNodes, settings);
             }
-
-            Rng = new RandomNonceGenerator();
 
             connector.ConnectFailureEvent += Connector_ConnectFailureEvent;
 
@@ -100,10 +97,6 @@ namespace Autarkysoft.Bitcoin
         /// Settings used in this client
         /// </summary>
         public IClientSettings Settings { get; set; }
-        /// <summary>
-        /// A weak random number generator
-        /// </summary>
-        public IRandomNonceGenerator Rng { get; set; }
 
 
         private async Task<IPAddress[]> DigDnsSeeds(bool all)
@@ -116,7 +109,7 @@ namespace Autarkysoft.Bitcoin
             }
             else
             {
-                indices = Rng.GetDistinct(0, Settings.DnsSeeds.Length, Math.Min(DnsDigCount, Settings.DnsSeeds.Length));
+                indices = Settings.Rng.GetDistinct(0, Settings.DnsSeeds.Length, Math.Min(DnsDigCount, Settings.DnsSeeds.Length));
             }
 
             foreach (int i in indices)
@@ -169,7 +162,7 @@ namespace Autarkysoft.Bitcoin
                     }
                 }
 
-                int[] indices = Rng.GetDistinct(0, ips.Length, Math.Min(ips.Length, count));
+                int[] indices = Settings.Rng.GetDistinct(0, ips.Length, Math.Min(ips.Length, count));
                 foreach (var index in indices)
                 {
                     Interlocked.Increment(ref inQueue);
