@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Denovo.Models;
 using System;
 using System.IO;
 using System.Reflection;
@@ -97,6 +98,17 @@ namespace Denovo.Services
             using FileStream stream = File.Create(path);
             string json = JsonSerializer.Serialize(value, options);
             stream.Write(Encoding.UTF8.GetBytes(json));
+        }
+
+
+        public Configuration ReadConfig()
+        {
+            return ReadJson<Configuration>("Config", null);
+        }
+
+        public void WriteConfig(Configuration config)
+        {
+            WriteJson(config, "Config", null);
         }
     }
 }
