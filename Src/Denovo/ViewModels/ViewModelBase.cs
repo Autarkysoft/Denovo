@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Denovo.MVVM;
+using System;
 
 namespace Denovo.ViewModels
 {
@@ -12,5 +13,8 @@ namespace Denovo.ViewModels
     /// </summary>
     public abstract class ViewModelBase : InpcBase
     {
+        public event EventHandler CLoseEvent;
+
+        public void RaiseCloseEvent() => CLoseEvent?.Invoke(this, null);
     }
 }

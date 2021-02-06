@@ -31,6 +31,8 @@ namespace Denovo.Services
                 Title = vm.GetType().Name.Replace("ViewModel", ""),
             };
 
+            vm.CLoseEvent += (s, e) => win.Close();
+
             var lf = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
             return win.ShowDialog(lf.MainWindow);
         }
