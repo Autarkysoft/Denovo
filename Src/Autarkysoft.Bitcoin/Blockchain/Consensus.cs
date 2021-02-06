@@ -30,6 +30,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="Consensus"/> using block height zero and the given <see cref="NetworkType"/>.
+        /// </summary>
+        /// <param name="netType">Network type</param>
+        public Consensus(NetworkType netType) : this(0, netType)
+        {
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="Consensus"/> using the <see cref="NetworkType"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
