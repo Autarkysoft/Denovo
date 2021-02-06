@@ -7,18 +7,19 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Denovo.ViewModels;
+using System.Threading.Tasks;
 
 namespace Denovo.Services
 {
     public interface IWindowManager
     {
-        void ShowDialog(VmWithSizeBase vm);
+        Task ShowDialog(VmWithSizeBase vm);
     }
 
 
     public class WindowManager : IWindowManager
     {
-        public void ShowDialog(VmWithSizeBase vm)
+        public Task ShowDialog(VmWithSizeBase vm)
         {
             Window win = new Window()
             {
@@ -31,8 +32,7 @@ namespace Denovo.Services
             };
 
             var lf = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
-
-            win.ShowDialog(lf.MainWindow);
+            return win.ShowDialog(lf.MainWindow);
         }
     }
 }
