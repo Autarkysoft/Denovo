@@ -21,13 +21,6 @@ namespace Autarkysoft.Bitcoin
     public class FullClient
     {
         /// <summary>
-        /// Initializes a new instance of <see cref="FullClient"/> with default properties.
-        /// </summary>
-        public FullClient() : this(new ClientSettings())
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of <see cref="FullClient"/> using the given parameters.
         /// </summary>
         /// <param name="settings">Client settings</param>
@@ -82,7 +75,7 @@ namespace Autarkysoft.Bitcoin
         {
             if (!(listener is null))
             {
-                listener.StartListen(new IPEndPoint(IPAddress.Any, Settings.Port));
+                listener.StartListen(new IPEndPoint(IPAddress.Any, Settings.ListenPort));
             }
         }
 
@@ -166,7 +159,7 @@ namespace Autarkysoft.Bitcoin
                 foreach (var index in indices)
                 {
                     Interlocked.Increment(ref inQueue);
-                    await Task.Run(() => connector.StartConnect(new IPEndPoint(ips[index], Settings.Port)));
+                    await Task.Run(() => connector.StartConnect(new IPEndPoint(ips[index], Settings.ListenPort)));
                 }
             }
         }

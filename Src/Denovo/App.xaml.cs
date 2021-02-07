@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -22,9 +23,37 @@ namespace Denovo
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
+                NetworkType network = NetworkType.MainNet;
+                if (desktop.Args.Length > 1)
+                {
+                    for (int i = 0; i < desktop.Args.Length; i++)
+                    {
+                        if (desktop.Args.Length - i >= 2)
+                        {
+                            if (desktop.Args[i].StartsWith('-'))
+                            {
+                                if (desktop.Args[i] == "-n" || desktop.Args[i] == "-network")
+                                {
+                                    string value = desktop.Args[i + 1].ToLower();
+                                    if (value == "testnet")
+                                    {
+                                        network = NetworkType.TestNet;
+                                    }
+                                    else if (value == "regtest")
+                                    {
+                                        network = NetworkType.RegTest;
+                                    }
+                                }
+                                // Add more options here
+                            }
+                            i++;
+                        }
+                    }
+                }
+
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(true)
+                    DataContext = new MainWindowViewModel(network)
                 };
             }
 

@@ -25,14 +25,12 @@ namespace Denovo.ViewModels
         public MinerViewModel() : base(650, 650)
         {
             AllNodes = new NodePool(5);
-            var clientSettings = new ClientSettings()
+            var clientSettings = new ClientSettings(false, NetworkType.TestNet, 5, NodeServiceFlags.NodeNone,
+                                                    AllNodes, new FileManager(NetworkType.TestNet))
             {
                 UserAgent = "/Satoshi:0.20.1/",
                 Relay = false,
                 Network = NetworkType.TestNet,
-                Blockchain = new MockBlockChain(),
-                Time = new ClientTime(),
-                FileMan = new FileManager(NetworkType.TestNet)
             };
             connector = new NodeConnector(AllNodes, clientSettings);
         }
@@ -47,7 +45,7 @@ namespace Denovo.ViewModels
             public event EventHandler HeaderSyncEndEvent;
             public event EventHandler BlockSyncEndEvent;
 
-            public int FindHeight(ReadOnlySpan<byte> prevHash) => throw new NotImplementedException();
+            public int FindHeight(ReadOnlySpan<byte> prevHash) => -1;
             public Target GetNextTarget() => throw new NotImplementedException();
             public bool ProcessBlock(IBlock block, INodeStatus nodeStatus) => true;
             public BlockProcessResult ProcessHeaders(BlockHeader[] headers) => BlockProcessResult.Success;
@@ -56,7 +54,7 @@ namespace Denovo.ViewModels
             {
                 return new BlockHeader[]
                 {
-                    new Consensus().GetGenesisBlock().Header
+                    new Consensus(NetworkType.TestNet).GetGenesisBlock().Header
                 };
             }
 

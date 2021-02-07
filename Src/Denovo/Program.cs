@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Avalonia;
-using Avalonia.Logging.Serilog;
 
 namespace Denovo
 {
@@ -20,6 +19,6 @@ namespace Denovo
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
                 .UsePlatformDetect()
-                .LogToDebug();
+                .LogToTrace();
     }
 }

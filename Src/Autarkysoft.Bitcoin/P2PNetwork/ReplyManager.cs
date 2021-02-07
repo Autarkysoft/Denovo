@@ -89,7 +89,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     if (!IPAddress.IsLoopback(myIp))
                     {
                         uint time = (uint)settings.Time.Now;
-                        var myAddr = new NetworkAddressWithTime(settings.Services, myIp, settings.Port, time);
+                        var myAddr = new NetworkAddressWithTime(settings.Services, myIp, settings.ListenPort, time);
                         result.Add(new Message(new AddrPayload(new NetworkAddressWithTime[1] { myAddr }), settings.Network));
                     }
                 }

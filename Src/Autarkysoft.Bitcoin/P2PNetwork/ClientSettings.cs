@@ -27,54 +27,47 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public class ClientSettings : IClientSettings
     {
         /// <summary>
-        /// Initializes a new instance of <see cref="ClientSettings"/> with default parameters.
+        /// 
         /// </summary>
         public ClientSettings()
-            : this(Constants.P2PProtocolVersion,
-                   true,
-                   new BIP0014("Bitcoin.Net", Assembly.GetExecutingAssembly().GetName().Version, "Bitcoin from scratch").ToString(),
-                   NetworkType.MainNet,
-                   NodeServiceFlags.All)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="ClientSettings"/> with the given parameters.
         /// </summary>
-        /// <param name="pver">Protocol version</param>
-        /// <param name="relay">True to relay blocks and transactions; false otherwise</param>
-        /// <param name="ua">User agent</param>
+        /// <param name="listen">True to open a listening socket; false otherwise</param>
         /// <param name="netType">Network type</param>
         /// <param name="servs">Services supported by this node</param>
-        public ClientSettings(int pver, bool relay, BIP0014 ua, NetworkType netType, NodeServiceFlags servs)
-            : this(pver, relay, ua.ToString(), netType, servs)
+        /// <param name="nodes">List of peers (can be null)</param>
+        /// <param name="fileMan">File manager</param>
+        /// <param name="maxConnection">Maximum number of connections</param>
+        public ClientSettings(bool listen, NetworkType netType, int maxConnection, NodeServiceFlags servs,
+                              NodePool nodes, IFileManager fileMan)
         {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of <see cref="ClientSettings"/> with the given parameters.
-        /// </summary>
-        /// <param name="pver">Protocol version</param>
-        /// <param name="relay">True to relay blocks and transactions; false otherwise</param>
-        /// <param name="ua">User agent as defined by <see cref="BIP0014"/></param>
-        /// <param name="netType">Network type</param>
-        /// <param name="servs">Services supported by this node</param>
-        public ClientSettings(int pver, bool relay, string ua, NetworkType netType, NodeServiceFlags servs)
-        {
-            ProtocolVersion = pver;
-            Relay = relay;
-            UserAgent = ua;
+            // TODO: add AcceptSAEAPool here based on listen
+            AcceptIncomingConnections = listen;
             Network = netType;
+            MaxConnectionCount = maxConnection;
             Services = servs;
+            AllNodes = nodes ?? new NodePool(maxConnection);
+            FileMan = fileMan ?? throw new ArgumentNullException();
+
+            ListenPort = Network switch
+            {
+                NetworkType.MainNet => Constants.MainNetPort,
+                NetworkType.TestNet => Constants.TestNetPort,
+                NetworkType.RegTest => Constants.RegTestPort,
+                _ => throw new ArgumentException("Undefined network"),
+            };
 
             // TODO: the following values are for testing, they should be set by the caller
             //       they need more checks for correct and optimal values
-
-            MaxConnectionCount = 5;
             BufferLength = 16384; // 16 KB
             int totalBytes = BufferLength * MaxConnectionCount * 2;
             MaxConnectionEnforcer = new Semaphore(MaxConnectionCount, MaxConnectionCount);
             SendReceivePool = new SocketAsyncEventArgsPool(MaxConnectionCount * 2);
+            // TODO: bufferMan is not needed and we should use Memory<byte> instead of byte[]
             var buffMan = new BufferManager(totalBytes, BufferLength);
 
             for (int i = 0; i < MaxConnectionCount * 2; i++)
@@ -87,23 +80,28 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             // TODO: find a better way for this
             supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
 
-            Time = new ClientTime();
+            var c = new Consensus(netType);
+            Blockchain = new Blockchain.Blockchain(FileMan, new BlockVerifier(null, c), c)
+            {
+                Time = Time,
+                State = BlockchainState.None
+            };
         }
 
 
         private readonly bool supportsIpV6;
 
         /// <inheritdoc/>
-        public NodePool AllNodes { get; set; }
+        public NodePool AllNodes { get; }
 
         /// <inheritdoc/>
-        public IClientTime Time { get; set; }
+        public IClientTime Time { get; } = new ClientTime();
 
         /// <inheritdoc/>
-        public IFileManager FileMan { get; set; }
+        public IFileManager FileMan { get; }
 
         /// <inheritdoc/>
-        public IBlockchain Blockchain { get; set; }
+        public IBlockchain Blockchain { get; }
 
         /// <inheritdoc/>
         public IMemoryPool MemPool { get; set; }
@@ -112,19 +110,26 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public IRandomNonceGenerator Rng { get; set; } = new RandomNonceGenerator();
 
         /// <inheritdoc/>
-        public int ProtocolVersion { get; set; }
+        public int ProtocolVersion { get; set; } = Constants.P2PProtocolVersion;
         /// <inheritdoc/>
         public bool Relay { get; set; }
         /// <inheritdoc/>
         public ulong MinTxRelayFee { get; set; }
+
+        private string _ua =
+            new BIP0014("Bitcoin.Net", Assembly.GetExecutingAssembly().GetName().Version, "Bitcoin from scratch").ToString();
         /// <inheritdoc/>
-        public string UserAgent { get; set; }
+        public string UserAgent
+        {
+            get => _ua;
+            set => _ua = value ?? "";
+        }
         /// <inheritdoc/>
         public NetworkType Network { get; set; }
         /// <inheritdoc/>
         public NodeServiceFlags Services { get; set; }
         /// <inheritdoc/>
-        public ushort Port { get; set; }
+        public ushort ListenPort { get; set; }
         /// <inheritdoc/>
         public bool AcceptIncomingConnections { get; set; }
         /// <inheritdoc/>
@@ -133,7 +138,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public int BufferLength { get; }
         /// <inheritdoc/>
-        public int MaxConnectionCount { get; set; }
+        public int MaxConnectionCount { get; }
         /// <inheritdoc/>
         public Semaphore MaxConnectionEnforcer { get; }
         /// <inheritdoc/>

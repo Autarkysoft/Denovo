@@ -20,16 +20,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// List of all nodes (peers) connected to this client.
         /// </summary>
-        NodePool AllNodes { get; set; }
+        NodePool AllNodes { get; }
         /// <summary>
-        /// Gets or sets the client time
+        /// Returns the client time
         /// </summary>
-        IClientTime Time { get; set; }
+        IClientTime Time { get; }
 
         /// <summary>
         /// Gets or sets the blockchain instance to be shared among all node instances
         /// </summary>
-        IBlockchain Blockchain { get; set; }
+        IBlockchain Blockchain { get; }
 
         /// <summary>
         /// Gets or sets the memory pool instance that is shared by all node instances
@@ -68,7 +68,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Port that this client listens to and makes connection over
         /// </summary>
-        ushort Port { get; set; }
+        ushort ListenPort { get; set; }
         /// <summary>
         /// Gets or sets whether the client should have an open <see cref="System.Net.Sockets.Socket"/> to listen for incoming
         /// connections.
@@ -86,7 +86,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Maximum number of nodes to connect to. Will also determine the total allocated buffer length.
         /// </summary>
-        int MaxConnectionCount { get; set; }
+        int MaxConnectionCount { get; }
         /// <summary>
         /// A <see cref="Semaphore"/> used to limit the number of connections based on <see cref="MaxConnectionCount"/>
         /// </summary>

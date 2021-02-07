@@ -28,6 +28,11 @@ namespace Denovo.ViewModels
             Config.PropertyChanged += Config_PropertyChanged;
         }
 
+        public ConfigurationViewModel(Configuration config) : base(500, 600)
+        {
+            Config = config;
+        }
+
 
         private void Config_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -69,6 +74,7 @@ namespace Denovo.ViewModels
         {
             Config.IsDefault = false;
             StorageMan.WriteConfig(Config);
+            RaiseCloseEvent();
         }
     }
 }

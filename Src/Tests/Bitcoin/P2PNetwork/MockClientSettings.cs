@@ -23,7 +23,7 @@ namespace Tests.Bitcoin.P2PNetwork
         private const string UnexpectedCall = "Unexpected call was made";
 
 
-        public NodePool AllNodes { get; set; }
+        public NodePool AllNodes { get; }
 
 
         internal IClientTime _time;
@@ -33,10 +33,6 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 Assert.False(_time is null, UnexpectedCall);
                 return _time;
-            }
-            set
-            {
-                throw new NotImplementedException();
             }
         }
 
@@ -48,7 +44,6 @@ namespace Tests.Bitcoin.P2PNetwork
                 Assert.NotNull(_bchain);
                 return _bchain;
             }
-            set => throw new NotImplementedException();
         }
 
         internal IMemoryPool _memPool;
@@ -58,17 +53,6 @@ namespace Tests.Bitcoin.P2PNetwork
             {
                 Assert.NotNull(_memPool);
                 return _memPool;
-            }
-            set => throw new NotImplementedException();
-        }
-
-        internal IStorage _storage;
-        public IStorage Storage
-        {
-            get
-            {
-                Assert.NotNull(_storage);
-                return _storage;
             }
             set => throw new NotImplementedException();
         }
@@ -151,7 +135,7 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         internal ushort _port;
-        public ushort Port
+        public ushort ListenPort
         {
             get
             {
@@ -201,7 +185,6 @@ namespace Tests.Bitcoin.P2PNetwork
                 Assert.True(_maxConnection != 0, UnexpectedCall);
                 return _maxConnection;
             }
-            set => throw new NotImplementedException();
         }
 
         internal int _semaphore;

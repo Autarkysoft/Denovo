@@ -4,9 +4,9 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using Denovo.Models;
 using Denovo.MVVM;
 using Denovo.Services;
 using System;
@@ -29,83 +29,106 @@ namespace Denovo.ViewModels
         /// </summary>
         public MainWindowViewModel()
         {
+            IsInitialized = true;
         }
 
-        public MainWindowViewModel(bool initialize)
+        public MainWindowViewModel(NetworkType network)
         {
-            if (initialize)
+            Network = network;
+            WinMan = new WindowManager();
+            DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
+
+            FileMan = new FileManager(network);
+            Configuration config = FileMan.ReadConfig();
+            if (config is not null && !config.IsDefault)
             {
-                // Later this has to be passed as a command line args that initializes this VM
-                // Right now TestNet is used for security reasons (project being in beta)
-                //      string[] arguments = Environment.GetCommandLineArgs();
-                var network = NetworkType.MainNet;
-                port = network switch
-                {
-                    NetworkType.MainNet => Constants.MainNetPort,
-                    NetworkType.TestNet => Constants.TestNetPort,
-                    NetworkType.RegTest => Constants.RegTestPort,
-                    _ => throw new ArgumentException(),
-                };
-
-                var StorageMan = new Storage(network);
-                ConfigVm = new ConfigurationViewModel(StorageMan);
-
-                AllNodes = new NodePool(ConfigVm.Config.MaxConnectionCount);
-                var consensus = new Consensus(0, network);
-                var time = new ClientTime();
-                time.WrongClockEvent += Time_WrongClockEvent;
-                var fileMan = new FileManager(network);
-                var clientSettings = new ClientSettings()
-                {
-                    UserAgent = ConfigVm.Config.UserAgent,
-                    Relay = ConfigVm.Config.Relay,
-                    Network = network,
-                    AllNodes = AllNodes,
-                    Time = time,
-                    FileMan = fileMan,
-                    Blockchain = new Blockchain(fileMan, new BlockVerifier(null, consensus), consensus)
-                    {
-                        Time = time,
-                        State = BlockchainState.None
-                    },
-                    AcceptIncomingConnections = ConfigVm.Config.AcceptIncoming,
-                    MaxConnectionCount = 5,
-                    DnsSeeds = ConfigVm.Config.PeerList.Split(Environment.NewLine),
-                    Port = (ushort)port
-                };
-
-                WinMan = new WindowManager();
-                connector = new NodeConnector(AllNodes, clientSettings);
-                listener = new NodeListener(AllNodes, clientSettings);
-
-                listener.StartListen(new IPEndPoint(IPAddress.Any, port));
-
-                DisconnectCommand = new BindableCommand(Disconnect, CanDisconnect);
-
-                FullClient cl = new FullClient(clientSettings);
-                cl.Start();
-
-                MyInfo = $"My node information:{Environment.NewLine}" +
-                         $"Network: {ConfigVm.Config.Network}{Environment.NewLine}" +
-                         $"User agent: {ConfigVm.Config.UserAgent}{Environment.NewLine}" +
-                         $"Protocol version: {clientSettings.ProtocolVersion}{Environment.NewLine}" +
-                         $"Max connection count: {clientSettings.MaxConnectionCount}{Environment.NewLine}" +
-                         $"Best block height: {clientSettings.Blockchain.Height}{Environment.NewLine}";
+                IsInitialized = true;
+                Init(config);
+            }
+            else
+            {
+                IsInitialized = false;
             }
         }
+
+
+        public NetworkType Network { get; }
+        public NodePool AllNodes { get; set; }
+
+        public IWindowManager WinMan { get; set; }
+        public IDenovoFileManager FileMan { get; set; }
+        public bool IsInitialized { get; }
+
+
+        private void Init(Configuration config)
+        {
+            AllNodes = new NodePool(config.MaxConnectionCount);
+            var clientSettings =
+                new ClientSettings(
+                    config.AcceptIncoming,
+                    config.Network,
+                    config.MaxConnectionCount,
+                    NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness,
+                    AllNodes,
+                    FileMan)
+                {
+                    Relay = config.Relay,
+                    UserAgent = config.UserAgent,
+                    DnsSeeds = config.PeerList.Split(Environment.NewLine),
+                    //ListenPort = (ushort)config.ListenPort
+                };
+
+            clientSettings.Time.WrongClockEvent += Time_WrongClockEvent;
+
+            // TODO: the following 4 lines are for testing and can be removed later
+            connector = new NodeConnector(AllNodes, clientSettings);
+            listener = new NodeListener(AllNodes, clientSettings);
+            listener.StartListen(new IPEndPoint(IPAddress.Any, port));
+
+            MyInfo = $"My node information:{Environment.NewLine}" +
+                     $"Network: {config.Network}{Environment.NewLine}" +
+                     $"User agent: {config.UserAgent}{Environment.NewLine}" +
+                     $"Protocol version: {clientSettings.ProtocolVersion}{Environment.NewLine}" +
+                     $"Max connection count: {clientSettings.MaxConnectionCount}{Environment.NewLine}" +
+                     $"Best block height: {clientSettings.Blockchain.Height}{Environment.NewLine}";
+
+
+            // TODO: only the FullClient is needed
+            //FullClient cl = new FullClient(clientSettings);
+            //cl.Start();
+        }
+
 
         private void Time_WrongClockEvent(object sender, EventArgs e)
         {
             Result = "The computer's clock is possibly wrong.";
         }
 
-        public NodePool AllNodes { get; set; }
 
-        public IWindowManager WinMan { get; set; }
-        public ConfigurationViewModel ConfigVm { get; set; }
-        public void Config() => WinMan.ShowDialog(ConfigVm);
-        public void Miner() => WinMan.ShowDialog(new MinerViewModel());
+        public async void OpenConfig()
+        {
+            Configuration config = FileMan.ReadConfig();
+            if (config is null)
+            {
+                config = new Configuration(Network) { IsDefault = true };
+            }
 
+            var vm = new ConfigurationViewModel(config);
+            await WinMan.ShowDialog(vm);
+
+            if (!IsInitialized && !config.IsDefault)
+            {
+                Init(config);
+            }
+        }
+
+        public async void OpenMiner()
+        {
+            // TODO: A better way is to make the following VM disposable
+            var vm = new MinerViewModel();
+            await WinMan.ShowDialog(vm);
+            vm.StopMining();
+        }
 
         private Node _selNode;
         public Node SelectedNode
@@ -120,7 +143,7 @@ namespace Denovo.ViewModels
             }
         }
 
-        public string MyInfo { get; }
+        public string MyInfo { get; private set; }
 
         [DependsOnProperty(nameof(SelectedNode))]
         public string PeerInfo => SelectedNode is null ?
@@ -143,9 +166,9 @@ namespace Denovo.ViewModels
             $"Violation: {((NodeStatus)SelectedNode.NodeStatus).Violation}{Environment.NewLine}";
 
 
-        private readonly NodeConnector connector;
-        private readonly NodeListener listener;
-        private readonly int port;
+        private NodeConnector connector;
+        private NodeListener listener;
+        private int port;
 
 
         private string _ip = "127.0.0.1";
@@ -194,12 +217,12 @@ namespace Denovo.ViewModels
         }
 
 
-        public string Risk
+        public static string Risk
         {
             get
             {
                 Version ver = Assembly.GetExecutingAssembly().GetName().Version;
-                string verInfo = "The current version is a showcase of different Bitcoin.Net features and is not" +
+                string verInfo = "The current version is a showcase of different Bitcoin.Net features and is not " +
                                  "yet a complete bitcoin client.";
                 return $"The current version is {ver.ToString(4)}{Environment.NewLine}{verInfo}";
             }

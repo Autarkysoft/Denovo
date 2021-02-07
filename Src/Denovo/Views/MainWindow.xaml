@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
         x:Class="Denovo.Views.MainWindow"
-        Height="670" Width="700"
+        Height="690" Width="700"
         Title="MainWindow">
 
   <Design.DataContext>
@@ -21,8 +21,8 @@
     <Grid>
       <StackPanel Margin="5" Spacing="5">
         <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,30">
-          <Button Content="Config" Command="{Binding Config}" Width="100" HorizontalAlignment="Left"/>
-          <Button Content="Miner" Command="{Binding Miner}" Width="100" HorizontalAlignment="Left"/>
+          <Button Content="Config" Command="{Binding OpenConfig}" Width="100" HorizontalAlignment="Left"/>
+          <Button Content="Miner" Command="{Binding OpenMiner}" Width="100" HorizontalAlignment="Left"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="5">
           <TextBlock Text="IP:"/>
