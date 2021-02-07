@@ -23,10 +23,8 @@ namespace Tests.Bitcoin.P2PNetwork
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness, BlockchainState.BlocksSync, true)]
         public void HasNeededServicesTest(NodeServiceFlags flags, BlockchainState state, bool expected)
         {
-            var cs = new ClientSettings()
-            {
-                Blockchain = new MockBlockchain() { _stateToReturn = state }
-            };
+            var cs = new ClientSettings();
+            Helper.SetReadonlyProperty(cs, nameof(cs.Blockchain), new MockBlockchain() { _stateToReturn = state });
             bool actual = cs.HasNeededServices(flags);
             Assert.Equal(expected, actual);
         }

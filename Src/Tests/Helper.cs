@@ -59,6 +59,18 @@ namespace Tests
             fi.SetValue(instance, toSet);
         }
 
+        public static void SetReadonlyProperty<InstanceType, FieldType>(InstanceType instance, string fieldName, FieldType toSet)
+        {
+            FieldInfo fi = typeof(InstanceType).GetField($"<{fieldName}>k__BackingField",
+                                                         BindingFlags.NonPublic | BindingFlags.Instance);
+            if (fi is null)
+            {
+                Assert.True(false, "The backing private field was not found.");
+            }
+
+            fi.SetValue(instance, toSet);
+        }
+
         public static void CheckNullPrivateField<InstanceType>(InstanceType instance, string fieldName)
         {
             FieldInfo fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
