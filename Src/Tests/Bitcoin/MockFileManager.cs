@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
 using Xunit;
 
@@ -36,6 +37,18 @@ namespace Tests.Bitcoin
             Assert.False(string.IsNullOrEmpty(expWriteFN), UnexpectedCall);
             Assert.Equal(expWriteFN, fileName);
             Assert.Equal(expWriteData, data);
+        }
+
+
+        internal IBlock expBlock;
+        public void WriteBlock(IBlock block)
+        {
+            Assert.NotNull(expBlock);
+            Assert.NotNull(block);
+
+            bool eq = ReferenceEquals(expBlock, block) ||
+                      ((ReadOnlySpan<byte>)expBlock.Header.GetHash()).SequenceEqual(block.Header.GetHash());
+            Assert.True(eq, "Given block is not as expected.");
         }
     }
 #pragma warning restore CS0649 // Field is never assigned to

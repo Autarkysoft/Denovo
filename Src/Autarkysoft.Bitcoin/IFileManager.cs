@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
+
 namespace Autarkysoft.Bitcoin
 {
     /// <summary>
@@ -28,5 +30,10 @@ namespace Autarkysoft.Bitcoin
         /// <param name="data">Data to write</param>
         /// <param name="fileName">Name of the file</param>
         void WriteData(byte[] data, string fileName);
+        /// <summary>
+        /// Writes the given block to disk
+        /// </summary>
+        /// <param name="block">Block to store</param>
+        void WriteBlock(IBlock block);
     }
 }
