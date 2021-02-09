@@ -39,7 +39,12 @@ namespace Denovo.Services
 
         public FileManager(NetworkType netType, string blockPath)
         {
-            blockDir = Path.Combine(blockPath, "Autarkysoft", "Denovo", "Blocks");
+            blockDir = netType switch
+            {
+                NetworkType.MainNet => Path.Combine(blockPath, "Autarkysoft", "Denovo", "Blocks"),
+                _ => Path.Combine(blockPath, "Autarkysoft", "Denovo", netType.ToString(), "Blocks"),
+            };
+
             if (!Directory.Exists(blockDir))
             {
                 Directory.CreateDirectory(blockDir);
