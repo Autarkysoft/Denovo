@@ -99,7 +99,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                                      .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (!words.All(x => allWords.Contains(x)))
             {
-                throw new ArgumentException(nameof(mnemonic), "Seed has invalid words.");
+                throw new ArgumentException("Seed has invalid words.", nameof(mnemonic));
             }
             if (!allowedWordLengths.Contains(words.Length))
             {
