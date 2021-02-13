@@ -24,7 +24,14 @@ namespace Denovo.Models
             Network = network;
             SetPeerList();
             UserAgent = new BIP0014("Denovo", ver).ToString(3);
-            MaxConnectionCount = 10;
+            MaxConnectionCount = 8;
+            ListenPort = network switch
+            {
+                NetworkType.MainNet => Constants.MainNetPort,
+                NetworkType.TestNet => Constants.TestNetPort,
+                NetworkType.RegTest => Constants.RegTestPort,
+                _ => throw new ArgumentException("Undefined network type.")
+            };
         }
 
 
@@ -52,6 +59,13 @@ namespace Denovo.Models
         {
             get => _listen;
             set => SetField(ref _listen, value);
+        }
+
+        public ushort _port;
+        public ushort ListenPort
+        {
+            get => _port;
+            set => SetField(ref _port, value);
         }
 
         private bool _relay;
