@@ -4,6 +4,9 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Denovo.Models;
 using Denovo.MVVM;
 using Denovo.Services;
@@ -20,17 +23,10 @@ namespace Denovo.ViewModels
             Config = new Configuration(NetworkType.MainNet);
         }
 
-        public ConfigurationViewModel(Storage storage) : base(500, 600)
-        {
-            StorageMan = storage;
-
-            Config = StorageMan.ReadConfig();
-            Config.PropertyChanged += Config_PropertyChanged;
-        }
-
         public ConfigurationViewModel(Configuration config) : base(500, 600)
         {
             Config = config;
+            Config.PropertyChanged += Config_PropertyChanged;
         }
 
 
@@ -49,6 +45,8 @@ namespace Denovo.ViewModels
 
                 ShowPruneSize = Config.SelectedClientType == ClientType.FullPruned;
             }
+
+            HasPendingChanges = true;
         }
 
         public Configuration Config { get; set; }
@@ -70,10 +68,39 @@ namespace Denovo.ViewModels
             set => SetField(ref _isPruned, value);
         }
 
+        private bool _pendingChange;
+        public bool HasPendingChanges
+        {
+            get => _pendingChange;
+            set => SetField(ref _pendingChange, value);
+
+        }
+
+        public bool IsChanged { get; private set; }
+
+
+        public async void SetBlockchainDir()
+        {
+            var open = new OpenFolderDialog();
+            var lf = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
+            string dir = await open.ShowAsync(lf.MainWindow);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                Config.BlockchainPath = dir;
+            }
+        }
+
+
         public void Ok()
         {
             Config.IsDefault = false;
-            StorageMan.WriteConfig(Config);
+            IsChanged = true;
+            RaiseCloseEvent();
+        }
+
+        public void Cancel()
+        {
+            IsChanged = false;
             RaiseCloseEvent();
         }
     }

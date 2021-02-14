@@ -19,6 +19,7 @@ namespace Denovo.Services
         /// <exception cref="UnauthorizedAccessException"/>
         public FileManager(NetworkType netType)
         {
+            network = netType;
             // Main directory is C:\Users\USERNAME\AppData\Roaming\Autarkysoft\Denovo on Windows
             // or ~/.config/Autarkysoft/Denovo on Unix systems such as Linux
 
@@ -37,12 +38,22 @@ namespace Denovo.Services
             }
         }
 
-        public FileManager(NetworkType netType, string blockPath)
+
+        private readonly NetworkType network;
+        private readonly string mainDir;
+        private string blockDir;
+
+
+        public static string GetAppPath() =>
+                             Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).LocalPath);
+
+
+        public void SetBlockPath(string blockPath)
         {
-            blockDir = netType switch
+            blockDir = network switch
             {
                 NetworkType.MainNet => Path.Combine(blockPath, "Autarkysoft", "Denovo", "Blocks"),
-                _ => Path.Combine(blockPath, "Autarkysoft", "Denovo", netType.ToString(), "Blocks"),
+                _ => Path.Combine(blockPath, "Autarkysoft", "Denovo", network.ToString(), "Blocks"),
             };
 
             if (!Directory.Exists(blockDir))
@@ -62,32 +73,7 @@ namespace Denovo.Services
                     blockFileNum = tempNum;
                 }
             }
-
-
-            // Main directory is C:\Users\USERNAME\AppData\Roaming\Autarkysoft\Denovo on Windows
-            // or ~/.config/Autarkysoft/Denovo on Unix systems such as Linux
-
-            // Note that "Environment.SpecialFolder.ApplicationData" returns the correct ~/.config 
-            // following XDG Base Directory Specification
-            mainDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Autarkysoft", "Denovo");
-            // For other networks everything is placed in a separate folder using the network name
-            if (netType != NetworkType.MainNet)
-            {
-                mainDir = Path.Combine(mainDir, netType.ToString());
-            }
-
-            if (!Directory.Exists(mainDir))
-            {
-                Directory.CreateDirectory(mainDir);
-            }
         }
-
-
-        private readonly string mainDir, blockDir;
-
-
-        public string GetAppPath() => Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).LocalPath);
-
 
         private void AppendData(byte[] data, string fileName, string dir)
         {

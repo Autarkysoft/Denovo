@@ -11,6 +11,7 @@ namespace Denovo.Services
 {
     public interface IDenovoFileManager : IFileManager
     {
+        void SetBlockPath(string blockPath);
         T ReadJson<T>(string fileName, JsonSerializerOptions options);
         void WriteJson<T>(T value, string fileName, JsonSerializerOptions options);
         Configuration ReadConfig();

@@ -62,6 +62,8 @@ namespace Denovo.ViewModels
 
         private void Init(Configuration config)
         {
+            FileMan.SetBlockPath(config.BlockchainPath);
+
             AllNodes = new NodePool(config.MaxConnectionCount);
             var clientSettings =
                 new ClientSettings(
@@ -75,15 +77,16 @@ namespace Denovo.ViewModels
                     Relay = config.Relay,
                     UserAgent = config.UserAgent,
                     DnsSeeds = config.PeerList.Split(Environment.NewLine),
-                    //ListenPort = (ushort)config.ListenPort
+                    ListenPort = config.ListenPort
                 };
 
             clientSettings.Time.WrongClockEvent += Time_WrongClockEvent;
 
-            // TODO: the following 4 lines are for testing and can be removed later
+            // TODO: the following 5 lines are for testing and can be removed later
             connector = new NodeConnector(AllNodes, clientSettings);
             listener = new NodeListener(AllNodes, clientSettings);
-            listener.StartListen(new IPEndPoint(IPAddress.Any, port));
+            listener.StartListen(new IPEndPoint(IPAddress.Any, config.ListenPort));
+            port = config.ListenPort;
 
             MyInfo = $"My node information:{Environment.NewLine}" +
                      $"Network: {config.Network}{Environment.NewLine}" +
@@ -115,6 +118,11 @@ namespace Denovo.ViewModels
 
             var vm = new ConfigurationViewModel(config);
             await WinMan.ShowDialog(vm);
+
+            if (vm.IsChanged)
+            {
+                FileMan.WriteConfig(config);
+            }
 
             if (!IsInitialized && !config.IsDefault)
             {

@@ -54,6 +54,14 @@ namespace Denovo.Models
         }
 
 
+        private string _bcPath;
+        public string BlockchainPath
+        {
+            get => _bcPath;
+            set => SetField(ref _bcPath, value);
+        }
+
+
         private bool _listen;
         public bool AcceptIncoming
         {
@@ -61,7 +69,7 @@ namespace Denovo.Models
             set => SetField(ref _listen, value);
         }
 
-        public ushort _port;
+        private ushort _port;
         public ushort ListenPort
         {
             get => _port;
