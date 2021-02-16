@@ -40,6 +40,14 @@ namespace Tests.Bitcoin
         }
 
 
+        internal byte[] blockInfo;
+        public byte[] ReadBlockInfo()
+        {
+            Assert.NotNull(blockInfo);
+            return blockInfo;
+        }
+
+
         internal IBlock expBlock;
         public void WriteBlock(IBlock block)
         {

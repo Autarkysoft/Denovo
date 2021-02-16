@@ -124,6 +124,22 @@ namespace Denovo.Services
 
         private int blockFileNum;
         private const int Max = 0x08000000;
+        private const string BlockInfo = "BlockInfo";
+
+
+        /// <inheritdoc/>
+        public byte[] ReadBlockInfo() => ReadData(BlockInfo);
+
+        private void WriteBlockInfo(IBlock block)
+        {
+            var stream = new FastStream(32 + 4 + 4);
+            stream.Write(block.Header.GetHash(false));
+            stream.Write(block.BlockSize);
+            stream.Write(blockFileNum);
+
+            // Writes to main directory
+            AppendData(stream.ToByteArray(), BlockInfo);
+        }
 
         /// <inheritdoc/>
         public void WriteBlock(IBlock block)
@@ -132,14 +148,16 @@ namespace Denovo.Services
             block.Serialize(temp);
 
             string fileName = $"Block{blockFileNum:D6}";
-            long len = new FileInfo(Path.Combine(blockDir, fileName)).Length;
+            var info = new FileInfo(Path.Combine(blockDir, fileName));
+            long len = info.Exists ? info.Length : 0;
             if (len + temp.GetSize() > Max)
             {
                 blockFileNum++;
                 fileName = $"Block{blockFileNum:D6}";
             }
 
-            WriteData(temp.ToByteArray(), fileName, blockDir);
+            WriteBlockInfo(block);
+            AppendData(temp.ToByteArray(), fileName, blockDir);
         }
 
 

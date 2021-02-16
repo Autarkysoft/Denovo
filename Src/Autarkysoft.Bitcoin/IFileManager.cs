@@ -30,6 +30,13 @@ namespace Autarkysoft.Bitcoin
         /// <param name="data">Data to write</param>
         /// <param name="fileName">Name of the file</param>
         void WriteData(byte[] data, string fileName);
+
+        /// <summary>
+        /// Reads the block information file.
+        /// <para/>Format is: [32 byte block hash][4 byte block size][4 byte block file number]
+        /// </summary>
+        /// <returns>File bytes</returns>
+        byte[] ReadBlockInfo();
         /// <summary>
         /// Writes the given block to disk
         /// </summary>
