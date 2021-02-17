@@ -157,7 +157,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private void ReadBlockInfo()
         {
             byte[] data = FileMan.ReadBlockInfo();
-            if (data is null || data.Length % (32 + 4 + 4) != 0)
+            if (data is null || data.Length == 0 || data.Length % (32 + 4 + 4) != 0)
             {
                 // File doesn't exist or data is corrupted
                 IBlock genesis = Consensus.GetGenesisBlock();

@@ -31,6 +31,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 expReadFN = "Headers",
                 returnReadData = BlockHeaderTests.GetSampleBlockHeaderBytes(),
+                blockInfo = new byte[32 + 4 + 4]
             };
             return GetChain(fman, new BlockVerifier(null, c), c);
         }
@@ -65,6 +66,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 expReadFN = "Headers",
                 returnReadData = BlockHeaderTests.GetSampleBlockHeaderBytes(),
+                blockInfo = new byte[32 + 4 + 4]
             };
             var consensus = new MockConsensus();
             var bver = new BlockVerifier(null, consensus);
