@@ -11,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -60,6 +62,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             // TODO: find a better initial capacity
             headerList = new List<BlockHeader>(700_000);
             ReadHeaders();
+            ReadBlockInfo();
 
             // TODO: read blocks and others
         }
@@ -115,7 +118,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         /// <inheritdoc/>
-        public int Height => headerList.Count - 1;
+        public int Height { get; private set; }
 
         private void ReadHeaders()
         {
@@ -148,6 +151,26 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         break;
                     }
                 }
+            }
+        }
+
+        private void ReadBlockInfo()
+        {
+            byte[] data = FileMan.ReadBlockInfo();
+            if (data is null || data.Length % (32 + 4 + 4) != 0)
+            {
+                // File doesn't exist or data is corrupted
+                IBlock genesis = Consensus.GetGenesisBlock();
+                FileMan.WriteBlock(genesis);
+                Height = 0;
+                tip = genesis.GetBlockHash(false);
+
+                // TODO: if the file is corrupted the info file has to be created based on block files
+            }
+            else
+            {
+                Height = (data.Length / (32 + 4 + 4)) - 1;
+                tip = headerList[Height].GetHash(false);
             }
         }
 
@@ -255,36 +278,117 @@ namespace Autarkysoft.Bitcoin.Blockchain
             if (State == BlockchainState.BlocksSync)
             {
                 byte[] blockHash = block.GetBlockHash(false);
-                int index = nodeStatus.InvsToGet.FindIndex(x => ((ReadOnlySpan<byte>)blockHash).SequenceEqual(x.Hash));
-                if (index < 0)
+
+                if (((ReadOnlySpan<byte>)blockHash).SequenceEqual(nodeStatus.InvsToGet[0].Hash))
                 {
-                    nodeStatus.AddMediumViolation();
-                    return false;
+                    // Peer has to return blocks in the order that we asked for
+                    nodeStatus.InvsToGet.RemoveAt(0);
                 }
                 else
                 {
-                    nodeStatus.InvsToGet.RemoveAt(index);
+                    // If the block wasn't the first one in Inv list there are 2 possibilities:
+                    //    1. The peer is returning blocks out of order => punish and disconnect
+                    //    2. This is a random block => punish and disconnect
+                    //    3. This is a new block (check against headers list)
+                    //       3.1. Ignore if tip is far behind the last header or couldn't connect
+                    //       3.2. Add to queue otherwie
+
+                    int index = nodeStatus.InvsToGet.FindIndex(x => ((ReadOnlySpan<byte>)blockHash).SequenceEqual(x.Hash));
+                    if (index < 0)
+                    {
+                        // Try to find this block's height
+                        int h = -1;
+                        lock (mainLock)
+                        {
+                            for (int i = headerList.Count - 1; i >= 0; i--)
+                            {
+                                if (((Span<byte>)headerList[i].GetHash(false)).SequenceEqual(block.Header.PreviousBlockHeaderHash))
+                                {
+                                    h = i + 1;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (h < 0)
+                        {
+                            // An unknown new block, we may be missing headers (ignore)
+                            return true;
+                        }
+                        else if (h <= headerList.Count - 1)
+                        {
+                            // A random block that we didn't ask for (punish and disconnect)
+                            nodeStatus.AddBigViolation();
+                            return false;
+                        }
+                        else if (h - Height > 20)
+                        {
+                            // A new block that is too far away (ignore)
+                            return true;
+                        }
+                        // Else this block is going to be added to the queue
+                    }
+                    else
+                    {
+                        // Sending out of order
+                        nodeStatus.AddBigViolation();
+                        return false;
+                    }
                 }
 
-                // Find index of the block that the first header in the array references
-                int height = headerList.FindLastIndex(x =>
-                                        ((ReadOnlySpan<byte>)block.Header.GetHash(false)).SequenceEqual(x.GetHash()));
 
-                // TODO: process this block!
-                Consensus.BlockHeight = height;
-                if (BlockVer.Verify(block, out string error))
-                {
-                    //BlockVer.utxo
-                    //nodeStatus.BlocksToGet.Remove(height);
-                }
-                else
-                {
-
-                }
+                Task.Run(() => ProcessBlockQueue(block));
             }
 
             return true;
         }
+
+
+        // TODO: replace with a lighter alternative
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+        private byte[] tip;
+        private readonly List<IBlock> queue = new List<IBlock>(10);
+
+        private void ProcessBlockQueue(IBlock block)
+        {
+            semaphore.Wait();
+
+            if (((ReadOnlySpan<byte>)block.Header.PreviousBlockHeaderHash).SequenceEqual(tip))
+            {
+                ProcessAndSaveBlock(block);
+            }
+            else
+            {
+                queue.Add(block);
+            }
+
+            bool b = queue.Count != 0;
+            while (b)
+            {
+                int i;
+                int max = queue.Count;
+                for (i = 0; i < queue.Count; i++)
+                {
+                    if (((ReadOnlySpan<byte>)block.Header.PreviousBlockHeaderHash).SequenceEqual(tip))
+                    {
+                        ProcessAndSaveBlock(block);
+                        queue.RemoveAt(i);
+                        break;
+                    }
+                }
+                b = i < max;
+            }
+
+            semaphore.Release();
+        }
+
+        private void ProcessAndSaveBlock(IBlock block)
+        {
+            // TODO: validate
+            FileMan.WriteBlock(block);
+        }
+
+
 
         private long GetMedianTimePast(int startIndex)
         {
