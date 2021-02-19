@@ -612,6 +612,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                             TxInList[inputIndex].SigScript.SetToMultiSig(sig, redeem, this, inputIndex);
                             break;
                         case RedeemScriptType.CheckLocktimeVerify:
+                            if (!redeem.TryEvaluate(out IOperation[] rdmOps, out _, out string error))
+                            {
+                                throw new ArgumentException($"Invalid redeem script. Error: {error}");
+                            }
+                            var stack = new OpData() { Tx = this, IsBip65Enabled = true };
+                            // Only run PushData(locktime) and CheckLockTimeVerify
+                            for (int i = 0; i < 2; i++)
+                            {
+                                if (!rdmOps[i].Run(stack, out error))
+                                {
+                                    throw new ArgumentException($"Invalid redeem script. Error: {error}");
+                                }
+                            }
+
+                            TxInList[inputIndex].SigScript.SetToCheckLocktimeVerify(sig, redeem);
                             break;
                         case RedeemScriptType.P2SH_P2WPKH:
                             TxInList[inputIndex].SigScript.SetToP2SH_P2WPKH(redeem);
@@ -655,9 +670,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                             throw new ArgumentException("Not defined.");
                     }
                     break;
-
-                case PubkeyScriptType.CheckLocktimeVerify:
-                    throw new NotImplementedException();
 
                 case PubkeyScriptType.RETURN:
                     throw new ArgumentException("Can not spend an OP_Return output.");
