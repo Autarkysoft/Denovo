@@ -384,8 +384,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private void ProcessAndSaveBlock(IBlock block)
         {
-            // TODO: validate
-            FileMan.WriteBlock(block);
+            Consensus.BlockHeight = Height + 1;
+            if (BlockVer.Verify(block, out string error))
+            {
+                Height++;
+                FileMan.WriteBlock(block);
+            }
+            else
+            {
+                lock (mainLock)
+                {
+                    missingBlockHashes.Push(block.GetBlockHash(false));
+                }
+            }
         }
 
 
