@@ -50,7 +50,6 @@ namespace Denovo.ViewModels
         }
 
         public Configuration Config { get; set; }
-        public Storage StorageMan { get; set; }
         public IEnumerable<ClientType> ClientTypes { get; } = EnumHelper.GetAllEnumValues<ClientType>();
         public IEnumerable<PeerDiscoveryOption> PeerDiscoveryOptions { get; } = EnumHelper.GetAllEnumValues<PeerDiscoveryOption>();
 
