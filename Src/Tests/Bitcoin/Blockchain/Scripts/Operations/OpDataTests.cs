@@ -73,6 +73,31 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        [Theory]
+        // If property is set to false (non-standard and not-tapscript) the check always returns true
+        [InlineData(new byte[0], false, true)]
+        [InlineData(new byte[] { 0 }, false, true)]
+        [InlineData(new byte[] { 1 }, false, true)]
+        [InlineData(new byte[] { 2 }, false, true)]
+        [InlineData(new byte[] { 1, 2 }, false, true)]
+        // Otherwise the stack item must be either empty array or array with 1 item equal to 1 (byte[0] or byte[1]{1})
+        [InlineData(new byte[0], true, true)]
+        [InlineData(new byte[] { 0 }, true, false)]
+        [InlineData(new byte[] { 1 }, true, true)]
+        [InlineData(new byte[] { 2 }, true, false)]
+        [InlineData(new byte[] { 1, 2 }, true, false)]
+        public void CheckConditionalOpBoolTest(byte[] data, bool standardRule, bool expected)
+        {
+            var stack = new OpData()
+            {
+                IsStrictConditionalOpBool = standardRule
+            };
+            bool actual = stack.CheckConditionalOpBool(data);
+            Assert.Equal(expected, actual);
+        }
+
+
+
         private const int TestItemCount = 5;
         private static readonly byte[][] testData5 = new byte[TestItemCount][]
         {
