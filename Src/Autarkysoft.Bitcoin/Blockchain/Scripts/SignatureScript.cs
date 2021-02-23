@@ -10,6 +10,7 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -64,6 +65,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (extraData == null)
             {
                 SetData(new IOperation[] { hPush });
+                if (Data.Length < Constants.MinCoinbaseScriptLength)
+                {
+                    SetData(new IOperation[] { hPush, new PushDataOp(Encoding.UTF8.GetBytes("Bitcoin.Net")) });
+                }
             }
             else
             {

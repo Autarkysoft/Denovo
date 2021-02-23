@@ -64,6 +64,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
 
         [Theory]
+        // Small height (the following 2 cases) pad the script with "Bitcoin.Net" to avoid invalid coinbase script length
+        [InlineData(1, null, new byte[] { (byte)OP._1, 11, 66, 105, 116, 99, 111, 105, 110, 46, 78, 101, 116 })]
+        [InlineData(2, null, new byte[] { (byte)OP._2, 11, 66, 105, 116, 99, 111, 105, 110, 46, 78, 101, 116 })]
+        [InlineData(17, null, new byte[] { 1, 17 })]
         [InlineData(100, null, new byte[] { 1, 100 })]
         [InlineData(256, null, new byte[] { 2, 0, 1 })]
         [InlineData(600000, new byte[] { 10, 20, 30, 40, 50 }, new byte[] { 3, 192, 39, 9, 5, 10, 20, 30, 40, 50 })]
