@@ -12,6 +12,27 @@ namespace Autarkysoft.Bitcoin.Blockchain
     /// </summary>
     public class Utxo : IUtxo, IDeserializable
     {
+        /// <summary>
+        /// Initializes a new empty instance of <see cref="Utxo"/>.
+        /// </summary>
+        public Utxo()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Utxo"/> using the given parameters.
+        /// </summary>
+        /// <param name="index">Index of the output</param>
+        /// <param name="amount">Amount value of the output</param>
+        /// <param name="pubScr">Locking script of the output</param>
+        public Utxo(uint index, ulong amount, IPubkeyScript pubScr)
+        {
+            Index = index;
+            Amount = amount;
+            PubScript = pubScr;
+        }
+
+
         /// <inheritdoc/>
         public bool IsMempoolSpent { get; set; }
         /// <inheritdoc/>
