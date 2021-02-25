@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -17,7 +18,7 @@ namespace Denovo.Services
     //       Each coinbase tx must mature before it can be spent, which takes 100 blocks.
     //       The idea is to use a "queue" in our UTXO DB to hold the coinbase txs and only add them to the actual DB when
     //       they reach maturity. So there is no need to check the maturity of each "coin" aka UTXO and the caller can be sure
-    //       that what it receives is spendable already.
+    //       that what it receives by calling Find() is always spendable (mature).
     //       The queue can be a simple array that avoids array copy (push>pop>push>pop) like this
     //       assuming maturity is 5 confirmation and with 2 indexes i1 and i2:
     //       [null,null,null,null,null] i1=0, i2=0
@@ -32,7 +33,8 @@ namespace Denovo.Services
     //       we simply keep track of the index witn i1 and replace the item inside the array:
     //       [C6,  C2,  C3,  C4,   C5 ] i1=5, i2=1   => C1 added to DB
     //       [C6,  C7,  C3,  C4,   C5 ] i1=5, i2=2   => C2 added to DB
-    //       In case of a small reorg. the items are replaced starting at i2-2
+    //       In case of a small reorg (<maturity=100) the popped coinbase outputs are already matured when block N is replaced
+    //       by block N'. The replacement starts at i2-reorgCount
     //       [C6', C7', C3,  C4,   C5'] i1=5, i2=2
     //       In case of bigger reorg (>100) "undo data" has to be used to remove matured but invalid the coinbase txs from DB
 
@@ -135,13 +137,39 @@ namespace Denovo.Services
         }
 
 
+
+        private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
+        private int i1, i2;
+
         private void UpdateCoinbase(ITransaction coinbase)
         {
-            // Add to coinbase queue
+            if (i1 < coinbaseQueue.Length)
+            {
+                coinbaseQueue[i1++] = coinbase;
+            }
+            else
+            {
+                if (i2 > coinbaseQueue.Length)
+                {
+                    i2 = 0;
+                }
+
+                ITransaction pop = coinbaseQueue[i2];
+                database.Add(pop.GetTransactionHash(),
+                    new List<Utxo>(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript))));
+
+                coinbaseQueue[i2++] = coinbase;
+
+                WriteToDisk();
+            }
         }
+
+
 
         public void Update(ITransaction[] txs)
         {
+            Debug.Assert(txs is not null && txs.Length > 0);
+
             UpdateCoinbase(txs[0]);
 
             for (uint i = 1; i < txs.Length; i++)
@@ -157,7 +185,7 @@ namespace Denovo.Services
                 }
 
                 database.Add(txs[i].GetTransactionHash(),
-                    new List<Utxo>(txs[i].TxOutList.Select(x => new Utxo(i, x.Amount, x.PubScript))));
+                    new List<Utxo>(txs[i].TxOutList.Select((x, j) => new Utxo((uint)j, x.Amount, x.PubScript))));
             }
 
             WriteToDisk();
@@ -165,6 +193,8 @@ namespace Denovo.Services
 
         public void Undo(ITransaction[] txs, int lastIndex)
         {
+            Debug.Assert(txs is not null && txs.Length > 0);
+
             for (int i = 1; i <= lastIndex; i++)
             {
                 foreach (var item in txs[i].TxInList)
