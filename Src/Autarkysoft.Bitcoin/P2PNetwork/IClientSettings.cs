@@ -66,7 +66,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         NodeServiceFlags Services { get; set; }
         /// <summary>
-        /// Port that this client listens to and makes connection over
+        /// Returns the default port to use when connecting to other peers (used for peer addresses sent by DNS seeds)
+        /// </summary>
+        public ushort DefaultPort { get; }
+        /// <summary>
+        /// Port that this client listens to
         /// </summary>
         ushort ListenPort { get; set; }
         /// <summary>

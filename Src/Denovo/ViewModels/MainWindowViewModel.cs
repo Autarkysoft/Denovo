@@ -65,6 +65,8 @@ namespace Denovo.ViewModels
             FileMan.SetBlockPath(config.BlockchainPath);
 
             AllNodes = new NodePool(config.MaxConnectionCount);
+            var utxoDb = new UtxoDatabase(FileMan);
+            var memPool = new MemoryPool();
             var clientSettings =
                 new ClientSettings(
                     config.AcceptIncoming,
@@ -72,7 +74,9 @@ namespace Denovo.ViewModels
                     config.MaxConnectionCount,
                     NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness,
                     AllNodes,
-                    FileMan)
+                    FileMan,
+                    utxoDb,
+                    memPool)
                 {
                     Relay = config.Relay,
                     UserAgent = config.UserAgent,

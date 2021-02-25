@@ -134,13 +134,23 @@ namespace Tests.Bitcoin.P2PNetwork
             set => throw new NotImplementedException();
         }
 
-        internal ushort _port;
+        internal ushort _defaultPort;
+        public ushort DefaultPort
+        {
+            get
+            {
+                Assert.True(_defaultPort != 0, UnexpectedCall);
+                return _defaultPort;
+            }
+        }
+
+        internal ushort _listenPort;
         public ushort ListenPort
         {
             get
             {
-                Assert.True(_port != 0, UnexpectedCall);
-                return _port;
+                Assert.True(_listenPort != 0, UnexpectedCall);
+                return _listenPort;
             }
             set => throw new NotImplementedException();
         }

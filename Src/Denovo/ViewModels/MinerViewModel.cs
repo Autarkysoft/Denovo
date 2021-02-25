@@ -25,8 +25,9 @@ namespace Denovo.ViewModels
         public MinerViewModel() : base(650, 650)
         {
             AllNodes = new NodePool(5);
+            var fileMan = new FileManager(NetworkType.TestNet);
             var clientSettings = new ClientSettings(false, NetworkType.TestNet, 5, NodeServiceFlags.NodeNone,
-                                                    AllNodes, new FileManager(NetworkType.TestNet))
+                                                    AllNodes, fileMan, new UtxoDatabase(fileMan), new MemoryPool())
             {
                 UserAgent = "/Satoshi:0.20.1/",
                 Relay = false,

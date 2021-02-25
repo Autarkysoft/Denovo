@@ -41,9 +41,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="servs">Services supported by this node</param>
         /// <param name="nodes">List of peers (can be null)</param>
         /// <param name="fileMan">File manager</param>
+        /// <param name="utxoDb">UTXO database</param>
+        /// <param name="memPool">Memory pool</param>
         /// <param name="maxConnection">Maximum number of connections</param>
         public ClientSettings(bool listen, NetworkType netType, int maxConnection, NodeServiceFlags servs,
-                              NodePool nodes, IFileManager fileMan)
+                              NodePool nodes, IFileManager fileMan, IUtxoDatabase utxoDb, IMemoryPool memPool)
         {
             // TODO: add AcceptSAEAPool here based on listen
             AcceptIncomingConnections = listen;
@@ -53,13 +55,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             AllNodes = nodes ?? new NodePool(maxConnection);
             FileMan = fileMan ?? throw new ArgumentNullException();
 
-            ListenPort = Network switch
+            DefaultPort = Network switch
             {
                 NetworkType.MainNet => Constants.MainNetPort,
                 NetworkType.TestNet => Constants.TestNetPort,
                 NetworkType.RegTest => Constants.RegTestPort,
                 _ => throw new ArgumentException("Undefined network"),
             };
+
+            ListenPort = DefaultPort;
 
             // TODO: the following values are for testing, they should be set by the caller
             //       they need more checks for correct and optimal values
@@ -81,7 +85,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
 
             var c = new Consensus(netType);
-            Blockchain = new Blockchain.Blockchain(FileMan, new BlockVerifier(null, c), c)
+            var txVer = new TransactionVerifier(false, utxoDb, memPool, c);
+            Blockchain = new Blockchain.Blockchain(FileMan, new BlockVerifier(txVer, c), c)
             {
                 Time = Time,
                 State = BlockchainState.None
@@ -128,6 +133,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public NetworkType Network { get; set; }
         /// <inheritdoc/>
         public NodeServiceFlags Services { get; set; }
+        /// <inheritdoc/>
+        public ushort DefaultPort { get; }
         /// <inheritdoc/>
         public ushort ListenPort { get; set; }
         /// <inheritdoc/>
