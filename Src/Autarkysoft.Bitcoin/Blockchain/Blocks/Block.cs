@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
-using Autarkysoft.Bitcoin.Encoders;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
@@ -241,6 +240,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
+        public void SerializeWithoutWitness(FastStream stream)
+        {
+            Header.Serialize(stream);
+
+            CompactInt txCount = new CompactInt(TransactionList.Length);
+            txCount.WriteToStream(stream);
+            foreach (Transaction tx in TransactionList)
+            {
+                tx.SerializeWithoutWitness(stream);
+            }
+        }
+
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             Header.Serialize(stream);
@@ -259,7 +271,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <returns>An array of bytes</returns>
         public byte[] Serialize()
         {
-            FastStream stream = new FastStream();
+            FastStream stream = new FastStream(TransactionList.Length * 250);
             Serialize(stream);
             return stream.ToByteArray();
         }
