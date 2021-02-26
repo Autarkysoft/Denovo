@@ -364,6 +364,17 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     error = $"Input {currentInput.TxHash.ToBase16()}:{currentInput.Index} was not found.";
                     return false;
                 }
+
+                if (isMempool && prevOutput.IsMempoolSpent)
+                {
+                    // TODO: verify but have to decide if this is a double spend or RBF and if we want to accept/replace it in mempool
+                }
+                else if (!isMempool && prevOutput.IsBlockSpent)
+                {
+                    error = "Output is already spent in a previous transaction in this block.";
+                    return false;
+                }
+
                 toSpend += prevOutput.Amount;
 
                 PubkeyScriptSpecialType pubType = prevOutput.PubScript.GetSpecialType(consensus);
