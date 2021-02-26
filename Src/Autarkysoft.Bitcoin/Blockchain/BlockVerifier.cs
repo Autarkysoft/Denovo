@@ -70,12 +70,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <returns>True if block was valid, otherwise false.</returns>
         public bool Verify(IBlock block, out string error)
         {
-            if (block.Height < 0)
-            {
-                error = "Block height is not set.";
-                return false;
-            }
-
             if (block.TransactionList.Length < 1)
             {
                 error = "Block must contain at least 1 transaction (coinbase).";
