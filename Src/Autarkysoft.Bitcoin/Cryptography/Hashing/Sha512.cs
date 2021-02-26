@@ -10,10 +10,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
     /// <summary>
     /// Implementation of 512-bit Secure Hash Algorithm (SHA) based on RFC-6234.
-    /// Implements <see cref="IHashFunction"/>.
+    /// <para/>Implements <see cref="IDisposable"/>.
     /// <para/> https://tools.ietf.org/html/rfc6234
     /// </summary>
-    public class Sha512 : IHashFunction
+    public sealed class Sha512 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Sha512"/>.
@@ -35,7 +35,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Size of the hash result in bytes (=64 bytes).
         /// </summary>
-        public int HashByteSize => 64;
+        public const int HashByteSize = 64;
 
         /// <summary>
         /// Size of the blocks used in each round (=128 bytes).
@@ -46,7 +46,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         internal ulong[] hashState = new ulong[8];
         internal ulong[] w = new ulong[80];
 
-        private readonly ulong[] Ks =
+        private static readonly ulong[] Ks =
         {
             0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc,
             0x3956c25bf348b538, 0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118,
@@ -419,36 +419,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         private bool isDisposed = false;
 
         /// <summary>
-        /// Releases the resources used by the <see cref="Sha512"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(hashState is null))
-                        Array.Clear(hashState, 0, hashState.Length);
-                    hashState = null;
-
-                    if (!(w is null))
-                        Array.Clear(w, 0, w.Length);
-                    w = null;
-                }
-
-                isDisposed = true;
-            }
-        }
-
-        /// <summary>
         /// Releases all resources used by the current instance of the <see cref="Sha512"/> class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!isDisposed)
+            {
+                if (!(hashState is null))
+                    Array.Clear(hashState, 0, hashState.Length);
+                hashState = null;
+
+                if (!(w is null))
+                    Array.Clear(w, 0, w.Length);
+                w = null;
+
+                isDisposed = true;
+            }
         }
     }
 }

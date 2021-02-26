@@ -93,17 +93,6 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             Assert.Equal(expectedHash, actualHash);
         }
 
-        [Fact]
-        public void ComputeHash_DoubleTest()
-        {
-            using Ripemd160 rip = new Ripemd160(true);
-            byte[] data = Helper.HexToBytes("fb8049137747e712628240cf6d7056ea2870170cb7d9bc713d91e901b514c6ae7d7dda3cd03ea1b99cf85046a505f3590541123d3f8f2c22c4d7d6e65de65c4ebb9251f09619");
-            byte[] actualHash = rip.ComputeHash(data);
-            byte[] expectedHash = Helper.HexToBytes("dd0ea2c8b8f2fba4e1a1b58080fb59b0350c7aba");
-
-            Assert.Equal(expectedHash, actualHash);
-        }
-
 
         [Fact]
         public void ComputeHash_ExceptionsTest()

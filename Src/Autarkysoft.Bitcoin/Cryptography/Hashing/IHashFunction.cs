@@ -11,6 +11,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// Defines methods and properties that hash functions implement.
     /// Inherits from <see cref="IDisposable"/>.
     /// </summary>
+    [Obsolete]
     public interface IHashFunction : IDisposable
     {
         /// <summary>

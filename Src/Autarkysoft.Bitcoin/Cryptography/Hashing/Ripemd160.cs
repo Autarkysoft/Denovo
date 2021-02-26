@@ -10,35 +10,28 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
     /// <summary>
     /// Implementation of RIPEMD160.
-    /// Implements <see cref="IHashFunction"/>.
+    /// <para/>Implements <see cref="IDisposable"/>.
     /// </summary>
-    public class Ripemd160 : IHashFunction
+    public sealed class Ripemd160 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Ripemd160"/>.
         /// </summary>
-        /// <param name="isDouble">Determines whether the hash should be performed twice.</param>
-        public Ripemd160(bool isDouble = false)
+        public Ripemd160()
         {
-            IsDouble = isDouble;
         }
 
 
 
         /// <summary>
-        /// Indicates whether the hash function should be performed twice on message.
-        /// </summary>
-        public bool IsDouble { get; set; }
-
-        /// <summary>
         /// Size of the hash result in bytes.
         /// </summary>
-        public int HashByteSize => 20;
+        public const int HashByteSize = 20;
 
         /// <summary>
         /// Size of the blocks used in each round.
         /// </summary>
-        public int BlockByteSize => 64;
+        public const int BlockByteSize = 64;
 
         internal uint[] block = new uint[16];
         internal uint[] hashState = new uint[5];
@@ -154,14 +147,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     }
                 }
             }
-
-            if (IsDouble)
-            {
-                DoSecondHash();
-            }
         }
 
-        internal virtual unsafe void DoSecondHash()
+
+
+        internal unsafe void DoSecondHash()
         {
             // TODO: change this like Sha256, etc.
             block = new uint[16]
@@ -726,36 +716,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         private bool disposedValue = false;
 
         /// <summary>
-        /// Releases the resources used by the <see cref="Ripemd160"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    if (!(block is null))
-                        Array.Clear(block, 0, block.Length);
-                    block = null;
-
-                    if (!(hashState is null))
-                        Array.Clear(hashState, 0, hashState.Length);
-                    hashState = null;
-                }
-
-                disposedValue = true;
-            }
-        }
-
-        /// <summary>
         /// Releases all resources used by the current instance of the <see cref="Ripemd160"/> class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!disposedValue)
+            {
+                if (!(block is null))
+                    Array.Clear(block, 0, block.Length);
+                block = null;
+
+                if (!(hashState is null))
+                    Array.Clear(hashState, 0, hashState.Length);
+                hashState = null;
+
+                disposedValue = true;
+            }
         }
 
 

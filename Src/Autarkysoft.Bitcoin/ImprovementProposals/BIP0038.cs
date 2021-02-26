@@ -28,7 +28,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             b58enc = new Base58();
             addressMaker = new Address();
             scrypt = new Scrypt(16384, 8, 8);
-            hash = new Sha256(true);
+            hash = new Sha256();
             aes = new AesManaged
             {
                 KeySize = 256, // AES-256
@@ -48,7 +48,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private readonly Address addressMaker;
         private Scrypt scrypt;
         private Aes aes;
-        private IHashFunction hash;
+        private Sha256 hash;
 
 
 
@@ -125,7 +125,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             PrivateKey result = new PrivateKey(XOR(decryptedResult, dk));
 
             string address = addressMaker.GetP2pkh(result.ToPublicKey(), isCompressed, NetworkType.MainNet);
-            Span<byte> computedHash = hash.ComputeHash(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
+            Span<byte> computedHash = hash.ComputeHashTwice(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
             if (!computedHash.SequenceEqual(salt))
             {
                 throw new FormatException("Wrong password (derived address hash is not the same).");
@@ -182,7 +182,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(password), "Password can not be null or empty.");
 
             string address = addressMaker.GetP2pkh(key.ToPublicKey(), isCompressed, NetworkType.MainNet);
-            byte[] salt = hash.ComputeHash(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
+            byte[] salt = hash.ComputeHashTwice(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
 
             byte[] dk = scrypt.GetBytes(password, salt, 64);
             aes.Key = dk.SubArray(32, 32); // AES key is derivedhalf2

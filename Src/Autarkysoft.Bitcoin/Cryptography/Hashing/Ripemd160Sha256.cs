@@ -12,8 +12,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// Performs RIPEMD160 hash function on the result of SHA256 also known as HASH160
     /// <para/> This is more optimized and a lot faster than using .Net functions individually 
     /// specially when computing hash for small byte arrays such as 33 bytes (bitcoin public keys used in P2PKH scripts)
+    /// <para/>Implements <see cref="IDisposable"/>
     /// </summary>
-    public class Ripemd160Sha256 : IDisposable
+    public sealed class Ripemd160Sha256 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Ripemd160Sha256"/>.
@@ -270,33 +271,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         private bool isDisposed = false;
 
         /// <summary>
-        /// Releases the resources used by the <see cref="Ripemd160Sha256"/> class.
+        /// Releases all resources used by the current instance of the <see cref="Ripemd160Sha256"/> class.
         /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (!isDisposed)
             {
-                if (disposing)
-                {
-                    if (!(rip is null))
-                        rip.Dispose();
-                    rip = null;
+                if (!(rip is null))
+                    rip.Dispose();
+                rip = null;
 
-                    if (!(sha is null))
-                        sha.Dispose();
-                    sha = null;
-                }
+                if (!(sha is null))
+                    sha.Dispose();
+                sha = null;
 
                 isDisposed = true;
             }
         }
-
-        /// <summary>
-        /// Releases all resources used by the current instance of the <see cref="Ripemd160Sha256"/> class.
-        /// </summary>
-        public void Dispose() => Dispose(true);
     }
 }

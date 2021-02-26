@@ -17,9 +17,9 @@ namespace Benchmarks.Bitcoin.Cryptography.Hashing
     public class Sha256DoubleBench
     {
         private readonly SHA256 sysSha = SHA256.Create();
-        private readonly Sha256 libSha = new Sha256(true);
+        private readonly Sha256 libSha = new Sha256();
 
-        public IEnumerable<object[]> GetData()
+        public static IEnumerable<object[]> GetData()
         {
             byte[] small = new byte[33];
             byte[] big = new byte[250];
@@ -37,6 +37,6 @@ namespace Benchmarks.Bitcoin.Cryptography.Hashing
 
         [Benchmark(Baseline = true)]
         [ArgumentsSource(nameof(GetData))]
-        public byte[] Library_Sha256d(byte[] data) => libSha.ComputeHash(data);
+        public byte[] Library_Sha256d(byte[] data) => libSha.ComputeHashTwice(data);
     }
 }

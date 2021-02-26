@@ -12,16 +12,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
     /// <summary>
     /// Implementation of 256-bit Secure Hash Algorithm (SHA) base on RFC-6234.
-    /// Implements <see cref="IHashFunction"/>.
-    /// <para/> https://tools.ietf.org/html/rfc6234
+    /// <para/>Implements <see cref="IDisposable"/>
+    /// <para/>https://tools.ietf.org/html/rfc6234
     /// </summary>
-    public class Sha256 : IHashFunction
+    public sealed class Sha256 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Sha256"/>.
         /// </summary>
-        /// <param name="isDouble">Determines whether the hash should be performed twice.</param>
-        public Sha256(bool isDouble = false)
+        public Sha256()
+        {
+        }
+
+        /// <summary>
+        /// Use <see cref="ComputeHashTwice(byte[])"/> method for double hash
+        /// </summary>
+        [Obsolete("IsDouble will be removed soon, use ComputeHashTwice() instead")]
+        public Sha256(bool isDouble)
         {
             IsDouble = isDouble;
         }
@@ -37,7 +44,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Size of the hash result in bytes (=32 bytes).
         /// </summary>
-        public int HashByteSize => 32;
+        public const int HashByteSize = 32;
 
         /// <summary>
         /// Size of the blocks used in each round (=64 bytes).
@@ -48,7 +55,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         internal uint[] hashState = new uint[8];
         internal uint[] w = new uint[64];
 
-        private readonly uint[] Ks =
+        private static readonly uint[] Ks =
         {
             0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
             0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -84,9 +91,35 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
+            // TODO: replace DoHash with an unsafe code right here abandoning the IsDouble part in next release
             Init();
             DoHash(data, data.Length);
             return GetBytes();
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array twice (hash of hash).
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ObjectDisposedException"/>
+        /// <param name="data">The byte array to compute hash for</param>
+        /// <returns>The computed hash</returns>
+        public unsafe byte[] ComputeHashTwice(byte[] data)
+        {
+            if (isDisposed)
+                throw new ObjectDisposedException("Instance was disposed.");
+            if (data == null)
+                throw new ArgumentNullException(nameof(data), "Data can not be null.");
+
+            fixed (byte* dPt = data)
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                Init(hPt);
+                CompressData(dPt, data.Length, data.Length, hPt, wPt);
+                ComputeSecondHash(hPt, wPt);
+
+                return GetBytes(hPt);
+            }
         }
 
 
@@ -933,36 +966,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         private bool isDisposed = false;
 
         /// <summary>
-        /// Releases the resources used by the <see cref="Sha256"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(hashState is null))
-                        Array.Clear(hashState, 0, hashState.Length);
-                    hashState = null;
-
-                    if (!(w is null))
-                        Array.Clear(w, 0, w.Length);
-                    w = null;
-                }
-
-                isDisposed = true;
-            }
-        }
-
-        /// <summary>
         /// Releases all resources used by the current instance of the <see cref="Sha256"/> class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!isDisposed)
+            {
+                if (!(hashState is null))
+                    Array.Clear(hashState, 0, hashState.Length);
+                hashState = null;
+
+                if (!(w is null))
+                    Array.Clear(w, 0, w.Length);
+                w = null;
+
+                isDisposed = true;
+            }
         }
     }
 }

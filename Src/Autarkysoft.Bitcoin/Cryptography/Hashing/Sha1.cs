@@ -10,35 +10,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
     /// <summary>
     /// This is a wrapper around .Net SHA1 implementation.
+    /// <para/>Implements <see cref="IDisposable"/>
     /// </summary>
-    public class Sha1 : IHashFunction
+    public sealed class Sha1 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Sha1"/>.
         /// </summary>
-        /// <param name="isDouble">Determines whether the hash should be performed twice.</param>
-        public Sha1(bool isDouble = false)
+        public Sha1()
         {
-            IsDouble = isDouble;
         }
 
-
-
-        /// <summary>
-        /// Indicates whether the hash function should be performed twice on message.
-        /// For example Double SHA256 that bitcoin uses.
-        /// </summary>
-        public bool IsDouble { get; set; }
 
         /// <summary>
         /// Size of the hash result in bytes.
         /// </summary>
-        public virtual int HashByteSize => 20;
+        public const int HashByteSize = 20;
 
         /// <summary>
         /// Size of the blocks used in each round.
         /// </summary>
-        public virtual int BlockByteSize => 64;
+        public const int BlockByteSize = 64;
 
 
         private SHA1 hash = SHA1.Create();
@@ -59,7 +51,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
-            return IsDouble ? hash.ComputeHash(hash.ComputeHash(data)) : hash.ComputeHash(data);
+            return hash.ComputeHash(data);
         }
 
 
@@ -83,32 +75,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         private bool disposedValue = false;
 
         /// <summary>
-        /// Releases the resources used by the <see cref="Sha1"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    if (!(hash is null))
-                        hash.Dispose();
-                    hash = null;
-                }
-
-                disposedValue = true;
-            }
-        }
-
-        /// <summary>
         /// Releases all resources used by the current instance of the <see cref="Sha1"/> class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!disposedValue)
+            {
+                if (!(hash is null))
+                    hash.Dispose();
+                hash = null;
+
+                disposedValue = true;
+            }
         }
     }
 }
