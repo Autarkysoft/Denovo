@@ -12,7 +12,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// Based on RFC-2104
     /// <para/> https://tools.ietf.org/html/rfc2104
     /// </summary>
-    public class HmacSha256 : IHmacFunction
+    public sealed class HmacSha256 : IHmacFunction
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="HmacSha256"/>. 
@@ -246,48 +246,33 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
 
-
         private bool disposedValue = false;
-
-        /// <summary>
-        /// Releases the resources used by the <see cref="HmacSha256"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    if (!(hashFunc is null))
-                        hashFunc.Dispose();
-                    hashFunc = null;
-
-                    if (!(_keyValue is null))
-                        Array.Clear(_keyValue, 0, _keyValue.Length);
-                    _keyValue = null;
-
-                    if (!(ipad is null))
-                        Array.Clear(ipad, 0, ipad.Length);
-                    ipad = null;
-
-                    if (!(opad is null))
-                        Array.Clear(opad, 0, opad.Length);
-                    opad = null;
-                }
-
-                disposedValue = true;
-            }
-        }
 
         /// <summary>
         /// Releases all resources used by the current instance of the <see cref="HmacSha256"/> class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!disposedValue)
+            {
+                if (!(hashFunc is null))
+                    hashFunc.Dispose();
+                hashFunc = null;
+
+                if (!(_keyValue is null))
+                    Array.Clear(_keyValue, 0, _keyValue.Length);
+                _keyValue = null;
+
+                if (!(ipad is null))
+                    Array.Clear(ipad, 0, ipad.Length);
+                ipad = null;
+
+                if (!(opad is null))
+                    Array.Clear(opad, 0, opad.Length);
+                opad = null;
+
+                disposedValue = true;
+            }
         }
     }
 }

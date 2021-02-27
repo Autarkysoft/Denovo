@@ -10,7 +10,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// <summary>
     /// Implementation of version 3 of the non-cryptographic hash function called MurmurHash
     /// </summary>
-    public class Murmur3
+    public sealed class Murmur3
     {
         /// <summary>
         /// Computes 32-bit hash of the given data.

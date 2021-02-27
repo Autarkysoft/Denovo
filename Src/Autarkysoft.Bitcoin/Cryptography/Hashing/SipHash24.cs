@@ -11,7 +11,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// Implementation of non-cryptographic hash function called SipHash with c=2 and d=4
     /// <para/>https://131002.net/siphash/siphash.pdf
     /// </summary>
-    public class SipHash24
+    public sealed class SipHash24
     {
         /// <summary>
         /// Computes 64-bit hash of the given data with the given 128-bit key.
