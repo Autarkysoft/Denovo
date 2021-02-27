@@ -57,14 +57,14 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (message is null)
                 throw new ArgumentNullException(nameof(message), "Message can not be null.");
 
-            using Sha256 hash = new Sha256(true);
+            using Sha256 hash = new Sha256();
             FastStream stream = new FastStream();
             stream.Write((byte)Constants.MsgSignConst.Length);
             stream.Write(Encoding.UTF8.GetBytes(Constants.MsgSignConst));
             byte[] messageBytes = Encoding.UTF8.GetBytes(message.Normalize(NormalizationForm.FormKD));
             stream.WriteWithCompactIntLength(messageBytes);
 
-            byte[] result = hash.ComputeHash(stream.ToByteArray());
+            byte[] result = hash.ComputeHashTwice(stream.ToByteArray());
             return result;
         }
 

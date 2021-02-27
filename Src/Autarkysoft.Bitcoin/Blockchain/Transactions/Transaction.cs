@@ -48,7 +48,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         private const int MaxTxSize = 4_000_000;
-        private readonly Sha256 hashFunc = new Sha256(true);
+        private readonly Sha256 hashFunc = new Sha256();
         private readonly Ripemd160Sha256 addrHashFunc = new Ripemd160Sha256();
 
         private int _version;
@@ -132,7 +132,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         {
             // Tx hash is always stripping witness
             byte[] bytesToHash = ToByteArrayWithoutWitness();
-            return hashFunc.ComputeHash(bytesToHash);
+            return hashFunc.ComputeHashTwice(bytesToHash);
         }
 
         /// <inheritdoc/>
@@ -148,7 +148,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         public byte[] GetWitnessTransactionHash()
         {
             // TODO: same as above (verify if signed)
-            byte[] hashRes = hashFunc.ComputeHash(ToByteArray());
+            byte[] hashRes = hashFunc.ComputeHashTwice(ToByteArray());
             return hashRes;
         }
 
@@ -317,7 +317,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             stream.Write((int)sht);
 
-            byte[] hash = hashFunc.ComputeHash(stream.ToByteArray());
+            byte[] hash = hashFunc.ComputeHashTwice(stream.ToByteArray());
             return hash;
         }
 
@@ -344,7 +344,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     prvOutStream.Write(tin.Index);
                 }
 
-                hashPrevouts = hashFunc.ComputeHash(prvOutStream.ToByteArray());
+                hashPrevouts = hashFunc.ComputeHashTwice(prvOutStream.ToByteArray());
             }
 
             byte[] hashSequence;
@@ -361,7 +361,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     seqStream.Write(tin.Sequence);
                 }
 
-                hashSequence = hashFunc.ComputeHash(seqStream.ToByteArray());
+                hashSequence = hashFunc.ComputeHashTwice(seqStream.ToByteArray());
             }
 
             byte[] hashOutputs;
@@ -374,14 +374,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     tout.Serialize(outputStream);
                 }
 
-                hashOutputs = hashFunc.ComputeHash(outputStream.ToByteArray());
+                hashOutputs = hashFunc.ComputeHashTwice(outputStream.ToByteArray());
             }
             else if (isSingle && inputIndex < TxOutList.Length)
             {
                 FastStream outputStream = new FastStream(33);
                 TxOutList[inputIndex].Serialize(outputStream);
 
-                hashOutputs = hashFunc.ComputeHash(outputStream.ToByteArray());
+                hashOutputs = hashFunc.ComputeHashTwice(outputStream.ToByteArray());
             }
             else
             {
@@ -405,7 +405,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             LockTime.WriteToStream(finalStream);
             finalStream.Write((int)sht);
 
-            byte[] hashPreimage = hashFunc.ComputeHash(finalStream.ToByteArray());
+            byte[] hashPreimage = hashFunc.ComputeHashTwice(finalStream.ToByteArray());
             return hashPreimage;
         }
 

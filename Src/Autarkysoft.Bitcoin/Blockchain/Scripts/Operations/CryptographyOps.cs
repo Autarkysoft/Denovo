@@ -153,8 +153,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            using Sha256 hash = new Sha256(true);
-            opData.Push(hash.ComputeHash(opData.Pop()));
+            using Sha256 hash = new Sha256();
+            opData.Push(hash.ComputeHashTwice(opData.Pop()));
 
             error = null;
             return true;

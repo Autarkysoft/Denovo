@@ -130,8 +130,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             if (recompute || hash is null)
             {
                 byte[] bytesToHash = Serialize();
-                using Sha256 hashFunc = new Sha256(true);
-                hash = hashFunc.ComputeHash(bytesToHash);
+                using Sha256 hashFunc = new Sha256();
+                hash = hashFunc.ComputeHashTwice(bytesToHash);
             }
 
             return hash;

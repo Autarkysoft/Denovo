@@ -285,7 +285,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             // TODO: check out https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki + 322
 
             // TODO: convert Sha into a straem itself and directly write to it instead of another stream (similar to tx)
-            using Sha256 hash = new Sha256(true);
+            using Sha256 hash = new Sha256();
             FastStream stream = new FastStream();
             stream.Write((byte)Constants.MsgSignConst.Length);
             stream.Write(Encoding.UTF8.GetBytes(Constants.MsgSignConst));
@@ -293,7 +293,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             new CompactInt(messageBytes.Length).WriteToStream(stream);
             stream.Write(messageBytes);
 
-            byte[] toSign = hash.ComputeHash(stream.ToByteArray());
+            byte[] toSign = hash.ComputeHashTwice(stream.ToByteArray());
 
             return calc.Sign(toSign, keyBytes);
         }
