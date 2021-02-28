@@ -10,6 +10,7 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
+using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -334,7 +335,27 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 // TODO: get the tx object from mempool the passed tx (from block) doesn't have any properties set
                 TotalSigOpCount += tx.SigOpCount;
-                TotalFee += utxoDb.MarkSpentAndGetFee(tx.TxInList);
+                ulong totalToSpend = 0;
+                foreach (TxIn item in tx.TxInList)
+                {
+                    IUtxo utxo = utxoDb.Find(item);
+                    // If the tx is valid and is in mempool the UTXOs must be available in UTXO database
+                    Debug.Assert(!(utxo is null));
+                    Debug.Assert(utxo.IsMempoolSpent);
+                    Debug.Assert(!utxo.IsBlockSpent);
+
+                    totalToSpend += utxo.Amount;
+                }
+
+                ulong totalSpent = 0;
+                foreach (TxOut item in tx.TxOutList)
+                {
+                    totalSpent += item.Amount;
+                }
+
+                TotalFee += (totalToSpend - totalSpent);
+
+
                 if (!AnySegWit)
                 {
                     AnySegWit = tx.WitnessList != null;
