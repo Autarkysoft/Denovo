@@ -159,7 +159,7 @@ namespace Autarkysoft.Bitcoin
                 foreach (var index in indices)
                 {
                     Interlocked.Increment(ref inQueue);
-                    await Task.Run(() => connector.StartConnect(new IPEndPoint(ips[index], Settings.ListenPort)));
+                    await Task.Run(() => connector.StartConnect(new IPEndPoint(ips[index], Settings.DefaultPort)));
                 }
             }
         }
