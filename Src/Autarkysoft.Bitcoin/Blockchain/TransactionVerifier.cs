@@ -345,6 +345,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     Debug.Assert(!utxo.IsBlockSpent);
 
                     totalToSpend += utxo.Amount;
+                    utxo.IsBlockSpent = true;
                 }
 
                 ulong totalSpent = 0;
