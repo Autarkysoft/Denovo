@@ -19,8 +19,17 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="tin">Input to search for</param>
         /// <returns>The <see cref="IUtxo"/> instance if the input was found; otherwise null.</returns>
         public IUtxo Find(TxIn tin);
-
-        void MarkSpent(TxIn[] txInList);
-        ulong MarkSpentAndGetFee(TxIn[] txInList);
+        /// <summary>
+        /// Update database with the given transaction array from the block. First transaction must be the coinbase.
+        /// </summary>
+        /// <param name="txs">Array of transactions to use</param>
+        void Update(ITransaction[] txs);
+        /// <summary>
+        /// Undo the changes made to each <see cref="IUtxo.IsBlockSpent"/>.
+        /// Useful if block verification fails due to an invalid transaction.
+        /// </summary>
+        /// <param name="txs">Array of transactions in the block</param>
+        /// <param name="lastIndex">Last index of the transaction that was checked</param>
+        void Undo(ITransaction[] txs, int lastIndex);
     }
 }

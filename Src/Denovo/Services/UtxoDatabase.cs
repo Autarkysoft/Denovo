@@ -14,6 +14,10 @@ using System.Linq;
 
 namespace Denovo.Services
 {
+    // TODO: Add a temp DB that is not stored to disk but updated on each call by TxVerifier to add outputs so that they
+    //       can be spent in txs in the same block
+
+
     // TODO: Idea for coinbase transactions:
     //       Each coinbase tx must mature before it can be spent, which takes 100 blocks.
     //       The idea is to use a "queue" in our UTXO DB to hold the coinbase txs and only add them to the actual DB when
@@ -95,6 +99,31 @@ namespace Denovo.Services
                     }
                 }
             }
+
+            data = fileMan.ReadData("CoinbaseDb");
+            if (data is not null && data.Length != 0)
+            {
+                var stream = new FastStreamReader(data);
+                if (!stream.CheckRemaining(8))
+                {
+                    return;
+                }
+                i1 = stream.ReadInt32Checked();
+                i2 = stream.ReadInt32Checked();
+                int index = 0;
+                while (true)
+                {
+                    var coinbase = new Transaction();
+                    if (coinbase.TryDeserialize(stream, out _))
+                    {
+                        coinbaseQueue[index] = coinbase;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
         }
 
         private void WriteToDisk()
@@ -112,6 +141,19 @@ namespace Denovo.Services
             fileMan.WriteData(stream.ToByteArray(), DbName);
         }
 
+        private void WriteCoinbaseToDisk()
+        {
+            var stream = new FastStream(coinbaseQueue.Length * 250);
+            stream.Write(i1);
+            stream.Write(i2);
+            foreach (var item in coinbaseQueue)
+            {
+                item.Serialize(stream);
+            }
+
+            fileMan.WriteData(stream.ToByteArray(), "CoinbaseDb");
+        }
+
         public IUtxo Find(TxIn tin)
         {
             if (database.TryGetValue(tin.TxHash, out List<Utxo> value))
@@ -124,18 +166,6 @@ namespace Denovo.Services
                 return null;
             }
         }
-
-        // TODO: get rid of the following 2 in interface and here
-        public void MarkSpent(TxIn[] txInList)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ulong MarkSpentAndGetFee(TxIn[] txInList)
-        {
-            throw new NotImplementedException();
-        }
-
 
 
         private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
@@ -160,7 +190,7 @@ namespace Denovo.Services
 
                 coinbaseQueue[i2++] = coinbase;
 
-                WriteToDisk();
+                WriteCoinbaseToDisk();
             }
         }
 

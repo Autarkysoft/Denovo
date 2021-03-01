@@ -79,27 +79,34 @@ namespace Tests.Bitcoin.Blockchain
             database.Add(output);
         }
 
+        internal void Swap()
+        {
+            Assert.Equal(2, hashes.Count);
+            hashes.Reverse();
+            database.Reverse();
+        }
+
         public IUtxo Find(TxIn tin)
         {
             Assert.NotNull(hashes);
             Assert.True(index < hashes.Count, "More calls were made to UTXO-Database.Find() than expected");
 
             Assert.Equal(hashes[index], tin.TxHash);
-            Assert.Equal(database[index].Index, tin.Index);
+            if (!(database[index] is null))
+            {
+                Assert.Equal(database[index].Index, tin.Index);
+            }
 
             return database[index++];
         }
 
-        public void MarkSpent(TxIn[] txInList)
+
+        public void Update(ITransaction[] txs)
         {
-            foreach (var tin in txInList)
-            {
-                IUtxo utxo = Find(tin);
-                utxo.IsBlockSpent = true;
-            }
+            throw new NotImplementedException();
         }
 
-        public ulong MarkSpentAndGetFee(TxIn[] txInList)
+        public void Undo(ITransaction[] txs, int lastIndex)
         {
             throw new NotImplementedException();
         }
