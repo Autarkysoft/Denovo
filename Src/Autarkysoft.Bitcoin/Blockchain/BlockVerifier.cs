@@ -60,6 +60,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                    new BigInteger(header.GetHash(), isUnsigned: true, isBigEndian: false) <= tar;
         }
 
+
+        private void UndoAllUtxos(IBlock block)
+        {
+            txVer.UtxoDb.Undo(block.TransactionList, block.TransactionList.Length - 1);
+        }
+
         /// <summary>
         /// Verifies validity of the given block. Return value indicates succcess.
         /// <para/>Header has to be verified before using <see cref="VerifyHeader(BlockHeader, Target)"/> method.
@@ -86,10 +92,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 if (!txVer.Verify(block.TransactionList[i], out error))
                 {
+                    txVer.UtxoDb.Undo(block.TransactionList, i);
                     return false;
                 }
                 if (txVer.TotalSigOpCount > consensus.MaxSigOpCount)
                 {
+                    txVer.UtxoDb.Undo(block.TransactionList, i);
                     error = "Maximum allowed sigops exceeded.";
                     return false;
                 }
@@ -97,6 +105,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
             if (!((ReadOnlySpan<byte>)block.Header.MerkleRootHash).SequenceEqual(block.ComputeMerkleRoot()))
             {
+                UndoAllUtxos(block);
                 error = "Block has invalid merkle root hash.";
                 return false;
             }
@@ -118,6 +127,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 if (txVer.AnySegWit && commitPos == -1)
                 {
+                    UndoAllUtxos(block);
                     error = "Witness commitment was not found in coinbase output.";
                     return false;
                 }
@@ -125,6 +135,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     coinbase.WitnessList == null || coinbase.WitnessList.Length != 1 ||
                     coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].data?.Length != 32)
                 {
+                    UndoAllUtxos(block);
                     error = "Invalid or non-existant witness commitment in coinbase output.";
                     return false;
                 }
@@ -147,6 +158,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                       .Slice(0, Constants.MinWitnessCommitmentLen)
                       .SequenceEqual(witPubScr))
                 {
+                    UndoAllUtxos(block);
                     error = "Invalid witness commitment in coinbase output.";
                     return false;
                 }
@@ -155,13 +167,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
             // TotalFee must be set already in ITransactionVerifier
             if (!txVer.VerifyCoinbaseOutput(coinbase, out error))
             {
+                UndoAllUtxos(block);
                 error = $"Invalid coinbase output: {error}";
                 return false;
             }
 
-            // TODO: write an "undo" button to mark UTXOs as unspent in case verification of this block failed need to know index)
             // TODO: add block size and weight checks
-            // TODO: add block version checks
+
+            txVer.UtxoDb.Update(block.TransactionList);
+
             error = null;
             return true;
         }

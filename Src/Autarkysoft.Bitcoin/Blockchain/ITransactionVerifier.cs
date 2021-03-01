@@ -14,6 +14,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public interface ITransactionVerifier
     {
         /// <summary>
+        /// Returns the <see cref="IUtxoDatabase"/> instance used by this <see cref="ITransactionVerifier"/>.
+        /// </summary>
+        IUtxoDatabase UtxoDb { get; }
+        /// <summary>
         /// Total number of signature operations that this instance has verified so far.
         /// Must be set/reset by the caller for each block.
         /// </summary>

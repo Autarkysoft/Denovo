@@ -39,7 +39,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 throw new ArgumentNullException(nameof(consensus), "Consensus rules can not be null.");
 
             this.isMempool = isMempool;
-            utxoDb = utxoDatabase;
+            UtxoDb = utxoDatabase;
             mempool = memoryPool;
             this.consensus = consensus;
 
@@ -53,13 +53,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private readonly bool isMempool;
         private readonly EllipticCurveCalculator calc;
         private readonly ScriptSerializer scrSer;
-        private readonly IUtxoDatabase utxoDb;
         private readonly IMemoryPool mempool;
         private readonly IConsensus consensus;
         private Ripemd160Sha256 hash160;
         private Sha256 sha256;
 
-
+        /// <inheritdoc/>
+        public IUtxoDatabase UtxoDb { get; }
         /// <inheritdoc/>
         public int TotalSigOpCount { get; set; }
         /// <inheritdoc/>
@@ -338,7 +338,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 ulong totalToSpend = 0;
                 foreach (TxIn item in tx.TxInList)
                 {
-                    IUtxo utxo = utxoDb.Find(item);
+                    IUtxo utxo = UtxoDb.Find(item);
                     // If the tx is valid and is in mempool the UTXOs must be available in UTXO database
                     Debug.Assert(!(utxo is null));
                     Debug.Assert(utxo.IsMempoolSpent);
@@ -379,7 +379,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 TxIn currentInput = tx.TxInList[i];
                 // TODO: add a condition in UTXO for when it is a coinbase transaction (they are not spendable if haven't 
                 // reached maturity ie. 100 blocks -> thisHeight - spendingCoinbaseHeight >= 100)
-                IUtxo prevOutput = utxoDb.Find(currentInput);
+                IUtxo prevOutput = UtxoDb.Find(currentInput);
                 if (prevOutput is null)
                 {
                     // TODO: add a ToString() method to TxIn?
