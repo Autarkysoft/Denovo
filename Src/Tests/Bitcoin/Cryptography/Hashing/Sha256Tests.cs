@@ -102,11 +102,21 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_DoubleTest()
         {
-            using Sha256 sha = new Sha256(true);
+            using Sha256 sha = new Sha256();
             var data = Helper.HexToBytes("fb8049137747e712628240cf6d7056ea2870170cb7d9bc713d91e901b514c6ae7d7dda3cd03ea1b99cf85046a505f3590541123d3f8f2c22c4d7d6e65de65c4ebb9251f09619");
-            byte[] actualHash = sha.ComputeHash(data);
+            byte[] actualHash = sha.ComputeHashTwice(data);
             byte[] expectedHash = Helper.HexToBytes("d2cee8d3cfaf1819c55cce1214d01cdef1d97446719ccfaad4d76d912a8126f9");
 
+            Assert.Equal(expectedHash, actualHash);
+        }
+
+        [Theory]
+        [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA256", MemberType = typeof(HashTestCaseHelper))]
+        public void ComputeHashTwiceTest(byte[] message, byte[] expectedHash)
+        {
+            using Sha256 sha = new Sha256();
+            byte[] actualHash = sha.ComputeHashTwice(message);
+            expectedHash = sha.ComputeHash(expectedHash);
             Assert.Equal(expectedHash, actualHash);
         }
 
@@ -132,7 +142,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetNistShortCases), parameters: "Sha256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistShortTest(byte[] message, byte[] expected)
         {
-            using Sha256 sha = new Sha256(false);
+            using Sha256 sha = new Sha256();
             byte[] actual = sha.ComputeHash(message);
             Assert.Equal(expected, actual);
         }
@@ -141,7 +151,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetNistLongCases), parameters: "Sha256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistLongTest(byte[] message, byte[] expected)
         {
-            using Sha256 sha = new Sha256(false);
+            using Sha256 sha = new Sha256();
             byte[] actual = sha.ComputeHash(message);
             Assert.Equal(expected, actual);
         }
@@ -159,7 +169,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] M1 = seed;
             byte[] M2 = seed;
 
-            using Sha256 sha = new Sha256(false);
+            using Sha256 sha = new Sha256();
 
             foreach (var item in jObjs["MonteCarlo"])
             {
