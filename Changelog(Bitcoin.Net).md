@@ -1,5 +1,20 @@
 ### Next release
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.9.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.10.0.0...master)
+
+### Release 0.10.0 (2021-03-03)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.9.0.0...B0.10.0.0)
+* Implemented initial block synchronization code in `Blockchain` and respective classes
+* `IUtxoDatabase` and `IFileManager` have new methods
+* Add a new UTXO class
+* Mandatory ClientSettings properties are read only and can only be set in its constructor,
+the rest can be set using the respective property setter
+* To reduce memory usage some properties are placed in ClientSettings and are accessed from all threads (by different node instances)
+* RandomNonceGenerator is thread safe now
+* (I)Storage is entirely removed
+* Hash and HMAC functions are all `seal`ed
+* `IHashFunction` and its `IsDouble` property are obsolete and will be removed in next release. 
+Use the new `ComputeHashTwice` method instead
+* Various bug fixes, tests and improvements
 
 ### Release 0.9.0 (2021-01-26)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.8.0.0...B0.9.0.0)
