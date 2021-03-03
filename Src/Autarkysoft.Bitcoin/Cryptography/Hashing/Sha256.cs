@@ -39,6 +39,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// Indicates whether the hash function should be performed twice on message.
         /// For example Double SHA256 that bitcoin uses.
         /// </summary>
+        [Obsolete("IsDouble will be removed soon, use ComputeHashTwice() instead")]
         public bool IsDouble { get; set; }
 
         /// <summary>
