@@ -24,23 +24,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         {
         }
 
-        /// <summary>
-        /// Use <see cref="ComputeHashTwice(byte[])"/> method for double hash
-        /// </summary>
-        [Obsolete("IsDouble will be removed soon, use ComputeHashTwice() instead")]
-        public Sha256(bool isDouble)
-        {
-            IsDouble = isDouble;
-        }
 
-
-        // TODO: retire IsDouble from both here and interface
-        /// <summary>
-        /// Indicates whether the hash function should be performed twice on message.
-        /// For example Double SHA256 that bitcoin uses.
-        /// </summary>
-        [Obsolete("IsDouble will be removed soon, use ComputeHashTwice() instead")]
-        public bool IsDouble { get; set; }
 
         /// <summary>
         /// Size of the hash result in bytes (=32 bytes).
@@ -85,17 +69,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public byte[] ComputeHash(byte[] data)
+        public unsafe byte[] ComputeHash(byte[] data)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
-            // TODO: replace DoHash with an unsafe code right here abandoning the IsDouble part in next release
-            Init();
-            DoHash(data, data.Length);
-            return GetBytes();
+            fixed (byte* dPt = data)
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                Init(hPt);
+                CompressData(dPt, data.Length, data.Length, hPt, wPt);
+
+                return GetBytes(hPt);
+            }
         }
 
         /// <summary>
@@ -516,21 +504,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             };
         }
 
-
-        internal unsafe void DoHash(byte[] data, int len)
-        {
-            // If data.Length == 0 => &data[0] will throw an exception
-            fixed (byte* dPt = data)
-            fixed (uint* hPt = &hashState[0], wPt = &w[0])
-            {
-                CompressData(dPt, data.Length, len, hPt, wPt);
-
-                if (IsDouble)
-                {
-                    ComputeSecondHash(hPt, wPt);
-                }
-            }
-        }
 
         internal unsafe void CompressData(byte* dPt, int dataLen, int totalLen, uint* hPt, uint* wPt)
         {

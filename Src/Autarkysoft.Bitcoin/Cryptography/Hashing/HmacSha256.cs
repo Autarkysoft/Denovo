@@ -129,13 +129,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 throw new ArgumentNullException(nameof(key), "Key can not be null.");
 
 
+            fixed (byte* kPt = key, dPt = data)
             fixed (uint* oPt = &opad[0], iPt = &ipad[0])
             fixed (uint* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
                 if (key.Length > hashFunc.BlockByteSize)
                 {
                     hashFunc.Init(hPt);
-                    hashFunc.DoHash(key, key.Length);
+                    hashFunc.CompressData(kPt, key.Length, key.Length, hPt, wPt);
 
                     for (int i = 0; i < 8; i++) // 8 items in HashState = 8*4 = 32 byte
                     {
@@ -171,7 +172,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 // 1. Compute SHA256(inner_pad | data)
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, iPt);
-                hashFunc.DoHash(data, data.Length + 64); // len + hashFunc.BlockByteSize
+                // Total data length is len + hashFunc.BlockByteSize
+                hashFunc.CompressData(dPt, data.Length, data.Length + 64, hPt, wPt);
 
                 // 2. Compute SHA256(outer_pad | hash)
                 Buffer.MemoryCopy(hPt, wPt, 256, 32);
@@ -214,6 +216,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
             // Pads are already set
+            fixed (byte* dPt = data)
             fixed (uint* oPt = &opad[0], iPt = &ipad[0])
             fixed (uint* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
@@ -222,7 +225,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 // 1. Compute SHA256(inner_pad | data)
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, iPt);
-                hashFunc.DoHash(data, data.Length + 64); // len + hashFunc.BlockByteSize
+                // Total data length is len + hashFunc.BlockByteSize
+                hashFunc.CompressData(dPt, data.Length, data.Length + 64, hPt, wPt);
 
                 // 2. Compute SHA256(outer_pad | hash)
                 Buffer.BlockCopy(hashFunc.hashState, 0, hashFunc.w, 0, 32); // 32 byte is upto index 7
