@@ -34,14 +34,14 @@ namespace Tests.Bitcoin.Blockchain
                 throw new ArgumentException("Invalid inputs.");
             }
 
-            index = 0;
-            this.hashes = new List<byte[]>(hashes);
-            database = new List<IUtxo>(toReturn);
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                Add(hashes[i], toReturn[i]);
+            }
         }
 
-        private int index;
-        private List<byte[]> hashes;
-        private List<IUtxo> database;
+
+        private Dictionary<byte[], List<Utxo>> database;
 
         private class ByteArrayComparer : IEqualityComparer<byte[]>
         {
@@ -69,35 +69,36 @@ namespace Tests.Bitcoin.Blockchain
 
         internal void Add(byte[] hash, IUtxo output)
         {
-            if (hashes is null)
+            if (database is null)
             {
-                hashes = new List<byte[]>(1);
-                database = new List<IUtxo>(1);
+                database = new Dictionary<byte[], List<Utxo>>(new ByteArrayComparer());
             }
 
-            hashes.Add(hash);
-            database.Add(output);
+
+            if (database.ContainsKey(hash))
+            {
+                database[hash].Add(new Utxo(output.Index, output.Amount, output.PubScript));
+            }
+            else
+            {
+                database.Add(hash, new List<Utxo>() { new Utxo(output.Index, output.Amount, output.PubScript) });
+            }
         }
 
-        internal void Swap()
-        {
-            Assert.Equal(2, hashes.Count);
-            hashes.Reverse();
-            database.Reverse();
-        }
 
         public IUtxo Find(TxIn tin)
         {
-            Assert.NotNull(hashes);
-            Assert.True(index < hashes.Count, "More calls were made to UTXO-Database.Find() than expected");
+            Assert.NotNull(database);
+            bool b = database.ContainsKey(tin.TxHash);
+            Assert.True(database.ContainsKey(tin.TxHash), "Input not found in database.");
 
-            Assert.Equal(hashes[index], tin.TxHash);
-            if (!(database[index] is null))
+            List<Utxo> ulist = database[tin.TxHash];
+            Utxo utxo = ulist.Find(x => x.Index == tin.Index);
+            if (utxo is not null)
             {
-                Assert.Equal(database[index].Index, tin.Index);
+                ulist.Remove(utxo);
             }
-
-            return database[index++];
+            return utxo;
         }
 
 
