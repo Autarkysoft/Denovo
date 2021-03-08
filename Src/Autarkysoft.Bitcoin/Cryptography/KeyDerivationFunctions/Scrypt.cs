@@ -14,7 +14,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
     /// Implements <see cref="IDisposable"/>.
     /// <para/> https://tools.ietf.org/html/rfc7914
     /// </summary>
-    public class Scrypt : IDisposable
+    public sealed class Scrypt : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of <see cref="Scrypt"/> with the given parameters.
@@ -320,45 +320,29 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
         }
 
 
-
         private bool isDisposed = false;
-
-        /// <summary>
-        /// Releases the resources used by the <see cref="Scrypt"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(V is null))
-                        Array.Clear(V, 0, V.Length);
-                    V = null;
-
-                    if (!(blockMixBuffer is null))
-                        Array.Clear(blockMixBuffer, 0, blockMixBuffer.Length);
-                    blockMixBuffer = null;
-
-                    if (!(kdf is null))
-                        kdf.Dispose();
-                    kdf = null;
-                }
-
-                isDisposed = true;
-            }
-        }
-
 
         /// <summary>
         /// Releases all resources used by the current instance of the <see cref="Scrypt"/> class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!isDisposed)
+            {
+                if (!(V is null))
+                    Array.Clear(V, 0, V.Length);
+                V = null;
+
+                if (!(blockMixBuffer is null))
+                    Array.Clear(blockMixBuffer, 0, blockMixBuffer.Length);
+                blockMixBuffer = null;
+
+                if (!(kdf is null))
+                    kdf.Dispose();
+                kdf = null;
+
+                isDisposed = true;
+            }
         }
     }
 }

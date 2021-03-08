@@ -13,7 +13,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
     /// Implements <see cref="IDisposable"/>
     /// <para/> https://tools.ietf.org/html/rfc8018
     /// </summary>
-    public class PBKDF2 : IDisposable
+    public sealed class PBKDF2 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of <see cref="PBKDF2"/> with the given parameters.
@@ -155,36 +155,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
         }
 
 
-
         private bool isDisposed = false;
-
-        /// <summary>
-        /// Releases the resources used by the <see cref="PBKDF2"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(hmacFunc is null))
-                        hmacFunc.Dispose();
-                    hmacFunc = null;
-                }
-
-                isDisposed = true;
-            }
-        }
 
         /// <summary>
         /// Releases all resources used by the current instance of the <see cref="PBKDF2"/> class.
         /// </summary>
         public void Dispose()
         {
-            Dispose(true);
+            if (!isDisposed)
+            {
+                if (!(hmacFunc is null))
+                    hmacFunc.Dispose();
+                hmacFunc = null;
+
+                isDisposed = true;
+            }
         }
     }
 }
