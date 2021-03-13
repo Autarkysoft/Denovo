@@ -333,6 +333,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         /// with AES-128-CBC as cipher and HMAC-SHA256 as MAC.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="FormatException"/>
         /// <param name="encrypted">Encrypted message encoded using Base-64 encoding</param>
         /// <param name="magic">
         /// [Default value = BIE1]
