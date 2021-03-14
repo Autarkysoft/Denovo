@@ -26,7 +26,7 @@ namespace Tests.Denovo.MVVM
             Foo4,
         }
 
-        public class EqHelper<T> : IEqualityComparer<T> where T : DescriptiveItem<Foo>
+        public class EqHelper<T> : IEqualityComparer<T> where T : DescriptiveEnum<Foo>
         {
             public bool Equals([AllowNull] T x, [AllowNull] T y)
             {
@@ -57,31 +57,47 @@ namespace Tests.Denovo.MVVM
         }
 
         [Fact]
-        public void GetEnumDescItemsTest()
+        public void GetEnumValues_All_Test()
         {
-            IEnumerable<DescriptiveItem<Foo>> actual = EnumHelper.GetEnumDescItems<Foo>();
-            IEnumerable<DescriptiveItem<Foo>> expected = new DescriptiveItem<Foo>[]
-            {
-                new DescriptiveItem<Foo>(Foo.Foo1),
-                new DescriptiveItem<Foo>(Foo.Foo2),
-                new DescriptiveItem<Foo>(Foo.Foo3),
-                new DescriptiveItem<Foo>(Foo.Foo4),
-            };
-
-            Assert.Equal(expected, actual, new EqHelper<DescriptiveItem<Foo>>());
+            IEnumerable<Foo> actual = EnumHelper.GetEnumValues<Foo>();
+            IEnumerable<Foo> expected = new Foo[] { Foo.Foo1, Foo.Foo2, Foo.Foo3, Foo.Foo4 };
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
-        public void GetEnumDescItems_WithExclusion_Test()
+        public void GetEnumValues_Exclude_Test()
         {
-            IEnumerable<DescriptiveItem<Foo>> actual = EnumHelper.GetEnumDescItems(Foo.Foo2, Foo.Foo4);
-            IEnumerable<DescriptiveItem<Foo>> expected = new DescriptiveItem<Foo>[]
+            IEnumerable<Foo> actual = EnumHelper.GetEnumValues(Foo.Foo2, Foo.Foo2, Foo.Foo4);
+            IEnumerable<Foo> expected = new Foo[] { Foo.Foo1, Foo.Foo3 };
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void GetDescriptiveEnumsTest()
+        {
+            IEnumerable<DescriptiveEnum<Foo>> actual = EnumHelper.GetDescriptiveEnums<Foo>();
+            IEnumerable<DescriptiveEnum<Foo>> expected = new DescriptiveEnum<Foo>[]
             {
-                new DescriptiveItem<Foo>(Foo.Foo1),
-                new DescriptiveItem<Foo>(Foo.Foo3),
+                new DescriptiveEnum<Foo>(Foo.Foo1),
+                new DescriptiveEnum<Foo>(Foo.Foo2),
+                new DescriptiveEnum<Foo>(Foo.Foo3),
+                new DescriptiveEnum<Foo>(Foo.Foo4),
             };
 
-            Assert.Equal(expected, actual, new EqHelper<DescriptiveItem<Foo>>());
+            Assert.Equal(expected, actual, new EqHelper<DescriptiveEnum<Foo>>());
+        }
+
+        [Fact]
+        public void GetDescriptiveEnums_WithExclusion_Test()
+        {
+            IEnumerable<DescriptiveEnum<Foo>> actual = EnumHelper.GetDescriptiveEnums(Foo.Foo2, Foo.Foo4);
+            IEnumerable<DescriptiveEnum<Foo>> expected = new DescriptiveEnum<Foo>[]
+            {
+                new DescriptiveEnum<Foo>(Foo.Foo1),
+                new DescriptiveEnum<Foo>(Foo.Foo3),
+            };
+
+            Assert.Equal(expected, actual, new EqHelper<DescriptiveEnum<Foo>>());
         }
     }
 }

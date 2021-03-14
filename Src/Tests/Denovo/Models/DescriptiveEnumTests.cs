@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Tests.Denovo.Models
 {
-    public class DescriptiveItemTests
+    public class DescriptiveEnumTests
     {
         public enum MockEnum
         {
@@ -28,7 +28,7 @@ namespace Tests.Denovo.Models
         [InlineData((MockEnum)123, "123")]
         public void ConstructorTest(MockEnum val, string expected)
         {
-            var item = new DescriptiveItem<MockEnum>(val);
+            var item = new DescriptiveEnum<MockEnum>(val);
 
             Assert.Equal(expected, item.Description);
             Assert.Equal(val, item.Value);

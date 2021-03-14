@@ -9,9 +9,9 @@ using System.Reflection;
 
 namespace Denovo.Models
 {
-    public class DescriptiveItem<T> where T : Enum
+    public class DescriptiveEnum<T> where T : Enum
     {
-        public DescriptiveItem(T value)
+        public DescriptiveEnum(T value)
         {
             Value = value;
 
