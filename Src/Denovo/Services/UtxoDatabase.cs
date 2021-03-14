@@ -61,9 +61,16 @@ namespace Denovo.Services
                 return ((Span<byte>)x).SequenceEqual(y);
             }
 
-            public int GetHashCode([DisallowNull] byte[] obj)
+            public int GetHashCode(byte[] key)
             {
-                return HashCode.Combine(obj);
+                Debug.Assert(key != null);
+
+                int hash = 17;
+                foreach (byte b in key)
+                {
+                    hash = (hash * 31) + b.GetHashCode();
+                }
+                return hash;
             }
         }
 
