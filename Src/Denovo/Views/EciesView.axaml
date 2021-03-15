@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Denovo.Views.EciesView"
+             FontSize="14">
+
+  <Design.DataContext>
+    <vm:EciesViewModel/>
+  </Design.DataContext>
+
+  <Grid ColumnDefinitions="*,auto" RowDefinitions="*,auto,*,auto">
+    <TextBox Text="{Binding Input}"
+             Watermark="Message to encrypt"
+             TextWrapping="Wrap"
+             AcceptsReturn="True"
+             Margin="3"
+             Grid.Column="0"
+             Grid.Row="0"/>
+    <ListBox Items="{Binding InputEncodingList}"
+             SelectedItem="{Binding SelectedInputEncoding}"
+             Classes="RadioButtonListBox"
+             Grid.Column="1"
+             Grid.Row="0">
+    </ListBox>
+
+    <TextBox Text="{Binding Key}"
+             Watermark="Key (Base16 pubkey for encryption, Base58 private key for decryption)"
+             Margin="3"
+             Grid.Column="0"
+             Grid.Row="1"/>
+    <ListBox Items="{Binding KeyEncodingList}"
+             SelectedItem="{Binding SelectedKeyEncoding}"
+             Classes="RadioButtonListBox"
+             Grid.Column="1"
+             Grid.Row="1">
+    </ListBox>
+
+    <TextBox Text="{Binding Output}"
+             Watermark="Encrypted message"
+             TextWrapping="Wrap"
+             AcceptsReturn="True"
+             IsReadOnly="True"
+             Margin="3"
+             Grid.Column="0"
+             Grid.Row="2"/>
+    <ListBox Items="{Binding OutputEncodingList}"
+             SelectedItem="{Binding SelectedOutputEncoding}"
+             Classes="RadioButtonListBox"
+             Grid.Column="1"
+             Grid.Row="2">
+    </ListBox>
+
+
+    <StackPanel Orientation="Horizontal" Spacing="3" Grid.Column="0" Grid.Row="3">
+      <Button Content="Decrypt"
+              Command="{Binding Decrypt}"/>
+      <Button Content="Encrypt"
+              Command="{Binding Encrypt}"/>
+      <TextBlock Text="{Binding Error}"/>
+    </StackPanel>
+  </Grid>
+</UserControl>

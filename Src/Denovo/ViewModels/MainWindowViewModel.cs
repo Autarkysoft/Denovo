@@ -142,6 +142,12 @@ namespace Denovo.ViewModels
             vm.StopMining();
         }
 
+        public async void OpenEcies()
+        {
+            var vm = new EciesViewModel();
+            await WinMan.ShowDialog(vm);
+        }
+
         private Node _selNode;
         public Node SelectedNode
         {
