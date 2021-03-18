@@ -168,7 +168,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 wPt[2] = (uint)((dPt[72] << 24) | (dPt[73] << 16) | (dPt[74] << 8) | dPt[75]);
                 wPt[3] = (uint)((dPt[76] << 24) | (dPt[77] << 16) | (dPt[78] << 8) | dPt[79]);
                 // 8 byte of nonce
-                wPt[4] = (uint)(nonce >> 24);
+                wPt[4] = (uint)(nonce >> 32);
                 wPt[5] = (uint)nonce;
                 wPt[6] = 0b10000000_00000000_00000000_00000000U;
                 wPt[7] = 0;

@@ -53,6 +53,31 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             Assert.Throws<ObjectDisposedException>(() => sha.ComputeChecksum(new byte[0]));
         }
 
+        [Fact]
+        public void ComputeShortIdKeyTest()
+        {
+            // A priliminary test making sure the method works as we think it should.
+            // This will be replaced when we find out some examples of ShortTxIds!
+            using Sha256 sha = new Sha256();
+            var rand = new Random();
+            Span<byte> data = new byte[88];
+            rand.NextBytes(data);
+
+            ulong nonce = data[87]
+                         | ((ulong)data[86] << 8)
+                         | ((ulong)data[85] << 16)
+                         | ((ulong)data[84] << 24)
+                         | ((ulong)data[83] << 32)
+                         | ((ulong)data[82] << 40)
+                         | ((ulong)data[81] << 48)
+                         | ((ulong)data[80] << 56);
+
+            byte[] actual = sha.ComputeShortIdKey(data.Slice(0, 80).ToArray(), nonce);
+            byte[] expected = ((Span<byte>)sha.ComputeHash(data.ToArray())).Slice(0, 16).ToArray();
+
+            Assert.Equal(expected, actual);
+        }
+
         [Theory]
         [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHashTest(byte[] message, byte[] expectedHash)
