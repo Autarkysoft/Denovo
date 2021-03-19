@@ -76,6 +76,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// </summary>
         public bool StrictNumberEncoding { get; set; }
 
+
+        /// <inheritdoc/>
+        public void Init()
+        {
+            TotalSigOpCount = 0;
+            TotalFee = 0;
+            AnySegWit = false;
+        }
+
         /// <inheritdoc/>
         public bool VerifyCoinbasePrimary(ITransaction coinbase, out string error)
         {

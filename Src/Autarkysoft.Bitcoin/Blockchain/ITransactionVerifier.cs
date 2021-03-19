@@ -14,7 +14,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public interface ITransactionVerifier
     {
         /// <summary>
-        /// Returns the <see cref="IUtxoDatabase"/> instance used by this <see cref="ITransactionVerifier"/>.
+        /// Returns the <see cref="IUtxoDatabase"/> instance used by this instance.
         /// </summary>
         IUtxoDatabase UtxoDb { get; }
         /// <summary>
@@ -33,6 +33,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// </summary>
         bool AnySegWit { get; set; }
 
+        /// <summary>
+        /// Initializes this instance's properties to their default values.
+        /// </summary>
+        void Init();
         /// <summary>
         /// Performs primary checks (1-of-2) on the coinbase transactions (input/output, adds SigOp count)
         /// </summary>

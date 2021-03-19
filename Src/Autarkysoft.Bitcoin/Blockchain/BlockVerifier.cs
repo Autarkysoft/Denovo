@@ -82,7 +82,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            txVer.TotalSigOpCount = 0;
+            txVer.Init();
+
             ITransaction coinbase = block.TransactionList[0];
             if (!txVer.VerifyCoinbasePrimary(coinbase, out error))
             {
@@ -154,6 +155,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 witPubScr[5] = 0xed;
                 Buffer.BlockCopy(root, 0, witPubScr, 6, 32);
 
+                // Script data size is already checked when commitPos was found and is bigger than min length.
                 if (!((ReadOnlySpan<byte>)coinbase.TxOutList[commitPos].PubScript.Data)
                       .Slice(0, Constants.MinWitnessCommitmentLen)
                       .SequenceEqual(witPubScr))
