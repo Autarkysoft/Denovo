@@ -113,13 +113,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
             // TODO: investigate if this can become deterministic (it can't be based on message or pubkey
             //       otherwise the ephemeral key is revealed)
-            PrivateKey ephemeral = new PrivateKey(new SharpRandom());
+            using SharpRandom rng = new SharpRandom();
+            using PrivateKey ephemeral = new PrivateKey(rng);
 
             byte[] ecdhKey = new PublicKey(calc.Multiply(ephemeral.ToBigInt(), point)).ToByteArray(true);
             using Sha512 sha512 = new Sha512();
             byte[] key = sha512.ComputeHash(ecdhKey);
 
-            Aes aes = new AesManaged
+            using Aes aes = new AesManaged
             {
                 KeySize = 128,
                 Key = key.SubArray(16, 16),

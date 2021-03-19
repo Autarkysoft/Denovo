@@ -370,7 +370,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
             byte[] ecdhKey = new PublicKey(calc.Multiply(ToBigInt(), ephemeralPubkey.ToPoint())).ToByteArray(true);
 
-            var key = new Sha512().ComputeHash(ecdhKey);
+            using Sha512 sha512 = new Sha512();
+            var key = sha512.ComputeHash(ecdhKey);
 
             using HmacSha256 hmac = new HmacSha256();
             Span<byte> actualMac = hmac.ComputeHash(encBytes.SubArray(0, encBytes.Length - 32), key.SubArray(32));
@@ -379,7 +380,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 throw new FormatException("Invalid MAC.");
             }
 
-            Aes aes = new AesManaged
+            using Aes aes = new AesManaged
             {
                 KeySize = 128,
                 Key = key.SubArray(16, 16),
