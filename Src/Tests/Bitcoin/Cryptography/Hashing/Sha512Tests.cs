@@ -62,11 +62,21 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_DoubleTest()
         {
-            using Sha512 sha = new Sha512(true);
+            using Sha512 sha = new Sha512();
             var data = Helper.HexToBytes("fb8049137747e712628240cf6d7056ea2870170cb7d9bc713d91e901b514c6ae7d7dda3cd03ea1b99cf85046a505f3590541123d3f8f2c22c4d7d6e65de65c4ebb9251f09619");
-            byte[] actualHash = sha.ComputeHash(data);
+            byte[] actualHash = sha.ComputeHashTwice(data);
             byte[] expectedHash = Helper.HexToBytes("00920ac1123d211929f0ef40d0ab3775abc987c606219301eb5995ff1053043a3c24906e88a74e4b2d6e1f6aa830a4f8b7e5e6edb7d090d37033abe45153a8e2");
 
+            Assert.Equal(expectedHash, actualHash);
+        }
+
+        [Theory]
+        [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA512", MemberType = typeof(HashTestCaseHelper))]
+        public void ComputeHashTwiceTest(byte[] message, byte[] expectedHash)
+        {
+            using Sha512 sha = new Sha512();
+            byte[] actualHash = sha.ComputeHashTwice(message);
+            expectedHash = sha.ComputeHash(expectedHash);
             Assert.Equal(expectedHash, actualHash);
         }
 
@@ -92,7 +102,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetNistShortCases), parameters: "Sha512", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistShortTest(byte[] message, byte[] expected)
         {
-            using Sha512 sha = new Sha512(false);
+            using Sha512 sha = new Sha512();
             byte[] actual = sha.ComputeHash(message);
             Assert.Equal(expected, actual);
         }
@@ -101,7 +111,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetNistLongCases), parameters: "Sha512", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistLongTest(byte[] message, byte[] expected)
         {
-            using Sha512 sha = new Sha512(false);
+            using Sha512 sha = new Sha512();
             byte[] actual = sha.ComputeHash(message);
             Assert.Equal(expected, actual);
         }
@@ -119,7 +129,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] M1 = seed;
             byte[] M2 = seed;
 
-            using Sha512 sha = new Sha512(false);
+            using Sha512 sha = new Sha512();
 
             foreach (var item in jObjs["MonteCarlo"])
             {

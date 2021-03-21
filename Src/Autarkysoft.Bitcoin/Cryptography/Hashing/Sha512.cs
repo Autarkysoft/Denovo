@@ -11,37 +11,26 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// <summary>
     /// Implementation of 512-bit Secure Hash Algorithm (SHA) based on RFC-6234.
     /// <para/>Implements <see cref="IDisposable"/>.
-    /// <para/> https://tools.ietf.org/html/rfc6234
+    /// <para/>https://tools.ietf.org/html/rfc6234
     /// </summary>
     public sealed class Sha512 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Sha512"/>.
         /// </summary>
-        /// <param name="isDouble">Determines whether the hash should be performed twice.</param>
-        public Sha512(bool isDouble = false)
+        public Sha512()
         {
-            IsDouble = isDouble;
         }
 
-
-
-        /// <summary>
-        /// Indicates whether the hash function should be performed twice on message.
-        /// For example Double SHA256 that bitcoin uses.
-        /// </summary>
-        [Obsolete("IsDouble will be removed soon, use ComputeHashTwice() instead")]
-        public bool IsDouble { get; set; }
 
         /// <summary>
         /// Size of the hash result in bytes (=64 bytes).
         /// </summary>
         public const int HashByteSize = 64;
-
         /// <summary>
         /// Size of the blocks used in each round (=128 bytes).
         /// </summary>
-        public int BlockByteSize => 128;
+        public const int BlockByteSize = 128;
 
 
         internal ulong[] hashState = new ulong[8];
@@ -72,7 +61,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         };
 
 
-
         /// <summary>
         /// Computes the hash value for the specified byte array.
         /// </summary>
@@ -80,18 +68,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public byte[] ComputeHash(byte[] data)
+        public unsafe byte[] ComputeHash(byte[] data)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
-            Init();
+            fixed (byte* dPt = data)
+            fixed (ulong* hPt = &hashState[0], wPt = &w[0])
+            {
+                Init(hPt);
+                CompressData(dPt, data.Length, data.Length, hPt, wPt);
 
-            DoHash(data, data.Length);
-
-            return GetBytes();
+                return GetBytes(hPt);
+            }
         }
 
 
@@ -99,15 +90,59 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// Computes the hash value for the specified region of the specified byte array.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="IndexOutOfRangeException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="buffer">The byte array to compute hash for</param>
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash</returns>
-        public byte[] ComputeHash(byte[] buffer, int offset, int count)
+        public unsafe byte[] ComputeHash(byte[] buffer, int offset, int count)
         {
-            return ComputeHash(buffer.SubArray(offset, count));
+            if (isDisposed)
+                throw new ObjectDisposedException("Instance was disposed.");
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer), "Data can not be null.");
+            if (offset < 0 || count < 0)
+                throw new IndexOutOfRangeException("Offset or count can not be negative.");
+            if (buffer.Length != 0 && offset > buffer.Length - 1 || buffer.Length == 0 && offset != 0)
+                throw new IndexOutOfRangeException("Index can not be bigger than array length.");
+            if (count > buffer.Length - offset)
+                throw new IndexOutOfRangeException("Array is not long enough.");
+
+            fixed (byte* dPt = &buffer[offset])
+            fixed (ulong* hPt = &hashState[0], wPt = &w[0])
+            {
+                Init(hPt);
+                CompressData(dPt, count, count, hPt, wPt);
+
+                return GetBytes(hPt);
+            }
+        }
+
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array twice (hash of hash).
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ObjectDisposedException"/>
+        /// <param name="data">The byte array to compute hash for</param>
+        /// <returns>The computed hash</returns>
+        public unsafe byte[] ComputeHashTwice(byte[] data)
+        {
+            if (isDisposed)
+                throw new ObjectDisposedException("Instance was disposed.");
+            if (data == null)
+                throw new ArgumentNullException(nameof(data), "Data can not be null.");
+
+            fixed (byte* dPt = data)
+            fixed (ulong* hPt = &hashState[0], wPt = &w[0])
+            {
+                Init(hPt);
+                CompressData(dPt, data.Length, data.Length, hPt, wPt);
+                ComputeSecondHash(hPt, wPt);
+
+                return GetBytes(hPt);
+            }
         }
 
 
@@ -143,7 +178,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe byte[] GetBytes(ulong* hPt)
         {
-            return new byte[64]
+            return new byte[HashByteSize]
             {
                 (byte)(hPt[0] >> 56), (byte)(hPt[0] >> 48), (byte)(hPt[0] >> 40), (byte)(hPt[0] >> 32),
                 (byte)(hPt[0] >> 24), (byte)(hPt[0] >> 16), (byte)(hPt[0] >> 8), (byte)hPt[0],
@@ -172,16 +207,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
 
-        internal unsafe void DoHash(byte[] data, int len)
+        internal unsafe void CompressData(byte* dPt, int dataLen, int totalLen, ulong* hPt, ulong* wPt)
         {
-            byte[] finalBlock = new byte[128];
+            Span<byte> finalBlock = stackalloc byte[BlockByteSize];
 
-            fixed (byte* dPt = data, fPt = &finalBlock[0]) // If data.Length == 0 => &data[0] will throw an exception
-            fixed (ulong* hPt = &hashState[0], wPt = &w[0])
+            fixed (byte* fPt = &finalBlock[0])
             {
-                int remainingBytes = data.Length;
                 int dIndex = 0;
-                while (remainingBytes >= BlockByteSize)
+                while (dataLen >= BlockByteSize)
                 {
                     for (int i = 0; i < 16; i++, dIndex += 8)
                     {
@@ -198,16 +231,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
                     CompressBlock(hPt, wPt);
 
-                    remainingBytes -= BlockByteSize;
+                    dataLen -= BlockByteSize;
                 }
 
                 // Copy the reamaining bytes into a blockSize length buffer so that we can loop through it easily:
-                Buffer.BlockCopy(data, data.Length - remainingBytes, finalBlock, 0, remainingBytes);
+                Buffer.MemoryCopy(dPt + dIndex, fPt, finalBlock.Length, dataLen);
 
                 // Append 1 bit followed by zeros. Since we only work with bytes, this is 1 whole byte
-                fPt[remainingBytes] = 0b1000_0000;
+                fPt[dataLen] = 0b1000_0000;
 
-                if (remainingBytes >= 112) // blockSize - pad2.Len = 128 - 16
+                if (dataLen >= 112) // blockSize - pad2.Len = 128 - 16
                 {
                     // This means we have an additional block to compress, which we do it here:
 
@@ -227,19 +260,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     CompressBlock(hPt, wPt);
 
                     // Zero out all the items in FinalBlock so it can be reused
-                    for (int i = 0; i < 16; i++)
-                    {
-                        ((ulong*)fPt)[i] = 0;
-                    }
+                    finalBlock.Clear();
                 }
 
                 // Add length in bits as the last 16 bytes of final block in big-endian order
                 // See MessageLengthTest in SHA256 Test project to understand what the following shifts are
-                fPt[127] = (byte)(len << 3);
-                fPt[126] = (byte)(len >> 5);
-                fPt[125] = (byte)(len >> 13);
-                fPt[124] = (byte)(len >> 21);
-                fPt[123] = (byte)(len >> 29);
+                fPt[127] = (byte)(totalLen << 3);
+                fPt[126] = (byte)(totalLen >> 5);
+                fPt[125] = (byte)(totalLen >> 13);
+                fPt[124] = (byte)(totalLen >> 21);
+                fPt[123] = (byte)(totalLen >> 29);
                 // The remainig 11 bytes are always zero
                 // The remaining 112 bytes are already set
 
@@ -257,12 +287,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 }
 
                 CompressBlock(hPt, wPt);
-
-
-                if (IsDouble)
-                {
-                    ComputeSecondHash(hPt, wPt);
-                }
             }
         }
 
@@ -293,7 +317,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
             // We only have 1 block so there is no need for a loop.
             CompressBlock(hPt, wPt);
-
         }
 
 

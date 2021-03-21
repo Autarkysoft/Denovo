@@ -65,7 +65,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     throw new ArgumentNullException("Key can not be null.");
 
 
-                if (value.Length > hashFunc.BlockByteSize)
+                if (value.Length > Sha512.BlockByteSize)
                 {
                     _keyValue = hashFunc.ComputeHash(value);
                 }
@@ -78,8 +78,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 {
                     // In order to set pads we have to XOR key with pad values. 
                     // Since we don't know the length of the key, it is harder to loop using UInt32 so we use 2 temp pad bytes:
-                    byte[] opadB = new byte[hashFunc.BlockByteSize];
-                    byte[] ipadB = new byte[hashFunc.BlockByteSize];
+                    byte[] opadB = new byte[Sha512.BlockByteSize];
+                    byte[] ipadB = new byte[Sha512.BlockByteSize];
 
                     // Note (kp = _keyValue) can't assign to first item because key might be empty array which will throw an excpetion
                     fixed (byte* kp = _keyValue, temp_opB = &opadB[0], temp_ipB = &ipadB[0])
@@ -146,13 +146,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 throw new ArgumentNullException(nameof(key), "Key can not be null.");
 
 
+            fixed (byte* kPt = key, dPt = data)
             fixed (ulong* oPt = &opad[0], iPt = &ipad[0])
             fixed (ulong* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
-                if (key.Length > hashFunc.BlockByteSize)
+                if (key.Length > Sha512.BlockByteSize)
                 {
                     hashFunc.Init(hPt);
-                    hashFunc.DoHash(key, key.Length);
+                    hashFunc.CompressData(kPt, key.Length, key.Length, hPt, wPt);
 
                     for (int i = 0; i < 8; i++) // 8 items in HashState = 8*8 = 64 byte
                     {
@@ -167,7 +168,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 }
                 else
                 {
-                    byte[] temp = new byte[hashFunc.BlockByteSize];
+                    byte[] temp = new byte[Sha512.BlockByteSize];
                     Buffer.BlockCopy(key, 0, temp, 0, key.Length);
                     fixed (byte* tPt = &temp[0])
                     {
@@ -197,10 +198,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 // 1. Compute SHA512(inner_pad | data)
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, iPt);
-                hashFunc.DoHash(data, data.Length + 128); // len + hashFunc.BlockByteSize
+                // Total data length is len + hashFunc.BlockByteSize
+                hashFunc.CompressData(dPt, data.Length, data.Length + Sha512.BlockByteSize, hPt, wPt);
 
                 // 2. Compute SHA512(outer_pad | hash)
-                Buffer.BlockCopy(hashFunc.hashState, 0, hashFunc.w, 0, 64); // 64 bytes copied
+                // Copy 64 bytes and fill unto index 7 in wPt
+                *(Block64*)wPt = *(Block64*)hPt;
                 wPt[8] = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000UL; // 1 followed by 0 bits: pad1
                 wPt[9] = 0;
                 wPt[10] = 0;
@@ -239,6 +242,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
             // Pads are already set
+            fixed (byte* dPt = data)
             fixed (ulong* oPt = &opad[0], iPt = &ipad[0])
             fixed (ulong* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
@@ -247,10 +251,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 // 1. Compute SHA512(inner_pad | data)
                 hashFunc.Init(hPt);
                 hashFunc.CompressBlock(hPt, iPt);
-                hashFunc.DoHash(data, data.Length + 128); // len + hashFunc.BlockByteSize
+                // Total data length is len + hashFunc.BlockByteSize
+                hashFunc.CompressData(dPt, data.Length, data.Length + Sha512.BlockByteSize, hPt, wPt);
 
                 // 2. Compute SHA512(outer_pad | hash)
-                Buffer.BlockCopy(hashFunc.hashState, 0, hashFunc.w, 0, 64); // 64 bytes is upto index 7
+                // Copy 64 bytes and fill unto index 7 in wPt
+                *(Block64*)wPt = *(Block64*)hPt;
                 wPt[8] = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000UL; // 1 followed by 0 bits: pad1
                 wPt[9] = 0;
                 wPt[10] = 0;
