@@ -176,8 +176,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 hashFunc.CompressData(dPt, data.Length, data.Length + 64, hPt, wPt);
 
                 // 2. Compute SHA256(outer_pad | hash)
-                Buffer.MemoryCopy(hPt, wPt, 256, 32);
-                // Copied 32 byte is upto index 7
+                // Copy 32 byte2 and fill unto index 7 in wPt
+                *(Block32*)wPt = *(Block32*)hPt;
                 wPt[8] = 0b10000000_00000000_00000000_00000000U; // 1 followed by 0 bits to fill pad1
                 wPt[9] = 0;
                 wPt[10] = 0;
@@ -229,7 +229,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 hashFunc.CompressData(dPt, data.Length, data.Length + 64, hPt, wPt);
 
                 // 2. Compute SHA256(outer_pad | hash)
-                Buffer.BlockCopy(hashFunc.hashState, 0, hashFunc.w, 0, 32); // 32 byte is upto index 7
+                // Copy 32 byte2 and fill unto index 7 in wPt
+                *(Block32*)wPt = *(Block32*)hPt;
                 wPt[8] = 0b10000000_00000000_00000000_00000000U; // 1 followed by 0 bits to fill pad1
                 wPt[9] = 0;
                 wPt[10] = 0;
