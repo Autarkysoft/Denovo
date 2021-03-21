@@ -453,9 +453,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash</returns>
-        public byte[] ComputeHash(byte[] buffer, int offset, int count)
+        public unsafe byte[] ComputeHash(byte[] buffer, int offset, int count)
         {
-            return ComputeHash(buffer.SubArray(offset, count));
+            if (isDisposed)
+                throw new ObjectDisposedException("Instance was disposed.");
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer), "Data can not be null.");
+            if (offset < 0 || count < 0)
+                throw new IndexOutOfRangeException("Offset or count can not be negative.");
+            if (buffer.Length != 0 && offset > buffer.Length - 1 || buffer.Length == 0 && offset != 0)
+                throw new IndexOutOfRangeException("Index can not be bigger than array length.");
+            if (count > buffer.Length - offset)
+                throw new IndexOutOfRangeException("Array is not long enough.");
+
+            fixed (byte* dPt = &buffer[offset])
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                Init(hPt);
+                CompressData(dPt, count, count, hPt, wPt);
+
+                return GetBytes(hPt);
+            }
         }
 
 
