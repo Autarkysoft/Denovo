@@ -36,6 +36,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Initializes a new instance of <see cref="ClientSettings"/> with the given parameters.
         /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
         /// <param name="listen">True to open a listening socket; false otherwise</param>
         /// <param name="netType">Network type</param>
         /// <param name="servs">Services supported by this node</param>
@@ -71,13 +73,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             int totalBytes = BufferLength * MaxConnectionCount * 2;
             MaxConnectionEnforcer = new Semaphore(MaxConnectionCount, MaxConnectionCount);
             SendReceivePool = new SocketAsyncEventArgsPool(MaxConnectionCount * 2);
-            // TODO: bufferMan is not needed and we should use Memory<byte> instead of byte[]
-            var buffMan = new BufferManager(totalBytes, BufferLength);
-
+            // TODO: can Memory<byte> be used here instead of byte[]?
+            byte[] bufferBlock = new byte[totalBytes];
             for (int i = 0; i < MaxConnectionCount * 2; i++)
             {
                 var sArg = new SocketAsyncEventArgs();
-                buffMan.SetBuffer(sArg);
+                sArg.SetBuffer(bufferBlock, i * BufferLength, BufferLength);
                 SendReceivePool.Push(sArg);
             }
 
