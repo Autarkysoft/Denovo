@@ -37,8 +37,18 @@ namespace Tests.Bitcoin.Encoders
             Assert.False(Base16.IsValid(hex));
         }
 
+        [Fact]
+        public void TryDecodeTest()
+        {
+            // DecodeTest is testing TryDecode by calling Decode
+            bool b = Base16.TryDecode("foo", out byte[] result);
+            Assert.False(b);
+            Assert.Null(result);
+        }
+
         [Theory]
         [InlineData(new byte[] { }, "")]
+        [InlineData(new byte[] { }, "0x")]
         [InlineData(new byte[] { 0 }, "00")]
         [InlineData(new byte[] { 0, 0 }, "0000")]
         [InlineData(new byte[] { 16, 42, 255 }, "102aff")]
@@ -75,7 +85,7 @@ namespace Tests.Bitcoin.Encoders
         public void Encode_AllCharsTest()
         {
             byte[] allHexChars = new byte[256];
-            StringBuilder sb = new StringBuilder(256 * 2);
+            var sb = new StringBuilder(256 * 2);
             for (int i = 0; i < 256; i++)
             {
                 allHexChars[i] = (byte)i;
@@ -90,6 +100,5 @@ namespace Tests.Bitcoin.Encoders
         {
             Assert.Throws<ArgumentNullException>(() => Base16.Encode(null));
         }
-
     }
 }
