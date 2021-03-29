@@ -25,7 +25,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// </summary>
         public BIP0038()
         {
-            b58enc = new Base58();
             addressMaker = new Address();
             scrypt = new Scrypt(16384, 8, 8);
             hash = new Sha256();
@@ -44,7 +43,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private const int EncodedLength = 39;
         private readonly byte[] prefix = { 0x01, 0x42 };
         private readonly byte[] prefix_ECMultiplied = { 0x01, 0x43 };
-        private readonly Base58 b58enc;
         private readonly Address addressMaker;
         private Scrypt scrypt;
         private Aes aes;
@@ -98,7 +96,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(password), "Password can not be null.");
 
 
-            byte[] encryptedBytes = b58enc.DecodeWithCheckSum(encrypted);
+            byte[] encryptedBytes = Base58.DecodeWithCheckSum(encrypted);
             if (encryptedBytes.Length != EncodedLength)
             {
                 throw new FormatException("Invalid encrypted bytes length.");
@@ -200,7 +198,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             stream.Write(salt);
             stream.Write(encryptedResult);
 
-            return b58enc.EncodeWithCheckSum(stream.ToByteArray());
+            return Base58.EncodeWithCheckSum(stream.ToByteArray());
         }
 
         private byte[] XOR(byte[] first, byte[] second)

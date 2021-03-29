@@ -101,7 +101,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(extendedKey), "Extended key can not be null or empty.");
 
 
-            byte[] decoded = b58Encoder.DecodeWithCheckSum(extendedKey);
+            byte[] decoded = Base58.DecodeWithCheckSum(extendedKey);
             if (decoded.Length != ExtendedKeyLength)
             {
                 throw new FormatException($"Extended key length should be {ExtendedKeyLength} bytes " +
@@ -180,7 +180,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private readonly byte[] MasterKeyHashKey = Encoding.UTF8.GetBytes("Bitcoin seed");
 
         private HmacSha512 hmac = new HmacSha512();
-        private Base58 b58Encoder = new Base58();
 
         private byte ExtendedKeyDepth;
         internal byte[] ParentFingerPrint;
@@ -452,7 +451,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.Write(PrvKey.ToBytes());
             }
 
-            return b58Encoder.EncodeWithCheckSum(stream.ToByteArray());
+            return Base58.EncodeWithCheckSum(stream.ToByteArray());
         }
 
 
@@ -492,8 +491,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                     if (ChildNumber != null)
                         Array.Clear(ChildNumber, 0, ChildNumber.Length);
                     ChildNumber = null;
-
-                    b58Encoder = null;
                 }
 
                 isDisposed = true;

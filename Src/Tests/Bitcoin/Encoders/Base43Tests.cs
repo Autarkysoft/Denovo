@@ -12,13 +12,14 @@ namespace Tests.Bitcoin.Encoders
 {
     public class Base43Tests
     {
-        private readonly Base43 encoder = new Base43();
-
-
-        [Fact]
-        public void HasValidCharsTest()
+        [Theory]
+        [InlineData("A")]
+        [InlineData("123")]
+        [InlineData("123ABC")]
+        [InlineData("123ABC$*+-./:")]
+        public void IsValidTest(string b43)
         {
-            Assert.True(encoder.HasValidChars("A"));
+            Assert.True(Base43.IsValid(b43));
         }
 
         public static IEnumerable<object[]> GetInvalidCases()
@@ -29,18 +30,12 @@ namespace Tests.Bitcoin.Encoders
             yield return new object[] { "123 4" };
             yield return new object[] { "a" };
         }
+
         [Theory]
         [MemberData(nameof(GetInvalidCases))]
-        public void HasValidChars_FailTest(string invalid)
+        public void IsValid_FailTest(string invalid)
         {
-            Assert.False(encoder.HasValidChars(invalid));
-        }
-
-        [Fact]
-        public void IsValidTest()
-        {
-            // Fails because of checksum
-            Assert.False(encoder.IsValid("A"));
+            Assert.False(Base43.IsValid(invalid));
         }
 
 
@@ -68,7 +63,7 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetEncodeDecodeCases))]
         public void DecodeTest(byte[] expected, string encoded)
         {
-            byte[] actual = encoder.Decode(encoded);
+            byte[] actual = Base43.Decode(encoded);
             Assert.Equal(expected, actual);
         }
 
@@ -76,7 +71,7 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetInvalidCases))]
         public void Decode_ExceptionTest(string invalid)
         {
-            Exception ex = Assert.Throws<FormatException>(() => encoder.Decode(invalid));
+            Exception ex = Assert.Throws<FormatException>(() => Base43.Decode(invalid));
             Assert.Contains("Input is not a valid Base-43 encoded string.", ex.Message);
         }
 
@@ -84,15 +79,14 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetEncodeDecodeCases))]
         public void EncodeTest(byte[] data, string expected)
         {
-            string actual = encoder.Encode(data);
+            string actual = Base43.Encode(data);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void Encode_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => encoder.Encode(null));
+            Assert.Throws<ArgumentNullException>(() => Base43.Encode(null));
         }
-
     }
 }

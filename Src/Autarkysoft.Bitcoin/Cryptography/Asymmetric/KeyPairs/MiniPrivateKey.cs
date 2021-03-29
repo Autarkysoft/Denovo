@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
+using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.Linq;
 using System.Text;
@@ -33,7 +34,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             byte[] tempBa = new byte[32 + 1];
             rng.GetBytes(tempBa);
             tempBa[0] = GetWifFirstByte(NetworkType.MainNet);
-            string b58 = 'S' + b58Encoder.EncodeWithCheckSum(tempBa).Replace("1", "").Substring(4, 29);
+            string b58 = 'S' + Base58.EncodeWithCheckSum(tempBa).Replace("1", "").Substring(4, 29);
 
             char[] chars = b58.ToCharArray();
             char[] charstest = (b58 + "?").ToCharArray();

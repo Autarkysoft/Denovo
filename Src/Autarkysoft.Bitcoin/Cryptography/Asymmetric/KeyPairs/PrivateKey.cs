@@ -105,7 +105,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 throw new ArgumentNullException(nameof(wif), "Input WIF can not be null or empty.");
 
 
-            byte[] ba = b58Encoder.DecodeWithCheckSum(wif);
+            byte[] ba = Base58.DecodeWithCheckSum(wif);
             if (ba[0] != GetWifFirstByte(netType))
             {
                 throw new FormatException("Invalid first byte.");
@@ -132,10 +132,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
 
 
-        /// <summary>
-        /// Base-58 encoder to convert byte arrays to WIF.
-        /// </summary>
-        protected readonly Base58 b58Encoder = new Base58();
         private readonly EllipticCurveCalculator calc = new EllipticCurveCalculator();
         private readonly BigInteger minValue = BigInteger.One;
         // Curve.N - 1
@@ -265,7 +261,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 data[^1] = CompressedByte;
             }
 
-            return b58Encoder.EncodeWithCheckSum(data);
+            return Base58.EncodeWithCheckSum(data);
         }
 
 

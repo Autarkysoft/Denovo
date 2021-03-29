@@ -12,7 +12,6 @@ namespace Tests.Bitcoin.Encoders
 {
     public class Base58Tests
     {
-        private readonly Base58 encoder = new Base58();
         // Encode with checksum of empty bytes (byte[0]) is the following:
         private const string Empty58 = "3QJmnh";
         private const string Empty16 = "5df6e0e2";
@@ -28,7 +27,7 @@ namespace Tests.Bitcoin.Encoders
         [InlineData("abc%d", false)]
         public void HasValidCharsTest(string s, bool expected)
         {
-            Assert.Equal(expected, encoder.HasValidChars(s));
+            Assert.Equal(expected, Base58.IsValid(s));
         }
 
         [Theory]
@@ -39,7 +38,7 @@ namespace Tests.Bitcoin.Encoders
         [InlineData("1BvBMSOYstWetqTFn5Au4m4GFg7xJaNVN2", false)] // Invalid char
         public void IsValidTest(string s, bool expected)
         {
-            Assert.Equal(expected, encoder.IsValid(s));
+            Assert.Equal(expected, Base58.IsValidWithChecksum(s));
         }
 
         // Test cases are from:
@@ -107,14 +106,14 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetDecodeCases))]
         public void DecodeTest(string s, byte[] expected)
         {
-            byte[] actual = encoder.Decode(s);
+            byte[] actual = Base58.Decode(s);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void Decode_EmptyBytesTest()
         {
-            byte[] actual = encoder.Decode(Empty58);
+            byte[] actual = Base58.Decode(Empty58);
             byte[] expected = Helper.HexToBytes(Empty16);
 
             Assert.Equal(expected, actual);
@@ -123,7 +122,7 @@ namespace Tests.Bitcoin.Encoders
         [Fact]
         public void Decode_ExceptionTest()
         {
-            Exception ex = Assert.Throws<FormatException>(() => encoder.Decode("I"));
+            Exception ex = Assert.Throws<FormatException>(() => Base58.Decode("I"));
             Assert.Contains("Input is not a valid Base-58 encoded string", ex.Message);
         }
 
@@ -133,7 +132,7 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetDecodeChecksumCases))]
         public void DecodeWithCheckSumTest(string s, byte[] expected)
         {
-            byte[] actual = encoder.DecodeWithCheckSum(s);
+            byte[] actual = Base58.DecodeWithCheckSum(s);
             Assert.Equal(expected, actual);
         }
 
@@ -145,7 +144,7 @@ namespace Tests.Bitcoin.Encoders
         [InlineData("1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAa", "Invalid checksum.")]
         public void DecodeWithCheckSum_ExceptionTest(string s, string expErrMsg)
         {
-            Exception ex = Assert.Throws<FormatException>(() => encoder.DecodeWithCheckSum(s));
+            Exception ex = Assert.Throws<FormatException>(() => Base58.DecodeWithCheckSum(s));
             Assert.Contains(expErrMsg, ex.Message);
         }
 
@@ -154,14 +153,14 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetDecodeCases))]
         public void EncodeTest(string expected, byte[] data)
         {
-            string actual = encoder.Encode(data);
+            string actual = Base58.Encode(data);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void Encode_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => encoder.Encode(null));
+            Assert.Throws<ArgumentNullException>(() => Base58.Encode(null));
         }
 
 
@@ -169,14 +168,14 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetDecodeChecksumCases))]
         public void EncodeWithCheckSumTest(string expected, byte[] data)
         {
-            string actual = encoder.EncodeWithCheckSum(data);
+            string actual = Base58.EncodeWithCheckSum(data);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void EncodeWithCheckSum_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => encoder.EncodeWithCheckSum(null));
+            Assert.Throws<ArgumentNullException>(() => Base58.EncodeWithCheckSum(null));
         }
 
     }

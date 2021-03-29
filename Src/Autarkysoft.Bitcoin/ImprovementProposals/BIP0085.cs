@@ -155,7 +155,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             stream.Write((byte)0);
             stream.Write(b64.Slice(32, 32).ToArray());
 
-            return new Base58().EncodeWithCheckSum(stream.ToByteArray());
+            return Base58.EncodeWithCheckSum(stream.ToByteArray());
         }
 
         /// <summary>

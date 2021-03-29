@@ -24,7 +24,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private const byte TestNetByte = 239;
         private const byte RegTestByte = 239;
         private const byte CompressedByte = 1;
-        private readonly Base58 b58Encoder = new Base58();
 
         /// <summary>
         /// The suffix appended to the end of the private key bytes to indicate the type of address that should be
@@ -108,7 +107,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (string.IsNullOrEmpty(versionedWif))
                 throw new ArgumentNullException(nameof(versionedWif), "Input WIF can not be null or empty.");
 
-            byte[] ba = b58Encoder.DecodeWithCheckSum(versionedWif);
+            byte[] ba = Base58.DecodeWithCheckSum(versionedWif);
             if (ba[0] != GetWifFirstByte(netType))
             {
                 throw new FormatException("Invalid first byte.");
@@ -161,7 +160,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (string.IsNullOrEmpty(versionedWif))
                 throw new ArgumentNullException(nameof(versionedWif), "Input WIF can not be null or empty.");
 
-            byte[] ba = b58Encoder.DecodeWithCheckSum(versionedWif);
+            byte[] ba = Base58.DecodeWithCheckSum(versionedWif);
             // Uncompressed with no appended byte to the end
             if (ba.Length == 32 + 1)
             {
@@ -222,7 +221,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             byte firstByte = GetWifFirstByte(netType);
             byte[] ba = key.ToBytes().AppendToBeginning(firstByte).AppendToEnd((byte)ver);
 
-            return b58Encoder.EncodeWithCheckSum(ba);
+            return Base58.EncodeWithCheckSum(ba);
         }
 
         /// <summary>
@@ -248,7 +247,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             byte firstByte = (byte)(GetWifFirstByte(netType) + (byte)ver);
             byte[] ba = key.ToBytes().AppendToBeginning(firstByte).AppendToEnd(CompressedByte);
 
-            return b58Encoder.EncodeWithCheckSum(ba);
+            return Base58.EncodeWithCheckSum(ba);
         }
 
         /// <summary>

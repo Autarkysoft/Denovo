@@ -27,9 +27,6 @@ namespace Autarkysoft.Bitcoin.Encoders
         private const string HrpTestNet = "tb";
         private const string HrpRegTest = "bcrt";
 
-        private readonly Base58 b58Encoder = new Base58();
-
-
 
         /// <summary>
         /// Address type, there are currently 4 defined types
@@ -70,9 +67,9 @@ namespace Autarkysoft.Bitcoin.Encoders
             {
                 return AddressType.Unknown;
             }
-            else if (b58Encoder.IsValid(address))
+            else if (Base58.IsValidWithChecksum(address))
             {
-                byte[] decoded = b58Encoder.DecodeWithCheckSum(address);
+                byte[] decoded = Base58.DecodeWithCheckSum(address);
                 if (decoded.Length == 21)
                 {
                     if ((netType == NetworkType.MainNet && decoded[0] == P2pkhVerMainNet) ||
@@ -145,7 +142,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] data = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed)).AppendToBeginning(ver);
 
-            return b58Encoder.EncodeWithCheckSum(data);
+            return Base58.EncodeWithCheckSum(data);
         }
 
 
@@ -173,7 +170,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] data = hashFunc.ComputeHash(redeem.Data).AppendToBeginning(ver);
 
-            return b58Encoder.EncodeWithCheckSum(data);
+            return Base58.EncodeWithCheckSum(data);
         }
 
 
@@ -316,11 +313,11 @@ namespace Autarkysoft.Bitcoin.Encoders
             switch (scrType)
             {
                 case PubkeyScriptType.P2PKH:
-                    if (!b58Encoder.IsValid(address))
+                    if (!Base58.IsValid(address))
                     {
                         return false;
                     }
-                    byte[] decoded = b58Encoder.DecodeWithCheckSum(address);
+                    byte[] decoded = Base58.DecodeWithCheckSum(address);
                     if (decoded[0] != P2pkhVerMainNet &&
                         decoded[0] != P2pkhVerTestNet &&
                         decoded[0] != P2pkhVerRegTest ||
@@ -332,11 +329,11 @@ namespace Autarkysoft.Bitcoin.Encoders
                     return true;
 
                 case PubkeyScriptType.P2SH:
-                    if (!b58Encoder.IsValid(address))
+                    if (!Base58.IsValidWithChecksum(address))
                     {
                         return false;
                     }
-                    decoded = b58Encoder.DecodeWithCheckSum(address);
+                    decoded = Base58.DecodeWithCheckSum(address);
                     if (decoded[0] != P2shVerMainNet &&
                         decoded[0] != P2shVerTestNet &&
                         decoded[0] != P2shVerRegTest ||
