@@ -28,7 +28,6 @@ namespace Autarkysoft.Bitcoin.Encoders
         private const string HrpRegTest = "bcrt";
 
         private readonly Base58 b58Encoder = new Base58();
-        private readonly Bech32 b32Encoder = new Bech32();
 
 
 
@@ -90,9 +89,9 @@ namespace Autarkysoft.Bitcoin.Encoders
                     }
                 }
             }
-            else if (b32Encoder.IsValid(address))
+            else if (Bech32.IsValid(address, Bech32.Mode.B32))
             {
-                byte[] decoded = b32Encoder.Decode(address, out byte witVer, out string hrp);
+                byte[] decoded = Bech32.Decode(address, Bech32.Mode.B32, out byte witVer, out string hrp);
                 if (witVer == 0)
                 {
                     if (decoded.Length == 20 && (
@@ -210,7 +209,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] hash160 = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed));
 
-            return b32Encoder.Encode(hash160, witVer, hrp);
+            return Bech32.Encode(hash160, Bech32.Mode.B32, witVer, hrp);
         }
 
 
@@ -271,7 +270,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Sha256 witHashFunc = new Sha256();
             byte[] hash = witHashFunc.ComputeHash(script.Data);
 
-            return b32Encoder.Encode(hash, witVer, hrp);
+            return Bech32.Encode(hash, Bech32.Mode.B32, witVer, hrp);
         }
 
 
@@ -349,11 +348,11 @@ namespace Autarkysoft.Bitcoin.Encoders
                     return true;
 
                 case PubkeyScriptType.P2WPKH:
-                    if (!b32Encoder.IsValid(address))
+                    if (!Bech32.IsValid(address, Bech32.Mode.B32))
                     {
                         return false;
                     }
-                    decoded = b32Encoder.Decode(address, out byte witVer, out string hrp);
+                    decoded = Bech32.Decode(address, Bech32.Mode.B32, out byte witVer, out string hrp);
                     if (witVer != 0 || decoded.Length != 20 ||
                         (hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest))
                     {
@@ -363,11 +362,11 @@ namespace Autarkysoft.Bitcoin.Encoders
                     return true;
 
                 case PubkeyScriptType.P2WSH:
-                    if (!b32Encoder.IsValid(address))
+                    if (!Bech32.IsValid(address, Bech32.Mode.B32))
                     {
                         return false;
                     }
-                    decoded = b32Encoder.Decode(address, out witVer, out hrp);
+                    decoded = Bech32.Decode(address, Bech32.Mode.B32, out witVer, out hrp);
                     if (witVer != 0 || decoded.Length != 32 ||
                         (hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest))
                     {

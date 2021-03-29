@@ -14,8 +14,6 @@ namespace Autarkysoft.Bitcoin.Experimental
     /// </summary>
     public class Bech32PrivateKey
     {
-        private readonly Bech32 encoder = new Bech32();
-
         /// <summary>
         /// Type of the script and corresponding address created from the private key
         /// </summary>
@@ -50,7 +48,7 @@ namespace Autarkysoft.Bitcoin.Experimental
         /// <returns>Private key as an array of bytes</returns>
         public byte[] Decode(string bech, out ScriptType scrT, out string hrp, out DateTime creationDate)
         {
-            var data = encoder.Decode(bech, out byte ver, out hrp);
+            var data = Bech32.Decode(bech, Bech32.Mode.B32m, out byte ver, out hrp);
             scrT = (ScriptType)ver;
             creationDate = UnixTimeStamp.EpochToTime(data[32] | 
                                                     (long)data[33] << 8 | 
@@ -83,7 +81,7 @@ namespace Autarkysoft.Bitcoin.Experimental
             data[35] = (byte)(val >> 24);
             data[36] = (byte)(val >> 32);
 
-            return encoder.Encode(data, (byte)scrT, hrp);
+            return Bech32.Encode(data, Bech32.Mode.B32m, (byte)scrT, hrp);
         }
     }
 }
