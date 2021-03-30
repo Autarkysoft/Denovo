@@ -69,7 +69,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             }
             else if (Base58.IsValidWithChecksum(address))
             {
-                byte[] decoded = Base58.DecodeWithCheckSum(address);
+                byte[] decoded = Base58.DecodeWithChecksum(address);
                 if (decoded.Length == 21)
                 {
                     if ((netType == NetworkType.MainNet && decoded[0] == P2pkhVerMainNet) ||
@@ -142,7 +142,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] data = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed)).AppendToBeginning(ver);
 
-            return Base58.EncodeWithCheckSum(data);
+            return Base58.EncodeWithChecksum(data);
         }
 
 
@@ -170,7 +170,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] data = hashFunc.ComputeHash(redeem.Data).AppendToBeginning(ver);
 
-            return Base58.EncodeWithCheckSum(data);
+            return Base58.EncodeWithChecksum(data);
         }
 
 
@@ -317,7 +317,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                     {
                         return false;
                     }
-                    byte[] decoded = Base58.DecodeWithCheckSum(address);
+                    byte[] decoded = Base58.DecodeWithChecksum(address);
                     if (decoded[0] != P2pkhVerMainNet &&
                         decoded[0] != P2pkhVerTestNet &&
                         decoded[0] != P2pkhVerRegTest ||
@@ -333,7 +333,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                     {
                         return false;
                     }
-                    decoded = Base58.DecodeWithCheckSum(address);
+                    decoded = Base58.DecodeWithChecksum(address);
                     if (decoded[0] != P2shVerMainNet &&
                         decoded[0] != P2shVerTestNet &&
                         decoded[0] != P2shVerRegTest ||

@@ -40,7 +40,7 @@ namespace Denovo.ViewModels
                 EncodingNames.Base16 => Base16.Decode(input),
                 EncodingNames.Base43 => Base43.Decode(input),
                 EncodingNames.Base58 => Base58.Decode(input),
-                EncodingNames.Base58Check => Base58.DecodeWithCheckSum(input),
+                EncodingNames.Base58Check => Base58.DecodeWithChecksum(input),
                 EncodingNames.Base64 => Convert.FromBase64String(input),
                 EncodingNames.UTF8 => Encoding.UTF8.GetBytes(input),
                 EncodingNames.Unicode => Encoding.Unicode.GetBytes(input),
@@ -55,7 +55,7 @@ namespace Denovo.ViewModels
                 EncodingNames.Base16 => Base16.Encode(data),
                 EncodingNames.Base43 => Base43.Encode(data),
                 EncodingNames.Base58 => Base58.Encode(data),
-                EncodingNames.Base58Check => Base58.EncodeWithCheckSum(data),
+                EncodingNames.Base58Check => Base58.EncodeWithChecksum(data),
                 EncodingNames.Base64 => Convert.ToBase64String(data),
                 EncodingNames.UTF8 => Encoding.UTF8.GetString(data),
                 EncodingNames.Unicode => Encoding.Unicode.GetString(data),
@@ -179,7 +179,7 @@ namespace Denovo.ViewModels
                 byte[] pubBa = SelectedKeyEncoding switch
                 {
                     EncodingNames.Base16 => Base16.Decode(Key),
-                    EncodingNames.Base58Check => Base58.DecodeWithCheckSum(Key),
+                    EncodingNames.Base58Check => Base58.DecodeWithChecksum(Key),
                     _ => null
                 };
 

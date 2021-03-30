@@ -96,7 +96,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(password), "Password can not be null.");
 
 
-            byte[] encryptedBytes = Base58.DecodeWithCheckSum(encrypted);
+            byte[] encryptedBytes = Base58.DecodeWithChecksum(encrypted);
             if (encryptedBytes.Length != EncodedLength)
             {
                 throw new FormatException("Invalid encrypted bytes length.");
@@ -198,7 +198,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             stream.Write(salt);
             stream.Write(encryptedResult);
 
-            return Base58.EncodeWithCheckSum(stream.ToByteArray());
+            return Base58.EncodeWithChecksum(stream.ToByteArray());
         }
 
         private byte[] XOR(byte[] first, byte[] second)

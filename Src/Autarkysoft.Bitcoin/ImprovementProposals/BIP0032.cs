@@ -101,7 +101,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(extendedKey), "Extended key can not be null or empty.");
 
 
-            byte[] decoded = Base58.DecodeWithCheckSum(extendedKey);
+            byte[] decoded = Base58.DecodeWithChecksum(extendedKey);
             if (decoded.Length != ExtendedKeyLength)
             {
                 throw new FormatException($"Extended key length should be {ExtendedKeyLength} bytes " +
@@ -451,7 +451,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.Write(PrvKey.ToBytes());
             }
 
-            return Base58.EncodeWithCheckSum(stream.ToByteArray());
+            return Base58.EncodeWithChecksum(stream.ToByteArray());
         }
 
 

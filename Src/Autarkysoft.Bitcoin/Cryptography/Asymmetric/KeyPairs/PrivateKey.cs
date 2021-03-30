@@ -105,7 +105,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 throw new ArgumentNullException(nameof(wif), "Input WIF can not be null or empty.");
 
 
-            byte[] ba = Base58.DecodeWithCheckSum(wif);
+            byte[] ba = Base58.DecodeWithChecksum(wif);
             if (ba[0] != GetWifFirstByte(netType))
             {
                 throw new FormatException("Invalid first byte.");
@@ -261,7 +261,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 data[^1] = CompressedByte;
             }
 
-            return Base58.EncodeWithCheckSum(data);
+            return Base58.EncodeWithChecksum(data);
         }
 
 

@@ -107,7 +107,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (string.IsNullOrEmpty(versionedWif))
                 throw new ArgumentNullException(nameof(versionedWif), "Input WIF can not be null or empty.");
 
-            byte[] ba = Base58.DecodeWithCheckSum(versionedWif);
+            byte[] ba = Base58.DecodeWithChecksum(versionedWif);
             if (ba[0] != GetWifFirstByte(netType))
             {
                 throw new FormatException("Invalid first byte.");
@@ -160,7 +160,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (string.IsNullOrEmpty(versionedWif))
                 throw new ArgumentNullException(nameof(versionedWif), "Input WIF can not be null or empty.");
 
-            byte[] ba = Base58.DecodeWithCheckSum(versionedWif);
+            byte[] ba = Base58.DecodeWithChecksum(versionedWif);
             // Uncompressed with no appended byte to the end
             if (ba.Length == 32 + 1)
             {
@@ -221,7 +221,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             byte firstByte = GetWifFirstByte(netType);
             byte[] ba = key.ToBytes().AppendToBeginning(firstByte).AppendToEnd((byte)ver);
 
-            return Base58.EncodeWithCheckSum(ba);
+            return Base58.EncodeWithChecksum(ba);
         }
 
         /// <summary>
@@ -247,7 +247,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             byte firstByte = (byte)(GetWifFirstByte(netType) + (byte)ver);
             byte[] ba = key.ToBytes().AppendToBeginning(firstByte).AppendToEnd(CompressedByte);
 
-            return Base58.EncodeWithCheckSum(ba);
+            return Base58.EncodeWithChecksum(ba);
         }
 
         /// <summary>

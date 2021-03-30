@@ -25,7 +25,7 @@ namespace Tests.Bitcoin.Encoders
         [InlineData("I", false)]
         [InlineData("l", false)]
         [InlineData("abc%d", false)]
-        public void HasValidCharsTest(string s, bool expected)
+        public void HasValidTest(string s, bool expected)
         {
             Assert.Equal(expected, Base58.IsValid(s));
         }
@@ -36,7 +36,7 @@ namespace Tests.Bitcoin.Encoders
         [InlineData("1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2", true)]
         [InlineData("1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVc2", false)] // Invalid checksum
         [InlineData("1BvBMSOYstWetqTFn5Au4m4GFg7xJaNVN2", false)] // Invalid char
-        public void IsValidTest(string s, bool expected)
+        public void IsValidWithChecksumTest(string s, bool expected)
         {
             Assert.Equal(expected, Base58.IsValidWithChecksum(s));
         }
@@ -104,9 +104,28 @@ namespace Tests.Bitcoin.Encoders
 
         [Theory]
         [MemberData(nameof(GetDecodeCases))]
+        public void TryDecodeTest(string s, byte[] expected)
+        {
+            bool b = Base58.TryDecode(s, out byte[] actual);
+            Assert.True(b);
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDecodeCases))]
         public void DecodeTest(string s, byte[] expected)
         {
             byte[] actual = Base58.Decode(s);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void TryDecode_EmptyBytesTest()
+        {
+            bool b = Base58.TryDecode(Empty58, out byte[] actual);
+            byte[] expected = Helper.HexToBytes(Empty16);
+
+            Assert.True(b);
             Assert.Equal(expected, actual);
         }
 
@@ -120,6 +139,14 @@ namespace Tests.Bitcoin.Encoders
         }
 
         [Fact]
+        public void TryDecode_FailTest()
+        {
+            bool b = Base58.TryDecode("I", out byte[] actual);
+            Assert.False(b);
+            Assert.Null(actual);
+        }
+
+        [Fact]
         public void Decode_ExceptionTest()
         {
             Exception ex = Assert.Throws<FormatException>(() => Base58.Decode("I"));
@@ -127,12 +154,20 @@ namespace Tests.Bitcoin.Encoders
         }
 
 
+        [Theory]
+        [MemberData(nameof(GetDecodeChecksumCases))]
+        public void TryDecodeWithChecksumTest(string s, byte[] expected)
+        {
+            bool b = Base58.TryDecodeWithChecksum(s, out byte[] actual);
+            Assert.True(b);
+            Assert.Equal(expected, actual);
+        }
 
         [Theory]
         [MemberData(nameof(GetDecodeChecksumCases))]
-        public void DecodeWithCheckSumTest(string s, byte[] expected)
+        public void DecodeWithChecksumTest(string s, byte[] expected)
         {
-            byte[] actual = Base58.DecodeWithCheckSum(s);
+            byte[] actual = Base58.DecodeWithChecksum(s);
             Assert.Equal(expected, actual);
         }
 
@@ -142,10 +177,13 @@ namespace Tests.Bitcoin.Encoders
         [InlineData("a", "Input is not a valid base-58 encoded string.")] // 1 byte data
         [InlineData("xyz1", "Input is not a valid base-58 encoded string.")] // 3 byte data
         [InlineData("1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAa", "Invalid checksum.")]
-        public void DecodeWithCheckSum_ExceptionTest(string s, string expErrMsg)
+        public void DecodeWithChecksum_ExceptionTest(string s, string expErrMsg)
         {
-            Exception ex = Assert.Throws<FormatException>(() => Base58.DecodeWithCheckSum(s));
+            Exception ex = Assert.Throws<FormatException>(() => Base58.DecodeWithChecksum(s));
             Assert.Contains(expErrMsg, ex.Message);
+
+            Assert.False(Base58.TryDecodeWithChecksum(s, out byte[] result));
+            Assert.Null(result);
         }
 
 
@@ -166,17 +204,16 @@ namespace Tests.Bitcoin.Encoders
 
         [Theory]
         [MemberData(nameof(GetDecodeChecksumCases))]
-        public void EncodeWithCheckSumTest(string expected, byte[] data)
+        public void EncodeWithChecksumTest(string expected, byte[] data)
         {
-            string actual = Base58.EncodeWithCheckSum(data);
+            string actual = Base58.EncodeWithChecksum(data);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
-        public void EncodeWithCheckSum_ExceptionTest()
+        public void EncodeWithChecksum_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => Base58.EncodeWithCheckSum(null));
+            Assert.Throws<ArgumentNullException>(() => Base58.EncodeWithChecksum(null));
         }
-
     }
 }

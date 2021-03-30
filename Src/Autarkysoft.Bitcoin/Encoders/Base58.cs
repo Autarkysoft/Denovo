@@ -49,7 +49,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="encoded">String to check</param>
         /// <returns>True if input was a valid base-58 encoded string with checksum, false if otherwise.</returns>
         public static bool IsValidWithChecksum(string encoded) =>
-            HasValidChars(encoded, Mode.B58) && HasValidCheckSum(encoded, Mode.B58);
+            HasValidChars(encoded, Mode.B58) && HasValidChecksum(encoded, Mode.B58);
 
 
         internal static bool HasValidChars(string val, Mode mode)
@@ -74,22 +74,22 @@ namespace Autarkysoft.Bitcoin.Encoders
             return true;
         }
 
-        internal static bool HasValidCheckSum(string val, Mode mode)
+        internal static bool HasValidChecksum(string val, Mode mode)
         {
             byte[] data = DecodeWithoutValidation(val, mode);
-            if (data.Length < Constants.CheckSumSize)
+            if (data.Length < Constants.ChecksumSize)
             {
                 return false;
             }
 
-            byte[] dataWithoutCheckSum = data.SubArray(0, data.Length - Constants.CheckSumSize);
-            ReadOnlySpan<byte> checkSum = data.SubArrayFromEnd(Constants.CheckSumSize);
-            ReadOnlySpan<byte> calculatedCheckSum = CalculateCheckSum(dataWithoutCheckSum);
+            byte[] dataWithoutChecksum = data.SubArray(0, data.Length - Constants.ChecksumSize);
+            ReadOnlySpan<byte> checksum = data.SubArrayFromEnd(Constants.ChecksumSize);
+            ReadOnlySpan<byte> calculatedChecksum = CalculateChecksum(dataWithoutChecksum);
 
-            return checkSum.SequenceEqual(calculatedCheckSum);
+            return checksum.SequenceEqual(calculatedChecksum);
         }
 
-        internal static byte[] CalculateCheckSum(byte[] data)
+        internal static byte[] CalculateChecksum(byte[] data)
         {
             using Sha256 hash = new Sha256();
             return hash.ComputeChecksum(data);
@@ -97,10 +97,31 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
-        /// Converts a base-58 encoded string back to its byte array representation.
+        /// Converts the given base-58 encoded string back to its byte array representation.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="encoded">Base-58 encoded string</param>
+        /// <param name="result">Byte array of the given string</param>
+        /// <returns>True if the conversion was successful; otherwise false.</returns>
+        public static bool TryDecode(string encoded, out byte[] result)
+        {
+            if (HasValidChars(encoded, Mode.B58))
+            {
+                result = DecodeWithoutValidation(encoded, Mode.B58);
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Converts the given base-58 encoded string back to its byte array representation.
         /// </summary>
         /// <exception cref="FormatException"/>
-        /// <param name="encoded">Base-58 encoded string.</param>
+        /// <param name="encoded">Base-58 encoded string</param>
         /// <returns>Byte array of the given string.</returns>
         public static byte[] Decode(string encoded)
         {
@@ -163,33 +184,63 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <summary>
         /// Converts a base-58 encoded string back to its byte array representation
         /// while also validating and removing checksum bytes.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="b58EncodedStringWithChecksum">Base-58 encoded string with checksum</param>
+        /// <param name="result">Byte array of the given string</param>
+        /// <returns>True if the conversion was successful; otherwise false.</returns>
+        public static bool TryDecodeWithChecksum(string b58EncodedStringWithChecksum, out byte[] result)
+        {
+            if (HasValidChars(b58EncodedStringWithChecksum, Mode.B58))
+            {
+                byte[] data = DecodeWithoutValidation(b58EncodedStringWithChecksum, Mode.B58);
+                if (data.Length >= Constants.ChecksumSize)
+                {
+                    result = data.SubArray(0, data.Length - Constants.ChecksumSize);
+                    ReadOnlySpan<byte> checksum = data.SubArrayFromEnd(Constants.ChecksumSize);
+                    ReadOnlySpan<byte> calculatedChecksum = CalculateChecksum(result);
+
+                    if (checksum.SequenceEqual(calculatedChecksum))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            result = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Converts a base-58 encoded string back to its byte array representation
+        /// while also validating and removing checksum bytes.
         /// </summary>
         /// <exception cref="FormatException"/>
-        /// <param name="b58EncodedStringWithCheckSum">Base-58 encoded string with checksum.</param>
+        /// <param name="b58EncodedStringWithChecksum">Base-58 encoded string with checksum</param>
         /// <returns>Byte array of the given string.</returns>
-        public static byte[] DecodeWithCheckSum(string b58EncodedStringWithCheckSum)
+        public static byte[] DecodeWithChecksum(string b58EncodedStringWithChecksum)
         {
-            if (!HasValidChars(b58EncodedStringWithCheckSum, Mode.B58))
+            if (!HasValidChars(b58EncodedStringWithChecksum, Mode.B58))
             {
                 throw new FormatException("Input is not a valid base-58 encoded string.");
             }
 
-            byte[] data = DecodeWithoutValidation(b58EncodedStringWithCheckSum, Mode.B58);
-            if (data.Length < Constants.CheckSumSize)
+            byte[] data = DecodeWithoutValidation(b58EncodedStringWithChecksum, Mode.B58);
+            if (data.Length < Constants.ChecksumSize)
             {
                 throw new FormatException("Input is not a valid base-58 encoded string.");
             }
 
-            byte[] dataWithoutCheckSum = data.SubArray(0, data.Length - Constants.CheckSumSize);
-            byte[] checkSum = data.SubArrayFromEnd(Constants.CheckSumSize);
-            byte[] calculatedCheckSum = CalculateCheckSum(dataWithoutCheckSum);
+            byte[] dataWithoutChecksum = data.SubArray(0, data.Length - Constants.ChecksumSize);
+            byte[] checksum = data.SubArrayFromEnd(Constants.ChecksumSize);
+            byte[] calculatedChecksum = CalculateChecksum(dataWithoutChecksum);
 
-            if (!((ReadOnlySpan<byte>)checkSum).SequenceEqual(calculatedCheckSum))
+            if (!((ReadOnlySpan<byte>)checksum).SequenceEqual(calculatedChecksum))
             {
                 throw new FormatException("Invalid checksum.");
             }
 
-            return dataWithoutCheckSum;
+            return dataWithoutChecksum;
         }
 
 
@@ -243,13 +294,13 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentNullException"/>
         /// <param name="data">Byte array to encode.</param>
         /// <returns>The string representation in base-58 with a checksum.</returns>
-        public static string EncodeWithCheckSum(byte[] data)
+        public static string EncodeWithChecksum(byte[] data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Input can not be null!");
 
-            byte[] checkSum = CalculateCheckSum(data);
-            return Encode(data.ConcatFast(checkSum), Mode.B58);
+            byte[] checksum = CalculateChecksum(data);
+            return Encode(data.ConcatFast(checksum), Mode.B58);
         }
     }
 }
