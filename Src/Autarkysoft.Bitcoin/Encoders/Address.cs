@@ -13,7 +13,7 @@ namespace Autarkysoft.Bitcoin.Encoders
     /// <summary>
     /// Provides methods to check and create bitcoin addresses from public keys.
     /// </summary>
-    public class Address
+    public static class Address
     {
         private const byte P2pkhVerMainNet = 0;
         private const byte P2pkhVerTestNet = 111;
@@ -29,47 +29,22 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
-        /// Address type, there are currently 4 defined types
-        /// </summary>
-        public enum AddressType
-        {
-            /// <summary>
-            /// Unknown or invalid address
-            /// </summary>
-            Unknown,
-            /// <summary>
-            /// Pay to public key hash
-            /// </summary>
-            P2PKH,
-            /// <summary>
-            /// Pay to script hash
-            /// </summary>
-            P2SH,
-            /// <summary>
-            /// Pay to witness public key hash
-            /// </summary>
-            P2WPKH,
-            /// <summary>
-            /// Pay to witness script hash
-            /// </summary>
-            P2WSH
-        }
-
-        /// <summary>
         /// Returns the type of the given address
         /// </summary>
         /// <param name="address">Address string to check</param>
         /// <param name="netType">Network type</param>
         /// <returns>Address type</returns>
-        public AddressType GetAddressType(string address, NetworkType netType)
+        public static AddressType GetAddressType(string address, NetworkType netType)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
                 return AddressType.Unknown;
             }
-            else if (Base58.IsValidWithChecksum(address))
+
+            // Address has to be checked by all encodings so that in case TryDecode passed for an unintended encoding
+            // (eg. Bech32 address was valid Base58Check!) the evaluation still returns the correct type
+            if (Base58.TryDecodeWithChecksum(address, out byte[] decoded))
             {
-                byte[] decoded = Base58.DecodeWithChecksum(address);
                 if (decoded.Length == 21)
                 {
                     if ((netType == NetworkType.MainNet && decoded[0] == P2pkhVerMainNet) ||
@@ -86,27 +61,45 @@ namespace Autarkysoft.Bitcoin.Encoders
                     }
                 }
             }
-            else if (Bech32.IsValid(address, Bech32.Mode.B32))
+
+            if (Bech32.TryDecode(address, Bech32.Mode.B32, out decoded, out byte witVer, out string hrp))
             {
-                byte[] decoded = Bech32.Decode(address, Bech32.Mode.B32, out byte witVer, out string hrp);
                 if (witVer == 0)
                 {
                     if (decoded.Length == 20 && (
                         (netType == NetworkType.MainNet && hrp == HrpMainNet) ||
                         (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
-                        (netType == NetworkType.RegTest && hrp == HrpRegTest)
-                        ))
+                        (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
                         return AddressType.P2WPKH;
                     }
                     else if (decoded.Length == 32 && (
                              (netType == NetworkType.MainNet && hrp == HrpMainNet) ||
                              (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
-                             (netType == NetworkType.RegTest && hrp == HrpRegTest)
-                             ))
+                             (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
                         return AddressType.P2WSH;
                     }
+                }
+                else // witVer != 0
+                {
+                    // We mandate version 1+ SegWit addresses to be encoded using BIP-350 (mode m) not BIP-173.
+                    return AddressType.Invalid;
+                }
+            }
+
+            if (Bech32.TryDecode(address, Bech32.Mode.B32m, out decoded, out witVer, out hrp))
+            {
+                if (witVer == 0)
+                {
+                    // We also mandate version 0 SegWit addresses to be encoded using BIP-173 not BIP-350 (mode m).
+                    // TODO: this may change in the future (let all SegWit addresses use mode m).
+                    return AddressType.Invalid;
+                }
+                else if (witVer == 1)
+                {
+                    // TODO: implement version 1 SegWit addresses when Taproot soft-fork is started,
+                    // for now they are considered AddressType.Unknown
                 }
             }
 
@@ -122,11 +115,11 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="pubk">Public key to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
-        /// Indicates wheter to use compressed or compressed public key to generate the address
+        /// Indicates wheter to use compressed or uncompressed public key to generate the address
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public string GetP2pkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2pkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
             if (pubk is null)
                 throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
@@ -154,7 +147,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="redeem">Redeem script to use</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public string GetP2sh(IScript redeem, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2sh(IScript redeem, NetworkType netType = NetworkType.MainNet)
         {
             if (redeem is null)
                 throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null.");
@@ -188,7 +181,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public string GetP2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
             if (pubk is null)
                 throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
@@ -224,7 +217,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public string GetP2sh_P2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true,
+        public static string GetP2sh_P2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true,
                                      NetworkType netType = NetworkType.MainNet)
         {
             if (pubk is null)
@@ -249,7 +242,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="witVer">Witness version to use</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public string GetP2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
         {
             if (script is null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
@@ -280,7 +273,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="witVer">Witness version to use</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public string GetP2sh_P2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2sh_P2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
         {
             if (script is null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
@@ -303,7 +296,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="scrType">The public key script type to check against</param>
         /// <param name="hash">The hash used in creation of this address</param>
         /// <returns>True if the address is the same script type, otherwise false</returns>
-        public bool VerifyType(string address, PubkeyScriptType scrType, out byte[] hash)
+        public static bool VerifyType(string address, PubkeyScriptType scrType, out byte[] hash)
         {
             hash = null;
             if (string.IsNullOrWhiteSpace(address))

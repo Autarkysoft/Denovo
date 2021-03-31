@@ -25,7 +25,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// </summary>
         public BIP0038()
         {
-            addressMaker = new Address();
             scrypt = new Scrypt(16384, 8, 8);
             hash = new Sha256();
             aes = new AesManaged
@@ -43,7 +42,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private const int EncodedLength = 39;
         private readonly byte[] prefix = { 0x01, 0x42 };
         private readonly byte[] prefix_ECMultiplied = { 0x01, 0x43 };
-        private readonly Address addressMaker;
         private Scrypt scrypt;
         private Aes aes;
         private Sha256 hash;
@@ -122,7 +120,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             // XOR method will only work on first item's length (32 byte here) so it doesn't matter of dk.Legth is 64
             PrivateKey result = new PrivateKey(XOR(decryptedResult, dk));
 
-            string address = addressMaker.GetP2pkh(result.ToPublicKey(), isCompressed, NetworkType.MainNet);
+            string address = Address.GetP2pkh(result.ToPublicKey(), isCompressed, NetworkType.MainNet);
             Span<byte> computedHash = hash.ComputeHashTwice(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
             if (!computedHash.SequenceEqual(salt))
             {
@@ -179,7 +177,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (password == null || password.Length == 0)
                 throw new ArgumentNullException(nameof(password), "Password can not be null or empty.");
 
-            string address = addressMaker.GetP2pkh(key.ToPublicKey(), isCompressed, NetworkType.MainNet);
+            string address = Address.GetP2pkh(key.ToPublicKey(), isCompressed, NetworkType.MainNet);
             byte[] salt = hash.ComputeHashTwice(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
 
             byte[] dk = scrypt.GetBytes(password, salt, 64);

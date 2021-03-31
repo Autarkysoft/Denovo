@@ -53,8 +53,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
 
-        private readonly Address addrManager = new Address();
-
 
         /// <inheritdoc/>
         public bool IsUnspendable() => (Data.Length > 0 && Data[0] == (byte)OP.RETURN) || Data.Length > Constants.MaxScriptLength;
@@ -237,7 +235,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (string.IsNullOrWhiteSpace(address))
                 throw new ArgumentNullException(nameof(address), "Address can not be null or empty.");
-            if (!addrManager.VerifyType(address, PubkeyScriptType.P2PKH, out byte[] hash))
+            if (!Address.VerifyType(address, PubkeyScriptType.P2PKH, out byte[] hash))
                 throw new FormatException("Invalid P2PKH address.");
 
             SetToP2PKH(hash);
@@ -276,7 +274,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (string.IsNullOrWhiteSpace(address))
                 throw new ArgumentNullException(nameof(address), "Address can not be empty or null.");
-            if (!addrManager.VerifyType(address, PubkeyScriptType.P2SH, out byte[] hash))
+            if (!Address.VerifyType(address, PubkeyScriptType.P2SH, out byte[] hash))
                 throw new FormatException("Invalid P2SH address.");
 
             SetToP2SH(hash);
@@ -414,7 +412,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (string.IsNullOrWhiteSpace(address))
                 throw new ArgumentNullException(nameof(address), "Address can not be empty or null.");
-            if (!addrManager.VerifyType(address, PubkeyScriptType.P2WPKH, out byte[] hash))
+            if (!Address.VerifyType(address, PubkeyScriptType.P2WPKH, out byte[] hash))
                 throw new FormatException("Invalid P2WPKH address.");
 
             SetToP2WPKH(hash);
@@ -471,7 +469,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (string.IsNullOrWhiteSpace(address))
                 throw new ArgumentNullException(nameof(address), "Address can not be null or empty.");
-            if (!addrManager.VerifyType(address, PubkeyScriptType.P2WSH, out byte[] hash))
+            if (!Address.VerifyType(address, PubkeyScriptType.P2WSH, out byte[] hash))
                 throw new FormatException("Invalid P2WSH address.");
 
             SetToP2WSH(hash);

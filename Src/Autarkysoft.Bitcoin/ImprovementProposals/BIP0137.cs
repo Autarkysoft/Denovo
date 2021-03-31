@@ -137,7 +137,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new FormatException(error);
             }
 
-            Address addr = new Address();
             AddressType addrType = AddressType.P2PKH_Compressed;
             if (sig.RecoveryId < 27 || sig.RecoveryId > 43)
             {
@@ -145,14 +144,14 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
             else if (sig.RecoveryId >= 27 && sig.RecoveryId < 35)
             {
-                if (!addr.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2PKH, out _))
+                if (!Address.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2PKH, out _))
                 {
                     // Special case where this BIP is not used to create the signature
-                    if (ignoreSegwit && addr.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2SH, out _))
+                    if (ignoreSegwit && Address.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2SH, out _))
                     {
                         addrType = AddressType.P2SH_P2WPKH;
                     }
-                    else if (ignoreSegwit && addr.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2WPKH, out _))
+                    else if (ignoreSegwit && Address.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2WPKH, out _))
                     {
                         addrType = AddressType.P2WPKH;
                     }
@@ -168,7 +167,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
             else if (sig.RecoveryId >= 35 && sig.RecoveryId < 39)
             {
-                if (!addr.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2SH, out _))
+                if (!Address.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2SH, out _))
                 {
                     return false;
                 }
@@ -176,7 +175,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
             else if (sig.RecoveryId >= 39 && sig.RecoveryId < 43)
             {
-                if (!addr.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2WPKH, out _))
+                if (!Address.VerifyType(address, Blockchain.Scripts.PubkeyScriptType.P2WPKH, out _))
                 {
                     return false;
                 }
@@ -193,10 +192,10 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             {
                 string actualAddr = addrType switch
                 {
-                    AddressType.P2PKH_Uncompressed => addr.GetP2pkh(new PublicKey(item), false),
-                    AddressType.P2PKH_Compressed => addr.GetP2pkh(new PublicKey(item), true),
-                    AddressType.P2SH_P2WPKH => addr.GetP2sh_P2wpkh(new PublicKey(item), 0, true),
-                    AddressType.P2WPKH => addr.GetP2wpkh(new PublicKey(item), 0, true),
+                    AddressType.P2PKH_Uncompressed => Address.GetP2pkh(new PublicKey(item), false),
+                    AddressType.P2PKH_Compressed => Address.GetP2pkh(new PublicKey(item), true),
+                    AddressType.P2SH_P2WPKH => Address.GetP2sh_P2wpkh(new PublicKey(item), 0, true),
+                    AddressType.P2WPKH => Address.GetP2wpkh(new PublicKey(item), 0, true),
                     _ => throw new ArgumentException("Address type is not defined."),
                 };
 

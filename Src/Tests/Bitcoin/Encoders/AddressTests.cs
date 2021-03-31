@@ -28,57 +28,56 @@ namespace Tests.Bitcoin.Encoders
 
         public static IEnumerable<object[]> GetTypeCases()
         {
-            yield return new object[] { P2pkh_main, NetworkType.MainNet, Address.AddressType.P2PKH };
-            yield return new object[] { P2pkh_main, NetworkType.TestNet, Address.AddressType.Unknown };
-            yield return new object[] { P2pkh_main, NetworkType.RegTest, Address.AddressType.P2PKH };
-            yield return new object[] { "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhe1", NetworkType.MainNet, Address.AddressType.Unknown };
+            yield return new object[] { P2pkh_main, NetworkType.MainNet, AddressType.P2PKH };
+            yield return new object[] { P2pkh_main, NetworkType.TestNet, AddressType.Unknown };
+            yield return new object[] { P2pkh_main, NetworkType.RegTest, AddressType.P2PKH };
+            yield return new object[] { "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhe1", NetworkType.MainNet, AddressType.Unknown };
 
-            yield return new object[] { P2pkh_test, NetworkType.MainNet, Address.AddressType.Unknown };
-            yield return new object[] { P2pkh_test, NetworkType.TestNet, Address.AddressType.P2PKH };
-            yield return new object[] { P2pkh_test, NetworkType.RegTest, Address.AddressType.Unknown };
-            yield return new object[] { "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRf1", NetworkType.TestNet, Address.AddressType.Unknown };
+            yield return new object[] { P2pkh_test, NetworkType.MainNet, AddressType.Unknown };
+            yield return new object[] { P2pkh_test, NetworkType.TestNet, AddressType.P2PKH };
+            yield return new object[] { P2pkh_test, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRf1", NetworkType.TestNet, AddressType.Unknown };
 
-            yield return new object[] { P2sh_main, NetworkType.MainNet, Address.AddressType.P2SH };
-            yield return new object[] { P2sh_main, NetworkType.TestNet, Address.AddressType.Unknown };
-            yield return new object[] { P2sh_main, NetworkType.RegTest, Address.AddressType.P2SH };
-            yield return new object[] { "3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQ1", NetworkType.MainNet, Address.AddressType.Unknown };
+            yield return new object[] { P2sh_main, NetworkType.MainNet, AddressType.P2SH };
+            yield return new object[] { P2sh_main, NetworkType.TestNet, AddressType.Unknown };
+            yield return new object[] { P2sh_main, NetworkType.RegTest, AddressType.P2SH };
+            yield return new object[] { "3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQ1", NetworkType.MainNet, AddressType.Unknown };
 
-            yield return new object[] { P2sh_test, NetworkType.MainNet, Address.AddressType.Unknown };
-            yield return new object[] { P2sh_test, NetworkType.TestNet, Address.AddressType.P2SH };
-            yield return new object[] { P2sh_test, NetworkType.RegTest, Address.AddressType.Unknown };
-            yield return new object[] { "2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1V1", NetworkType.TestNet, Address.AddressType.Unknown };
+            yield return new object[] { P2sh_test, NetworkType.MainNet, AddressType.Unknown };
+            yield return new object[] { P2sh_test, NetworkType.TestNet, AddressType.P2SH };
+            yield return new object[] { P2sh_test, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { "2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1V1", NetworkType.TestNet, AddressType.Unknown };
 
-            yield return new object[] { P2wpkh_main, NetworkType.MainNet, Address.AddressType.P2WPKH };
-            yield return new object[] { P2wpkh_main, NetworkType.TestNet, Address.AddressType.Unknown };
-            yield return new object[] { P2wpkh_main, NetworkType.RegTest, Address.AddressType.Unknown };
-            yield return new object[] { P2wpkh_main + "1", NetworkType.MainNet, Address.AddressType.Unknown };
+            yield return new object[] { P2wpkh_main, NetworkType.MainNet, AddressType.P2WPKH };
+            yield return new object[] { P2wpkh_main, NetworkType.TestNet, AddressType.Unknown };
+            yield return new object[] { P2wpkh_main, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { P2wpkh_main + "1", NetworkType.MainNet, AddressType.Unknown };
 
-            yield return new object[] { P2wpkh_test, NetworkType.MainNet, Address.AddressType.Unknown };
-            yield return new object[] { P2wpkh_test, NetworkType.TestNet, Address.AddressType.P2WPKH };
-            yield return new object[] { P2wpkh_test, NetworkType.RegTest, Address.AddressType.Unknown };
-            yield return new object[] { P2wpkh_test + "1", NetworkType.MainNet, Address.AddressType.Unknown };
+            yield return new object[] { P2wpkh_test, NetworkType.MainNet, AddressType.Unknown };
+            yield return new object[] { P2wpkh_test, NetworkType.TestNet, AddressType.P2WPKH };
+            yield return new object[] { P2wpkh_test, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { P2wpkh_test + "1", NetworkType.MainNet, AddressType.Unknown };
 
-            yield return new object[] { P2wpkh_reg, NetworkType.MainNet, Address.AddressType.Unknown };
-            yield return new object[] { P2wpkh_reg, NetworkType.TestNet, Address.AddressType.Unknown };
-            yield return new object[] { P2wpkh_reg, NetworkType.RegTest, Address.AddressType.P2WPKH };
-            yield return new object[] { P2wpkh_reg + "1", NetworkType.MainNet, Address.AddressType.Unknown };
+            yield return new object[] { P2wpkh_reg, NetworkType.MainNet, AddressType.Unknown };
+            yield return new object[] { P2wpkh_reg, NetworkType.TestNet, AddressType.Unknown };
+            yield return new object[] { P2wpkh_reg, NetworkType.RegTest, AddressType.P2WPKH };
+            yield return new object[] { P2wpkh_reg + "1", NetworkType.MainNet, AddressType.Unknown };
 
-            yield return new object[] { P2wsh_main, NetworkType.MainNet, Address.AddressType.P2WSH };
-            yield return new object[] { P2wsh_main, NetworkType.TestNet, Address.AddressType.Unknown };
-            yield return new object[] { P2wsh_main, NetworkType.RegTest, Address.AddressType.Unknown };
-            yield return new object[] { P2wsh_main + "1", NetworkType.MainNet, Address.AddressType.Unknown };
+            yield return new object[] { P2wsh_main, NetworkType.MainNet, AddressType.P2WSH };
+            yield return new object[] { P2wsh_main, NetworkType.TestNet, AddressType.Unknown };
+            yield return new object[] { P2wsh_main, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { P2wsh_main + "1", NetworkType.MainNet, AddressType.Unknown };
 
-            yield return new object[] { P2wsh_test, NetworkType.MainNet, Address.AddressType.Unknown };
-            yield return new object[] { P2wsh_test, NetworkType.TestNet, Address.AddressType.P2WSH };
-            yield return new object[] { P2wsh_test, NetworkType.RegTest, Address.AddressType.Unknown };
-            yield return new object[] { P2wsh_test + "1", NetworkType.MainNet, Address.AddressType.Unknown };
+            yield return new object[] { P2wsh_test, NetworkType.MainNet, AddressType.Unknown };
+            yield return new object[] { P2wsh_test, NetworkType.TestNet, AddressType.P2WSH };
+            yield return new object[] { P2wsh_test, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { P2wsh_test + "1", NetworkType.MainNet, AddressType.Unknown };
         }
         [Theory]
         [MemberData(nameof(GetTypeCases))]
-        public void GetAddressTypeTest(string address, NetworkType nt, Address.AddressType expected)
+        public void GetAddressTypeTest(string address, NetworkType nt, AddressType expected)
         {
-            Address addr = new Address();
-            Address.AddressType actual = addr.GetAddressType(address, nt);
+            AddressType actual = Address.GetAddressType(address, nt);
             Assert.Equal(expected, actual);
         }
 
@@ -96,17 +95,15 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetP2pkhCases))]
         public void GetP2pkhTest(PublicKey pub, bool comp, NetworkType netType, string expected)
         {
-            Address addr = new Address();
-            string actual = addr.GetP2pkh(pub, comp, netType);
+            string actual = Address.GetP2pkh(pub, comp, netType);
             Assert.Equal(actual, expected);
         }
 
         [Fact]
         public void GetP2pkhTest_ExceptionTest()
         {
-            Address addr = new Address();
-            Assert.Throws<ArgumentNullException>(() => addr.GetP2pkh(null));
-            Assert.Throws<ArgumentException>(() => addr.GetP2pkh(KeyHelper.Pub1, netType: (NetworkType)100));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2pkh(null));
+            Assert.Throws<ArgumentException>(() => Address.GetP2pkh(KeyHelper.Pub1, netType: (NetworkType)100));
         }
 
 
@@ -135,18 +132,15 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetP2shCases))]
         public void GetP2shTest(IScript script, NetworkType netType, string expected)
         {
-            Address addr = new Address();
-            string actual = addr.GetP2sh(script, netType);
+            string actual = Address.GetP2sh(script, netType);
             Assert.Equal(actual, expected);
         }
 
         [Fact]
         public void GetP2sh_ExceptionTest()
         {
-            Address addr = new Address();
-
-            Assert.Throws<ArgumentNullException>(() => addr.GetP2sh(null));
-            Assert.Throws<ArgumentException>(() => addr.GetP2sh(new MockSerializableRedeemScript(new byte[0], 0), (NetworkType)100));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh(null));
+            Assert.Throws<ArgumentException>(() => Address.GetP2sh(new MockSerializableRedeemScript(new byte[0], 0), (NetworkType)100));
         }
 
 
@@ -169,21 +163,19 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetP2wpkhCases))]
         public void GetP2wpkhTest(PublicKey pub, byte ver, bool comp, NetworkType netType, string expected)
         {
-            Address addr = new Address();
-            string actual = addr.GetP2wpkh(pub, ver, comp, netType);
+            string actual = Address.GetP2wpkh(pub, ver, comp, netType);
             Assert.Equal(actual, expected);
         }
 
         [Fact]
         public void GetP2wpkh_ExceptionTest()
         {
-            Address addr = new Address();
-            Assert.Throws<ArgumentNullException>(() => addr.GetP2wpkh(null, 0));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2wpkh(null, 0));
 
-            Exception ex = Assert.Throws<ArgumentException>(() => addr.GetP2wpkh(KeyHelper.Pub1, 1, netType: (NetworkType)100));
+            Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2wpkh(KeyHelper.Pub1, 1, netType: (NetworkType)100));
             Assert.Contains("witVer", ex.Message);
 
-            ex = Assert.Throws<ArgumentException>(() => addr.GetP2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
+            ex = Assert.Throws<ArgumentException>(() => Address.GetP2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
             Assert.Contains(Err.InvalidNetwork, ex.Message);
         }
 
@@ -202,21 +194,19 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetP2sh_P2wpkhCases))]
         public void GetP2sh_P2wpkhTest(PublicKey pub, byte ver, bool comp, NetworkType netType, string expected)
         {
-            Address addr = new Address();
-            string actual = addr.GetP2sh_P2wpkh(pub, ver, comp, netType);
+            string actual = Address.GetP2sh_P2wpkh(pub, ver, comp, netType);
             Assert.Equal(actual, expected);
         }
 
         [Fact]
         public void GetP2sh_P2wpkh_ExceptionTest()
         {
-            Address addr = new Address();
-            Assert.Throws<ArgumentNullException>(() => addr.GetP2sh_P2wpkh(null, 0));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wpkh(null, 0));
 
-            Exception ex = Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wpkh(KeyHelper.Pub1, 1, netType: (NetworkType)100));
+            Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wpkh(KeyHelper.Pub1, 1, netType: (NetworkType)100));
             Assert.Contains("witVer", ex.Message);
 
-            ex = Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
+            ex = Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
             Assert.Contains(Err.InvalidNetwork, ex.Message);
         }
 
@@ -260,20 +250,18 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetP2wshCases))]
         public void GetP2wshTest(IScript script, byte witVer, NetworkType netType, string expected)
         {
-            Address addr = new Address();
-            string actual = addr.GetP2wsh(script, witVer, netType);
+            string actual = Address.GetP2wsh(script, witVer, netType);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void GetP2wsh_ExceptionTest()
         {
-            Address addr = new Address();
             var scr = new MockSerializableRedeemScript(new byte[0], 0);
 
-            Assert.Throws<ArgumentNullException>(() => addr.GetP2wsh(null, 0));
-            Assert.Throws<ArgumentException>(() => addr.GetP2wsh(scr, 1));
-            Assert.Throws<ArgumentException>(() => addr.GetP2wsh(scr, 0, (NetworkType)100));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2wsh(null, 0));
+            Assert.Throws<ArgumentException>(() => Address.GetP2wsh(scr, 1));
+            Assert.Throws<ArgumentException>(() => Address.GetP2wsh(scr, 0, (NetworkType)100));
         }
 
 
@@ -302,20 +290,18 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetP2sh_P2wshCases))]
         public void GetP2sh_P2wshTest(IScript script, byte witVer, NetworkType netType, string expected)
         {
-            Address addr = new Address();
-            string actual = addr.GetP2sh_P2wsh(script, witVer, netType);
+            string actual = Address.GetP2sh_P2wsh(script, witVer, netType);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void GetP2sh_P2wsh_ExceptionTest()
         {
-            Address addr = new Address();
             var scr = new MockSerializableRedeemScript(new byte[0], 0);
 
-            Assert.Throws<ArgumentNullException>(() => addr.GetP2sh_P2wsh(null, 0));
-            Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wsh(scr, 1));
-            Assert.Throws<ArgumentException>(() => addr.GetP2sh_P2wsh(scr, 0, (NetworkType)100));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wsh(null, 0));
+            Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wsh(scr, 1));
+            Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wsh(scr, 0, (NetworkType)100));
         }
 
 
@@ -374,8 +360,7 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetVerifyCases))]
         public void VerifyTypeTest(string address, PubkeyScriptType scrType, byte[] expected)
         {
-            Address addr = new Address();
-            bool b = addr.VerifyType(address, scrType, out byte[] actual);
+            bool b = Address.VerifyType(address, scrType, out byte[] actual);
 
             Assert.True(b);
             Assert.Equal(expected, actual);
@@ -408,8 +393,7 @@ namespace Tests.Bitcoin.Encoders
         [MemberData(nameof(GetVerifyFailCases))]
         public void VerifyType_FailTest(string address, PubkeyScriptType scrType)
         {
-            Address addr = new Address();
-            bool b = addr.VerifyType(address, scrType, out byte[] actual);
+            bool b = Address.VerifyType(address, scrType, out byte[] actual);
 
             Assert.False(b);
             Assert.Null(actual);
