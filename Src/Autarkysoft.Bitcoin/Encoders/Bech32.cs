@@ -260,7 +260,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                 return false;
 
             byte[] b32Arr = Bech32Decode(bech32EncodedString, out hrp);
-            if (b32Arr.Length < CheckSumSize)
+            if (b32Arr.Length <= CheckSumSize)
             {
                 return false;
             }
