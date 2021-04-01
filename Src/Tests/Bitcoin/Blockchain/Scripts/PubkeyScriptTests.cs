@@ -19,7 +19,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void ConstructorTest()
         {
-            PubkeyScript scr = new PubkeyScript();
+            var scr = new PubkeyScript();
             Assert.Empty(scr.Data);
         }
 
@@ -27,7 +27,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithNullBytesTest()
         {
             byte[] data = null;
-            PubkeyScript scr = new PubkeyScript(data);
+            var scr = new PubkeyScript(data);
             Assert.Empty(scr.Data); // NotNull
         }
 
@@ -35,21 +35,21 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithBytesTest()
         {
             byte[] data = Helper.GetBytes(10);
-            PubkeyScript scr = new PubkeyScript(data);
+            var scr = new PubkeyScript(data);
             Assert.Equal(data, scr.Data);
         }
 
         [Fact]
         public void Constructor_OpsTest()
         {
-            PubkeyScript scr = new PubkeyScript(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
+            var scr = new PubkeyScript(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
             Assert.Equal(new byte[] { (byte)OP.DUP, 3, 10, 20, 30 }, scr.Data);
         }
 
         [Fact]
         public void Constructor_EmptyOpsTest()
         {
-            PubkeyScript scr = new PubkeyScript(new IOperation[0]);
+            var scr = new PubkeyScript(new IOperation[0]);
             Assert.Equal(new byte[0], scr.Data);
         }
 
@@ -58,6 +58,21 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             IOperation[] ops = null;
             Assert.Throws<ArgumentNullException>(() => new PubkeyScript(ops));
+        }
+
+        [Theory]
+        [InlineData("17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem", "76a91447376c6f537d62177a2c41c4ca9b45829ab9908388ac", NetworkType.MainNet)]
+        [InlineData("3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX", "a9148f55563b9a19f321c211e9b9f38cdf686ea0784587", NetworkType.MainNet)]
+        [InlineData("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "0014751e76e8199196d454941c45d1b3a323f1433bd6", NetworkType.MainNet)]
+        [InlineData("bc1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7q59qg86", "002025fd43197330d6e961ab0421247d24394c3f8e3864ef86328e8976e3756453bc", NetworkType.MainNet)]
+        [InlineData("2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc", "a9144e9f39ca4688ff102128ea4ccda34105324305b087", NetworkType.TestNet)]
+        [InlineData("tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx", "0014751e76e8199196d454941c45d1b3a323f1433bd6", NetworkType.TestNet)]
+        [InlineData("tb1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7qrdk8a4", "002025fd43197330d6e961ab0421247d24394c3f8e3864ef86328e8976e3756453bc", NetworkType.TestNet)]
+        public void Constructor_FromAddressTest(string addr, string hex, NetworkType net)
+        {
+            var scr = new PubkeyScript(addr, net);
+            byte[] expected = Helper.HexToBytes(hex);
+            Assert.Equal(expected, scr.Data);
         }
 
         public static IEnumerable<object[]> GetSerCases()
@@ -70,8 +85,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetSerCases))]
         public void SerializeTest(byte[] data, byte[] start)
         {
-            PubkeyScript scr = new PubkeyScript(data);
-            FastStream stream = new FastStream(data.Length + start.Length);
+            var scr = new PubkeyScript(data);
+            var stream = new FastStream(data.Length + start.Length);
             scr.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();

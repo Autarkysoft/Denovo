@@ -52,6 +52,36 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             SetData(ops);
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="PubkeyScript"/> using the given address.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <param name="address">Bitcoin address to use</param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/> Network type</param>
+        public PubkeyScript(string address, NetworkType netType = NetworkType.MainNet)
+        {
+            AddressType adrt = Address.GetAddressType(address, netType, out byte[] data);
+            switch (adrt)
+            {
+                case AddressType.Unknown:
+                case AddressType.Invalid:
+                    throw new ArgumentException("Invalid or unknown address.");
+                case AddressType.P2PKH:
+                    SetToP2PKH(data);
+                    break;
+                case AddressType.P2SH:
+                    SetToP2SH(data);
+                    break;
+                case AddressType.P2WPKH:
+                    SetToP2WPKH(data);
+                    break;
+                case AddressType.P2WSH:
+                    SetToP2WSH(data);
+                    break;
+                default:
+                    throw new ArgumentException("Undefined address type");
+            }
+        }
 
 
         /// <inheritdoc/>
