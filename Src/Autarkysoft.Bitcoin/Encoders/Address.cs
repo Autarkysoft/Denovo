@@ -33,9 +33,14 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </summary>
         /// <param name="address">Address string to check</param>
         /// <param name="netType">Network type</param>
+        /// <param name="data">
+        /// Decoded data or hash extracted from the given address 
+        /// (null for <see cref="AddressType.Unknown"/> and <see cref="AddressType.Invalid"/> tyepes 
+        /// </param>
         /// <returns>Address type</returns>
-        public static AddressType GetAddressType(string address, NetworkType netType)
+        public static AddressType GetAddressType(string address, NetworkType netType, out byte[] data)
         {
+            data = null;
             if (string.IsNullOrWhiteSpace(address))
             {
                 return AddressType.Unknown;
@@ -51,12 +56,14 @@ namespace Autarkysoft.Bitcoin.Encoders
                         (netType == NetworkType.TestNet && decoded[0] == P2pkhVerTestNet) ||
                         (netType == NetworkType.RegTest && decoded[0] == P2pkhVerRegTest))
                     {
+                        data = decoded.SubArray(1);
                         return AddressType.P2PKH;
                     }
                     else if ((netType == NetworkType.MainNet && decoded[0] == P2shVerMainNet) ||
                              (netType == NetworkType.TestNet && decoded[0] == P2shVerTestNet) ||
                              (netType == NetworkType.RegTest && decoded[0] == P2shVerRegTest))
                     {
+                        data = decoded.SubArray(1);
                         return AddressType.P2SH;
                     }
                 }
@@ -64,6 +71,11 @@ namespace Autarkysoft.Bitcoin.Encoders
 
             if (Bech32.TryDecode(address, Bech32.Mode.B32, out decoded, out byte witVer, out string hrp))
             {
+                if (decoded.Length < 2 || decoded.Length > 40 || witVer > 16)
+                {
+                    return AddressType.Invalid;
+                }
+
                 if (witVer == 0)
                 {
                     if (decoded.Length == 20 && (
@@ -71,6 +83,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                         (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
                         (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
+                        data = decoded;
                         return AddressType.P2WPKH;
                     }
                     else if (decoded.Length == 32 && (
@@ -78,7 +91,12 @@ namespace Autarkysoft.Bitcoin.Encoders
                              (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
                              (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
+                        data = decoded;
                         return AddressType.P2WSH;
+                    }
+                    else
+                    {
+                        return AddressType.Invalid;
                     }
                 }
                 else // witVer != 0
@@ -90,6 +108,11 @@ namespace Autarkysoft.Bitcoin.Encoders
 
             if (Bech32.TryDecode(address, Bech32.Mode.B32m, out decoded, out witVer, out hrp))
             {
+                if (decoded.Length < 2 || decoded.Length > 40 || witVer > 16)
+                {
+                    return AddressType.Invalid;
+                }
+
                 if (witVer == 0)
                 {
                     // We also mandate version 0 SegWit addresses to be encoded using BIP-173 not BIP-350 (mode m).
@@ -105,6 +128,14 @@ namespace Autarkysoft.Bitcoin.Encoders
 
             return AddressType.Unknown;
         }
+
+        /// <summary>
+        /// Returns the type of the given address
+        /// </summary>
+        /// <param name="address">Address string to check</param>
+        /// <param name="netType">Network type</param>
+        /// <returns>Address type</returns>
+        public static AddressType GetAddressType(string address, NetworkType netType) => GetAddressType(address, netType, out _);
 
 
         /// <summary>
@@ -306,67 +337,59 @@ namespace Autarkysoft.Bitcoin.Encoders
             switch (scrType)
             {
                 case PubkeyScriptType.P2PKH:
-                    if (!Base58.IsValid(address))
+                    if (Base58.TryDecodeWithChecksum(address, out byte[] decoded))
                     {
-                        return false;
+                        if ((decoded[0] == P2pkhVerMainNet ||
+                             decoded[0] == P2pkhVerTestNet ||
+                             decoded[0] == P2pkhVerRegTest) &&
+                             decoded.Length == 21)
+                        {
+                            hash = decoded.SubArray(1);
+                            return true;
+                        }
                     }
-                    byte[] decoded = Base58.DecodeWithChecksum(address);
-                    if (decoded[0] != P2pkhVerMainNet &&
-                        decoded[0] != P2pkhVerTestNet &&
-                        decoded[0] != P2pkhVerRegTest ||
-                        decoded.Length != 21)
-                    {
-                        return false;
-                    }
-                    hash = decoded.SubArray(1);
-                    return true;
+                    break;
 
                 case PubkeyScriptType.P2SH:
-                    if (!Base58.IsValidWithChecksum(address))
+                    if (Base58.TryDecodeWithChecksum(address, out decoded))
                     {
-                        return false;
+                        if ((decoded[0] == P2shVerMainNet ||
+                             decoded[0] == P2shVerTestNet ||
+                             decoded[0] == P2shVerRegTest) &&
+                             decoded.Length == 21)
+                        {
+                            hash = decoded.SubArray(1);
+                            return true;
+                        }
                     }
-                    decoded = Base58.DecodeWithChecksum(address);
-                    if (decoded[0] != P2shVerMainNet &&
-                        decoded[0] != P2shVerTestNet &&
-                        decoded[0] != P2shVerRegTest ||
-                        decoded.Length != 21)
-                    {
-                        return false;
-                    }
-                    hash = decoded.SubArray(1);
-                    return true;
+                    break;
 
                 case PubkeyScriptType.P2WPKH:
-                    if (!Bech32.IsValid(address, Bech32.Mode.B32))
+                    if (Bech32.TryDecode(address, Bech32.Mode.B32, out decoded, out byte witVer, out string hrp))
                     {
-                        return false;
+                        if (witVer == 0 && decoded.Length == 20 &&
+                            (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpRegTest))
+                        {
+                            hash = decoded;
+                            return true;
+                        }
                     }
-                    decoded = Bech32.Decode(address, Bech32.Mode.B32, out byte witVer, out string hrp);
-                    if (witVer != 0 || decoded.Length != 20 ||
-                        (hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest))
-                    {
-                        return false;
-                    }
-                    hash = decoded;
-                    return true;
+                    break;
 
                 case PubkeyScriptType.P2WSH:
-                    if (!Bech32.IsValid(address, Bech32.Mode.B32))
+                    if (Bech32.TryDecode(address, Bech32.Mode.B32, out decoded, out witVer, out hrp))
                     {
-                        return false;
+                        if (witVer == 0 && decoded.Length == 32 &&
+                            (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpRegTest))
+                        {
+                            hash = decoded;
+                            return true;
+                        }
                     }
-                    decoded = Bech32.Decode(address, Bech32.Mode.B32, out witVer, out hrp);
-                    if (witVer != 0 || decoded.Length != 32 ||
-                        (hrp != HrpMainNet && hrp != HrpTestNet && hrp != HrpRegTest))
-                    {
-                        return false;
-                    }
-                    hash = decoded;
-                    return true;
-                default:
-                    return false;
+                    break;
             }
+
+            return false;
         }
     }
 }
