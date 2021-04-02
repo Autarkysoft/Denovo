@@ -32,9 +32,30 @@ namespace Autarkysoft.Bitcoin.Encoders
 
         /// <summary>
         /// Converts a base-43 encoded string back to its byte array representation.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="encoded">Base-43 encoded string</param>
+        /// <param name="result">Byte array of the given string</param>
+        /// <returns>True if the conversion was successful; otherwise false.</returns>
+        public static bool TryDecode(string encoded, out byte[] result)
+        {
+            if (Base58.HasValidChars(encoded, Base58.Mode.B43))
+            {
+                result = Base58.DecodeWithoutValidation(encoded, Base58.Mode.B43);
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Converts a base-43 encoded string back to its byte array representation.
         /// </summary>
         /// <exception cref="FormatException"/>
-        /// <param name="encoded">Base-58 encoded string.</param>
+        /// <param name="encoded">Base-43 encoded string</param>
         /// <returns>Byte array of the given string.</returns>
         public static byte[] Decode(string encoded)
         {
