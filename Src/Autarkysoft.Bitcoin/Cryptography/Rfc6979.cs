@@ -16,7 +16,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
     /// <para/>This is made to only use bitcoin curve (namely curve ornder N and its length) and HMAC-SHA256
     /// <para/>https://tools.ietf.org/html/rfc6979
     /// </summary>
-    public class Rfc6979 : IDisposable
+    public sealed class Rfc6979 : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of <see cref="Rfc6979"/> with default parameters.
@@ -132,34 +132,19 @@ namespace Autarkysoft.Bitcoin.Cryptography
         }
 
 
-
         private bool isDisposed = false;
-
-        /// <summary>
-        /// Releases the resources used by the <see cref="Rfc6979"/> class.
-        /// </summary>
-        /// <param name="disposing">
-        /// True to release both managed and unmanaged resources; false to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!isDisposed)
-            {
-                if (disposing)
-                {
-                    if (!(HmacK is null))
-                        HmacK.Dispose();
-                    HmacK = null;
-                }
-
-                isDisposed = true;
-            }
-        }
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            Dispose(true);
+            if (!isDisposed)
+            {
+                if (!(HmacK is null))
+                    HmacK.Dispose();
+                HmacK = null;
+
+                isDisposed = true;
+            }
         }
     }
 }
