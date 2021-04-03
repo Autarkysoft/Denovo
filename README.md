@@ -73,7 +73,8 @@ are in separate classes. Currently:
   [143](https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki "Transaction Signature Verification for Version 0 Witness Program"), 
   [144](https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki "Segregated Witness (Peer Services)"), 
   [147](https://github.com/bitcoin/bips/blob/master/bip-0147.mediawiki "Dealing with dummy stack element malleability"), 
-  [173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki "Base32 address format for native v0-16 witness outputs")
+  [173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki "Base32 address format for native v0-16 witness outputs"), 
+  [350](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki "Bech32m format for v1+ witness addresses")
   * Optional: [14](https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki "Protocol Version and User Agent"),
   [21](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki "URI Scheme"),
   [32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets"),
@@ -89,6 +90,7 @@ are in separate classes. Currently:
 * Optimization of the libray
 * Complete testing of remaining parts
 * Add more relevant and useful BIPs
+* Add support for Lightning Network
 * Explore more ideas for a better Bitcoin (eg. block compressions and P2P protocol) to add under `Experimental` namespace.
 
 ## Contributing

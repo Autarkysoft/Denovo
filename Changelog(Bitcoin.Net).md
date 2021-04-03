@@ -1,6 +1,17 @@
 ### Next release
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.10.0.0...master)
 
+### Release 0.11.0 (2021-00-00)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.10.0.0...B0.11.0.0)
+* New BIP: Bech32m format for v1+ witness addresses (BIP-350)
+* All encoders are static now and have a `TryDecode` method
+* Validity check by encoders is 2 methods now: `IsValid` (checks characters) and `IsValidWithChecksum` (checks both) unless
+the encoding doesn't have encode without checksum like Bech32
+* `IHashFunction` is removed
+* `IsDouble` is removed
+* Almost every class in Cryptography namespace is sealed now
+* Various improvements, bug fixes and small XML doc fixes
+
 ### Release 0.10.0 (2021-03-03)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.9.0.0...B0.10.0.0)
 * Implemented initial block synchronization code in `Blockchain` and respective classes
