@@ -18,21 +18,42 @@ namespace Tests.Bitcoin.ValueTypesTests
         private const uint NotNegative = 0x00800000U;
 
         [Fact]
-        public void ConstructorTest()
+        public void Constructor_FromIntTest()
         {
-            Target ti1 = new Target((int)Example);
-            Target tu1 = new Target(Example);
+            var ti1 = new Target((int)Example);
             Helper.ComparePrivateField(ti1, "value", Example);
+
+            var ti2 = new Target(0);
+            Helper.ComparePrivateField(ti2, "value", 0U);
+        }
+
+        [Theory]
+        [InlineData(-1, true)]
+        [InlineData(0x04800001, true)]
+        [InlineData(0x23000001, false)]
+        [InlineData(0x22000100, false)]
+        [InlineData(0x21010000, false)]
+        public void Constructor_FromInt_ExceptionTest(int val, bool isNeg)
+        {
+            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(val));
+            if (isNeg)
+            {
+                Assert.Contains("Target value can not be negative.", ex.Message);
+            }
+            else
+            {
+                Assert.Contains("Target is defined as a 256-bit number (value overflow).", ex.Message);
+            }
+        }
+
+        [Fact]
+        public void Constructor_FromUIntTest()
+        {
+            var tu1 = new Target(Example);
             Helper.ComparePrivateField(tu1, "value", Example);
 
-            Target ti2 = new Target(0);
-            Target tu2 = new Target(0U);
-            Helper.ComparePrivateField(ti2, "value", 0U);
+            var tu2 = new Target(0U);
             Helper.ComparePrivateField(tu2, "value", 0U);
-
-            int negI = -1;
-            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(negI));
-            Assert.Contains("Target value can not be negative.", ex.Message);
         }
 
         [Theory]
@@ -40,7 +61,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [InlineData(0x23000001U, false)]
         [InlineData(0x22000100U, false)]
         [InlineData(0x21010000U, false)]
-        public void Constructor_ExceptionTest(uint val, bool isNeg)
+        public void Constructor_FromUInt_ExceptionTest(uint val, bool isNeg)
         {
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Target(val));
             if (isNeg)
@@ -66,7 +87,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         public void Constructor_FromBigIntTest(uint expected, string hex)
         {
             BigInteger big = BigInteger.Parse(hex, NumberStyles.HexNumber);
-            Target tar = new Target(big);
+            var tar = new Target(big);
             Helper.ComparePrivateField(tar, "value", expected);
         }
 
@@ -109,10 +130,10 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void TryReadTest(byte[] data, uint expected)
         {
-            FastStreamReader stream = new FastStreamReader(data);
+            var stream = new FastStreamReader(data);
             bool b = Target.TryRead(stream, out Target actual, out string error);
 
-            Assert.True(b);
+            Assert.True(b, error);
             Assert.Null(error);
             Helper.ComparePrivateField(stream, "position", 4);
             Helper.ComparePrivateField(actual, "value", expected);
@@ -120,7 +141,7 @@ namespace Tests.Bitcoin.ValueTypesTests
 
         public static IEnumerable<object[]> GetReadFailCases()
         {
-            yield return new object[] { new byte[] { }, 0, Err.EndOfStream };
+            yield return new object[] { Array.Empty<byte>(), 0, Err.EndOfStream };
             yield return new object[] { new byte[] { 0xcb }, 0, Err.EndOfStream };
             yield return new object[]
             {
@@ -168,7 +189,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadFailCases))]
         public void TryRead_FailTest(byte[] data, int finalPos, string expError)
         {
-            FastStreamReader stream = new FastStreamReader(data);
+            var stream = new FastStreamReader(data);
             bool b = Target.TryRead(stream, out Target actual, out string error);
 
             Assert.False(b);
@@ -187,6 +208,16 @@ namespace Tests.Bitcoin.ValueTypesTests
             Helper.ComparePrivateField(actual, "value", 0U);
         }
 
+
+        [Fact]
+        public void WriteToStreamTest()
+        {
+            var stream = new FastStream(4);
+            var tar = new Target(0x171f0d9b);
+            tar.WriteToStream(stream);
+
+            Assert.Equal(new byte[] { 0x9b, 0x0d, 0x1f, 0x17 }, stream.ToByteArray());
+        }
 
         [Theory]
         [InlineData(0x1d00ffff, "00000000FFFF0000000000000000000000000000000000000000000000000000")]
@@ -210,7 +241,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [InlineData(0x20123456, "1234560000000000000000000000000000000000000000000000000000000000")]
         public void ToBigIntTest(uint val, string hex)
         {
-            Target tar = new Target(val);
+            var tar = new Target(val);
 
             BigInteger actual = tar.ToBigInt();
             BigInteger expected = BigInteger.Parse(hex, NumberStyles.HexNumber);
@@ -223,7 +254,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void ToByteArrayTest(byte[] data, uint val)
         {
-            Target tar = new Target(val);
+            var tar = new Target(val);
 
             byte[] actual = tar.ToByteArray();
             byte[] expected = new byte[4];
@@ -259,7 +290,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetToUintCases))]
         public void ToUInt32ArrayTest(uint val, uint[] expected)
         {
-            Target tar = new Target(val);
+            var tar = new Target(val);
             uint[] actual = tar.ToUInt32Array();
             Assert.Equal(expected, actual);
         }
@@ -268,7 +299,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void ToDifficultyTest()
         {
-            Target tar = new Target(0x1b0404cbU);
+            var tar = new Target(0x1b0404cbU);
             Target max = 0x1d00ffff;
 
             BigInteger actual = tar.ToDifficulty(max);
@@ -278,9 +309,20 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
         [Fact]
+        public void ToDifficulty_ZeroTest()
+        {
+            var tar = new Target(0);
+            Target max = 0x1d00ffff;
+
+            BigInteger actual = tar.ToDifficulty(max);
+
+            Assert.Equal(BigInteger.Zero, actual);
+        }
+
+        [Fact]
         public void ToHashrateTest()
         {
-            Target tar = new Target(0x1b0404cbU);
+            var tar = new Target(0x1b0404cbU);
             Target max = 0x1d00ffff;
 
             BigInteger actual = tar.ToHashrate(max);
@@ -290,13 +332,185 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
 
-        // TODO: add comparison tests. Target may need some significant changes before
+        [Fact]
+        public void Cast_FromNumberTest()
+        {
+            uint ui = 0x11223344U;
+            ushort us = 0x1122;
+            byte b = 0x01;
+            int i = 0x11223344;
+
+            Target c1 = ui;
+            Target c2 = us;
+            Target c3 = b;
+            Target c4 = (Target)i;
+
+            Helper.ComparePrivateField(c1, "value", (uint)ui);
+            Helper.ComparePrivateField(c2, "value", (uint)us);
+            Helper.ComparePrivateField(c3, "value", (uint)b);
+            Helper.ComparePrivateField(c4, "value", (uint)i);
+        }
+
+        [Fact]
+        public void Cast_ToNumberTest()
+        {
+            var tar1 = new Target(10);
+            var tar2 = new Target(Example);
+
+            uint ui1 = tar1;
+            uint ui2 = tar2;
+            ushort us1 = (ushort)tar1;
+            ushort us2 = (ushort)tar2;
+            byte b1 = (byte)tar1;
+            byte b2 = (byte)tar2;
+            int i1 = (int)tar1;
+            int i2 = (int)tar2;
+
+            Assert.Equal((uint)10, ui1);
+            Assert.Equal(Example, ui2);
+            Assert.Equal((ushort)10, us1);
+            Assert.Equal(unchecked((ushort)Example), us2);
+            Assert.Equal((byte)10, b1);
+            Assert.Equal(unchecked((byte)Example), b2);
+            Assert.Equal(10, i1);
+            Assert.Equal(unchecked((int)Example), i2);
+        }
+
+
+        public static IEnumerable<object[]> GetCompareSameTypeCases()
+        {
+            yield return new object[]
+            {
+                new Target(0), new Target(0), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new Target(1), new Target(0), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new Target(0), new Target(1), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new Target(1), new Target(1), new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new Target(1), new Target(2), new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new Target(2), new Target(1), new ValueCompareResult(true, true, false, false, false, 1)
+            };
+            yield return new object[]
+            {
+                new Target(Example),
+                new Target(Example),
+                new ValueCompareResult(false, true, false, true, true, 0)
+            };
+            yield return new object[]
+            {
+                new Target(Example),
+                new Target(0),
+                new ValueCompareResult(true, true, false, false, false, 1),
+            };
+            yield return new object[]
+            {
+                new Target(0),
+                new Target(Example),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new Target(Example-1),
+                new Target(Example),
+                new ValueCompareResult(false, false, true, true, false, -1)
+            };
+            yield return new object[]
+            {
+                new Target(Example),
+                new Target(Example-1),
+                new ValueCompareResult(true, true, false, false, false, 1)
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetCompareSameTypeCases))]
+        public void ComparisonOperator_SameTypeTest(Target si1, Target si2, ValueCompareResult expected)
+        {
+            Assert.Equal(expected.Bigger, si1 > si2);
+            Assert.Equal(expected.BiggerEqual, si1 >= si2);
+            Assert.Equal(expected.Smaller, si1 < si2);
+            Assert.Equal(expected.SmallerEqual, si1 <= si2);
+
+            Assert.Equal(expected.Equal, si1 == si2);
+            Assert.Equal(!expected.Equal, si1 != si2);
+
+            Assert.Equal(expected.Equal, si1.Equals(si2));
+            Assert.Equal(expected.Equal, si1.Equals((object)si2));
+
+            Assert.Equal(expected.Compare, si1.CompareTo(si2));
+            Assert.Equal(expected.Compare, si1.CompareTo((object)si2));
+        }
+
+        public static IEnumerable<object[]> GetCompareIntCases()
+        {
+            yield return new object[] { new Target(0), 0, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new Target(0), 1, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new Target(0), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new Target(0), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
+
+            yield return new object[] { new Target(1), 0, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new Target(1), 1, new ValueCompareResult(false, true, false, true, true) };
+            yield return new object[] { new Target(1), 2, new ValueCompareResult(false, false, true, true, false) };
+            yield return new object[] { new Target(1), -1, new ValueCompareResult(true, true, false, false, false) };
+            yield return new object[] { new Target(1), int.MaxValue, new ValueCompareResult(false, false, true, true, false) };
+
+            yield return new object[]
+            {
+                new Target(Example), 0, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new Target(Example), -1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new Target(Example), 1, new ValueCompareResult(true, true, false, false, false)
+            };
+            yield return new object[]
+            {
+                new Target(Example), Example, new ValueCompareResult(false, true, false, true, true)
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetCompareIntCases))]
+        public void ComparisonOperator_WithIntTest(Target si, int i, ValueCompareResult expected)
+        {
+            Assert.Equal(expected.Bigger, si > i);
+            Assert.Equal(expected.Bigger, i < si);
+
+            Assert.Equal(expected.BiggerEqual, si >= i);
+            Assert.Equal(expected.BiggerEqual, i <= si);
+
+            Assert.Equal(expected.Smaller, si < i);
+            Assert.Equal(expected.Smaller, i > si);
+
+            Assert.Equal(expected.SmallerEqual, si <= i);
+            Assert.Equal(expected.SmallerEqual, i >= si);
+
+            Assert.Equal(expected.Equal, si == i);
+            Assert.Equal(expected.Equal, i == si);
+
+            Assert.Equal(!expected.Equal, si != i);
+            Assert.Equal(!expected.Equal, i != si);
+        }
 
 
         [Fact]
         public void CompareTo_EdgeTest()
         {
-            Target tar = new Target(0x1b0404cbU);
+            var tar = new Target(0x1b0404cbU);
             object nObj = null;
             object sObj = "Target!";
 
@@ -307,7 +521,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Equals_EdgeTest()
         {
-            Target tar = new Target(0x1b0404cbU);
+            var tar = new Target(0x1b0404cbU);
             object sObj = "Target!";
             Assert.False(tar.Equals(sObj));
         }
@@ -315,7 +529,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void GetHashCodeTest()
         {
-            int expected = 0x1b0404cbU.GetHashCode();
+            int expected = 0x1b0404cb;
             int actual = new Target(0x1b0404cbU).GetHashCode();
 
             Assert.Equal(expected, actual);
@@ -324,7 +538,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void ToStringTest()
         {
-            Target tar = new Target(0x1b0404cbU);
+            var tar = new Target(0x1b0404cbU);
             Assert.Equal("453248203", tar.ToString());
         }
     }
