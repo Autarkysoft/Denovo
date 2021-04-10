@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
     {
         private readonly byte[] bytes1 = { 1, 2, 3, 4, 5 };
         private readonly byte[] bytes2 = { 6, 7 };
-        private readonly byte[] emptyBytes = { };
+        private readonly byte[] emptyBytes = Array.Empty<byte>();
         private readonly byte[] nullBytes = null;
 
 
@@ -199,6 +199,7 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
 
         public static IEnumerable<object[]> GetBigInts()
         {
+            yield return new object[] { "", BigInteger.Zero, BigInteger.Zero };
             yield return new object[] { "00", BigInteger.Zero, BigInteger.Zero };
             yield return new object[] { "01", BigInteger.One, BigInteger.One };
             yield return new object[] { "ff", BigInteger.Parse("255"), BigInteger.MinusOne };
