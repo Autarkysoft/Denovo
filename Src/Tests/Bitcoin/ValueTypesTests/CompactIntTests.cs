@@ -15,18 +15,18 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Constructor_FromIntTest()
         {
-            CompactInt zeroI = new CompactInt(0);
-            CompactInt zeroL = new CompactInt(0L);
+            var zeroI = new CompactInt(0);
+            var zeroL = new CompactInt(0L);
             Helper.ComparePrivateField(zeroI, "value", 0UL);
             Helper.ComparePrivateField(zeroL, "value", 0UL);
 
-            CompactInt cI = new CompactInt(123);
-            CompactInt cL = new CompactInt((long)123);
+            var cI = new CompactInt(123);
+            var cL = new CompactInt((long)123);
             Helper.ComparePrivateField(cI, "value", 123UL);
             Helper.ComparePrivateField(cL, "value", 123UL);
 
-            CompactInt maxI = new CompactInt(int.MaxValue);
-            CompactInt maxL = new CompactInt(long.MaxValue);
+            var maxI = new CompactInt(int.MaxValue);
+            var maxL = new CompactInt(long.MaxValue);
             Helper.ComparePrivateField(maxI, "value", (ulong)int.MaxValue);
             Helper.ComparePrivateField(maxL, "value", (ulong)long.MaxValue);
 
@@ -39,18 +39,18 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Constructor_FromUIntTest()
         {
-            CompactInt zeroUI = new CompactInt(0U);
-            CompactInt zeroUL = new CompactInt(0UL);
+            var zeroUI = new CompactInt(0U);
+            var zeroUL = new CompactInt(0UL);
             Helper.ComparePrivateField(zeroUI, "value", 0UL);
             Helper.ComparePrivateField(zeroUL, "value", 0UL);
 
-            CompactInt cUI = new CompactInt(123U);
-            CompactInt cUL = new CompactInt(123UL);
+            var cUI = new CompactInt(123U);
+            var cUL = new CompactInt(123UL);
             Helper.ComparePrivateField(cUI, "value", 123UL);
             Helper.ComparePrivateField(cUL, "value", 123UL);
 
-            CompactInt maxUI = new CompactInt(uint.MaxValue);
-            CompactInt maxUL = new CompactInt(ulong.MaxValue);
+            var maxUI = new CompactInt(uint.MaxValue);
+            var maxUL = new CompactInt(ulong.MaxValue);
             Helper.ComparePrivateField(maxUI, "value", (ulong)uint.MaxValue);
             Helper.ComparePrivateField(maxUL, "value", ulong.MaxValue);
         }
@@ -84,7 +84,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void TryReadTest(byte[] data, int finalPos, ulong expected)
         {
-            FastStreamReader stream = new FastStreamReader(data);
+            var stream = new FastStreamReader(data);
             bool b = CompactInt.TryRead(stream, out CompactInt actual, out string error);
 
             Assert.True(b);
@@ -96,7 +96,7 @@ namespace Tests.Bitcoin.ValueTypesTests
 
         public static IEnumerable<object[]> GetReadFailCases()
         {
-            yield return new object[] { new byte[] { }, 0, Err.EndOfStream };
+            yield return new object[] { Array.Empty<byte>(), 0, Err.EndOfStream };
             yield return new object[] { new byte[] { 253 }, 1, "First byte 253 needs to be followed by at least 2 byte." };
             yield return new object[]
             {
@@ -141,7 +141,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadFailCases))]
         public void TryRead_FailTest(byte[] data, int finalPos, string expError)
         {
-            FastStreamReader stream = new FastStreamReader(data);
+            var stream = new FastStreamReader(data);
             bool b = CompactInt.TryRead(stream, out CompactInt actual, out string error);
 
             Assert.False(b);
@@ -161,13 +161,36 @@ namespace Tests.Bitcoin.ValueTypesTests
         }
 
 
+        [Theory]
+        [InlineData(0, 0, 1)]
+        [InlineData(0, 2, 3)]
+        [InlineData(252, 2, 3)]
+        [InlineData(253, 3, 6)]
+        [InlineData(ushort.MaxValue, 3, 6)]
+        [InlineData(ushort.MaxValue + 1, 3, 8)]
+        [InlineData(uint.MaxValue, 3, 8)]
+        [InlineData(uint.MaxValue + 1UL, 3, 12)]
+        [InlineData(ulong.MaxValue, 3, 12)]
+        public void AddSerializedSizeTest(ulong val, int init, int expected)
+        {
+            var ci = new CompactInt(val);
+            var counter = new SizeCounter(init);
+            ci.AddSerializedSize(counter);
+
+            var stream = new FastStream(10);
+            ci.WriteToStream(stream);
+            Assert.Equal(expected, stream.GetSize() + init);
+
+            Assert.Equal(expected, counter.Size);
+        }
+
 
         [Theory]
         [MemberData(nameof(GetReadCases))]
         public void WriteToStreamTest(byte[] data, int finalOffset, ulong val)
         {
-            CompactInt ci = new CompactInt(val);
-            FastStream stream = new FastStream(10);
+            var ci = new CompactInt(val);
+            var stream = new FastStream(10);
             ci.WriteToStream(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -212,8 +235,8 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Cast_ToNumberTest()
         {
-            CompactInt c1 = new CompactInt(10);
-            CompactInt c2 = new CompactInt(ulong.MaxValue);
+            var c1 = new CompactInt(10);
+            var c2 = new CompactInt(ulong.MaxValue);
 
             ulong ul1 = c1;
             ulong ul2 = c2;
@@ -388,7 +411,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void CompareTo_EdgeTest()
         {
-            CompactInt ci = new CompactInt(1);
+            var ci = new CompactInt(1);
             object nObj = null;
             object sObj = "CompactInt!";
 
@@ -399,7 +422,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Equals_EdgeTest()
         {
-            CompactInt ci = new CompactInt(100);
+            var ci = new CompactInt(100);
             object sObj = "CompactInt!";
             object nl = null;
 
@@ -419,7 +442,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void ToStringTest()
         {
-            CompactInt ci = new CompactInt(123);
+            var ci = new CompactInt(123);
             Assert.Equal("123", ci.ToString());
         }
     }

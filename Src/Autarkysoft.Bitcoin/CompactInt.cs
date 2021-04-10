@@ -152,6 +152,30 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Adds the serialized size of this instance to the given counter.
+        /// </summary>
+        /// <param name="counter">Size counter to use</param>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            if (value <= 252) // 1 Byte
+            {
+                counter.AddByte();
+            }
+            else if (value <= 0xffff) // 1 + 2 Byte
+            {
+                counter.Add(3);
+            }
+            else if (value <= 0xffffffff) // 1 + 4 Byte
+            {
+                counter.Add(5);
+            }
+            else // < 0xffffffffffffffff // 1 + 8 Byte
+            {
+                counter.Add(9);
+            }
+        }
+
+        /// <summary>
         /// Converts this value to its byte array representation in little-endian order 
         /// and writes the result to the given <see cref="FastStream"/>.
         /// </summary>
