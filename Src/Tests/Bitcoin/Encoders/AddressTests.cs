@@ -136,7 +136,6 @@ namespace Tests.Bitcoin.Encoders
                 NetworkType.MainNet,
                 AddressType.Invalid
             };
-            yield return new object[] { "BC1QR508D6QEJXTDG4Y5R3ZARVARYV98GJ9P", NetworkType.MainNet, AddressType.Invalid };
             yield return new object[]
             {
                 "tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq47Zagq", NetworkType.TestNet, AddressType.Unknown
@@ -149,7 +148,6 @@ namespace Tests.Bitcoin.Encoders
             {
                 "tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vpggkg4j", NetworkType.TestNet, AddressType.Unknown
             };
-            yield return new object[] { "bc1gmk9yu", NetworkType.MainNet, AddressType.Unknown };
         }
         [Theory]
         [MemberData(nameof(GetTypeCases))]
@@ -224,7 +222,7 @@ namespace Tests.Bitcoin.Encoders
         public void GetP2sh_ExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => Address.GetP2sh(null));
-            Assert.Throws<ArgumentException>(() => Address.GetP2sh(new MockSerializableRedeemScript(new byte[0], 0), (NetworkType)100));
+            Assert.Throws<ArgumentException>(() => Address.GetP2sh(new MockSerializableRedeemScript(Array.Empty<byte>(), 0), (NetworkType)100));
         }
 
 
@@ -347,7 +345,7 @@ namespace Tests.Bitcoin.Encoders
         [Fact]
         public void GetP2wsh_ExceptionTest()
         {
-            var scr = new MockSerializableRedeemScript(new byte[0], 0);
+            var scr = new MockSerializableRedeemScript(Array.Empty<byte>(), 0);
 
             Assert.Throws<ArgumentNullException>(() => Address.GetP2wsh(null, 0));
             Assert.Throws<ArgumentException>(() => Address.GetP2wsh(scr, 1));
@@ -387,7 +385,7 @@ namespace Tests.Bitcoin.Encoders
         [Fact]
         public void GetP2sh_P2wsh_ExceptionTest()
         {
-            var scr = new MockSerializableRedeemScript(new byte[0], 0);
+            var scr = new MockSerializableRedeemScript(Array.Empty<byte>(), 0);
 
             Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wsh(null, 0));
             Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wsh(scr, 1));
