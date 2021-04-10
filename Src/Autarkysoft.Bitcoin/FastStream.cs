@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin
 {
@@ -18,7 +19,7 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public FastStream()
         {
-            buffer = new byte[Capacity];
+            buffer = new byte[DefaultCapacity];
             position = 0;
         }
 
@@ -26,17 +27,19 @@ namespace Autarkysoft.Bitcoin
         /// Initializes a new instance of <see cref="FastStream"/> with the given capacity.
         /// </summary>
         /// <param name="size">
-        /// Size of the buffer to use, small sizes are changed to default <see cref="Capacity"/> value
+        /// Initial buffer size to use, sizes &#60;= 0 are changed to <see cref="DefaultCapacity"/> value without throwing
         /// </param>
         public FastStream(int size)
         {
-            buffer = new byte[size < Capacity ? Capacity : size];
+            buffer = new byte[size <= 0 ? DefaultCapacity : size];
             position = 0;
         }
 
 
-
-        private const int Capacity = 100;
+        /// <summary>
+        /// Default capacity value used in default constructor and for resizing buffer
+        /// </summary>
+        public const int DefaultCapacity = 128;
         // Don't rename (used in test with reflection)
         private byte[] buffer;
         private int position;
@@ -61,15 +64,20 @@ namespace Autarkysoft.Bitcoin
         }
 
 
-        private void CheckAndResize(int extraSize)
+        internal void CheckAndResize(int extraSize)
         {
-            int finalPos = position + extraSize;
-            if (finalPos > buffer.Length)
+            Debug.Assert(extraSize >= 0);
+            Debug.Assert(buffer.Length - position >= 0);
+
+            int toAdd = extraSize - (buffer.Length - position);
+            if (toAdd > 0)
             {
-                int bytesToAdd = finalPos - buffer.Length;
-                byte[] temp = bytesToAdd < Capacity ?
-                              (new byte[buffer.Length + Capacity]) :
-                              (new byte[buffer.Length + bytesToAdd + Capacity]);
+                if (toAdd < DefaultCapacity)
+                {
+                    toAdd = DefaultCapacity;
+                }
+
+                byte[] temp = new byte[buffer.Length + toAdd];
                 Buffer.BlockCopy(buffer, 0, temp, 0, buffer.Length);
                 buffer = temp;
             }
@@ -186,28 +194,35 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// Writes the given byte array to stream startring from the given index.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="count"></param>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="data">The data to write</param>
+        /// <param name="startIndex">The zero-based byte offset into data</param>
+        /// <param name="count">The number of bytes to copy (writing is skipped if the value is negative)</param>
         public void Write(byte[] data, int startIndex, int count)
         {
+            if (count <= 0)
+                return;
+
             CheckAndResize(count);
             Buffer.BlockCopy(data, startIndex, buffer, position, count);
             position += count;
         }
 
         /// <summary>
-        /// Writes the given byte array to stream with zero pads to reach the specified length (<paramref name="sizeWithPad"/>).
+        /// Writes the given byte array to stream with zero pads added after the data to reach the specified length 
+        /// defined by <paramref name="sizeWithPad"/> parameter.
         /// <para/> eg. Write 1 byte=X with <paramref name="sizeWithPad"/>=1 => writes X
         /// <para/> eg. Write 1 byte=X with <paramref name="sizeWithPad"/>=2 => writes X0
         /// </summary>
         /// <param name="data">The data to write</param>
-        /// <param name="sizeWithPad">The desired final length of the given data with padding (must be &#62;= data.Length)</param>
+        /// <param name="sizeWithPad">
+        /// The desired final length of the given data with padding (values &#60; data.Length are ignored)</param>
         public void Write(byte[] data, int sizeWithPad)
         {
-            CheckAndResize(sizeWithPad);
+            int finalSize = sizeWithPad >= data.Length ? sizeWithPad : data.Length;
+            CheckAndResize(finalSize);
             Buffer.BlockCopy(data, 0, buffer, position, data.Length);
-            position += sizeWithPad;
+            position += finalSize;
         }
 
         /// <summary>
@@ -246,8 +261,8 @@ namespace Autarkysoft.Bitcoin
         /// <param name="stream">Stream to use</param>
         public void Write(FastStream stream)
         {
-            CheckAndResize(stream.GetSize());
-            Write(stream.ToByteArray());
+            CheckAndResize(stream.position);
+            Write(stream.buffer, 0, stream.position);
         }
 
 

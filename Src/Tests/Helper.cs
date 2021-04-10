@@ -158,7 +158,7 @@ namespace Tests
         {
             if (string.IsNullOrEmpty(hex))
             {
-                return new byte[0];
+                return Array.Empty<byte>();
             }
             if (hex.Length % 2 != 0)
             {
