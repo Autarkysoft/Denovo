@@ -13,6 +13,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
     public abstract class EmptyPayloadBase : PayloadBase
     {
         /// <inheritdoc/>
+        public override void AddSerializedSize(SizeCounter counter)
+        {
+            // Empty payload doesn't have any size
+        }
+
+        /// <inheritdoc/>
         public override byte[] Serialize() => new byte[0];
 
         /// <inheritdoc/>

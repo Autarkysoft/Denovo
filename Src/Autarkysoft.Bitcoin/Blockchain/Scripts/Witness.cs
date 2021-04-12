@@ -52,6 +52,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            if (Items.Length == 0)
+            {
+                counter.AddByte();
+            }
+            else
+            {
+                counter.AddCompactIntCount(Items.Length);
+                foreach (var item in Items)
+                {
+                    item.GetSerializedWitnessSize(counter);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             if (Items.Length == 0)
@@ -60,7 +77,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             }
             else
             {
-                CompactInt count = new CompactInt(Items.Length);
+                var count = new CompactInt(Items.Length);
                 count.WriteToStream(stream);
                 foreach (var item in Items)
                 {

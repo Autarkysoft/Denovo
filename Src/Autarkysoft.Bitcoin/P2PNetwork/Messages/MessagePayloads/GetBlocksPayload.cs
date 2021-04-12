@@ -123,6 +123,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
         // TODO: add a method here to take IBlockchain (the database manager) and set header hashes itself using that
 
+
+        /// <inheritdoc/>
+        public override void AddSerializedSize(SizeCounter counter)
+        {
+            counter.AddCompactIntCount(Hashes.Length);
+            counter.Add(4 + (Hashes.Length * 32) + 32);
+        }
+
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)
         {

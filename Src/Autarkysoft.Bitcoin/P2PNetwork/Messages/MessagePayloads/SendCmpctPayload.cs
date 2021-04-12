@@ -40,6 +40,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <summary>
+        /// Size of this instance (bool + ulong)
+        /// </summary>
+        public const int Size = 9;
+
+        /// <summary>
         /// A boolean indicating whether to reply with <see cref="CmpctBlockPayload"/> (true) or <see cref="InvPayload"/> and
         /// <see cref="HeadersPayload"/> (false).
         /// </summary>
@@ -65,6 +70,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.SendCmpct;
 
+
+        /// <inheritdoc/>
+        public override void AddSerializedSize(SizeCounter counter) => counter.Add(Size);
 
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)

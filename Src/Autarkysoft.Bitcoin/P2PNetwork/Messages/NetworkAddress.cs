@@ -64,6 +64,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
 
         /// <inheritdoc/>
+        public virtual void AddSerializedSize(SizeCounter counter) => counter.Add(Size);
+
+        /// <inheritdoc/>
         public virtual void Serialize(FastStream stream)
         {
             stream.Write((ulong)NodeServices);

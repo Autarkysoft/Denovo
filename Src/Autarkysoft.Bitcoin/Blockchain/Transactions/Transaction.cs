@@ -163,6 +163,35 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            counter.Add(4 + 4); // Version + Locktime
+            bool hasWitness = !(WitnessList is null) && WitnessList.Length != 0;
+            if (hasWitness)
+            {
+                // SegWit marker
+                counter.Add(2);
+                foreach (var wit in WitnessList)
+                {
+                    wit.AddSerializedSize(counter);
+                }
+            }
+
+            counter.AddCompactIntCount(TxInList.Length);
+            counter.AddCompactIntCount(TxOutList.Length);
+
+            foreach (var tin in TxInList)
+            {
+                tin.AddSerializedSize(counter);
+            }
+
+            foreach (var tout in TxOutList)
+            {
+                tout.AddSerializedSize(counter);
+            }
+        }
+
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             stream.Write(Version);

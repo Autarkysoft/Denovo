@@ -11,6 +11,12 @@ namespace Autarkysoft.Bitcoin
     public interface IDeserializable
     {
         /// <summary>
+        /// Adds the serialized size of this instance to the given counter.
+        /// </summary>
+        /// <param name="counter">Size counter to use</param>
+        void AddSerializedSize(SizeCounter counter);
+
+        /// <summary>
         /// Converts this object to its byte array representation and writes those bytes to the given stream.
         /// </summary>
         /// <param name="stream">Stream to use</param>

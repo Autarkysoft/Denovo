@@ -295,6 +295,46 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
 
+        /// <summary>
+        /// Adds the serialized size of this instance to the given counter as if it was inside an <see cref="IScript"/>.
+        /// </summary>
+        /// <param name="counter">Size counter to use</param>
+        public void AddSerializedNormalSize(SizeCounter counter)
+        {
+            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
+            {
+                counter.AddByte();
+            }
+            else
+            {
+                if (stackIntBytes != null)
+                {
+                    counter.Add(stackIntBytes.Length);
+                    counter.Add(data.Length);
+                }
+                else
+                {
+                    counter.AddWithStackIntLength(data.Length);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds the serialized size of this instance to the given counter as if it was inside an <see cref="IWitness"/>.
+        /// </summary>
+        /// <param name="counter">Size counter to use</param>
+        public void GetSerializedWitnessSize(SizeCounter counter)
+        {
+            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
+            {
+                counter.AddByte();
+            }
+            else
+            {
+                counter.AddWithCompactIntLength(data.Length);
+            }
+        }
+
         /// <inheritdoc/>
         public override void WriteToStream(FastStream stream)
         {

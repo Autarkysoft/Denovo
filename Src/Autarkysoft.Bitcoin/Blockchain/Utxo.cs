@@ -52,6 +52,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            counter.Add(4 + 8); // Index + Amount
+            PubScript.AddSerializedSize(counter);
+        }
+
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             stream.Write(Index);

@@ -108,6 +108,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter) => counter.Add(Constants.MessageHeaderSize + PayloadData.Length);
+
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             stream.Write(networkMagic);

@@ -44,6 +44,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
 
+
+        /// <summary>
+        /// Block header size in bytes when serialized
+        /// </summary>
+        public const int Size = 80;
+
         /// <summary>
         /// Block version
         /// </summary>
@@ -149,6 +155,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             byte[] hashRes = GetHash(recompute);
             return Base16.Encode(hashRes.Reverse().ToArray());
         }
+
+
+        /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter) => counter.Add(Size);
 
         /// <inheritdoc/>
         public void Serialize(FastStream stream)

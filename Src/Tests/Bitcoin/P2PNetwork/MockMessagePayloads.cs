@@ -13,6 +13,7 @@ namespace Tests.Bitcoin.P2PNetwork
     {
         public virtual PayloadType PayloadType => throw new NotImplementedException();
         public virtual byte[] GetChecksum() => throw new NotImplementedException();
+        public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
     }

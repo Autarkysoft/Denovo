@@ -66,13 +66,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             set => _pubScr = (value is null) ? new PubkeyScript() : value;
         }
 
+
+        /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            counter.AddUInt64();
+            PubScript.AddSerializedSize(counter);
+        }
+
         /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             stream.Write(Amount);
             PubScript.Serialize(stream);
         }
-
 
         /// <summary>
         /// Writes a special <see cref="TxOut"/> format to the given stream that is used for signing transactions

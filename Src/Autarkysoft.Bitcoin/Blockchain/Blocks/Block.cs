@@ -240,6 +240,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            counter.Add(BlockHeader.Size);
+            counter.AddCompactIntCount(TransactionList.Length);
+            foreach (var tx in TransactionList)
+            {
+                tx.AddSerializedSize(counter);
+            }
+        }
+
+        /// <inheritdoc/>
         public void SerializeWithoutWitness(FastStream stream)
         {
             Header.Serialize(stream);

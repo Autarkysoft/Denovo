@@ -95,6 +95,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            // Hash + Index + Sequence
+            counter.Add(32 + 4 + 4);
+            SigScript.AddSerializedSize(counter);
+        }
+
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             stream.Write(TxHash);

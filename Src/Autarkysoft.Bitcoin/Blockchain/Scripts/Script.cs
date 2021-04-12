@@ -37,6 +37,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter) => counter.AddWithCompactIntLength(Data.Length);
+
+        /// <inheritdoc/>
         public virtual void Serialize(FastStream stream) => stream.WriteWithCompactIntLength(Data);
 
         /// <inheritdoc/>

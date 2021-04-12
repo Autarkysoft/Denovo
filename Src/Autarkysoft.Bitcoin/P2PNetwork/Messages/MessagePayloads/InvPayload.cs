@@ -61,6 +61,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.Inv;
 
+
+        /// <inheritdoc/>
+        public override void AddSerializedSize(SizeCounter counter)
+        {
+            counter.AddCompactIntCount(InventoryList.Length);
+            counter.Add(InventoryList.Length * Inventory.Size);
+        }
+
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)
         {

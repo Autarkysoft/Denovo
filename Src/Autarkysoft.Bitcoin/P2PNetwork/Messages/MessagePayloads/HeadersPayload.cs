@@ -65,6 +65,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
+        public override void AddSerializedSize(SizeCounter counter)
+        {
+            counter.AddCompactIntCount(Headers.Length);
+            counter.Add((Headers.Length * BlockHeader.Size) + Headers.Length);
+        }
+
+        /// <inheritdoc/>
         public override void Serialize(FastStream stream)
         {
             CompactInt count = new CompactInt(Headers.Length);

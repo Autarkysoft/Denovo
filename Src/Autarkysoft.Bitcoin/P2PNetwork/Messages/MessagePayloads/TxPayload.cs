@@ -46,21 +46,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
-        public override void Serialize(FastStream stream)
-        {
-            Tx.Serialize(stream);
-        }
+        public override void AddSerializedSize(SizeCounter counter) => Tx.AddSerializedSize(counter);
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
-        {
-            if (stream is null)
-            {
-                error = "Stream can not be null.";
-                return false;
-            }
+        public override void Serialize(FastStream stream) => Tx.Serialize(stream);
 
-            return Tx.TryDeserialize(stream, out error);
-        }
+        /// <inheritdoc/>
+        public override bool TryDeserialize(FastStreamReader stream, out string error) => Tx.TryDeserialize(stream, out error);
     }
 }

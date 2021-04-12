@@ -155,6 +155,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
+        public override void AddSerializedSize(SizeCounter counter)
+        {
+            byte[] UA = Encoding.UTF8.GetBytes(UserAgent);
+            counter.Add(4 + 8 + 8 + NetworkAddress.Size + NetworkAddress.Size + 8 + 4 + 1 + UA.Length);
+            counter.AddCompactIntCount(UA.Length);
+        }
+
+        /// <inheritdoc/>
         public override void Serialize(FastStream stream)
         {
             byte[] UA = Encoding.UTF8.GetBytes(UserAgent);

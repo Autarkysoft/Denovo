@@ -14,6 +14,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         public ITransaction Tx { get; set; } = new Transaction();
 
         /// <inheritdoc/>
+        public void AddSerializedSize(SizeCounter counter)
+        {
+            Index.AddSerializedSize(counter);
+            Tx.AddSerializedSize(counter);
+        }
+
+        /// <inheritdoc/>
         public void Serialize(FastStream stream)
         {
             Index.WriteToStream(stream);

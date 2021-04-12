@@ -31,6 +31,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
         }
 
+        /// <inheritdoc/>
+        public abstract void AddSerializedSize(SizeCounter counter);
+
         /// <summary>
         /// Converts this instance to its byte array representation.
         /// </summary>

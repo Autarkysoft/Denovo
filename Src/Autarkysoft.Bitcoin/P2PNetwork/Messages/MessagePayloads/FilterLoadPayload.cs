@@ -114,6 +114,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <inheritdoc/>
         public override PayloadType PayloadType => PayloadType.FilterLoad;
 
+
+        /// <inheritdoc/>
+        public override void AddSerializedSize(SizeCounter counter)
+        {
+            counter.AddCompactIntCount(Filter.Length);
+            counter.Add(Filter.Length + 4 + 4 + 1);
+        }
+
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)
         {
