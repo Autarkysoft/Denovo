@@ -192,7 +192,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
 
-        private readonly int[] allowedEntropyLengths = { 16, 20, 24, 28, 32 };
+        internal static readonly int[] allowedEntropyLengths = { 16, 20, 24, 28, 32 };
         private static readonly int[] allowedWordLengths = { 12, 15, 18, 21, 24 };
         private uint[] wordIndexes;
         private string[] allWords;
