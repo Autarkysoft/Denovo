@@ -58,21 +58,21 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 {
                     // remove any extra whitespace.
                     string num = parts[i].Replace(" ", "");
-                    if (hardenedChars.Any(x => num.Contains(x)))
+                    if (HardenedChars.Any(x => num.Contains(x)))
                     {
                         num = num[0..^1];
-                        if (hardenedChars.Any(x => num.Contains(x)))
+                        if (HardenedChars.Any(x => num.Contains(x)))
                         {
                             throw new FormatException("Input contains more than one indicator for hardened key.");
                         }
-                        Indexes[i - 1] = 0x80000000;
+                        Indexes[i - 1] = HardenedIndex;
                     }
 
                     if (!uint.TryParse(num, out uint ui))
                     {
                         throw new FormatException($"Input ({num}) is not a valid positive number.");
                     }
-                    if ((ui & 0x80000000) != 0)
+                    if ((ui & HardenedIndex) != 0)
                     {
                         throw new FormatException("Index is too big.");
                     }
@@ -83,13 +83,113 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
 
-        private readonly char[] hardenedChars = { '\'', 'h' };
+        /// <summary>
+        /// Accepted hardened index indicators
+        /// </summary>
+        public static readonly char[] HardenedChars = { '\'', 'h' };
+        /// <summary>
+        /// Minimum value for an index to be considered hardened
+        /// </summary>
+        public const uint HardenedIndex = 0x80000000;
         /// <summary>
         /// An array of <see cref="BIP0032Path"/> indexes.
         /// </summary>
         public uint[] Indexes { get; private set; }
 
 
+        /// <summary>
+        /// Different purpose index values for BIP-43
+        /// <para/>m / purpose' / *
+        /// </summary>
+        public enum Bip43Purpose : uint
+        {
+            /// <summary>
+            /// Default index defined by BIP-32 (0')
+            /// </summary>
+            Default = 0 + HardenedIndex,
+            /// <summary>
+            /// Multi-Account Hierarchy for Deterministic Wallets (44')
+            /// </summary>
+            Bip44 = 44 + HardenedIndex,
+            /// <summary>
+            /// Structure for Deterministic P2SH Multisignature Wallets (45')
+            /// </summary>
+            Bip45 = 45 + HardenedIndex,
+            /// <summary>
+            /// Derivation scheme for P2WPKH-nested-in-P2SH based accounts (49')
+            /// </summary>
+            Bip49 = 49 + HardenedIndex,
+        }
+
+        /// <summary>
+        /// Coin type used in BIP-44 scheme
+        /// </summary>
+        /// <remarks>
+        /// See https://github.com/satoshilabs/slips/blob/master/slip-0044.md for list of coins
+        /// </remarks>
+        public enum CoinType : uint
+        {
+            /// <summary>
+            /// Bitcoin (0')
+            /// </summary>
+            Bitcoin = 0 + HardenedIndex,
+            /// <summary>
+            /// Bitcoin testnet (1')
+            /// </summary>
+            BitcoinTestnet = 1 + HardenedIndex
+        }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="BIP0032Path"/> based on BIP-44 scheme where purpose is 44'
+        /// <para/>m / purpose' / coin_type' / account' / change /
+        /// </summary>
+        /// <param name="ct">
+        /// Coin type (any undefined enum can be used by passing a valid UInt32 value, add <see cref="HardenedIndex"/> if needed)
+        /// </param>
+        /// <param name="account">A zero index account number (BIP-44 suggests hardened values)</param>
+        /// <param name="isChange">
+        /// Indicates if the path is for external chain (main addresses used for payments) or change addresses. 
+        /// If true the last index is 1' otherwise 0'.
+        /// </param>
+        /// <returns>New instance of <see cref="BIP0032Path"/></returns>
+        public static BIP0032Path CreateBip44(CoinType ct, uint account, bool isChange)
+        {
+            uint[] temp = new uint[4]
+            {
+                44 + HardenedIndex,
+                (uint)ct,
+                account,
+                isChange ? 1U : 0U
+            };
+
+            return new BIP0032Path(temp);
+        }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="BIP0032Path"/> based on BIP-49 scheme where purpose is 49'
+        /// <para/>m / purpose' / coin_type' / account' / change /
+        /// </summary>
+        /// <param name="ct">
+        /// Coin type (any undefined enum can be used by passing a valid UInt32 value, add <see cref="HardenedIndex"/> if needed)
+        /// </param>
+        /// <param name="account">A zero index account number (BIP-44 suggests hardened values)</param>
+        /// <param name="isChange">
+        /// Indicates if the path is for external chain (main addresses used for payments) or change addresses. 
+        /// If true the last index is 1' otherwise 0'.
+        /// </param>
+        /// <returns>New instance of <see cref="BIP0032Path"/></returns>
+        public static BIP0032Path CreateBip49(CoinType ct, uint account, bool isChange)
+        {
+            uint[] temp = new uint[4]
+            {
+                49 + HardenedIndex,
+                (uint)ct,
+                account,
+                isChange ? 1U : 0U
+            };
+
+            return new BIP0032Path(temp);
+        }
 
         /// <summary>
         /// Adds the given index to the end of the index array (expands the array by one item).
@@ -112,9 +212,9 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             StringBuilder sb = new StringBuilder("m");
             foreach (var item in Indexes)
             {
-                if ((item & 0x80000000) != 0)
+                if ((item & HardenedIndex) != 0)
                 {
-                    sb.Append($"/{item - 0x80000000}{hardenedChars[0]}");
+                    sb.Append($"/{item - HardenedIndex}{HardenedChars[0]}");
                 }
                 else
                 {

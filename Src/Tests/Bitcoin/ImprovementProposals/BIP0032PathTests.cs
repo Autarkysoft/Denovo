@@ -84,6 +84,42 @@ namespace Tests.Bitcoin.ImprovementProposals
             Assert.Contains("Depth can not be bigger than 1 byte.", ex.Message);
         }
 
+        [Theory]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 0 + Hard, false, "m/44'/0'/0'/0")]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 0 + Hard, true, "m/44'/0'/0'/1")]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 1 + Hard, false, "m/44'/0'/1'/0")]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 1 + Hard, true, "m/44'/0'/1'/1")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 0 + Hard, false, "m/44'/1'/0'/0")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 0 + Hard, true, "m/44'/1'/0'/1")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 1 + Hard, false, "m/44'/1'/1'/0")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 1 + Hard, true, "m/44'/1'/1'/1")]
+        [InlineData((BIP0032Path.CoinType)1000, 1 + Hard, true, "m/44'/1000/1'/1")]
+        [InlineData((BIP0032Path.CoinType)(1000 + Hard), 1 + Hard, true, "m/44'/1000'/1'/1")]
+        public void CreateBip44Test(BIP0032Path.CoinType ct, uint account, bool isChange, string expected)
+        {
+            var path = BIP0032Path.CreateBip44(ct, account, isChange);
+            string actual = path.ToString();
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 0 + Hard, false, "m/49'/0'/0'/0")]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 0 + Hard, true, "m/49'/0'/0'/1")]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 1 + Hard, false, "m/49'/0'/1'/0")]
+        [InlineData(BIP0032Path.CoinType.Bitcoin, 1 + Hard, true, "m/49'/0'/1'/1")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 0 + Hard, false, "m/49'/1'/0'/0")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 0 + Hard, true, "m/49'/1'/0'/1")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 1 + Hard, false, "m/49'/1'/1'/0")]
+        [InlineData(BIP0032Path.CoinType.BitcoinTestnet, 1 + Hard, true, "m/49'/1'/1'/1")]
+        [InlineData((BIP0032Path.CoinType)1000, 1 + Hard, true, "m/49'/1000/1'/1")]
+        [InlineData((BIP0032Path.CoinType)(1000 + Hard), 1 + Hard, true, "m/49'/1000'/1'/1")]
+        public void CreateBip49Test(BIP0032Path.CoinType ct, uint account, bool isChange, string expected)
+        {
+            var path = BIP0032Path.CreateBip49(ct, account, isChange);
+            string actual = path.ToString();
+            Assert.Equal(expected, actual);
+        }
+
         [Fact]
         public void AddTest()
         {
