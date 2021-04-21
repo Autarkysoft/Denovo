@@ -36,10 +36,10 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetEntropyCases), true)]
         public void Constructor_FromBytesTest(byte[] ent, string expMnemonic, string expXprv)
         {
-            using BIP0039 bip39 = new BIP0039(ent, passPhrase: "TREZOR");
+            using BIP0039 bip39 = new(ent, passPhrase: "TREZOR");
             string actMnemonic = bip39.ToMnemonic();
             // Also check if base class (BIP-32) is set correctly:
-            string actXprv = bip39.ToBase58(false);
+            string actXprv = bip39.ToBase58(BIP0032.XType.MainNet_xprv);
 
             Assert.Equal(expMnemonic, actMnemonic);
             Assert.Equal(expXprv, actXprv);
@@ -77,7 +77,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         public void Constructor_FromRngTest()
         {
             var rng = new MockRng("bfdf93686a31cd55fc5c1b8fd290fe39");
-            using BIP0039 bip = new BIP0039(rng, 16);
+            using BIP0039 bip = new(rng, 16);
 
             string actual = bip.ToMnemonic();
             string expected = "save wish sure stamp broom priority vapor lock more nest display inch";
@@ -99,7 +99,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData(33)]
         public void Constructor_FromRng_OutOfRangeExceptionTest(int entLen)
         {
-            MockRng rng = new MockRng(new byte[0]);
+            var rng = new MockRng(Array.Empty<byte>());
             Assert.Throws<ArgumentOutOfRangeException>(() => new BIP0039(rng, entLen));
         }
 
@@ -108,10 +108,10 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetEntropyCases), false)]
         public void Constructor_FromStringTest(string expMnemonic, string expXprv)
         {
-            using BIP0039 bip = new BIP0039(expMnemonic, passPhrase: "TREZOR");
+            using BIP0039 bip = new(expMnemonic, passPhrase: "TREZOR");
             string actMnemonic = bip.ToMnemonic();
             // Also check if base class (BIP-32) is set correctly:
-            string actXprv = bip.ToBase58(false);
+            string actXprv = bip.ToBase58(BIP0032.XType.MainNet_xprv);
 
             Assert.Equal(expMnemonic, actMnemonic);
             Assert.Equal(expXprv, actXprv);
@@ -158,7 +158,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         public void Constructor_FromString_MultipleSpacesTest()
         {
             string mnemonic = " legal   winner  thank year wave sausage worth useful legal   winner thank yellow   ";
-            using BIP0039 bip = new BIP0039(mnemonic);
+            using BIP0039 bip = new(mnemonic);
 
             string actual = bip.ToMnemonic();
             string expected = "legal winner thank year wave sausage worth useful legal winner thank yellow";
@@ -187,10 +187,10 @@ namespace Tests.Bitcoin.ImprovementProposals
         public void Constructor_FromBytes_JapTest(byte[] entropy, string expMnemonic, string pass, string expXprv)
         {
             // The passphrase is not normalized, this test makes sure the constructor normalizes it correctly
-            using BIP0039 bip = new BIP0039(entropy, BIP0039.WordLists.Japanese, pass);
+            using BIP0039 bip = new(entropy, BIP0039.WordLists.Japanese, pass);
             string actMnemonic = bip.ToMnemonic();
             // Also check if base class (BIP-32) is set correctly:
-            string actXprv = bip.ToBase58(false);
+            string actXprv = bip.ToBase58(BIP0032.XType.MainNet_xprv);
 
             Assert.Equal(expMnemonic.Normalize(NormalizationForm.FormKD), actMnemonic);
             Assert.Equal(expXprv, actXprv);
@@ -201,10 +201,10 @@ namespace Tests.Bitcoin.ImprovementProposals
         public void Constructor_FromString_JapTest(string expMnemonic, string pass, string expXprv)
         {
             // Both mnemonic and passphrase are not normalized, this test makes sure the constructor normalizes them correctly
-            using BIP0039 bip = new BIP0039(expMnemonic, BIP0039.WordLists.Japanese, pass);
+            using BIP0039 bip = new(expMnemonic, BIP0039.WordLists.Japanese, pass);
             string actMnemonic = bip.ToMnemonic();
             // Also check if base class (BIP-32) is set correctly:
-            string actXprv = bip.ToBase58(false);
+            string actXprv = bip.ToBase58(BIP0032.XType.MainNet_xprv);
 
             Assert.Equal(expMnemonic.Normalize(NormalizationForm.FormKD), actMnemonic);
             Assert.Equal(expXprv, actXprv);

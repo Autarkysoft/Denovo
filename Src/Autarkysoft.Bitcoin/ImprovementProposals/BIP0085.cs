@@ -32,7 +32,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// </param>
         public BIP0085(string masterExtendedKey, NetworkType netType = NetworkType.MainNet)
         {
-            bip32 = new BIP0032(masterExtendedKey, netType);
+            bip32 = new BIP0032(masterExtendedKey);
             ReadOnlySpan<byte> empty = new byte[4];
             if (!empty.SequenceEqual(bip32.ChildNumber) || !empty.SequenceEqual(bip32.ParentFingerPrint))
             {

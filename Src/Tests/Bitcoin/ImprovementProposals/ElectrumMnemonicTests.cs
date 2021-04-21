@@ -128,8 +128,8 @@ namespace Tests.Bitcoin.ImprovementProposals
 
             if (bip32Seed != null)
             {
-                string actualXprv = elmn.ToBase58(false);
-                string expectedXprv = new BIP0032(bip32Seed).ToBase58(false);
+                string actualXprv = elmn.ToBase58(BIP0032.XType.MainNet_xprv);
+                string expectedXprv = new BIP0032(bip32Seed).ToBase58(BIP0032.XType.MainNet_xprv);
                 Assert.Equal(expectedXprv, actualXprv);
             }
         }
@@ -176,8 +176,8 @@ namespace Tests.Bitcoin.ImprovementProposals
             Assert.Throws<ArgumentOutOfRangeException>(() => new ElectrumMnemonic(new byte[16], mnt));
             Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new byte[17], mntBad1));
             Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new byte[17], mntBad2));
-            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new MockRng(new byte[0]), mntBad1));
-            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new MockRng(new byte[0]), mntBad2));
+            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new MockRng(Array.Empty<byte>()), mntBad1));
+            Assert.Throws<ArgumentException>(() => new ElectrumMnemonic(new MockRng(Array.Empty<byte>()), mntBad2));
         }
 
         [Theory]

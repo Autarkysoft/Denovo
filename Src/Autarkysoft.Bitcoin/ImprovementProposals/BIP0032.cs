@@ -11,6 +11,7 @@ using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Autarkysoft.Bitcoin.ImprovementProposals
@@ -85,17 +86,14 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <summary>
         /// Initializes a new instance of <see cref="BIP0032"/> using the given base-58 encoded 
         /// extended public or private key string.
+        /// <para/>This will set the <see cref="ExtendedKeyType"/> property that can be used by caller to decide
+        /// what derivation path and address type to use for child keys.
         /// </summary>
-        /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException">If given private key is outside of curve range.</exception>
         /// <exception cref="FormatException"/>
         /// <param name="extendedKey">Base-58 encoded extended key to use</param>
-        /// <param name="netType">
-        /// [Default value = <see cref="NetworkType.MainNet"/>]
-        /// The expected network that this extended key belongs to.
-        /// </param>
-        public BIP0032(string extendedKey, NetworkType netType = NetworkType.MainNet)
+        public BIP0032(string extendedKey)
         {
             if (string.IsNullOrWhiteSpace(extendedKey))
                 throw new ArgumentNullException(nameof(extendedKey), "Extended key can not be null or empty.");
@@ -105,39 +103,27 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (decoded.Length != ExtendedKeyLength)
             {
                 throw new FormatException($"Extended key length should be {ExtendedKeyLength} bytes " +
-                    $"but it is {decoded.Length} bytes.");
+                                          $"but it is {decoded.Length} bytes.");
             }
 
-            Span<byte> ver = decoded.SubArray(0, 4);
-            bool isPublic;
-            if (netType == NetworkType.MainNet)
-            {
-                if (!ver.SequenceEqual(prvMainVer) && !ver.SequenceEqual(pubMainVer))
-                {
-                    throw new FormatException("Unknown extended key version.");
-                }
-                isPublic = ver.SequenceEqual(pubMainVer);
-            }
-            else if (netType == NetworkType.TestNet || netType == NetworkType.RegTest)
-            {
-                if (!ver.SequenceEqual(prvTestVer) && !ver.SequenceEqual(pubTestVer))
-                {
-                    throw new FormatException("Unknown extended key version.");
-                }
-                isPublic = !ver.SequenceEqual(pubTestVer);
-            }
-            else
-            {
-                throw new ArgumentException("Invalid network type.");
-            }
-
-
+            int version = decoded[3] | (decoded[2] << 8) | (decoded[1] << 16) | (decoded[0] << 24);
             ExtendedKeyDepth = decoded[4];
             ParentFingerPrint = decoded.SubArray(5, 4);
             ChildNumber = decoded.SubArray(9, 4);
             ChainCode = decoded.SubArray(13, 32);
-
             byte[] key = decoded.SubArray(45, 33);
+
+            bool isPublic;
+            if (Enum.IsDefined(typeof(XType), version))
+            {
+                ExtendedKeyType = (XType)version;
+                isPublic = IsPublic(ExtendedKeyType);
+            }
+            else
+            {
+                ExtendedKeyType = XType.Unknown;
+                isPublic = key[0] != 0;
+            }
 
             if (!isPublic && key[0] != 0)
             {
@@ -163,16 +149,121 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
 
-        // 2^31
-        internal const uint HardenedIndex = 0x80000000;
+        /// <summary>
+        /// Extended key type set based on first 4 bytes of the base58 encoded string and is used to determine the type of
+        /// addresses to derive from this extended key.
+        /// </summary>
+        /// <remarks>
+        /// https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki#extended-key-version
+        /// https://github.com/satoshilabs/slips/blob/master/slip-0132.md#registered-hd-version-bytes
+        /// </remarks>
+        public enum XType
+        {
+            /// <summary>
+            /// Unknown type
+            /// <para/>Returned from constructor for any extended key string that can not be recognized. Should not be used
+            /// for (re)encoding this instance to Base-58
+            /// </summary>
+            Unknown,
+            /// <summary>
+            /// The original type defined by BIP-32 for extended MainNet private keys starting with xprv
+            /// </summary>
+            MainNet_xprv = 0x0488ade4,
+            /// <summary>
+            /// The original type defined by BIP-32 for extended MainNet public keys starting with xpub
+            /// </summary>
+            MainNet_xpub = 0x0488b21e,
+            /// <summary>
+            /// Extended MainNet private key starting with yprv defined by BIP-49 to derive P2SH-P2WPKH address types
+            /// </summary>
+            MainNet_yprv = 0x049d7878,
+            /// <summary>
+            /// Extended MainNet public key starting with ypub defined by BIP-49 to derive P2SH-P2WPKH address types
+            /// </summary>
+            MainNet_ypub = 0x049d7cb2,
+            /// <summary>
+            /// Extended MainNet private key starting with zpub defined by BIP-84 to derive P2WPKH address types
+            /// </summary>
+            MainNet_zprv = 0x04b2430c,
+            /// <summary>
+            /// Extended MainNet public key starting with zpub defined by BIP-84 to derive P2WPKH address types
+            /// </summary>
+            MainNet_zpub = 0x04b24746,
+            /// <summary>
+            /// Extended MainNet private key starting with Yprv to derive P2SH-P2WSH address types
+            /// </summary>
+            MainNet_Yprv = 0x0295b005,
+            /// <summary>
+            /// Extended MainNet public key starting with Ypub to derive P2SH-P2WSH address types
+            /// </summary>
+            MainNet_Ypub = 0x0295b43f,
+            /// <summary>
+            /// Extended MainNet private key starting with Zprv to derive P2WSH address types
+            /// </summary>
+            MainNet_Zprv = 0x02aa7a99,
+            /// <summary>
+            /// Extended MainNet public key starting with Zpub to derive P2WSH address types
+            /// </summary>
+            MainNet_Zpub = 0x02aa7ed3,
+
+            /// <summary>
+            /// The original type defined by BIP-32 for extended TestNet private keys starting with tprv
+            /// </summary>
+            TestNet_tprv = 0x04358394,
+            /// <summary>
+            /// The original type defined by BIP-32 for extended TestNet public keys starting with tpub
+            /// </summary>
+            TestNet_tpub = 0x043587cf,
+            /// <summary>
+            /// Extended TestNet private key starting with uprv defined by BIP-49 to derive P2SH-P2WPKH address types
+            /// </summary>
+            TestNet_uprv = 0x044a4e28,
+            /// <summary>
+            /// Extended TestNet public key starting with upub defined by BIP-49 to derive P2SH-P2WPKH address types
+            /// </summary>
+            TestNet_upub = 0x044a5262,
+            /// <summary>
+            /// Extended TestNet private key starting with vpub defined by BIP-84 to derive P2WPKH address types
+            /// </summary>
+            TestNet_vprv = 0x045f18bc,
+            /// <summary>
+            /// Extended TestNet public key starting with vpub defined by BIP-84 to derive P2WPKH address types
+            /// </summary>
+            TestNet_vpub = 0x045f1cf6,
+            /// <summary>
+            /// Extended TestNet private key starting with Uprv to derive P2SH-P2WSH address types
+            /// </summary>
+            TestNet_Uprv = 0x024285b5,
+            /// <summary>
+            /// Extended TestNet public key starting with Upub to derive P2SH-P2WSH address types
+            /// </summary>
+            TestNet_Upub = 0x024289ef,
+            /// <summary>
+            /// Extended TestNet private key starting with Vprv to derive P2WSH address types
+            /// </summary>
+            TestNet_Vprv = 0x02575048,
+            /// <summary>
+            /// Extended TestNet public key starting with Vpub to derive P2WSH address types
+            /// </summary>
+            TestNet_Vpub = 0x02575483,
+        }
+
+
+        /// <summary>
+        /// Minimum value for an index to be considered hardened (equal to 2^31)
+        /// </summary>
+        public const uint HardenedIndex = 0x80000000;
+        /// <summary>
+        /// Minimum accepted length for the entropy (128 bits)
+        /// </summary>
+        public const int MinEntropyLength = 16;
+        /// <summary>
+        /// Maximum accepted length for the entropy (512 bits)
+        /// </summary>
+        public const int MaxEntropyLength = 64;
+
         // version(4) + depth(1) + fingerPrint(4) + index(4) + chain(32) + key(33)
         internal const int ExtendedKeyLength = 78;
-        private const int MinEntropyLength = 16;
-        private const int MaxEntropyLength = 64;
-        private readonly byte[] prvMainVer = { 0x04, 0x88, 0xad, 0xe4 };
-        private readonly byte[] pubMainVer = { 0x04, 0x88, 0xb2, 0x1e };
-        private readonly byte[] prvTestVer = { 0x04, 0x35, 0x83, 0x94 };
-        private readonly byte[] pubTestVer = { 0x04, 0x35, 0x87, 0xcf };
 
         private readonly BigInteger N = new SecP256k1().N;
 
@@ -188,7 +279,15 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private PrivateKey PrvKey;
         private PublicKey PubKey;
 
+        /// <summary>
+        /// Gets or sets the extended key type
+        /// </summary>
+        public XType ExtendedKeyType { get; set; }
 
+        private bool IsPublic(XType xType) => xType == XType.MainNet_xpub || xType == XType.MainNet_Ypub ||
+            xType == XType.MainNet_ypub || xType == XType.MainNet_Zpub || xType == XType.MainNet_zpub ||
+            xType == XType.TestNet_tpub || xType == XType.TestNet_upub || xType == XType.TestNet_Upub ||
+            xType == XType.TestNet_Vpub || xType == XType.TestNet_vpub;
 
         /// <summary>
         /// Initializes this instance using the given entropy.
@@ -220,9 +319,21 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             right32 = hash.SubArray(32);
         }
 
-        private bool IsHardendedIndex(uint i) => (i & HardenedIndex) != 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsHardendedIndex(uint i) => (i & HardenedIndex) != 0;
 
 
+        /// <summary>
+        /// Derives and returns the requested number of child private keys using the given derivation path.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <exception cref="ObjectDisposedException"/>
+        /// <param name="path">Derivation path</param>
+        /// <param name="count">Number of keys to return</param>
+        /// <param name="startIndex">[Default value = 0] Starting index of the child key</param>
+        /// <param name="step">[Default value = 1] Steps between each key (minimum will always be 1)</param>
+        /// <returns>An array of derived child private keys</returns>
         public PrivateKey[] GetPrivateKeys(BIP0032Path path, uint count, uint startIndex = 0, uint step = 1)
         {
             if (isDisposed)
@@ -320,6 +431,18 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         }
 
 
+        /// <summary>
+        /// Derives and returns the requested number of child public keys using the given derivation path.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <exception cref="ObjectDisposedException"/>
+        /// <param name="path">Derivation path</param>
+        /// <param name="count">Number of keys to return</param>
+        /// <param name="startIndex">[Default value = 0] Starting index of the child key</param>
+        /// <param name="step">[Default value = 1] Steps between each key (minimum will always be 1)</param>
+        /// <returns>An array of derived child public keys</returns>
         public PublicKey[] GetPublicKeys(BIP0032Path path, uint count, uint startIndex = 0, uint step = 1)
         {
             if (isDisposed)
@@ -417,31 +540,24 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// </summary>
         /// <exception cref="ObjectDisposedException"/>
         /// <exception cref="ArgumentNullException"/>
-        /// <param name="getPublic">If true returns extended public key, otherwise extended private key if possible.</param>
-        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <param name="xType">Extended key type to return</param>
         /// <returns>Base58-encoded extended key</returns>
-        public string ToBase58(bool getPublic, NetworkType netType = NetworkType.MainNet)
+        public string ToBase58(XType xType)
         {
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(BIP0032), "Instance was disposed.");
-            if (!getPublic && PrvKey is null)
+            bool isPub = IsPublic(xType);
+            if (!isPub && PrvKey is null)
                 throw new ArgumentNullException(nameof(PrvKey), "Can not get extended private key from public key.");
 
-            byte[] ver = netType switch
-            {
-                NetworkType.MainNet => getPublic ? pubMainVer : prvMainVer,
-                NetworkType.TestNet => getPublic ? pubTestVer : prvTestVer,
-                NetworkType.RegTest => getPublic ? pubTestVer : prvTestVer,
-                _ => throw new ArgumentException("Network type is not defined."),
-            };
 
             FastStream stream = new FastStream(ExtendedKeyLength);
-            stream.Write(ver);
+            stream.WriteBigEndian((uint)xType);
             stream.Write(ExtendedKeyDepth);
             stream.Write(ParentFingerPrint);
             stream.Write(ChildNumber);
             stream.Write(ChainCode);
-            if (getPublic)
+            if (isPub)
             {
                 stream.Write(PubKey.ToByteArray(true));
             }
@@ -453,7 +569,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             return Base58.EncodeWithChecksum(stream.ToByteArray());
         }
-
 
 
         private bool isDisposed = false;
