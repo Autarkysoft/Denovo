@@ -26,11 +26,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <exception cref="FormatException"/>
         /// <param name="masterExtendedKey">Master extended key (xprv string)</param>
-        /// <param name="netType">
-        /// [Default value = <see cref="NetworkType.MainNet"/>]
-        /// The expected network that this extended key belongs to.
-        /// </param>
-        public BIP0085(string masterExtendedKey, NetworkType netType = NetworkType.MainNet)
+        public BIP0085(string masterExtendedKey)
         {
             bip32 = new BIP0032(masterExtendedKey);
             ReadOnlySpan<byte> empty = new byte[4];

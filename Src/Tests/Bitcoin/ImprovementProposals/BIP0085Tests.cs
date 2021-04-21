@@ -41,7 +41,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetSimpleCases))]
         public void DeriveEntropyTest(string xprv, BIP0032Path path, byte[] expected)
         {
-            using BIP0085 bip85 = new BIP0085(xprv);
+            using BIP0085 bip85 = new(xprv);
             byte[] actual = bip85.DeriveEntropy(path);
 
             Assert.Equal(expected, actual);
@@ -96,10 +96,10 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetBip39Cases))]
         public void DeriveEntropyBip39Test(string xprv, BIP0039.WordLists lang, int wordLen, uint index, byte[] expectedEnt, string expectedMn)
         {
-            using BIP0085 bip85 = new BIP0085(xprv);
+            using BIP0085 bip85 = new(xprv);
             byte[] actualEnt = bip85.DeriveEntropyBip39(lang, wordLen, index);
 
-            using BIP0039 bip39 = new BIP0039(actualEnt, lang);
+            using BIP0039 bip39 = new(actualEnt, lang);
             string actualMn = bip39.ToMnemonic();
 
             Assert.Equal(expectedEnt, actualEnt);
@@ -135,7 +135,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetHdSeedWifCases))]
         public void DeriveEntropyHdSeedWifTest(string xprv, uint index, byte[] expected)
         {
-            using BIP0085 bip85 = new BIP0085(xprv);
+            using BIP0085 bip85 = new(xprv);
             byte[] actual = bip85.DeriveEntropyHdSeedWif(index);
 
             Assert.Equal(expected, actual);
@@ -162,7 +162,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetXprvCases))]
         public void DeriveEntropyXprvTest(string xprv, uint index, string expected)
         {
-            using BIP0085 bip85 = new BIP0085(xprv);
+            using BIP0085 bip85 = new(xprv);
             string actual = bip85.DeriveEntropyXprv(index);
 
             Assert.Equal(expected, actual);
@@ -190,7 +190,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetHexCases))]
         public void DeriveEntropyHexTest(string xprv, int byteLen, uint index, string expected)
         {
-            using BIP0085 bip85 = new BIP0085(xprv);
+            using BIP0085 bip85 = new(xprv);
             string actual = bip85.DeriveEntropyHex(byteLen, index);
 
             Assert.Equal(expected, actual);
