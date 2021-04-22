@@ -107,7 +107,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public void SetToEmpty() => Data = new byte[0];
+        public void SetToEmpty() => Data = Array.Empty<byte>();
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>

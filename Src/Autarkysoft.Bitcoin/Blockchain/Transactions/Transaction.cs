@@ -307,7 +307,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
             else
             {
-                byte[] empty = new byte[0];
+                byte[] empty = Array.Empty<byte>();
                 // Sequence of other inputs must be set to 0 if the SigHashType is Single or None
                 bool changeSeq = isSingle || isNone;
                 for (int i = 0; i < TxInList.Length; i++)

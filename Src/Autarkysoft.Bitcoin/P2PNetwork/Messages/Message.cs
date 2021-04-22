@@ -75,7 +75,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// </summary>
         public byte[] PayloadName { get; private set; } = new byte[CommandNameSize];
 
-        private byte[] _plData = new byte[0];
+        private byte[] _plData = Array.Empty<byte>();
         /// <summary>
         /// The payload bytes (can be null)
         /// </summary>
@@ -91,7 +91,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                               $"Payload length can not be bigger than {Constants.MaxPayloadSize} bytes.");
                 }
 
-                _plData = value ?? new byte[0];
+                _plData = value ?? Array.Empty<byte>();
             }
         }
 

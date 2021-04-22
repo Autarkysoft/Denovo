@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 using System.Collections.Generic;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
@@ -13,12 +14,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     /// </summary>
     public abstract class Script : IScript
     {
-        private byte[] _scrData = new byte[0];
+        private byte[] _scrData = Array.Empty<byte>();
         /// <inheritdoc/>
         public byte[] Data
         {
             get => _scrData;
-            set => _scrData = value ?? (new byte[0]);
+            set => _scrData = value ?? (Array.Empty<byte>());
         }
 
 

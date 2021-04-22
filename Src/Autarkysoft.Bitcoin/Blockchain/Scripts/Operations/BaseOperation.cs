@@ -101,7 +101,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         {
             if (val == 0)
             {
-                return new byte[0];
+                return Array.Empty<byte>();
             }
 
             bool isNeg = val < 0;

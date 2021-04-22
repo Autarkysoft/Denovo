@@ -241,7 +241,7 @@ namespace Autarkysoft.Bitcoin
             if (count > sourceArray.Length)
                 throw new IndexOutOfRangeException("Array is not long enough.");
 
-            return (count == 0) ? new byte[0] : sourceArray.SubArray(sourceArray.Length - count, count);
+            return (count == 0) ? Array.Empty<byte>() : sourceArray.SubArray(sourceArray.Length - count, count);
         }
 
 
@@ -321,7 +321,7 @@ namespace Autarkysoft.Bitcoin
                 index--;
                 count++;
             }
-            return (count == 0) ? ba : (count == ba.Length) ? new byte[0] : ba.SubArray(0, ba.Length - count);
+            return (count == 0) ? ba : (count == ba.Length) ? Array.Empty<byte>() : ba.SubArray(0, ba.Length - count);
         }
 
         /// <summary>
@@ -342,7 +342,7 @@ namespace Autarkysoft.Bitcoin
             {
                 index++;
             }
-            return (index == 0) ? ba : (index == ba.Length) ? new byte[0] : ba.SubArray(index);
+            return (index == 0) ? ba : (index == ba.Length) ? Array.Empty<byte>() : ba.SubArray(index);
         }
     }
 

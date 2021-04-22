@@ -128,7 +128,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         {
             if (OpValue == OP._0)
             {
-                opData.Push(new byte[0]);
+                opData.Push(Array.Empty<byte>());
             }
             else if (OpValue == OP.Negative1)
             {

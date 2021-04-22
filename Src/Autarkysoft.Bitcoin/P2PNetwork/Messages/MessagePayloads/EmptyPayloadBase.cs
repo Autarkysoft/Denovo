@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
+
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     /// <summary>
@@ -19,7 +21,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override byte[] Serialize() => new byte[0];
+        public override byte[] Serialize() => Array.Empty<byte>();
 
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)
