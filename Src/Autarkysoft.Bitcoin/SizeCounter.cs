@@ -41,6 +41,11 @@ namespace Autarkysoft.Bitcoin
         public int Size { get; private set; }
 
         /// <summary>
+        /// Resets this counter to zero.
+        /// </summary>
+        public void Reset() => Size = 0;
+
+        /// <summary>
         /// Add the given size to this counter
         /// </summary>
         /// <param name="additionalSize">Size to add (has to be positive, won't be checked)</param>

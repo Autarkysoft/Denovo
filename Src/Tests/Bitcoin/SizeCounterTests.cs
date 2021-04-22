@@ -33,6 +33,22 @@ namespace Tests.Bitcoin
             Assert.Throws<ArgumentOutOfRangeException>(() => new SizeCounter(-1));
         }
 
+        [Fact]
+        public void ResetTest()
+        {
+            var counter = new SizeCounter();
+            Assert.Equal(0, counter.Size);
+
+            counter.Reset();
+            Assert.Equal(0, counter.Size);
+
+            counter.Add(10);
+            Assert.Equal(10, counter.Size);
+
+            counter.Reset();
+            Assert.Equal(0, counter.Size);
+        }
+
         [Theory]
         [InlineData(0, 0, 0)]
         [InlineData(1, 0, 1)]
