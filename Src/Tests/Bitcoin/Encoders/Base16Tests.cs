@@ -100,5 +100,37 @@ namespace Tests.Bitcoin.Encoders
         {
             Assert.Throws<ArgumentNullException>(() => Base16.Encode(null));
         }
+
+        [Theory]
+        [InlineData(new byte[] { }, "")]
+        [InlineData(new byte[] { 0 }, "00")]
+        [InlineData(new byte[] { 0, 0 }, "0000")]
+        [InlineData(new byte[] { 16, 42, 255 }, "ff2a10")]
+        [InlineData(new byte[] { 0, 0, 2 }, "020000")]
+        public void EncodeReverseTest(byte[] ba, string expected)
+        {
+            string actual = Base16.EncodeReverse(ba);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void EncodeReverse_AllCharsTest()
+        {
+            byte[] allHexChars = new byte[256];
+            var sb = new StringBuilder(256 * 2);
+            for (int i = 255; i >= 0; i--)
+            {
+                allHexChars[i] = (byte)i;
+                sb.Append($"{allHexChars[i]:x2}");
+            }
+
+            Assert.Equal(sb.ToString(), Base16.EncodeReverse(allHexChars));
+        }
+
+        [Fact]
+        public void EncodeReverse_ExceptionTest()
+        {
+            Assert.Throws<ArgumentNullException>(() => Base16.EncodeReverse(null));
+        }
     }
 }

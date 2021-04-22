@@ -119,5 +119,30 @@ namespace Autarkysoft.Bitcoin.Encoders
             }
             return new string(ca);
         }
+
+        /// <summary>
+        /// Converts the given byte array to base-16 (Hexadecimal) encoded string in reverse order.
+        /// That is 0xabcd turns into 0xcdab.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="data">The array of bytes to convert</param>
+        /// <returns>Base-16 (Hexadecimal) encoded string in reverse order.</returns>
+        public static string EncodeReverse(byte[] data)
+        {
+            if (data == null)
+                throw new ArgumentNullException(nameof(data), "Byte array can not be null.");
+
+
+            Span<char> ca = new char[data.Length * 2];
+            int b;
+            for (int i = 0, j = data.Length - 1; i < data.Length && j >= 0; i++, j--)
+            {
+                b = data[i] >> 4;
+                ca[j * 2] = (char)(87 + b + (((b - 10) >> 31) & -39));
+                b = data[i] & 0xF;
+                ca[j * 2 + 1] = (char)(87 + b + (((b - 10) >> 31) & -39));
+            }
+            return new string(ca);
+        }
     }
 }
