@@ -10,12 +10,15 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
     /// <summary>
-    /// Bitcoin transaction!
-    /// Implements <see cref="ITransaction"/>.
+    /// Bitcoin transaction. Note that this class stores the transaction sizes and transaction hash and if the transaction
+    /// changes it will not re-compute them. There are methods available to manually force re-calculation.
+    /// <para/>Implements <see cref="ITransaction"/>.
     /// </summary>
     public class Transaction : ITransaction
     {
@@ -48,8 +51,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         private const int MaxTxSize = 4_000_000;
-        private readonly Sha256 hashFunc = new Sha256();
-        private readonly Ripemd160Sha256 addrHashFunc = new Ripemd160Sha256();
 
         private int _version;
         /// <inheritdoc/>
@@ -106,15 +107,43 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <inheritdoc/>
         public int SigOpCount { get; set; }
 
+        private int _totalSize;
         /// <summary>
         /// Total transaction size in bytes
         /// </summary>
-        public int TotalSize => ToByteArray().Length;
+        public int TotalSize
+        {
+            get
+            {
+                if (_totalSize == 0)
+                {
+                    var counter = new SizeCounter();
+                    ComputeTotalSize(counter);
+                    _totalSize = counter.Size;
+                }
 
+                return _totalSize;
+            }
+        }
+
+        private int _baseSize;
         /// <summary>
         /// Transaction size without witness
         /// </summary>
-        public int BaseSize => ToByteArrayWithoutWitness().Length;
+        public int BaseSize
+        {
+            get
+            {
+                if (_baseSize == 0)
+                {
+                    var counter = new SizeCounter();
+                    ComputeBaseSize(counter);
+                    _baseSize = counter.Size;
+                }
+
+                return _baseSize;
+            }
+        }
 
         /// <summary>
         /// Transaction weight (ie. 3x <see cref="BaseSize"/> + <see cref="TotalSize"/>)
@@ -127,39 +156,76 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         public int VirtualSize => Weight / 4;
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ComputeTotalSize(SizeCounter counter) => AddSerializedSize(counter);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ComputeBaseSize(SizeCounter counter) => AddSerializedSizeWithoutWitness(counter);
+
+        /// <summary>
+        /// Computes and sets the size values (useful to re-compute size when transaction changes)
+        /// </summary>
+        public void ComputeSizes()
+        {
+            var counter = new SizeCounter();
+            ComputeTotalSize(counter);
+            _totalSize = counter.Size;
+            counter.Reset();
+
+            ComputeBaseSize(counter);
+            _baseSize = counter.Size;
+        }
+
+        /// <summary>
+        /// Computes and sets transaction hash and witness transaction hash
+        /// (useful to re-compute hashes when transaction changes)
+        /// </summary>
+        public void ComputeTransactionHashes()
+        {
+            using Sha256 sha = new Sha256();
+            // Tx hash is always stripping witness
+            byte[] bytesToHash = ToByteArrayWithoutWitness();
+            _txHash = sha.ComputeHashTwice(bytesToHash);
+
+            bytesToHash = ToByteArray();
+            _txWitHash = sha.ComputeHashTwice(bytesToHash);
+        }
+
+        private byte[] _txHash, _txWitHash;
         /// <inheritdoc/>
         public byte[] GetTransactionHash()
         {
-            // Tx hash is always stripping witness
-            byte[] bytesToHash = ToByteArrayWithoutWitness();
-            return hashFunc.ComputeHashTwice(bytesToHash);
+            if (_txHash is null)
+            {
+                Debug.Assert(_txWitHash is null);
+                ComputeTransactionHashes();
+            }
+
+            Debug.Assert(_txHash != null);
+            Debug.Assert(_txWitHash != null);
+
+            return _txHash;
         }
 
         /// <inheritdoc/>
-        public string GetTransactionId()
-        {
-            // TODO: verify if transaction is signed then give TX ID. an unsigned tx doesn't have a TX ID.
-            byte[] hashRes = GetTransactionHash();
-            Array.Reverse(hashRes);
-            return Base16.Encode(hashRes);
-        }
+        public string GetTransactionId() => Base16.EncodeReverse(GetTransactionHash());
 
         /// <inheritdoc/>
         public byte[] GetWitnessTransactionHash()
         {
-            // TODO: same as above (verify if signed)
-            byte[] hashRes = hashFunc.ComputeHashTwice(ToByteArray());
-            return hashRes;
+            if (_txWitHash is null)
+            {
+                Debug.Assert(_txHash is null);
+                ComputeTransactionHashes();
+            }
+
+            Debug.Assert(_txHash != null);
+            Debug.Assert(_txWitHash != null);
+
+            return _txWitHash;
         }
 
         /// <inheritdoc/>
-        public string GetWitnessTransactionId()
-        {
-            // TODO: same as above (verify if signed)
-            byte[] hashRes = GetWitnessTransactionHash();
-            Array.Reverse(hashRes);
-            return Base16.Encode(hashRes);
-        }
+        public string GetWitnessTransactionId() => Base16.EncodeReverse(GetWitnessTransactionHash());
 
 
         /// <inheritdoc/>
@@ -176,6 +242,25 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     wit.AddSerializedSize(counter);
                 }
             }
+
+            counter.AddCompactIntCount(TxInList.Length);
+            counter.AddCompactIntCount(TxOutList.Length);
+
+            foreach (var tin in TxInList)
+            {
+                tin.AddSerializedSize(counter);
+            }
+
+            foreach (var tout in TxOutList)
+            {
+                tout.AddSerializedSize(counter);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void AddSerializedSizeWithoutWitness(SizeCounter counter)
+        {
+            counter.Add(4 + 4); // Version + Locktime
 
             counter.AddCompactIntCount(TxInList.Length);
             counter.AddCompactIntCount(TxOutList.Length);
@@ -346,13 +431,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             stream.Write((int)sht);
 
-            byte[] hash = hashFunc.ComputeHashTwice(stream.ToByteArray());
-            return hash;
+            using Sha256 sha = new Sha256();
+            return sha.ComputeHashTwice(stream.ToByteArray()); ;
         }
 
         /// <inheritdoc/>
         public byte[] SerializeForSigningSegWit(byte[] spendScript, int inputIndex, ulong amount, SigHashType sht)
         {
+            using Sha256 sha = new Sha256();
+
             // TODO: this needs to be optimized by storing hashPrevouts,... to be reused
             bool isAnyone = sht.IsAnyoneCanPay();
             bool isNone = sht.IsNone();
@@ -373,7 +460,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     prvOutStream.Write(tin.Index);
                 }
 
-                hashPrevouts = hashFunc.ComputeHashTwice(prvOutStream.ToByteArray());
+                hashPrevouts = sha.ComputeHashTwice(prvOutStream.ToByteArray());
             }
 
             byte[] hashSequence;
@@ -390,7 +477,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     seqStream.Write(tin.Sequence);
                 }
 
-                hashSequence = hashFunc.ComputeHashTwice(seqStream.ToByteArray());
+                hashSequence = sha.ComputeHashTwice(seqStream.ToByteArray());
             }
 
             byte[] hashOutputs;
@@ -403,14 +490,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     tout.Serialize(outputStream);
                 }
 
-                hashOutputs = hashFunc.ComputeHashTwice(outputStream.ToByteArray());
+                hashOutputs = sha.ComputeHashTwice(outputStream.ToByteArray());
             }
             else if (isSingle && inputIndex < TxOutList.Length)
             {
                 FastStream outputStream = new FastStream(33);
                 TxOutList[inputIndex].Serialize(outputStream);
 
-                hashOutputs = hashFunc.ComputeHashTwice(outputStream.ToByteArray());
+                hashOutputs = sha.ComputeHashTwice(outputStream.ToByteArray());
             }
             else
             {
@@ -434,7 +521,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             LockTime.WriteToStream(finalStream);
             finalStream.Write((int)sht);
 
-            byte[] hashPreimage = hashFunc.ComputeHashTwice(finalStream.ToByteArray());
+            byte[] hashPreimage = sha.ComputeHashTwice(finalStream.ToByteArray());
             return hashPreimage;
         }
 
@@ -470,6 +557,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (opCount > Constants.MaxScriptOpCount)
                 throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
 
+            using Ripemd160Sha256 ripSha = new Ripemd160Sha256();
 
             PubkeyScriptType pubScrType = prvScr.GetPublicScriptType();
             if (pubScrType == PubkeyScriptType.P2PKH || pubScrType == PubkeyScriptType.P2PK ||
@@ -486,7 +574,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 if (opCount > Constants.MaxScriptOpCount)
                     throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
 
-                ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.Data);
+                ReadOnlySpan<byte> expHash = ripSha.ComputeHash(redeem.Data);
                 // Previous is OP_HASH160 PushData(20) OP_EQUAL
                 ReadOnlySpan<byte> actHash = ((ReadOnlySpan<byte>)prvScr.Data).Slice(2, 20);
                 if (!expHash.SequenceEqual(actHash))
@@ -592,6 +680,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (inputIndex < 0 || inputIndex >= TxInList.Length)
                 throw new ArgumentOutOfRangeException(nameof(inputIndex), "Index can not be negative or bigger than input count.");
 
+            using Ripemd160Sha256 ripSha = new Ripemd160Sha256();
+
             PubkeyScriptType scrType = prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.GetPublicScriptType();
             switch (scrType)
             {
@@ -602,11 +692,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 case PubkeyScriptType.P2PKH:
                     ReadOnlySpan<byte> expHash160 =
                         ((ReadOnlySpan<byte>)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(3, 20);
-                    ReadOnlySpan<byte> actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
+                    ReadOnlySpan<byte> actualHash160 = ripSha.ComputeHash(pubKey.ToByteArray(true));
                     bool compressed = true;
                     if (!actualHash160.SequenceEqual(expHash160))
                     {
-                        actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(false));
+                        actualHash160 = ripSha.ComputeHash(pubKey.ToByteArray(false));
                         if (!actualHash160.SequenceEqual(expHash160))
                         {
                             throw new ArgumentException("Public key is invalid.");
@@ -626,7 +716,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                         throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
                     }
 
-                    ReadOnlySpan<byte> expHash = addrHashFunc.ComputeHash(redeem.Data);
+                    ReadOnlySpan<byte> expHash = ripSha.ComputeHash(redeem.Data);
                     ReadOnlySpan<byte> actHash =
                         ((ReadOnlySpan<byte>)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(2, 20);
                     if (!expHash.SequenceEqual(actHash))
@@ -661,11 +751,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                             TxInList[inputIndex].SigScript.SetToP2SH_P2WPKH(redeem);
 
                             expHash160 = ((ReadOnlySpan<byte>)redeem.Data).Slice(2, 20);
-                            actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
+                            actualHash160 = ripSha.ComputeHash(pubKey.ToByteArray(true));
                             compressed = true;
                             if (!actualHash160.SequenceEqual(expHash160))
                             {
-                                actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(false));
+                                actualHash160 = ripSha.ComputeHash(pubKey.ToByteArray(false));
                                 if (!actualHash160.SequenceEqual(expHash160))
                                 {
                                     throw new ArgumentException("Public key is invalid.");
@@ -705,11 +795,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
                 case PubkeyScriptType.P2WPKH:
                     expHash160 = ((ReadOnlySpan<byte>)prevTx.TxOutList[TxInList[inputIndex].Index].PubScript.Data).Slice(2, 20);
-                    actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(true));
+                    actualHash160 = ripSha.ComputeHash(pubKey.ToByteArray(true));
                     compressed = true;
                     if (!actualHash160.SequenceEqual(expHash160))
                     {
-                        actualHash160 = addrHashFunc.ComputeHash(pubKey.ToByteArray(false));
+                        actualHash160 = ripSha.ComputeHash(pubKey.ToByteArray(false));
                         if (!actualHash160.SequenceEqual(expHash160))
                         {
                             throw new ArgumentException("Public key is invalid.");
