@@ -1,5 +1,14 @@
 ### Next release
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.11.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.12.0.0...master)
+
+### Release 0.12.0 (2021-04-23)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.11.0.0...B0.12.0.0)
+* Add new `SizeCounter` class used by `IDeserializable` objects to compute the size of the object without serializing it first
+* `FastStream` class is now using the same initial capacity instead of increasing small ones to `DefaultCapacity`
+* New Experimental idea: Better mnemonic
+* New BIPs: 44 and 49 (BIP-32 related derivation paths and version bytes used in Base58 encoding)
+* `Transaction` class is modified to store size and hash and allow manual update
+* Various tests, some small code improvements, bug fixes and optimization
 
 ### Release 0.11.0 (2021-04-03)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.10.0.0...B0.11.0.0)

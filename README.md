@@ -80,11 +80,16 @@ are in separate classes. Currently:
   [32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki "Hierarchical Deterministic Wallets"),
   [38](https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki "Passphrase-protected private key"),
   [39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki "Mnemonic code for generating deterministic keys") (also Electrum mnemonics),
+  [43](https://github.com/bitcoin/bips/blob/master/bip-0043.mediawiki "Purpose Field for Deterministic Wallets"),
+  [44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki "Multi-Account Hierarchy for Deterministic Wallets"),
+  [49](https://github.com/bitcoin/bips/blob/master/bip-0049.mediawiki "Derivation scheme for P2WPKH-nested-in-P2SH based accounts"),
+  [84](https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki "Derivation scheme for P2WPKH based accounts"),
   [85](https://github.com/bitcoin/bips/blob/master/bip-0085.mediawiki "Deterministic Entropy From BIP32 Keychains"),
   [137](https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki "Signatures of Messages using Private Keys"),
   [152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki "Compact Block Relay"),
   [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF"),
   [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
+  * SLIP: [132](https://github.com/satoshilabs/slips/blob/master/slip-0132.md "Registered HD version bytes for BIP-0032")
 
 ### Future plans
 * Optimization of the libray
