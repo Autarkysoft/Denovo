@@ -48,6 +48,21 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             WitnessList = witnesses;
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="Transaction"/> using hexadecimal string representation of the transaction.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <param name="hex">Transaction data in hexadecimal format</param>
+        public Transaction(string hex)
+        {
+            byte[] data = Base16.Decode(hex);
+            var stream = new FastStreamReader(data);
+            if (!TryDeserialize(stream, out string error))
+            {
+                throw new ArgumentException(error);
+            }
+        }
+
 
 
         private const int MaxTxSize = 4_000_000;
