@@ -29,6 +29,11 @@ namespace Tests.Bitcoin.Blockchain
         public virtual bool IsVerified { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual int SigOpCount { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+        public virtual int TotalSize => throw new NotImplementedException();
+        public virtual int BaseSize => throw new NotImplementedException();
+        public virtual int Weight => throw new NotImplementedException();
+        public virtual int VirtualSize => throw new NotImplementedException();
+
         public virtual byte[] GetTransactionHash() => throw new NotImplementedException();
         public virtual string GetTransactionId() => throw new NotImplementedException();
         public virtual byte[] GetWitnessTransactionHash() => throw new NotImplementedException();

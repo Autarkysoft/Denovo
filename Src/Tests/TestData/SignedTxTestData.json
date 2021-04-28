@@ -16,7 +16,10 @@
         "TxId": "cfdc04aa27cbc9e081c644f7bcb5cda46def9b759a471ee63e5b65c497fdcf6b",
         "WTxId": "cfdc04aa27cbc9e081c644f7bcb5cda46def9b759a471ee63e5b65c497fdcf6b",
         "SigOpCount": 8,
-        "Fee": 310
+        "Fee": 310,
+        "BaseSize": 304,
+        "Weight": 1216,
+        "VirtualSize": 304
       },
       {
         "TestName": "Test #2 - Spending P2KH (3 inputs, 1st is using uncompressed, 2nd and 3rd are using compressed public key)",
@@ -33,7 +36,10 @@
         "TxId": "0801b9ad82735dd98eff1be467beba51968aaa6bd0aa0c6bb2c997d7be9fb440",
         "WTxId": "0801b9ad82735dd98eff1be467beba51968aaa6bd0aa0c6bb2c997d7be9fb440",
         "SigOpCount": 8,
-        "Fee": 590
+        "Fee": 590,
+        "BaseSize": 551,
+        "Weight": 2204,
+        "VirtualSize": 551
       },
       {
         "TestName": "Test #3 - Spending P2KH (3 inputs 2 outputs, sign with Sighash_None)",
@@ -50,7 +56,10 @@
         "TxId": "63e23bcfcb75f1da2da0350574f46e3a56d3c03c32eec2a89c144868d60aad08",
         "WTxId": "63e23bcfcb75f1da2da0350574f46e3a56d3c03c32eec2a89c144868d60aad08",
         "SigOpCount": 8,
-        "Fee": 1130
+        "Fee": 1130,
+        "BaseSize": 519,
+        "Weight": 2076,
+        "VirtualSize": 519
       },
       {
         "TestName": "Test #4 - Spending P2KH (3 inputs 2 outputs, sign with Sighash_Single)",
@@ -67,7 +76,10 @@
         "TxId": "80df872ab83b2be2ea195f7ee92f0002c071a0c20a1307781c40a054b1851239",
         "WTxId": "80df872ab83b2be2ea195f7ee92f0002c071a0c20a1307781c40a054b1851239",
         "SigOpCount": 8,
-        "Fee": 1106
+        "Fee": 1106,
+        "BaseSize": 519,
+        "Weight": 2076,
+        "VirtualSize": 519
       },
       {
         "TestName": "Test #5 - Spending P2KH (3 inputs 2 outputs, sign with Sighash_All | Sighash_AnyoneCanPay)",
@@ -84,7 +96,10 @@
         "TxId": "f09f53ce2d817f7442d317b81bda8a2cb0a6402c80bbaf37fa012752621f681b",
         "WTxId": "f09f53ce2d817f7442d317b81bda8a2cb0a6402c80bbaf37fa012752621f681b",
         "SigOpCount": 8,
-        "Fee": 1430
+        "Fee": 1430,
+        "BaseSize": 519,
+        "Weight": 2076,
+        "VirtualSize": 519
       },
       {
         "TestName": "Test #6 - Spending P2KH (3 inputs 2 outputs, sign with Sighash_None | Sighash_AnyoneCanPay)",
@@ -101,7 +116,10 @@
         "TxId": "e4b35a544152943d5b4086c79c5c071d69bce2de9528cc90c31090e1a41930f2",
         "WTxId": "e4b35a544152943d5b4086c79c5c071d69bce2de9528cc90c31090e1a41930f2",
         "SigOpCount": 8,
-        "Fee": 1730
+        "Fee": 1730,
+        "BaseSize": 519,
+        "Weight": 2076,
+        "VirtualSize": 519
       },
       {
         "TestName": "Test #7 - Spending P2KH (3 inputs 2 outputs, sign with Sighash_Single | Sighash_AnyoneCanPay)",
@@ -118,7 +136,10 @@
         "TxId": "9c95d6973da003dbf611bf6c118d82833d7be9ba4e5ffbf5e2f2bf6ab64b1ac2",
         "WTxId": "9c95d6973da003dbf611bf6c118d82833d7be9ba4e5ffbf5e2f2bf6ab64b1ac2",
         "SigOpCount": 8,
-        "Fee": 2030
+        "Fee": 2030,
+        "BaseSize": 519,
+        "Weight": 2076,
+        "VirtualSize": 519
       }
     ]
   },
@@ -140,7 +161,10 @@
         "TxId": "cf4b3ace014923e39895d2d6818ded06a4fabfc0947986e36375e106e2314efd",
         "WTxId": "343c021fda40f06178fdf31688e9a3dbfe8221666ab9060c897e91fc630d1ebb",
         "SigOpCount": 7,
-        "Fee": 669
+        "Fee": 669,
+        "BaseSize": 198,
+        "Weight": 1115,
+        "VirtualSize": 279
       },
       {
         "TestName": "Test #9 - Spending P2WPKH (3 inputs 2 outputs, sign with Sighash_None)",
@@ -157,7 +181,10 @@
         "TxId": "3ea84abd6771014aee94e6663911990d61453ffbdaafb2e74e43ce65283a66c8",
         "WTxId": "60f2f640c43fbf6b4e00e19a0630ac53b2671eb681c9117ed63a3598ab012a6d",
         "SigOpCount": 7,
-        "Fee": 36069
+        "Fee": 36069,
+        "BaseSize": 198,
+        "Weight": 1115,
+        "VirtualSize": 279
       },
       {
         "TestName": "Test #10 - Spending P2WPKH (3 inputs 2 outputs, sign with Sighash_Single)",
@@ -174,7 +201,10 @@
         "TxId": "d159ddc25934c0924c15d13bccb06ae2f26c0d775d1af07915d345ad5300d443",
         "WTxId": "d15b6cadc3aaa940861323c690973cbd5ec36ad7a2de6d4ecd7e00bc20f9395a",
         "SigOpCount": 7,
-        "Fee": 60006
+        "Fee": 60006,
+        "BaseSize": 198,
+        "Weight": 1115,
+        "VirtualSize": 279
       },
       {
         "TestName": "Test #11 - Spending P2WPKH (3 inputs 2 outputs, sign with Sighash_All | Sighash_AnyoneCalPay)",
@@ -191,7 +221,10 @@
         "TxId": "0b896603efd4243f41f114228c9946e7a243006e3bb20f411e35ff18eed3cbe2",
         "WTxId": "5856b342dd65d9b1e7503b9a8d1f248418b6e0ecbbc7e80bcb1d6ecb0d3076ed",
         "SigOpCount": 7,
-        "Fee": 90060
+        "Fee": 90060,
+        "BaseSize": 198,
+        "Weight": 1115,
+        "VirtualSize": 279
       },
       {
         "TestName": "Test #12 - Spending P2WPKH (3 inputs 2 outputs, sign with Sighash_None | Sighash_AnyoneCalPay)",
@@ -208,7 +241,10 @@
         "TxId": "3bc6fafd4ba7a09a40edad650b6842547d16e24344933705317cd1ce0fc26266",
         "WTxId": "a0830adce9ddb6d48f35da6fd6ae4ad91780123d88e9d767fb1f58b89c66f219",
         "SigOpCount": 7,
-        "Fee": 120600
+        "Fee": 120600,
+        "BaseSize": 198,
+        "Weight": 1115,
+        "VirtualSize": 279
       },
       {
         "TestName": "Test #13 - Spending P2WPKH (3 inputs 2 outputs, sign with Sighash_Single | Sighash_AnyoneCalPay)",
@@ -225,7 +261,10 @@
         "TxId": "fd81fa419f9d466c5a84d589aa67a1729291477a1b8eb16052926d35f15bdf3e",
         "WTxId": "8ed904e2d1b235f0e69623f6058b9a635ba8256484c523c9e18817bb23914e69",
         "SigOpCount": 7,
-        "Fee": 156666
+        "Fee": 156666,
+        "BaseSize": 198,
+        "Weight": 1115,
+        "VirtualSize": 279
       }
     ]
   }

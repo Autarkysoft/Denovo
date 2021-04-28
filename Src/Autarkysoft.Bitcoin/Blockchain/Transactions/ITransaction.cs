@@ -50,6 +50,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         int SigOpCount { get; set; }
 
         /// <summary>
+        /// Returns total transaction size in bytes (serialized size including everything)
+        /// </summary>
+        int TotalSize { get; }
+        /// <summary>
+        /// Returns Transaction size without witness (serialized size removing witnesses)
+        /// </summary>
+        int BaseSize { get; }
+        /// <summary>
+        /// Returns transaction weight (ie. 3x <see cref="BaseSize"/> + <see cref="TotalSize"/>)
+        /// </summary>
+        int Weight { get; }
+        /// <summary>
+        /// Returns virtual transaction size (ie. 1/4 * <see cref="Weight"/>)
+        /// </summary>
+        int VirtualSize { get; }
+
+        /// <summary>
         /// Returns hash of this instance using the defined hash function.
         /// </summary>
         /// <remarks>

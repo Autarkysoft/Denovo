@@ -123,9 +123,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         public int SigOpCount { get; set; }
 
         private int _totalSize;
-        /// <summary>
-        /// Total transaction size in bytes
-        /// </summary>
+        /// <inheritdoc/>
         public int TotalSize
         {
             get
@@ -142,9 +140,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
         private int _baseSize;
-        /// <summary>
-        /// Transaction size without witness
-        /// </summary>
+        /// <inheritdoc/>
         public int BaseSize
         {
             get
@@ -160,15 +156,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
         }
 
-        /// <summary>
-        /// Transaction weight (ie. 3x <see cref="BaseSize"/> + <see cref="TotalSize"/>)
-        /// </summary>
+        /// <inheritdoc/>
         public int Weight => (BaseSize * 3) + TotalSize;
 
-        /// <summary>
-        /// Virtual transaction size (ie. 1/4 * <see cref="Weight"/>)
-        /// </summary>
-        public int VirtualSize => Weight / 4;
+        /// <inheritdoc/>
+        public int VirtualSize => (int)MathF.Ceiling((float)Weight / 4);
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
