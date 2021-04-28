@@ -17,7 +17,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         public void ConstructorTest()
         {
             // Amount can be set to zero and pubkey script to null
-            TxOut tx = new TxOut(0, null);
+            var tx = new TxOut(0, null);
             Assert.Equal(0UL, tx.Amount);
             Assert.NotNull(tx.PubScript);
 
@@ -25,17 +25,25 @@ namespace Tests.Bitcoin.Blockchain.Transactions
             Assert.Throws<ArgumentOutOfRangeException>(() => new TxOut(Constants.TotalSupply + 1, null));
         }
 
+        [Fact]
+        public void AddSerializedSize()
+        {
+            var counter = new SizeCounter();
+            var tx = new TxOut(0, new MockSerializablePubScript(new byte[3], 3));
+            tx.AddSerializedSize(counter);
+            Assert.Equal(8 + 1 + 3, counter.Size);
+        }
 
         [Fact]
         public void SerializeTest()
         {
             var scr = new MockSerializablePubScript(Helper.GetBytes(5), 5);
-            TxOut tx = new TxOut(12_633_113_1334_7895, scr);
-            FastStream stream = new FastStream();
+            var tx = new TxOut(12_633_113_1334_7895, scr);
+            var stream = new FastStream(8 + 5 + 1);
             tx.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
-            // 8 bytes amount + 1 byte empty script
+            // 8 bytes amount + 1 byte push + 5 byte script
             byte[] expected = new byte[8 + 5 + 1];
             Buffer.BlockCopy(Helper.HexToBytes("37a51296f97c04"), 0, expected, 0, 7);
             expected[8] = 5;
@@ -47,8 +55,8 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void Serialize_EmptyScrTest()
         {
-            TxOut tx = new TxOut(0, null);
-            FastStream stream = new FastStream();
+            var tx = new TxOut(0, null);
+            var stream = new FastStream(9);
             tx.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -62,8 +70,8 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void SerializeSigHashSingleTest()
         {
-            FastStream stream = new FastStream();
-            TxOut tx = new TxOut();
+            var stream = new FastStream(9);
+            var tx = new TxOut();
             tx.SerializeSigHashSingle(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -97,11 +105,11 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [MemberData(nameof(GetDeserCases))]
         public void TryDeserializeTest(byte[] data, MockDeserializablePubScript scr, ulong expAmount)
         {
-            TxOut tx = new TxOut()
+            var tx = new TxOut()
             {
                 PubScript = scr
             };
-            FastStreamReader stream = new FastStreamReader(data);
+            var stream = new FastStreamReader(data);
             bool b = tx.TryDeserialize(stream, out string error);
 
             Assert.True(b, error);
@@ -131,7 +139,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [MemberData(nameof(GetDeserFailCases))]
         public void TryDeserialize_FailTest(FastStreamReader stream, MockDeserializablePubScript scr, string expErr)
         {
-            TxOut tx = new TxOut()
+            var tx = new TxOut()
             {
                 PubScript = scr
             };

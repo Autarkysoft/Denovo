@@ -106,6 +106,7 @@ namespace Tests.Bitcoin.Blockchain
 
         private readonly byte[] serBa;
 
+        public override void AddSerializedSize(SizeCounter counter) => counter.Add(serBa.Length);
         public override void Serialize(FastStream stream) => stream.Write(serBa);
     }
 
