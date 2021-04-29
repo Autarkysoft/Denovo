@@ -328,7 +328,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <returns>An array of bytes</returns>
         public byte[] ToByteArray()
         {
-            FastStream stream = new FastStream();
+            var stream = new FastStream(TotalSize);
             Serialize(stream);
             return stream.ToByteArray();
         }
@@ -367,7 +367,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <returns>An array of bytes</returns>
         public byte[] ToByteArrayWithoutWitness()
         {
-            FastStream stream = new FastStream();
+            var stream = new FastStream(BaseSize);
             SerializeWithoutWitness(stream);
             return stream.ToByteArray();
         }
@@ -386,7 +386,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             bool isNone = sht.IsNone();
             bool isAnyone = sht.IsAnyoneCanPay();
             // TODO: change this into Sha256 itself with stream methods inside + benchmark
-            FastStream stream = new FastStream();
+            var stream = new FastStream(TotalSize);
 
             stream.Write(Version);
 
@@ -415,7 +415,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 }
             }
 
-            CompactInt toutCount = new CompactInt(isNone ? 0 : isSingle ? inputIndex + 1 : TxOutList.Length);
+            var toutCount = new CompactInt(isNone ? 0 : isSingle ? inputIndex + 1 : TxOutList.Length);
             toutCount.WriteToStream(stream);
 
             if (isSingle)
@@ -460,7 +460,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             else
             {
                 // Outpoints are 32 byte tx hash + 4 byte index
-                FastStream prvOutStream = new FastStream(TxInList.Length * 36);
+                var prvOutStream = new FastStream(TxInList.Length * 36);
                 foreach (var tin in TxInList)
                 {
                     prvOutStream.Write(tin.TxHash);
@@ -478,7 +478,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             else
             {
                 // Sequences are 4 bytes each
-                FastStream seqStream = new FastStream(TxInList.Length * 4);
+                var seqStream = new FastStream(TxInList.Length * 4);
                 foreach (var tin in TxInList)
                 {
                     seqStream.Write(tin.Sequence);
@@ -491,7 +491,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (!isSingle && !isNone)
             {
                 // 33 is the approximate size of most TxOuts
-                FastStream outputStream = new FastStream(TxOutList.Length * 33);
+                var outputStream = new FastStream(TxOutList.Length * 33);
                 foreach (var tout in TxOutList)
                 {
                     tout.Serialize(outputStream);
@@ -501,7 +501,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
             else if (isSingle && inputIndex < TxOutList.Length)
             {
-                FastStream outputStream = new FastStream(33);
+                var outputStream = new FastStream(33);
                 TxOutList[inputIndex].Serialize(outputStream);
 
                 hashOutputs = sha.ComputeHashTwice(outputStream.ToByteArray());
@@ -515,7 +515,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             // 4(Sequence) + 32(hashOutputs) + 4(LockTime) + 4(SigHashType)
             // Note that the following total length is an approximation since +1 is only true if CompactInt length is 1 byte
             // which is true for majority of cases (<253 byte) and if not FastStream has to resize its array.
-            FastStream finalStream = new FastStream(156 + spendScript.Length + 1);
+            var finalStream = new FastStream(156 + spendScript.Length + 1);
             finalStream.Write(Version);
             finalStream.Write(hashPrevouts);
             finalStream.Write(hashSequence);
@@ -860,7 +860,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     break;
                 case RedeemScriptType.P2SH_P2WSH:
                     TxInList[index].SigScript.SetToP2SH_P2WSH(redeem);
-                    //((WitnessScript)WitnessList[index].WitnessItems).SetToP2WSH_MultiSig(sig, pubKey);
+                    //WitnessList[index].SetToP2WSH_MultiSig(sig, pubKey);
                     break;
                 default:
                     break;
