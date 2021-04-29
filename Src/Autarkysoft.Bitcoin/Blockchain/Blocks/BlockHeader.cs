@@ -153,7 +153,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         public string GetID(bool recompute)
         {
             byte[] hashRes = GetHash(recompute);
-            return Base16.Encode(hashRes.Reverse().ToArray());
+            return Base16.EncodeReverse(hashRes);
         }
 
 

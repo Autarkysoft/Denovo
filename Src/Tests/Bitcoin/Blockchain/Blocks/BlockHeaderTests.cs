@@ -102,11 +102,20 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         }
 
         [Fact]
+        public void AddSerializedSizeTest()
+        {
+            var hd = new BlockHeader();
+            var counter = new SizeCounter();
+            hd.AddSerializedSize(counter);
+            Assert.Equal(BlockHeader.Size, counter.Size);
+        }
+
+        [Fact]
         public void SerializeTest()
         {
             BlockHeader hd = GetSampleBlockHeader();
 
-            FastStream stream = new FastStream();
+            var stream = new FastStream();
             hd.Serialize(stream);
 
             byte[] expected = GetSampleBlockHeaderBytes();
@@ -118,18 +127,18 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void TryDeserializeTest()
         {
-            BlockHeader blk = new BlockHeader();
-            bool b = blk.TryDeserialize(new FastStreamReader(GetSampleBlockHeaderBytes()), out string error);
+            var hd = new BlockHeader();
+            bool b = hd.TryDeserialize(new FastStreamReader(GetSampleBlockHeaderBytes()), out string error);
             BlockHeader expected = GetSampleBlockHeader();
 
             Assert.True(b, error);
             Assert.Null(error);
-            Assert.Equal(expected.Version, blk.Version);
-            Assert.Equal(expected.PreviousBlockHeaderHash, blk.PreviousBlockHeaderHash);
-            Assert.Equal(expected.MerkleRootHash, blk.MerkleRootHash);
-            Assert.Equal(expected.BlockTime, blk.BlockTime);
-            Assert.Equal(expected.NBits, blk.NBits);
-            Assert.Equal(expected.Nonce, blk.Nonce);
+            Assert.Equal(expected.Version, hd.Version);
+            Assert.Equal(expected.PreviousBlockHeaderHash, hd.PreviousBlockHeaderHash);
+            Assert.Equal(expected.MerkleRootHash, hd.MerkleRootHash);
+            Assert.Equal(expected.BlockTime, hd.BlockTime);
+            Assert.Equal(expected.NBits, hd.NBits);
+            Assert.Equal(expected.Nonce, hd.Nonce);
         }
 
         public static IEnumerable<object[]> GetDeserFailCases()
@@ -144,8 +153,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [MemberData(nameof(GetDeserFailCases))]
         public void TryDeserialize_FailTests(byte[] data, string expErr)
         {
-            Block blk = new Block();
-            bool b = blk.TryDeserialize(new FastStreamReader(data), out string error);
+            var hd = new BlockHeader();
+            bool b = hd.TryDeserialize(new FastStreamReader(data), out string error);
 
             Assert.False(b, error);
             Assert.Equal(expErr, error);
