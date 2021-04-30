@@ -81,6 +81,16 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 error = "Block must contain at least 1 transaction (coinbase).";
                 return false;
             }
+            if (block.TransactionList.Length * Constants.WitnessScaleFactor > Constants.MaxBlockWeight)
+            {
+                error = "Block transaction list is too big.";
+                return false;
+            }
+            if (block.Weight > Constants.MaxBlockWeight)
+            {
+                error = "Block weight is too big.";
+                return false;
+            }
 
             txVer.Init();
 
@@ -174,7 +184,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            // TODO: add block size and weight checks
 
             txVer.UtxoDb.Update(block.TransactionList);
 

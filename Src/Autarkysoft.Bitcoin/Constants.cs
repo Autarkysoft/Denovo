@@ -62,6 +62,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int BlockHeaderSize = 80;
         /// <summary>
+        /// Maximum allowed block weight (BIP-141)
+        /// </summary>
+        public const int MaxBlockWeight = 4_000_000;
+        /// <summary>
         /// Maximum amount of time that a block timestamp is allowed to exceed the
         /// current network-adjusted time before the block will be accepted.
         /// </summary>
