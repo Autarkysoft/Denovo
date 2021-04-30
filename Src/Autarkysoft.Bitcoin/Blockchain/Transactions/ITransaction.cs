@@ -67,6 +67,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         int VirtualSize { get; }
 
         /// <summary>
+        /// Adds the serialized size of this instance with witnesses removed to the given counter.
+        /// </summary>
+        /// <param name="counter">Size counter to use</param>
+        void AddSerializedSizeWithoutWitness(SizeCounter counter);
+
+        /// <summary>
         /// Returns hash of this instance using the defined hash function.
         /// </summary>
         /// <remarks>

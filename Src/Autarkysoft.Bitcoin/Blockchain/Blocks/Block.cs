@@ -39,19 +39,66 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public int Height { get; set; } = -1;
 
-        private int _blockSize;
         /// <inheritdoc/>
-        public int BlockSize
+        public int TotalSize
         {
             get
             {
-                if (_blockSize == 0)
+                var counter = new SizeCounter();
+                Header.AddSerializedSize(counter);
+                counter.AddCompactIntCount(TransactionList.Length);
+                foreach (var tx in TransactionList)
                 {
-                    _blockSize = Serialize().Length;
+                    tx.AddSerializedSize(counter);
                 }
-                return _blockSize;
+                return counter.Size;
             }
-            set => _blockSize = value;
+        }
+
+        /// <inheritdoc/>
+        public int StrippedSize
+        {
+            get
+            {
+                var counter = new SizeCounter();
+
+                Header.AddSerializedSize(counter);
+                counter.AddCompactIntCount(TransactionList.Length);
+                foreach (var tx in TransactionList)
+                {
+                    tx.AddSerializedSizeWithoutWitness(counter);
+                }
+
+                return counter.Size;
+            }
+        }
+
+        /// <inheritdoc/>
+        public int Weight
+        {
+            get
+            {
+                var counter = new SizeCounter();
+
+                Header.AddSerializedSize(counter);
+                counter.AddCompactIntCount(TransactionList.Length);
+                foreach (var tx in TransactionList)
+                {
+                    tx.AddSerializedSizeWithoutWitness(counter);
+                }
+                int baseSize = counter.Size;
+
+                counter.Reset();
+
+                Header.AddSerializedSize(counter);
+                counter.AddCompactIntCount(TransactionList.Length);
+                foreach (var tx in TransactionList)
+                {
+                    tx.AddSerializedSize(counter);
+                }
+
+                return (baseSize * 3) + counter.Size;
+            }
         }
 
         private BlockHeader _header = new BlockHeader();
@@ -291,8 +338,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out string error)
         {
-            int start = stream.GetCurrentIndex();
-
             _header = new BlockHeader();
             if (!_header.TryDeserialize(stream, out error))
             {
@@ -319,10 +364,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 }
                 TransactionList[i] = temp;
             }
-
-            int end = stream.GetCurrentIndex();
-
-            _blockSize = end - start;
 
             error = null;
             return true;

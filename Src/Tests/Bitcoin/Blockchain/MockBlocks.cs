@@ -15,7 +15,9 @@ namespace Tests.Bitcoin.Blockchain
     public class MockBlockBase : IBlock
     {
         public virtual int Height { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public int BlockSize { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public int TotalSize => throw new NotImplementedException();
+        public int StrippedSize => throw new NotImplementedException();
+        public int Weight => throw new NotImplementedException();
         public virtual BlockHeader Header { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public virtual ITransaction[] TransactionList
         {
@@ -79,6 +81,7 @@ namespace Tests.Bitcoin.Blockchain
 
         private readonly byte[] ba;
 
+        public override void AddSerializedSize(SizeCounter counter) => counter.Add(ba.Length);
         public override void Serialize(FastStream stream)
         {
             stream.Write(ba);

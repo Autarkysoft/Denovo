@@ -19,9 +19,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         int Height { get; set; }
 
         /// <summary>
-        /// This block's raw byte size (normally set during deserialization)
+        /// Returns total size (block size when serialized)
         /// </summary>
-        int BlockSize { get; set; }
+        int TotalSize { get; }
+        /// <summary>
+        /// Returns stripped (or base) size (block size with all witnesses removedaa when serialized)
+        /// </summary>
+        int StrippedSize { get; }
+        /// <summary>
+        /// Returns block weight defined in BIP-141 as (BaseSize * 3 + TotalSize)
+        /// </summary>
+        int Weight { get; }
 
         /// <summary>
         /// The block header

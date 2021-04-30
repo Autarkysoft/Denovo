@@ -134,7 +134,7 @@ namespace Denovo.Services
         {
             var stream = new FastStream(32 + 4 + 4);
             stream.Write(block.Header.GetHash(false));
-            stream.Write(block.BlockSize);
+            stream.Write(block.TotalSize);
             stream.Write(blockFileNum);
 
             // Writes to main directory
@@ -144,7 +144,7 @@ namespace Denovo.Services
         /// <inheritdoc/>
         public void WriteBlock(IBlock block)
         {
-            var temp = new FastStream(block.BlockSize);
+            var temp = new FastStream(block.TotalSize);
             block.Serialize(temp);
 
             string fileName = $"Block{blockFileNum:D6}";
