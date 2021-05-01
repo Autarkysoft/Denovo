@@ -381,6 +381,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
+            // TODO: this seems like a redundant check since we already have checks in tx.TryDeserialize method
+            // https://github.com/bitcoin/bitcoin/blob/e1e1e708fa0fbc0c51460305da5d401ed8f218f3/src/consensus/tx_check.cpp#L18-L19
+            if (tx.Weight > Constants.MaxBlockWeight)
+            {
+                error = "Transaction is too big.";
+                return false;
+            }
+
             ulong toSpend = 0;
 
             for (int i = 0; i < tx.TxInList.Length; i++)
