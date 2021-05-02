@@ -336,7 +336,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
                 }
 
-
                 Task.Run(() => ProcessBlockQueue(block));
             }
 
@@ -388,6 +387,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             if (BlockVer.Verify(block, out string error))
             {
                 Height++;
+                tip = block.GetBlockHash(false);
                 FileMan.WriteBlock(block);
             }
             else
