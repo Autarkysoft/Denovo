@@ -286,7 +286,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     if (!nodeStatus.IsAddrSent)
                     {
                         nodeStatus.IsAddrSent = true;
-                        NetworkAddressWithTime[] availableAddrs = settings.GetRandomNodeAddrs(10, Constants.MaxAddrCount, true);
+                        int count = settings.Rng.NextInt32(10, Constants.MaxAddrCount);
+                        NetworkAddressWithTime[] availableAddrs = settings.GetRandomNodeAddrs(count, true);
                         if (!(availableAddrs is null) && availableAddrs.Length != 0)
                         {
                             result = new Message[] { new Message(new AddrPayload(availableAddrs), settings.Network) };

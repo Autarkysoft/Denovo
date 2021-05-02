@@ -192,9 +192,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         /// <inheritdoc/>
-        public NetworkAddressWithTime[] GetRandomNodeAddrs(int min, int max, bool skipCheck)
+        public NetworkAddressWithTime[] GetRandomNodeAddrs(int count, bool skipCheck)
         {
-            if (min < 0 || min > max)
+            if (count <= 0)
             {
                 return null;
             }
@@ -202,7 +202,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             lock (addrLock)
             {
                 byte[] data = FileMan.ReadData(NodeAddrs);
-                if (data is null || data.Length % NetworkAddressWithTime.Size != 0)
+                if (data is null || data.Length == 0 || data.Length % NetworkAddressWithTime.Size != 0)
                 {
                     // File doesn't exist or is corrupted
                     return null;
@@ -210,16 +210,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 else
                 {
                     int total = data.Length / NetworkAddressWithTime.Size;
-                    int count = Rng.NextInt32(min, max);
-                    if (total < count)
-                    {
-                        count = total;
-                    }
+                    // This is like shuffling the entire array itself, but we just have the random index
+                    int[] indices = Rng.GetDistinct(0, total, total);
 
                     var result = new List<NetworkAddressWithTime>(count);
                     var stream = new FastStreamReader(data);
-                    int[] indices = Rng.GetDistinct(0, total, count);
-                    for (int i = 0; i < indices.Length; i++)
+                    int i = 0;
+                    while (result.Count < count && i < indices.Length)
                     {
                         stream.ChangePosition(indices[i] * NetworkAddressWithTime.Size);
                         var addr = new NetworkAddressWithTime();
@@ -233,34 +230,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 result.Add(addr);
                             }
                         }
-                        else
-                        {
-                            return null;
-                        }
-                    }
-
-                    if (result.Count < count && total > count)
-                    {
-                        List<int> allIndices = new List<int>(Rng.GetDistinct(0, total, total));
-                        allIndices.RemoveAll(x => Array.IndexOf(indices, x) >= 0);
-                        if (allIndices.Count > 0)
-                        {
-                            for (int i = 0; i < indices.Length && result.Count < count; i++)
-                            {
-                                stream.ChangePosition(indices[i] * NetworkAddressWithTime.Size);
-                                var addr = new NetworkAddressWithTime();
-                                if (addr.TryDeserialize(stream, out _))
-                                {
-                                    if (skipCheck ||
-                                        !AllNodes.Contains(addr.NodeIP) &&
-                                        (supportsIpV6 || addr.NodeIP.AddressFamily != AddressFamily.InterNetworkV6) &&
-                                        HasNeededServices(addr.NodeServices))
-                                    {
-                                        result.Add(addr);
-                                    }
-                                }
-                            }
-                        }
+                        i++;
                     }
 
                     return result.ToArray();

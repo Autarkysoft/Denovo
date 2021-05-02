@@ -140,16 +140,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         bool AddToMempool(ITransaction tx);
 
         /// <summary>
-        /// Returns between <paramref name="min"/> and <paramref name="max"/> number of <see cref="NetworkAddressWithTime"/>s.
+        /// Returns up to <paramref name="count"/> number of <see cref="NetworkAddressWithTime"/>s at random.
         /// If the node address file is not found or is corrupted, returns null.
         /// </summary>
-        /// <param name="min">Minimum number of addresses to return</param>
-        /// <param name="max">Maximum number of addresses to return</param>
+        /// <param name="count">Number of addresses to return</param>
         /// <param name="skipCheck">
         /// True to skip checking the returned values  (for Addr message), false to check the IP and service flags (for connection)
         /// </param>
-        /// <returns>Null or at least <paramref name="min"/> and at most <paramref name="max"/> number of addresses</returns>
-        NetworkAddressWithTime[] GetRandomNodeAddrs(int min, int max, bool skipCheck);
+        /// <returns>Null or at most <paramref name="count"/> number of addresses</returns>
+        NetworkAddressWithTime[] GetRandomNodeAddrs(int count, bool skipCheck);
         /// <summary>
         /// Removes the peer from peer list that has the given IP address.
         /// </summary>

@@ -258,12 +258,11 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         internal NetworkAddressWithTime[] addrsToReturn;
-        internal int minRandAddr, maxRandAddr;
+        internal int countRandAddr;
         internal bool? randAddrSkipCheck;
-        public NetworkAddressWithTime[] GetRandomNodeAddrs(int min, int max, bool skipCheck)
+        public NetworkAddressWithTime[] GetRandomNodeAddrs(int count, bool skipCheck)
         {
-            Assert.Equal(minRandAddr, min);
-            Assert.Equal(maxRandAddr, max);
+            Assert.Equal(countRandAddr, count);
             Assert.True(randAddrSkipCheck.HasValue, UnexpectedCall);
             Assert.Equal(randAddrSkipCheck.Value, skipCheck);
 

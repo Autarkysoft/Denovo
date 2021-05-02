@@ -42,7 +42,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
 
             Message msg = rep.GetPingMsg();
-            FastStream actual = new FastStream();
+            var actual = new FastStream();
             msg.Serialize(actual);
             byte[] expected = Helper.HexToBytes("0b11090770696e670000000000000000080000002a45a5d2d33e5fbae8a85801");
 
@@ -73,7 +73,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
 
             Message msg = rep.GetVersionMsg();
-            FastStream actual = new FastStream();
+            var actual = new FastStream();
             msg.Serialize(actual);
             byte[] expected = Helper.HexToBytes("0b11090776657273696f6e0000000000590000002795abaa7b0000000900000000000000c801000000000000000000000000000000000000000000000000ffff0102030401bc0900000000000000000000000000000000000000000000000000d33e5fbae8a8580103666f6f3930000001");
 
@@ -200,8 +200,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     addrsToReturn = mockAddrs,
-                    minRandAddr = 10,
-                    maxRandAddr = Constants.MaxAddrCount,
+                    countRandAddr = 15,
+                    _rng = new MockNonceRng(15),
                     randAddrSkipCheck = true
                 },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
@@ -215,8 +215,8 @@ namespace Tests.Bitcoin.P2PNetwork
                 {
                     _netType = NetworkType.MainNet,
                     addrsToReturn = null,
-                    minRandAddr = 10,
-                    maxRandAddr = Constants.MaxAddrCount,
+                    countRandAddr = 15,
+                    _rng = new MockNonceRng(15),
                     randAddrSkipCheck = true
                 },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),
@@ -229,9 +229,9 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    addrsToReturn = new NetworkAddressWithTime[0],
-                    minRandAddr = 10,
-                    maxRandAddr = Constants.MaxAddrCount,
+                    addrsToReturn = Array.Empty<NetworkAddressWithTime>(),
+                    countRandAddr = 15,
+                    _rng = new MockNonceRng(15),
                     randAddrSkipCheck = true
                 },
                 new Message(new GetAddrPayload(), NetworkType.MainNet),

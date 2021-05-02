@@ -128,7 +128,7 @@ namespace Autarkysoft.Bitcoin
                 return;
             }
 
-            NetworkAddressWithTime[] addrs = Settings.GetRandomNodeAddrs(count, count, false);
+            NetworkAddressWithTime[] addrs = Settings.GetRandomNodeAddrs(count, false);
             if (!(addrs is null))
             {
                 foreach (var item in addrs)
