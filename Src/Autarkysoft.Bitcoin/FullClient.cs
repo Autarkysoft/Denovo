@@ -52,7 +52,14 @@ namespace Autarkysoft.Bitcoin
             }
             else if (e.Action == NodePool.CollectionAction.Remove)
             {
-                ConnectToPeers(Settings.MaxConnectionCount - Settings.AllNodes.Count - inQueue);
+                if (Settings.Blockchain.State == BlockchainState.HeadersSync)
+                {
+                    ConnectToPeers(1);
+                }
+                else
+                {
+                    ConnectToPeers(Settings.MaxConnectionCount - Settings.AllNodes.Count - inQueue);
+                }
             }
         }
 
@@ -61,7 +68,14 @@ namespace Autarkysoft.Bitcoin
         {
             Settings.RemoveNodeAddr(e);
             Interlocked.Decrement(ref inQueue);
-            ConnectToPeers(Settings.MaxConnectionCount - Settings.AllNodes.Count - inQueue);
+            if (Settings.Blockchain.State == BlockchainState.HeadersSync)
+            {
+                ConnectToPeers(1);
+            }
+            else
+            {
+                ConnectToPeers(Settings.MaxConnectionCount - Settings.AllNodes.Count - inQueue);
+            }
         }
 
 
