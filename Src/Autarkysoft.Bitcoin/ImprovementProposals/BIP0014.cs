@@ -198,12 +198,13 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             string verStr;
             try
             {
-                if (c == 0)
+                if (c < 0 || c > 4)
                 {
                     verStr = ClientVersion.ToString();
                 }
                 else
                 {
+                    // This can still throw if the version doesn't have enough fields
                     verStr = ClientVersion.ToString(c);
                 }
             }

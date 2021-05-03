@@ -146,7 +146,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         public static IEnumerable<object[]> GetToStringCases()
         {
             yield return new object[] { new Version(1, 2, 3, 4), -1, "1.2.3.4" };
-            yield return new object[] { new Version(1, 2, 3, 4), 0, "1.2.3.4" };
+            yield return new object[] { new Version(1, 2, 3, 4), 0, "" };
             yield return new object[] { new Version(1, 2, 3, 4), 1, "1" };
             yield return new object[] { new Version(1, 2, 3, 4), 2, "1.2" };
             yield return new object[] { new Version(1, 2, 3, 4), 3, "1.2.3" };
