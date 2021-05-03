@@ -155,7 +155,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private const ulong HdrSyncMask = (ulong)(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited);
         private const ulong BlkSyncMask = (ulong)(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness);
-
+        
         /// <inheritdoc/>
         public bool HasNeededServices(NodeServiceFlags flags)
         {
@@ -176,7 +176,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public bool IsGoodForBlockSync(NodeServiceFlags flags) => ((ulong)flags & BlkSyncMask) == BlkSyncMask && !IsPruned(flags);
         /// <inheritdoc/>
-        public bool IsPruned(NodeServiceFlags flags) => flags.HasFlag(NodeServiceFlags.NodeNetworkLimited);
+        public bool IsPruned(NodeServiceFlags flags) => flags.HasFlag(NodeServiceFlags.NodeNetworkLimited) &&
+                                                        !flags.HasFlag(NodeServiceFlags.NodeNetwork);
 
         /// <inheritdoc/>
         public bool AddToMempool(ITransaction tx)
@@ -321,15 +322,19 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private bool PingIp(IPAddress nodeIP)
         {
+            var ping = new Ping();
             try
             {
-                var ping = new Ping();
                 PingReply rep = ping.Send(nodeIP, TimeConstants.TenSeconds_Milliseconds);
                 return rep.Status == IPStatus.Success;
             }
             catch (Exception)
             {
                 return false;
+            }
+            finally
+            {
+                ping.Dispose();
             }
         }
 

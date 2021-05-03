@@ -52,7 +52,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeGetUtxo, false)]
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited, false)]
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness, true)]
-        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited, false)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited, true)]
         [InlineData(NodeServiceFlags.NodeNetworkLimited, false)]
         [InlineData(NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeGetUtxo, false)]
         [InlineData(NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeWitness, false)]
@@ -68,9 +68,9 @@ namespace Tests.Bitcoin.P2PNetwork
         [InlineData(NodeServiceFlags.NodeBloom | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeGetUtxo, false)]
         [InlineData(NodeServiceFlags.NodeNetwork, false)]
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeGetUtxo, false)]
-        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited, false)]
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness, false)]
-        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited, true)]
+        [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness | NodeServiceFlags.NodeNetworkLimited, false)]
         [InlineData(NodeServiceFlags.NodeNetworkLimited, true)]
         public void IsPrunedTest(NodeServiceFlags flags, bool expected)
         {
