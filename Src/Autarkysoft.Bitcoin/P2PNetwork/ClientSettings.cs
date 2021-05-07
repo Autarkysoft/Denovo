@@ -155,7 +155,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private const ulong HdrSyncMask = (ulong)(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited);
         private const ulong BlkSyncMask = (ulong)(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness);
-        
+
         /// <inheritdoc/>
         public bool HasNeededServices(NodeServiceFlags flags)
         {
@@ -322,6 +322,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private bool PingIp(IPAddress nodeIP)
         {
+            if (!supportsIpV6 && nodeIP.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                return false;
+            }
+
             var ping = new Ping();
             try
             {
