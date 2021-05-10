@@ -30,8 +30,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void DiscTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            SignalDisconnect();
             discTimer.Stop();
+            SignalDisconnect();
         }
 
         /// <inheritdoc/>
@@ -48,10 +48,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (SetField(ref _v, value))
                 {
-                    IsDisconnected = Violation >= DisconnectThreshold;
-                    if (IsDisconnected)
+                    if (Violation >= DisconnectThreshold)
                     {
-                        RaiseDisconnectEvent();
+                        SignalDisconnect();
                     }
                 }
             }
@@ -197,8 +196,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     return _isDead;
                 }
             }
-
-            set
+            private set
             {
                 lock (discLock)
                 {
@@ -263,8 +261,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public void SignalDisconnect()
         {
-            IsDisconnected = true;
-            RaiseDisconnectEvent();
+            if (!IsDisconnected)
+            {
+                IsDisconnected = true;
+                RaiseDisconnectEvent();
+            }
         }
 
         /// <inheritdoc/>

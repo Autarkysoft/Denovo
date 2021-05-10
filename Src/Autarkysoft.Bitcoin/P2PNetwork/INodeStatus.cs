@@ -83,7 +83,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Returns if this node was disconnected (it is safe to be disposed)
         /// </summary>
-        bool IsDisconnected { get; set; }
+        bool IsDisconnected { get; }
         /// <summary>
         /// Returns if the connection to this node should be terminated due to excessive violations
         /// </summary>

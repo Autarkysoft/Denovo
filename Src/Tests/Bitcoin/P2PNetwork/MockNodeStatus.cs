@@ -257,12 +257,6 @@ namespace Tests.Bitcoin.P2PNetwork
                 Assert.True(_isDead.HasValue, UnexpectedCall);
                 return _isDead.Value;
             }
-            set
-            {
-                Assert.True(_isDead.HasValue, UnexpectedCall);
-                Assert.Equal(_isDead.Value, value);
-                _isDead = null;
-            }
         }
 
         internal bool? _addrSent;

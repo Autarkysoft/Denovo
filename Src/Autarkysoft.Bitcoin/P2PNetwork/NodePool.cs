@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -216,8 +217,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 version++;
                 item.NodeStatus.DisconnectEvent += NodeStatus_DisconnectEvent;
                 Interlocked.Increment(ref size);
-                OnNotifyItemAdded(item, size);
             }
+            OnNotifyItemAdded(item, size - 1);
         }
 
         private void NodeStatus_DisconnectEvent(object sender, EventArgs e)
@@ -225,6 +226,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             if (sender is INodeStatus status)
             {
                 int index = -1;
+                Node removedVal = null;
                 lock (lockObj)
                 {
                     for (int i = 0; i < size; i++)
@@ -235,10 +237,26 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             break;
                         }
                     }
+
+                    if (index != -1)
+                    {
+                        removedVal = items[index];
+                        if (index < size - 1)
+                        {
+                            Array.Copy(items, index + 1, items, index, size - index - 1);
+                        }
+                        size--;
+                        items[size] = null;
+
+                        version++;
+                    }
                 }
-                if (index != -1)
+
+                if (!(removedVal is null))
                 {
-                    RemoveAt(index);
+                    removedVal.NodeStatus.DisconnectEvent -= NodeStatus_DisconnectEvent;
+                    OnNotifyItemRemoved(removedVal, index);
+                    removedVal.Dispose();
                 }
             }
         }
@@ -250,7 +268,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 foreach (var item in items)
                 {
-                    item.Dispose();
+                    item?.Dispose();
                 }
                 Array.Clear(items, 0, items.Length);
                 version++;
@@ -327,48 +345,56 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public bool Remove(Node item)
         {
+            Node removedVal;
+            int index = -1;
             lock (lockObj)
             {
-                int index = Array.IndexOf(items, item);
+                index = Array.IndexOf(items, item);
                 if (index < 0)
                 {
                     return false;
                 }
 
-                Node removedVal = items[index];
-                Interlocked.Decrement(ref size);
+                removedVal = items[index];
+                size--;
                 if (index < size)
                 {
                     Array.Copy(items, index + 1, items, index, size - index);
                 }
                 items[size] = null;
                 version++;
-                OnNotifyItemRemoved(removedVal, index);
-                removedVal.Dispose();
-                removedVal = null;
-                return true;
             }
+
+            Debug.Assert(index >= 0);
+            Debug.Assert(!(removedVal is null));
+            removedVal.NodeStatus.DisconnectEvent -= NodeStatus_DisconnectEvent;
+            OnNotifyItemRemoved(removedVal, index);
+            removedVal.Dispose();
+            return true;
         }
 
         /// <inheritdoc/>
         public void RemoveAt(int index)
         {
+            Node removedVal;
             lock (lockObj)
             {
                 CheckIndex(index);
 
-                Node removedVal = items[index];
-                Interlocked.Decrement(ref size);
+                removedVal = items[index];
+                size--;
                 if (index < size)
                 {
                     Array.Copy(items, index + 1, items, index, size - index);
                 }
                 items[size] = null;
+
                 version++;
-                OnNotifyItemRemoved(removedVal, index);
-                removedVal.Dispose();
-                removedVal = null;
             }
+
+            removedVal.NodeStatus.DisconnectEvent -= NodeStatus_DisconnectEvent;
+            OnNotifyItemRemoved(removedVal, index);
+            removedVal.Dispose();
         }
 
         /// <inheritdoc/>
@@ -383,9 +409,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (!(items is null))
                 {
-                    foreach (var item in items)
+                    for (int i = 0; i < items.Length; i++)
                     {
-                        item.Dispose();
+                        items[i]?.Dispose();
+                        items[i] = null;
                     }
                     items = null;
                 }

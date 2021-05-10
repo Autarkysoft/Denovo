@@ -18,7 +18,7 @@ namespace Autarkysoft.Bitcoin
     /// <summary>
     /// Implementation of a full verifying node
     /// </summary>
-    public class FullClient
+    public sealed class FullClient : IDisposable
     {
         /// <summary>
         /// Initializes a new instance of <see cref="FullClient"/> using the given parameters.
@@ -43,6 +43,9 @@ namespace Autarkysoft.Bitcoin
 
         private void AllNodes_AddRemoveEvent(object sender, NodePool.AddRemoveEventArgs e)
         {
+            if (isDisposed) 
+                return;
+
             if (e.Action == NodePool.CollectionAction.Add)
             {
                 if (inQueue > 0)
@@ -66,6 +69,9 @@ namespace Autarkysoft.Bitcoin
 
         private void Connector_ConnectFailureEvent(object sender, IPAddress e)
         {
+            if (isDisposed)
+                return;
+
             Settings.RemoveNodeAddr(e);
             Interlocked.Decrement(ref inQueue);
             if (Settings.Blockchain.State == BlockchainState.HeadersSync)
@@ -81,12 +87,18 @@ namespace Autarkysoft.Bitcoin
 
         private void Blockchain_HeaderSyncEndEvent(object sender, EventArgs e)
         {
+            if (isDisposed)
+                return;
+
             // Increase the number of connections to max connection and start dowloading blocks
             ConnectToPeers(Settings.MaxConnectionCount - Settings.AllNodes.Count - inQueue);
         }
 
         private void Blockchain_BlockSyncEndEvent(object sender, EventArgs e)
         {
+            if (isDisposed)
+                return;
+
             if (!(listener is null))
             {
                 listener.StartListen(new IPEndPoint(IPAddress.Any, Settings.ListenPort));
@@ -108,6 +120,8 @@ namespace Autarkysoft.Bitcoin
 
         private async Task<IPAddress[]> DigDnsSeeds(bool all)
         {
+            // // TODO: this could be used for DNS seeds
+            // https://github.com/sipa/bitcoin-seeder/blob/a09d2870d1b7f4dd3c1753bbf4fd0bc3690b7ef9/main.cpp#L165-L174
             List<IPAddress> result = new List<IPAddress>();
             int[] indices;
             if (all)
@@ -137,7 +151,7 @@ namespace Autarkysoft.Bitcoin
 
         private async void ConnectToPeers(int count)
         {
-            if (count <= 0)
+            if (count <= 0 || isDisposed)
             {
                 return;
             }
@@ -190,6 +204,22 @@ namespace Autarkysoft.Bitcoin
             // The message/reply mangers have to handle the sync process and raise an event to add more peers to the pool.
             Settings.Blockchain.State = BlockchainState.HeadersSync;
             ConnectToPeers(1);
+        }
+
+
+        private bool isDisposed = false;
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            if (!isDisposed)
+            {
+                isDisposed = true;
+
+                Settings.AllNodes.Dispose();
+                listener?.Dispose();
+                connector?.Dispose();
+            }
         }
     }
 }

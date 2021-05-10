@@ -53,19 +53,22 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void PingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            // Every 1 minute (~66 sec) the LastSeen is checked but only if 2 minutes has passed a Ping will be sent
-            // this will make sure the connection to the other node is still alive while avoiding unnecessary Pings
-            var msgMan = (MessageManager)sendSAEA.UserToken;
-            if (DateTime.Now.Subtract(msgMan.NodeStatus.LastSeen) >= TimeSpan.FromMinutes(2))
+            if (!isDisposed)
             {
-                if (NodeStatus.HasTooManyUnansweredPings)
+                // Every 1 minute (~66 sec) the LastSeen is checked but only if 2 minutes has passed a Ping will be sent
+                // this will make sure the connection to the other node is still alive while avoiding unnecessary Pings
+                var msgMan = (MessageManager)sendSAEA.UserToken;
+                if (DateTime.Now.Subtract(msgMan.NodeStatus.LastSeen) >= TimeSpan.FromMinutes(2))
                 {
-                    NodeStatus.SignalDisconnect();
-                }
-                else
-                {
-                    Message ping = msgMan.GetPingMsg();
-                    Send(ping);
+                    if (NodeStatus.HasTooManyUnansweredPings)
+                    {
+                        NodeStatus.SignalDisconnect();
+                    }
+                    else
+                    {
+                        Message ping = msgMan.GetPingMsg();
+                        Send(ping);
+                    }
                 }
             }
         }
@@ -123,7 +126,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 var msgMan = recEventArgs.UserToken as MessageManager;
                 msgMan.ReadBytes(recEventArgs);
 
-                if (!NodeStatus.HasTooManyViolations || !NodeStatus.IsDisconnected)
+                if (!isDisposed && !NodeStatus.IsDisconnected && !NodeStatus.HasTooManyViolations)
                 {
                     if (msgMan.HasDataToSend)
                     {
@@ -138,7 +141,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
             else
             {
-                CloseClientSocket(recEventArgs);
+                NodeStatus.SignalDisconnect();
             }
         }
 
@@ -175,14 +178,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 {
                     secondSendLimiter.Release();
                 }
-                else if (!NodeStatus.HasTooManyViolations || !NodeStatus.IsDisconnected)
+                else if (!isDisposed && !NodeStatus.IsDisconnected && !NodeStatus.HasTooManyViolations)
                 {
                     StartReceive(sendEventArgs);
                 }
             }
             else
             {
-                CloseClientSocket(sendEventArgs);
+                NodeStatus.SignalDisconnect();
             }
         }
 
@@ -192,7 +195,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             try
             {
-                NodeStatus.SignalDisconnect();
                 srEventArgs?.AcceptSocket?.Shutdown(SocketShutdown.Both);
                 srEventArgs?.AcceptSocket?.Close();
             }
