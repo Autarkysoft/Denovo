@@ -53,7 +53,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             settings.MaxConnectionEnforcer.WaitOne();
             SocketAsyncEventArgs connectEventArgs = connectPool.Pop();
             connectEventArgs.RemoteEndPoint = ep;
-            connectEventArgs.AcceptSocket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            connectEventArgs.AcceptSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
             StartConnect(connectEventArgs);
         }
