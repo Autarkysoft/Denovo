@@ -113,7 +113,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 wordIndexes[i] = Array.IndexOf(allWords, words[i]);
             }
 
-            MnType = GetMnomonicType(Normalize(ToMnemonic()));
+            MnType = GetMnemonicType(Normalize(ToMnemonic()));
             if (MnType == MnemonicType.Undefined)
             {
                 throw new FormatException("Invalid mnemonic (undefined version).");
@@ -182,7 +182,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                     (entropy[0]  & 0b00001111) << 7  | entropy[1]  >> 1,                    // 4 + 7
                 };
 
-                if (GetMnomonicType(Normalize(ToMnemonic())) == MnType)
+                if (GetMnemonicType(Normalize(ToMnemonic())) == MnType)
                 {
                     break;
                 }
@@ -247,7 +247,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private static string RemoveDiacritics(string text)
         {
             return new string(
-                text.Normalize(System.Text.NormalizationForm.FormD)
+                text.Normalize(NormalizationForm.FormD)
                     .ToCharArray()
                     .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
                     .ToArray());
@@ -279,7 +279,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             return temp.ToString();
         }
 
-        private MnemonicType GetMnomonicType(string normalizedMn)
+        private MnemonicType GetMnemonicType(string normalizedMn)
         {
             using HmacSha512 hmac = new HmacSha512(Encoding.UTF8.GetBytes("Seed version"));
             byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(normalizedMn));
@@ -324,16 +324,16 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
         /// <summary>
-        /// Returns mnemonic (seed words)
+        /// Returns the 12 word mnemonic string
         /// </summary>
         /// <exception cref="ObjectDisposedException"/>
-        /// <returns>mnemonic (seed words)</returns>
+        /// <returns>12-word mnemonic (seed words)</returns>
         public string ToMnemonic()
         {
             if (wordIndexes == null)
                 throw new ObjectDisposedException(nameof(BIP0039));
 
-            StringBuilder sb = new StringBuilder(wordIndexes.Length * 8);
+            var sb = new StringBuilder(wordIndexes.Length * 8);
             for (int i = 0; i < wordIndexes.Length; i++)
             {
                 sb.Append($"{allWords[wordIndexes[i]]} ");
