@@ -130,7 +130,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="msg">Message to send</param>
         public void SetSendBuffer(SocketAsyncEventArgs sendSAEA, Message msg)
         {
-            var stream = new FastStream();
+            var counter = new SizeCounter();
+            msg.AddSerializedSize(counter);
+            var stream = new FastStream(counter.Size);
             msg.Serialize(stream);
             DataToSend = stream.ToByteArray();
             SetSendBuffer(sendSAEA);
