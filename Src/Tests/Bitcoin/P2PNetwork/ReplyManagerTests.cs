@@ -141,23 +141,6 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                // Block
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, mediumViolation = true },
-                new MockClientSettings()
-                {
-                    _netType = NetworkType.MainNet,
-                    _bchain = new MockBlockchain()
-                    {
-                        _stateToReturn = BlockchainState.Synchronized,
-                        expProcessBlk = "00000000841cb802ca97cf20fb9470480cae9e5daa5d06b4a18ae2d5dd7f186f",
-                        blkProcessSuccess = false
-                    }
-                },
-                new Message(new BlockPayload(mockBlock), NetworkType.MainNet),
-                null
-            };
-            yield return new object[]
-            {
                 // FeeFilter
                 new MockNodeStatus()
                 {
