@@ -39,7 +39,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private Message[] GetSettingsMessages(Message extraMsg)
         {
-            var result = new List<Message>(6);
+            var result = new List<Message>(7);
             if (!(extraMsg is null))
             {
                 result.Add(extraMsg);
@@ -215,10 +215,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                     if (Deser(msg.PayloadData, out BlockPayload blk))
                     {
-                        if (!settings.Blockchain.ProcessBlock(blk.BlockData, nodeStatus))
-                        {
-                            nodeStatus.AddMediumViolation();
-                        }
+                        settings.Blockchain.ProcessBlock(blk.BlockData, nodeStatus);
                     }
                     break;
                 case PayloadType.BlockTxn:
