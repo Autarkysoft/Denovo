@@ -308,4 +308,57 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
         }
     }
+
+
+
+    /// <summary>
+    /// Operation to perform signature verification based on BIPs 340, 341 and 342 in Taproot scripts.
+    /// <para/>Inherits from <see cref="BaseOperation"/>.
+    /// </summary>
+    public class CheckSigAddOp : BaseOperation
+    {
+        /// <inheritdoc cref="IOperation.OpValue"/>
+        public override OP OpValue => OP.CheckSigAdd;
+
+        /// <summary>
+        /// Removes top three stack items as signature, number and public key and performs signature verification.
+        /// </summary>
+        /// <inheritdoc/>
+        public override bool Run(IOpData opData, out string error)
+        {
+            if (opData.ItemCount < 3)
+            {
+                error = Err.OpNotEnoughItems;
+                return false;
+            }
+
+            byte[][] items = opData.Pop(3);
+
+            // Evaluate public key here (if len==0 => fail; if len==32 => &evalSig => checksig else => ?)
+            // TODO: add a new method to PublicKey class to evaluate public keys (the new way!)
+            //if (!PublicKey.TryRead_NEW(items[2], out PublicKey pub))
+            //{
+
+            //}
+
+            if (items[0].Length == 0)
+            {
+                // If signature is an empty byte[] push n to the stack
+                opData.Push(items[1]);
+                error = null;
+                return true;
+            }
+
+            if (!TryConvertToLong(items[1], out long n, opData.StrictNumberEncoding, 4))
+            {
+                error = "Invalid number format.";
+                return false;
+            }
+
+            // TODO: evaluate signature for Taproot scripts.
+
+            error = "OP_CheckSigAdd is not activated yet";
+            return false;
+        }
+    }
 }

@@ -543,7 +543,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         #endregion
 
-        // Note: 0xba to 0xff are not defined.
+        /// <summary>
+        /// Removes 3 items from the stack as a signature, a number and a public key and performs the signature
+        /// verification process defined by BIP-342
+        /// </summary>
+        CheckSigAdd = 0xba,
+
+        // Note: 0xbb to 0xff are not defined.
 
     }
 }
