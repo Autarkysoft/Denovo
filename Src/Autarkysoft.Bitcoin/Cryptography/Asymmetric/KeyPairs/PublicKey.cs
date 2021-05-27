@@ -33,6 +33,24 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         private readonly EllipticCurvePoint point;
         private static readonly EllipticCurveCalculator calc = new EllipticCurveCalculator();
 
+        /// <summary>
+        /// Public key type in a Taproot script
+        /// </summary>
+        public enum PublicKeyType
+        {
+            /// <summary>
+            /// Invalid pubkey type (length = 0)
+            /// </summary>
+            None,
+            /// <summary>
+            /// Unknown pubkey type (length != 32 &#38; !=0)
+            /// </summary>
+            Unknown,
+            /// <summary>
+            /// Public key used in version 1 witness (length = 32)
+            /// </summary>
+            Schnorr
+        }
 
 
         /// <summary>
@@ -52,6 +70,39 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             {
                 pubK = null;
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Converts the given byte array from a Taproot script to a <see cref="PublicKey"/>.
+        /// Return value indicates success and type of the public key.
+        /// </summary>
+        /// <param name="pubBa">Byte array containing a public key</param>
+        /// <param name="pubK">The result</param>
+        /// <returns>Public key type.</returns>
+        public static PublicKeyType TryReadTaproot(byte[] pubBa, out PublicKey pubK)
+        {
+            if (pubBa.Length == 0)
+            {
+                pubK = null;
+                return PublicKeyType.None;
+            }
+
+            if (pubBa.Length != 32)
+            {
+                pubK = null;
+                return PublicKeyType.Unknown;
+            }
+
+            if (calc.TryGetPoint(pubBa.AppendToBeginning(0x02), out EllipticCurvePoint pt))
+            {
+                pubK = new PublicKey(pt);
+                return PublicKeyType.Schnorr;
+            }
+            else
+            {
+                pubK = null;
+                return PublicKeyType.None;
             }
         }
 
