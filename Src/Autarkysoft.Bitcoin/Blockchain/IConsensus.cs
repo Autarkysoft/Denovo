@@ -73,6 +73,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         bool IsSegWitEnabled { get; }
 
         /// <summary>
+        /// Returns if Taproot soft fork is enabled
+        /// </summary>
+        bool IsTaprootEnabled { get; }
+
+        /// <summary>
         /// Minimum allowed block version
         /// </summary>
         int MinBlockVersion { get; }

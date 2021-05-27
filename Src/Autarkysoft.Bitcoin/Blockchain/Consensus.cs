@@ -48,6 +48,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="netType">Network type</param>
         public Consensus(int height, NetworkType netType)
         {
+            // TODO: change this value to the specified block height after Taproot soft fork takes place
+            tap = int.MaxValue;
+
             // https://github.com/bitcoin/bitcoin/blob/544709763e1f45148d1926831e07ff03487673ee/src/chainparams.cpp
             switch (netType)
             {
@@ -93,7 +96,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
-        private readonly int bip16, bip34, bip65, bip66, bip112, seg;
+        private readonly int bip16, bip34, bip65, bip66, bip112, seg, tap;
         private int minBlkVer;
         private readonly BigInteger powLimit;
         private readonly NetworkType network;
@@ -177,6 +180,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         /// <inheritdoc/>
         public bool IsSegWitEnabled => BlockHeight >= seg;
+
+        /// <inheritdoc/>
+        public bool IsTaprootEnabled => BlockHeight >= tap;
 
         /// <inheritdoc/>
         public int MinBlockVersion => minBlkVer;

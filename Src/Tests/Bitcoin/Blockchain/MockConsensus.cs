@@ -15,7 +15,7 @@ namespace Tests.Bitcoin.Blockchain
 #pragma warning disable CS0649 // Field is never assigned to
         internal int expHeight = -1, maxSigOp = 0, halving = 0;
         internal ulong blockReward;
-        internal bool? bip16, bip34, bip65, bip112, bip147, strictDer, segWit;
+        internal bool? bip16, bip34, bip65, bip112, bip147, strictDer, segWit, tap;
 
         private const string UnexpectedCall = "Unexpected call was made";
 
@@ -114,6 +114,15 @@ namespace Tests.Bitcoin.Blockchain
             {
                 Assert.True(segWit.HasValue, UnexpectedCall);
                 return segWit.Value;
+            }
+        }
+
+        public bool IsTaprootEnabled
+        {
+            get
+            {
+                Assert.True(tap.HasValue, UnexpectedCall);
+                return tap.Value;
             }
         }
 
