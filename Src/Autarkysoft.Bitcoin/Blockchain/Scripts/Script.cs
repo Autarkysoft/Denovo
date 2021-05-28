@@ -162,6 +162,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         protected bool IsPushOp(byte b) => b >= 0 && b <= (byte)OP._16 && b != (byte)OP.Reserved;
 
         /// <summary>
+        /// Returns if the given byte is an OP_SuccessX OP code as defined by BIP-342
+        /// </summary>
+        /// <param name="b">Byte to check</param>
+        /// <returns>True if the byte is an OP_SuccessX; otherwise false.</returns>
+        protected bool IsOpSuccess(byte b) =>
+            b == 80 || b == 98 || (b >= 126 && b <= 129) ||
+            (b >= 131 && b <= 134) || (b >= 137 && b <= 138) ||
+            (b >= 141 && b <= 142) || (b >= 149 && b <= 153) ||
+            (b >= 187 && b <= 254);
+
+        /// <summary>
         /// Reads a single <see cref="IOperation"/> from the given the given stream and adds the result to the given list.
         /// Return value indicates success.
         /// </summary>
