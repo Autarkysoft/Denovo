@@ -75,7 +75,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         bool CheckMultiSigGarbage(byte[] garbage);
 
         /// <summary>
-        /// Checks the item popped by the conditional OPs to be a strict true/false value as a standard rule.
+        /// Checks the item popped by the conditional OPs to be a strict true/false value.
+        /// This is a standard rule for legacy and witness version 0 but a consensus rule for Taproot scripts.
         /// </summary>
         /// <param name="data">Top stack item that was popped by <see cref="OP.IF"/> or <see cref="OP.NotIf"/></param>
         /// <returns>True if the item is strictly encoded; otherwise false.</returns>

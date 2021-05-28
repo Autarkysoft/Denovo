@@ -92,7 +92,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public bool IsSegWit { get; set; }
 
         /// <summary>
-        /// If true only strict encoding of true/false is accepted for conditional operations. This is a standard rule.
+        /// If true only strict encoding of true/false is accepted for conditional operations.
+        /// This is a standard rule for legacy and witness version 0, and a consensus rule for Taproot scripts.
         /// </summary>
         public bool IsStrictConditionalOpBool { get; set; }
         /// <summary>

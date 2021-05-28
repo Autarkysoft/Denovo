@@ -75,6 +75,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// should be checked for strict and shortest encoding. This is a standard rule.
         /// </summary>
         public bool StrictNumberEncoding { get; set; }
+        /// <summary>
+        /// If true only strict encoding of true/false is accepted for conditional operations.
+        /// This is a standard rule for legacy and witness version 0, and a consensus rule for Taproot scripts.
+        /// </summary>
+        public bool IsStrictConditionalOpBool { get; set; }
 
 
         /// <inheritdoc/>
@@ -260,6 +265,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 IsBip112Enabled = consensus.IsBip112Enabled,
                 IsStrictDerSig = consensus.IsStrictDerSig,
                 IsBip147Enabled = consensus.IsBip147Enabled,
+                IsStrictConditionalOpBool = IsStrictConditionalOpBool,
             };
 
             for (int j = 0; j < tx.WitnessList[index].Items.Length - 1; j++)
@@ -474,6 +480,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             IsBip112Enabled = consensus.IsBip112Enabled,
                             IsStrictDerSig = consensus.IsStrictDerSig,
                             IsBip147Enabled = consensus.IsBip147Enabled,
+                            IsStrictConditionalOpBool = IsStrictConditionalOpBool,
                         };
 
                         // Note that checking OP count is below max is done during Evaluate() and op.Run()
@@ -564,6 +571,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             IsBip112Enabled = consensus.IsBip112Enabled,
                             IsStrictDerSig = consensus.IsStrictDerSig,
                             IsBip147Enabled = consensus.IsBip147Enabled,
+                            IsStrictConditionalOpBool = IsStrictConditionalOpBool,
                         };
 
                         // There is no need to set the following 2 since all sigOps are PushOps
