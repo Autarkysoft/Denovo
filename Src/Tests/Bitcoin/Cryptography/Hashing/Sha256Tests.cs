@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
     {
         public static IEnumerable<object[]> GetChecksumCases()
         {
-            yield return new object[] { new byte[0], new byte[4] { 0x5d, 0xf6, 0xe0, 0xe2 } };
+            yield return new object[] { Array.Empty<byte>(), new byte[4] { 0x5d, 0xf6, 0xe0, 0xe2 } };
             yield return new object[] { new byte[1], new byte[4] { 0x14, 0x06, 0xe0, 0x58 } };
             // From Sha256NistTestData.json file but hashed twice
             yield return new object[]
@@ -39,7 +39,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(GetChecksumCases))]
         public void ComputeChecksumTest(byte[] data, byte[] expected)
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] actual = sha.ComputeChecksum(data);
             Assert.Equal(expected, actual);
         }
@@ -47,10 +47,10 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeChecksum_ExceptionTest()
         {
-            Sha256 sha = new Sha256();
+            Sha256 sha = new();
             Assert.Throws<ArgumentNullException>(() => sha.ComputeChecksum(null));
             sha.Dispose();
-            Assert.Throws<ObjectDisposedException>(() => sha.ComputeChecksum(new byte[0]));
+            Assert.Throws<ObjectDisposedException>(() => sha.ComputeChecksum(Array.Empty<byte>()));
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         {
             // A priliminary test making sure the method works as we think it should.
             // This will be replaced when we find out some examples of ShortTxIds!
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             var rand = new Random();
             Span<byte> data = new byte[88];
             rand.NextBytes(data);
@@ -82,7 +82,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHashTest(byte[] message, byte[] expectedHash)
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] actualHash = sha.ComputeHash(message);
             Assert.Equal(expectedHash, actualHash);
         }
@@ -90,7 +90,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_AMillionATest()
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] actualHash = sha.ComputeHash(HashTestCaseHelper.GetAMillionA());
             byte[] expectedHash = Helper.HexToBytes("cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
 
@@ -105,7 +105,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] exp1 = Helper.HexToBytes("d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592");
             byte[] exp2 = Helper.HexToBytes("e4c4d8f3bf76b692de791a173e05321150f7a345b46484fe427f6acc7ecc81be");
 
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] act1 = sha.ComputeHash(msg1);
             byte[] act2 = sha.ComputeHash(msg2);
 
@@ -116,7 +116,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_WithIndexTest()
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] data = Helper.HexToBytes("123fab54686520717569636b2062726f776e20666f78206a756d7073206f76657220746865206c617a7920646f67f3a25c92");
             byte[] actualHash = sha.ComputeHash(data, 3, 43);
             byte[] expectedHash = Helper.HexToBytes("d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592");
@@ -127,7 +127,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_DoubleTest()
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             var data = Helper.HexToBytes("fb8049137747e712628240cf6d7056ea2870170cb7d9bc713d91e901b514c6ae7d7dda3cd03ea1b99cf85046a505f3590541123d3f8f2c22c4d7d6e65de65c4ebb9251f09619");
             byte[] actualHash = sha.ComputeHashTwice(data);
             byte[] expectedHash = Helper.HexToBytes("d2cee8d3cfaf1819c55cce1214d01cdef1d97446719ccfaad4d76d912a8126f9");
@@ -139,7 +139,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHashTwiceTest(byte[] message, byte[] expectedHash)
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] actualHash = sha.ComputeHashTwice(message);
             expectedHash = sha.ComputeHash(expectedHash);
             Assert.Equal(expectedHash, actualHash);
@@ -150,7 +150,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         public void ComputeHash_ExceptionsTest()
         {
             byte[] goodBa = { 1, 2, 3 };
-            Sha256 sha = new Sha256();
+            Sha256 sha = new();
 
             Assert.Throws<ArgumentNullException>(() => sha.ComputeHash(null));
             Assert.Throws<ArgumentNullException>(() => sha.ComputeHash(null, 0, 1));
@@ -167,7 +167,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetNistShortCases), parameters: "Sha256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistShortTest(byte[] message, byte[] expected)
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] actual = sha.ComputeHash(message);
             Assert.Equal(expected, actual);
         }
@@ -176,7 +176,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetNistLongCases), parameters: "Sha256", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistLongTest(byte[] message, byte[] expected)
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] actual = sha.ComputeHash(message);
             Assert.Equal(expected, actual);
         }
@@ -194,7 +194,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] M1 = seed;
             byte[] M2 = seed;
 
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
 
             foreach (var item in jObjs["MonteCarlo"])
             {
@@ -220,11 +220,11 @@ namespace Tests.Bitcoin.Cryptography.Hashing
 
         // The original MAJ() and CH() functions are defined differently in RFC documentation.
         // The two following tests act as proof that the changed functions are giving the same results.
-        private uint CH_Original(uint x, uint y, uint z)
+        private static uint CH_Original(uint x, uint y, uint z)
         {
             return (x & y) ^ ((~x) & z);
         }
-        private uint CH_Changed(uint x, uint y, uint z)
+        private static uint CH_Changed(uint x, uint y, uint z)
         {
             return z ^ (x & (y ^ z));
         }
@@ -244,11 +244,11 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
 
-        private uint MAJ_Original(uint x, uint y, uint z)
+        private static uint MAJ_Original(uint x, uint y, uint z)
         {
             return (x & y) ^ (x & z) ^ (y & z);
         }
-        private uint MAJ_Changed(uint x, uint y, uint z)
+        private static uint MAJ_Changed(uint x, uint y, uint z)
         {
             return (x & y) | (z & (x | y));
         }
@@ -320,28 +320,41 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         // System.Security.Cryptography.SHA256 in .Net Framework 4.7.2
 
         [Fact]
-        public void ComputeTaggedHash_BIPSchnorrDeriveTest()
+        public void ComputeTaggedHash_BIP0340auxTest()
         {
-            using Sha256 sha = new Sha256();
-            byte[] key = Helper.HexToBytes("16bfd223d68adb5539edffd08e5e1b5cba9e0ce581612118bc82111cef727975");
-            byte[] data = Helper.HexToBytes("fac9cdf2f2b82e7d6ab47656ea4a294ab886553e6fdb08b49eb9665479be65c7");
+            using Sha256 sha = new();
+            byte[] aux = Helper.HexToBytes("fac9cdf2f2b82e7d6ab47656ea4a294ab886553e6fdb08b49eb9665479be65c7");
 
-            byte[] actual = sha.ComputeTaggedHash("BIPSchnorrDerive", key, data);
-            byte[] expected = Helper.HexToBytes("3d9d5b3d1a791dbe1f61e6e4f457f90606417b6ec305b558160f4eaf71c819d9");
+            byte[] actual = sha.ComputeTaggedHash("BIP0340/aux", aux);
+            byte[] expected = Helper.HexToBytes("7db9b90018a2e4151d4eae8c9ab51975ab4fbc1ad59ca37330c30f41bd473a9d");
 
             Assert.Equal(expected, actual);
         }
 
         [Fact]
-        public void ComputeTaggedHash_BIPSchnorrTest()
+        public void ComputeTaggedHash_BIP0340challengeTest()
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] r = Helper.HexToBytes("c044e32bbe7a7973ed85e6645f648c60a8c3ea5d1989de40aa4b5eb2d6d4f1c1");
             byte[] pub = Helper.HexToBytes("13f714f34a70147d5b2daecb30855b198d17b9e6e20c9f3766a281721bc69d19");
             byte[] data = Helper.HexToBytes("9324506850981637af6d01ebdb120f24ef4525be1a0ade0757dd8da7efa16195");
 
-            byte[] actual = sha.ComputeTaggedHash("BIPSchnorr", r, pub, data);
-            byte[] expected = Helper.HexToBytes("3c63b7031c037368fb3f74de36f1a37cdf9f55051a0725f0a5f76a4550e4354e");
+            byte[] actual = sha.ComputeTaggedHash("BIP0340/challenge", r, pub, data);
+            byte[] expected = Helper.HexToBytes("8cb35f776c45345ddcc4658f362d080f7e4e4dc0fc425ba53b08ada81b1f5251");
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeTaggedHash_BIP0340nonceTest()
+        {
+            using Sha256 sha = new();
+            byte[] t = Helper.HexToBytes("c044e32bbe7a7973ed85e6645f648c60a8c3ea5d1989de40aa4b5eb2d6d4f1c1");
+            byte[] pub = Helper.HexToBytes("13f714f34a70147d5b2daecb30855b198d17b9e6e20c9f3766a281721bc69d19");
+            byte[] data = Helper.HexToBytes("9324506850981637af6d01ebdb120f24ef4525be1a0ade0757dd8da7efa16195");
+
+            byte[] actual = sha.ComputeTaggedHash("BIP0340/nonce", t, pub, data);
+            byte[] expected = Helper.HexToBytes("0ac9e997ceb2f96fe0d66da37df1e482695b11e38a18bd58f90d92a02ec48da9");
 
             Assert.Equal(expected, actual);
         }
@@ -349,7 +362,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeTaggedHash_GeneralTest()
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
             byte[] b1 = Helper.HexToBytes("7e12d002b106336a5ef75ec1871a9494c32fd0338dc8faa1cff751d51b42eb63");
             byte[] b2 = Helper.HexToBytes("bbbf2917e06ab87045b814fd21b38273ada86fca8adb4eb5182f32bab45d4e1c");
             byte[] b3 = Helper.HexToBytes("0bfb05c8f17db4587660eed4b4fc7f1c75de2873d220d8df7074feb037febce7");
@@ -364,7 +377,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeTaggedHash_NullExceptionTest()
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
 
             Exception ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash(null, new byte[32]));
             Assert.Contains("Tag can not be null.", ex.Message);
@@ -375,7 +388,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", null));
             Assert.Contains("The extra data can not be null or empty.", ex.Message);
 
-            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", new byte[0][]));
+            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", Array.Empty<byte[]>()));
             Assert.Contains("The extra data can not be null or empty.", ex.Message);
         }
 
@@ -389,22 +402,28 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             };
             yield return new object[]
             {
-                "BIPSchnorr",
+                "BIP0340/aux",
                 new byte[][] { new byte[32], new byte[32] },
-                "BIPSchnorr tag needs 3 data inputs."
+                "BIP0340/aux tag needs 1 data input."
             };
             yield return new object[]
             {
-                "BIPSchnorrDerive",
-                new byte[][] { new byte[32], new byte[32], new byte[32] },
-                "BIPSchnorrDerive tag needs 2 data inputs."
+                "BIP0340/challenge",
+                new byte[][] { new byte[32], new byte[32] },
+                "BIP0340/challenge tag needs 3 data inputs."
+            };
+            yield return new object[]
+            {
+                "BIP0340/nonce",
+                new byte[][] { new byte[32], new byte[32] },
+                "BIP0340/nonce tag needs 3 data inputs."
             };
         }
         [Theory]
         [MemberData(nameof(GetTaggedHashErrorCases))]
         public void ComputeTaggedHash_OutOfRangeExceptionTest(string tag, byte[][] data, string expError)
         {
-            using Sha256 sha = new Sha256();
+            using Sha256 sha = new();
 
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => sha.ComputeTaggedHash(tag, data));
             Assert.Contains(expError, ex.Message);

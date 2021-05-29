@@ -506,12 +506,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             return results.Length != 0;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IsSquare(BigInteger y) => BigInteger.ModPow(y, (curve.P - 1) / 2, curve.P) == 1;
-
         private BigInteger ComputeSchnorrE(byte[] rba, EllipticCurvePoint P, byte[] hash)
         {
-            // Compute "tagged hash":
+            // Compute tagged hash:
             // tagHash = Sha256(tagstring) 
             // msg = R.X | P.X | hash
             // return sha256(tagHash | tagHash | msg)
@@ -520,7 +517,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             // TODO: change all these BigIntegers to ModUint256 type so that it doesn't need length checks,...!
             byte[] pubBa = new byte[32];
             Buffer.BlockCopy(pba, 0, pubBa, 32 - pba.Length, pba.Length);
-            BigInteger e = sha.ComputeTaggedHash_BIPSchnorr(rba, pubBa, hash).ToBigInt(true, true) % curve.N;
+            BigInteger e = sha.ComputeTaggedHash_BIP340_challenge(rba, pubBa, hash).ToBigInt(true, true) % curve.N;
             return e;
         }
 
@@ -535,53 +532,47 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>Signature</returns>
         public Signature SignSchnorr(byte[] hash, byte[] key)
         {
-            BigInteger seckey = key.ToBigInt(true, true);
-            EllipticCurvePoint pubkPoint = MultiplyChecked(seckey, curve.G);
-            if (!IsSquare(pubkPoint.Y))
+            BigInteger d = key.ToBigInt(true, true);
+            EllipticCurvePoint pubkPoint = MultiplyChecked(d, curve.G);
+            if (!pubkPoint.Y.IsEven)
             {
-                seckey = curve.N - seckey;
+                d = curve.N - d;
                 // The internal ComputeTaggedHash_*() methods assume inputs are 32 byte so it needs to be padded here
                 // both hash and key are already 32 byte since the caller is PrivateKey.Sign() method
                 byte[] temp = new byte[32];
-                byte[] secBa = seckey.ToByteArray(true, true);
+                byte[] secBa = d.ToByteArray(true, true);
                 Buffer.BlockCopy(secBa, 0, temp, 32 - secBa.Length, secBa.Length);
                 key = temp;
             }
 
             using Sha256 sha = new Sha256();
-            byte[] kBa = sha.ComputeTaggedHash_BIPSchnorrDerive(key, hash);
-            BigInteger k = kBa.ToBigInt(true, true) % curve.N;
-
-            if (k == 0)
+            BigInteger k = 0;
+            uint count = 0;
+            do
             {
-                // This branch will only happen if k was 0 or N (reduced to 0) which is nearly impossible!
-                uint count = 1;
                 byte[] extraEntropy = new byte[32];
-                do
-                {
-                    // TODO: investigate what is the appropriate approach in this special case.
+                extraEntropy[0] = (byte)count;
+                extraEntropy[1] = (byte)(count >> 8);
+                extraEntropy[2] = (byte)(count >> 16);
+                extraEntropy[3] = (byte)(count >> 24);
 
-                    // A very similar approach to Sign() method is used here with the extra entropy but
-                    // instead of RFC-6979 TaggedHash is used with a different "tag" and 3x 32-byte inputs
-                    extraEntropy[0] = (byte)count;
-                    extraEntropy[1] = (byte)(count >> 8);
-                    extraEntropy[2] = (byte)(count >> 16);
-                    extraEntropy[3] = (byte)(count >> 24);
-                    count++;
-                    kBa = sha.ComputeTaggedHash("BIPSchnorrDeriveExtraEntropy", key, hash, extraEntropy);
-                    k = kBa.ToBigInt(true, true) % curve.N;
-                } while (k == 0);
-            }
+                byte[] kBa = sha.ComputeTaggedHash_BIP340_nonce(key, hash, extraEntropy);
+                k = kBa.ToBigInt(true, true) % curve.N;
+            } while (k == 0);
 
             EllipticCurvePoint R = MultiplyChecked(k, curve.G);
 
-            if (!IsSquare(R.Y))
+            if (!R.Y.IsEven)
             {
                 k = curve.N - k;
             }
 
-            BigInteger e = ComputeSchnorrE(R.X.ToByteArray(true, true), pubkPoint, hash);
-            BigInteger s = (k + (e * seckey)) % curve.N;
+            byte[] rBa = new byte[32];
+            byte[] tempR = R.X.ToByteArray(true, true);
+            Buffer.BlockCopy(tempR, 0, rBa, 32 - tempR.Length, tempR.Length);
+
+            BigInteger e = ComputeSchnorrE(rBa, pubkPoint, hash);
+            BigInteger s = (k + (e * d)) % curve.N;
 
             return new Signature(R.X, s);
         }
@@ -601,11 +592,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             {
                 return false;
             }
+            byte[] rBa = new byte[32];
+            byte[] tempR = sig.R.ToByteArray(true, true);
+            Buffer.BlockCopy(tempR, 0, rBa, 32 - tempR.Length, tempR.Length);
 
-            BigInteger e = ComputeSchnorrE(sig.R.ToByteArray(true, true), pubPoint, hash);
+            BigInteger e = ComputeSchnorrE(rBa, pubPoint, hash);
             EllipticCurvePoint R = AddChecked(MultiplyChecked(sig.S, curve.G), MultiplyChecked(curve.N - e, pubPoint));
 
-            return IsSquare(R.Y) && R.X == sig.R;
+            return R.Y.IsEven && R.X == sig.R;
         }
 
         /// <summary>

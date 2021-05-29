@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -264,19 +265,26 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 throw new ArgumentOutOfRangeException(nameof(data), "Each additional data must be 32 bytes.");
 
 
-            if (tag == "BIPSchnorr")
+            if (tag == "BIP0340/aux")
+            {
+                if (data.Length != 1)
+                    throw new ArgumentOutOfRangeException(nameof(data), "BIP0340/aux tag needs 1 data input.");
+
+                return ComputeTaggedHash_BIP340_aux(data[0]);
+            }
+            else if (tag == "BIP0340/challenge")
             {
                 if (data.Length != 3)
-                    throw new ArgumentOutOfRangeException(nameof(data), "BIPSchnorr tag needs 3 data inputs.");
+                    throw new ArgumentOutOfRangeException(nameof(data), "BIP0340/challenge tag needs 3 data inputs.");
 
-                return ComputeTaggedHash_BIPSchnorr(data[0], data[1], data[2]);
+                return ComputeTaggedHash_BIP340_challenge(data[0], data[1], data[2]);
             }
-            else if (tag == "BIPSchnorrDerive")
+            else if (tag == "BIP0340/nonce")
             {
-                if (data.Length != 2)
-                    throw new ArgumentOutOfRangeException(nameof(data), "BIPSchnorrDerive tag needs 2 data inputs.");
+                if (data.Length != 3)
+                    throw new ArgumentOutOfRangeException(nameof(data), "BIP0340/nonce tag needs 3 data inputs.");
 
-                return ComputeTaggedHash_BIPSchnorrDerive(data[0], data[1]);
+                return ComputeTaggedHash_BIP340_nonce(data[0], data[1], data[2]);
             }
 
             byte[] tagHash = ComputeHash(Encoding.UTF8.GetBytes(tag));
@@ -292,100 +300,91 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             return ComputeHash(toHash);
         }
 
-        internal unsafe byte[] ComputeTaggedHash_BIPSchnorrDerive(byte[] kba, byte[] data)
+        internal unsafe byte[] ComputeTaggedHash_BIP340_aux(byte[] aux)
         {
-            // Total data length to be hashed is 128 ([32+32] + 32 + 32)
-            fixed (byte* kPt = &kba[0], dPt = data)
+            Debug.Assert(aux != null && aux.Length == 32);
+
+            // Total data length to be hashed is 96 ([32+32] + 32)
+            fixed (byte* dPt = &aux[0])
             fixed (uint* hPt = &hashState[0], wPt = &w[0])
             {
-                // The first 64 bytes (1 block) is equal to SHA256("BIPSchnorrDerive") | SHA256("BIPSchnorrDerive")
+                // The first 64 bytes (1 block) is equal to SHA256("BIP0340/aux") | SHA256("BIP0340/aux")
                 // This can be pre-computed and change the HashState's initial value
-                hPt[0] = 0x1cd78ec3U;
-                hPt[1] = 0xc4425f87U;
-                hPt[2] = 0xb4f1a9f1U;
-                hPt[3] = 0xa16abd8dU;
-                hPt[4] = 0x5a6dea72U;
-                hPt[5] = 0xd28469e3U;
-                hPt[6] = 0x17119b2eU;
-                hPt[7] = 0x7bd19a16U;
+                hPt[0] = 0x24dd3219U;
+                hPt[1] = 0x4eba7e70U;
+                hPt[2] = 0xca0fabb9U;
+                hPt[3] = 0x0fa3166dU;
+                hPt[4] = 0x3afbe4b1U;
+                hPt[5] = 0x4c44df97U;
+                hPt[6] = 0x4aac2739U;
+                hPt[7] = 0x249e850aU;
 
-                // The second block (64 to 128) is kBa | data
-                for (int i = 0, j = 0; i < 8; i++, j += 4)
-                {
-                    wPt[i] = (uint)((kPt[j] << 24) | (kPt[j + 1] << 16) | (kPt[j + 2] << 8) | kPt[j + 3]);
-                }
-                for (int i = 8, j = 0; i < 16; i++, j += 4)
-                {
-                    wPt[i] = (uint)((dPt[j] << 24) | (dPt[j + 1] << 16) | (dPt[j + 2] << 8) | dPt[j + 3]);
-                }
-
-                CompressBlock(hPt, wPt);
-
-                // The third block (128 to 192) is pad
-                wPt[0] = 0b10000000_00000000_00000000_00000000U;
-                wPt[1] = 0;
-                wPt[2] = 0;
-                wPt[3] = 0;
-                wPt[4] = 0;
-                wPt[5] = 0;
-                wPt[6] = 0;
-                wPt[7] = 0;
-                wPt[8] = 0;
+                // The second block (64 to 96) is aux
+                wPt[0] = (uint)((dPt[00] << 24) | (dPt[01] << 16) | (dPt[02] << 8) | dPt[03]);
+                wPt[1] = (uint)((dPt[04] << 24) | (dPt[05] << 16) | (dPt[06] << 8) | dPt[07]);
+                wPt[2] = (uint)((dPt[08] << 24) | (dPt[09] << 16) | (dPt[10] << 8) | dPt[11]);
+                wPt[3] = (uint)((dPt[12] << 24) | (dPt[13] << 16) | (dPt[14] << 8) | dPt[15]);
+                wPt[4] = (uint)((dPt[16] << 24) | (dPt[17] << 16) | (dPt[18] << 8) | dPt[19]);
+                wPt[5] = (uint)((dPt[20] << 24) | (dPt[21] << 16) | (dPt[22] << 8) | dPt[23]);
+                wPt[6] = (uint)((dPt[24] << 24) | (dPt[25] << 16) | (dPt[26] << 8) | dPt[27]);
+                wPt[7] = (uint)((dPt[28] << 24) | (dPt[29] << 16) | (dPt[30] << 8) | dPt[31]);
+                wPt[8] = 0b10000000_00000000_00000000_00000000U;
                 wPt[9] = 0;
                 wPt[10] = 0;
                 wPt[11] = 0;
                 wPt[12] = 0;
                 wPt[13] = 0;
                 wPt[14] = 0;
-                wPt[15] = 1024; // len = 128*8
-                wPt[16] = 0x80000000U;
-                wPt[17] = 0x02800001U;
-                wPt[18] = 0x00205000U;
-                wPt[19] = 0x00000110U;
-                wPt[20] = 0x22000800U;
-                wPt[21] = 0x00aa0000U;
-                wPt[22] = 0x05089942U;
-                wPt[23] = 0xc0002ac0U;
-                wPt[24] = 0x62080004U;
-                wPt[25] = 0x1028c80aU;
-                wPt[26] = 0x001a4055U;
-                wPt[27] = 0x9f004823U;
-                wPt[28] = 0x68ca269eU;
-                wPt[29] = 0x323b15b4U;
-                wPt[30] = 0x1886f73dU;
-                wPt[31] = 0x5b6835a3U;
-                wPt[32] = 0x37fd1798U;
-                wPt[33] = 0x3311a7d2U;
-                wPt[34] = 0xe8977a87U;
-                wPt[35] = 0x55edccc1U;
-                wPt[36] = 0x26785e65U;
-                wPt[37] = 0x1c1a75cdU;
-                wPt[38] = 0x1898add6U;
-                wPt[39] = 0x70d975edU;
-                wPt[40] = 0xfc995de5U;
-                wPt[41] = 0xc72d9f47U;
-                wPt[42] = 0x225062f2U;
-                wPt[43] = 0xfa62c148U;
-                wPt[44] = 0x6d6275f8U;
-                wPt[45] = 0x4876537fU;
-                wPt[46] = 0x3e6bd0afU;
-                wPt[47] = 0xaf3a394cU;
-                wPt[48] = 0x5d69345cU;
-                wPt[49] = 0x7d685338U;
-                wPt[50] = 0x9ad3729dU;
-                wPt[51] = 0xc04f60b4U;
-                wPt[52] = 0x4af2ba27U;
-                wPt[53] = 0x3b5ad539U;
-                wPt[54] = 0x5b9a980bU;
-                wPt[55] = 0x818b7cddU;
-                wPt[56] = 0x89cdea52U;
-                wPt[57] = 0x2c88481eU;
-                wPt[58] = 0x69cbcd7eU;
-                wPt[59] = 0xd265fe42U;
-                wPt[60] = 0xab09cb34U;
-                wPt[61] = 0x9288f7b9U;
-                wPt[62] = 0x9fb768b8U;
-                wPt[63] = 0x9c18607fU;
+                wPt[15] = 768; // len = 96*8
+
+                wPt[16] = SSIG0(wPt[1]) + wPt[0];
+                wPt[17] = 31457280 + SSIG0(wPt[2]) + wPt[1];
+                wPt[18] = SSIG1(wPt[16]) + SSIG0(wPt[3]) + wPt[2];
+                wPt[19] = SSIG1(wPt[17]) + SSIG0(wPt[4]) + wPt[3];
+                wPt[20] = SSIG1(wPt[18]) + SSIG0(wPt[5]) + wPt[4];
+                wPt[21] = SSIG1(wPt[19]) + SSIG0(wPt[6]) + wPt[5];
+                wPt[22] = SSIG1(wPt[20]) + 768 + SSIG0(wPt[7]) + wPt[6];
+                wPt[23] = SSIG1(wPt[21]) + wPt[16] + 285220864 + wPt[7];
+                wPt[24] = SSIG1(wPt[22]) + wPt[17] + 2147483648;
+                wPt[25] = SSIG1(wPt[23]) + wPt[18];
+                wPt[26] = SSIG1(wPt[24]) + wPt[19];
+                wPt[27] = SSIG1(wPt[25]) + wPt[20];
+                wPt[28] = SSIG1(wPt[26]) + wPt[21];
+                wPt[29] = SSIG1(wPt[27]) + wPt[22];
+                wPt[30] = SSIG1(wPt[28]) + wPt[23] + 12583014;
+                wPt[31] = SSIG1(wPt[29]) + wPt[24] + SSIG0(wPt[16]) + 768;
+                wPt[32] = SSIG1(wPt[30]) + wPt[25] + SSIG0(wPt[17]) + wPt[16];
+                wPt[33] = SSIG1(wPt[31]) + wPt[26] + SSIG0(wPt[18]) + wPt[17];
+                wPt[34] = SSIG1(wPt[32]) + wPt[27] + SSIG0(wPt[19]) + wPt[18];
+                wPt[35] = SSIG1(wPt[33]) + wPt[28] + SSIG0(wPt[20]) + wPt[19];
+                wPt[36] = SSIG1(wPt[34]) + wPt[29] + SSIG0(wPt[21]) + wPt[20];
+                wPt[37] = SSIG1(wPt[35]) + wPt[30] + SSIG0(wPt[22]) + wPt[21];
+                wPt[38] = SSIG1(wPt[36]) + wPt[31] + SSIG0(wPt[23]) + wPt[22];
+                wPt[39] = SSIG1(wPt[37]) + wPt[32] + SSIG0(wPt[24]) + wPt[23];
+                wPt[40] = SSIG1(wPt[38]) + wPt[33] + SSIG0(wPt[25]) + wPt[24];
+                wPt[41] = SSIG1(wPt[39]) + wPt[34] + SSIG0(wPt[26]) + wPt[25];
+                wPt[42] = SSIG1(wPt[40]) + wPt[35] + SSIG0(wPt[27]) + wPt[26];
+                wPt[43] = SSIG1(wPt[41]) + wPt[36] + SSIG0(wPt[28]) + wPt[27];
+                wPt[44] = SSIG1(wPt[42]) + wPt[37] + SSIG0(wPt[29]) + wPt[28];
+                wPt[45] = SSIG1(wPt[43]) + wPt[38] + SSIG0(wPt[30]) + wPt[29];
+                wPt[46] = SSIG1(wPt[44]) + wPt[39] + SSIG0(wPt[31]) + wPt[30];
+                wPt[47] = SSIG1(wPt[45]) + wPt[40] + SSIG0(wPt[32]) + wPt[31];
+                wPt[48] = SSIG1(wPt[46]) + wPt[41] + SSIG0(wPt[33]) + wPt[32];
+                wPt[49] = SSIG1(wPt[47]) + wPt[42] + SSIG0(wPt[34]) + wPt[33];
+                wPt[50] = SSIG1(wPt[48]) + wPt[43] + SSIG0(wPt[35]) + wPt[34];
+                wPt[51] = SSIG1(wPt[49]) + wPt[44] + SSIG0(wPt[36]) + wPt[35];
+                wPt[52] = SSIG1(wPt[50]) + wPt[45] + SSIG0(wPt[37]) + wPt[36];
+                wPt[53] = SSIG1(wPt[51]) + wPt[46] + SSIG0(wPt[38]) + wPt[37];
+                wPt[54] = SSIG1(wPt[52]) + wPt[47] + SSIG0(wPt[39]) + wPt[38];
+                wPt[55] = SSIG1(wPt[53]) + wPt[48] + SSIG0(wPt[40]) + wPt[39];
+                wPt[56] = SSIG1(wPt[54]) + wPt[49] + SSIG0(wPt[41]) + wPt[40];
+                wPt[57] = SSIG1(wPt[55]) + wPt[50] + SSIG0(wPt[42]) + wPt[41];
+                wPt[58] = SSIG1(wPt[56]) + wPt[51] + SSIG0(wPt[43]) + wPt[42];
+                wPt[59] = SSIG1(wPt[57]) + wPt[52] + SSIG0(wPt[44]) + wPt[43];
+                wPt[60] = SSIG1(wPt[58]) + wPt[53] + SSIG0(wPt[45]) + wPt[44];
+                wPt[61] = SSIG1(wPt[59]) + wPt[54] + SSIG0(wPt[46]) + wPt[45];
+                wPt[62] = SSIG1(wPt[60]) + wPt[55] + SSIG0(wPt[47]) + wPt[46];
+                wPt[63] = SSIG1(wPt[61]) + wPt[56] + SSIG0(wPt[48]) + wPt[47];
 
                 CompressBlock_WithWSet(hPt, wPt);
 
@@ -393,22 +392,141 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             }
         }
 
-        internal unsafe byte[] ComputeTaggedHash_BIPSchnorr(byte[] rba, byte[] pba, byte[] data)
+        internal unsafe byte[] ComputeTaggedHash_BIP340_nonce(byte[] t, byte[] pba, byte[] data)
         {
+            Debug.Assert(t != null && t.Length == 32);
+            Debug.Assert(pba != null && pba.Length == 32);
+            Debug.Assert(data != null && data.Length == 32);
+
             // Total data length to be hashed is 160 ([32+32] + 32 + 32 + 32)
-            fixed (byte* rPt = &rba[0], pPt = &pba[0], dPt = data)
+            fixed (byte* tPt = &t[0], pPt = &pba[0], dPt = &data[0])
             fixed (uint* hPt = &hashState[0], wPt = &w[0])
             {
-                // The first 64 bytes (1 block) is equal to SHA256("BIPSchnorr") | SHA256("BIPSchnorr")
+                // The first 64 bytes (1 block) is equal to SHA256("BIP0340/nonce") | SHA256("BIP0340/nonce")
                 // This can be pre-computed and change the HashState's initial value
-                hPt[0] = 0x048d9a59U;
-                hPt[1] = 0xfe39fb05U;
-                hPt[2] = 0x28479648U;
-                hPt[3] = 0xe4a660f9U;
-                hPt[4] = 0x814b9e66U;
-                hPt[5] = 0x0469e801U;
-                hPt[6] = 0x83909280U;
-                hPt[7] = 0xb329e454U;
+                hPt[0] = 0x46615b35U;
+                hPt[1] = 0xf4bfbff7U;
+                hPt[2] = 0x9f8dc671U;
+                hPt[3] = 0x83627ab3U;
+                hPt[4] = 0x60217180U;
+                hPt[5] = 0x57358661U;
+                hPt[6] = 0x21a29e54U;
+                hPt[7] = 0x68b07b4cU;
+
+                // The second block (64 to 128) is kBa | data
+                wPt[0] = (uint)((tPt[00] << 24) | (tPt[01] << 16) | (tPt[02] << 8) | tPt[03]);
+                wPt[1] = (uint)((tPt[04] << 24) | (tPt[05] << 16) | (tPt[06] << 8) | tPt[07]);
+                wPt[2] = (uint)((tPt[08] << 24) | (tPt[09] << 16) | (tPt[10] << 8) | tPt[11]);
+                wPt[3] = (uint)((tPt[12] << 24) | (tPt[13] << 16) | (tPt[14] << 8) | tPt[15]);
+                wPt[4] = (uint)((tPt[16] << 24) | (tPt[17] << 16) | (tPt[18] << 8) | tPt[19]);
+                wPt[5] = (uint)((tPt[20] << 24) | (tPt[21] << 16) | (tPt[22] << 8) | tPt[23]);
+                wPt[6] = (uint)((tPt[24] << 24) | (tPt[25] << 16) | (tPt[26] << 8) | tPt[27]);
+                wPt[7] = (uint)((tPt[28] << 24) | (tPt[29] << 16) | (tPt[30] << 8) | tPt[31]);
+
+                wPt[8] = (uint)((pPt[00] << 24) | (pPt[01] << 16) | (pPt[02] << 8) | pPt[03]);
+                wPt[9] = (uint)((pPt[04] << 24) | (pPt[05] << 16) | (pPt[06] << 8) | pPt[07]);
+                wPt[10] = (uint)((pPt[08] << 24) | (pPt[09] << 16) | (pPt[10] << 8) | pPt[11]);
+                wPt[11] = (uint)((pPt[12] << 24) | (pPt[13] << 16) | (pPt[14] << 8) | pPt[15]);
+                wPt[12] = (uint)((pPt[16] << 24) | (pPt[17] << 16) | (pPt[18] << 8) | pPt[19]);
+                wPt[13] = (uint)((pPt[20] << 24) | (pPt[21] << 16) | (pPt[22] << 8) | pPt[23]);
+                wPt[14] = (uint)((pPt[24] << 24) | (pPt[25] << 16) | (pPt[26] << 8) | pPt[27]);
+                wPt[15] = (uint)((pPt[28] << 24) | (pPt[29] << 16) | (pPt[30] << 8) | pPt[31]);
+
+                CompressBlock(hPt, wPt);
+
+                // The third block (128 to 192) is pad
+                wPt[0] = (uint)((dPt[00] << 24) | (dPt[01] << 16) | (dPt[02] << 8) | dPt[03]);
+                wPt[1] = (uint)((dPt[04] << 24) | (dPt[05] << 16) | (dPt[06] << 8) | dPt[07]);
+                wPt[2] = (uint)((dPt[08] << 24) | (dPt[09] << 16) | (dPt[10] << 8) | dPt[11]);
+                wPt[3] = (uint)((dPt[12] << 24) | (dPt[13] << 16) | (dPt[14] << 8) | dPt[15]);
+                wPt[4] = (uint)((dPt[16] << 24) | (dPt[17] << 16) | (dPt[18] << 8) | dPt[19]);
+                wPt[5] = (uint)((dPt[20] << 24) | (dPt[21] << 16) | (dPt[22] << 8) | dPt[23]);
+                wPt[6] = (uint)((dPt[24] << 24) | (dPt[25] << 16) | (dPt[26] << 8) | dPt[27]);
+                wPt[7] = (uint)((dPt[28] << 24) | (dPt[29] << 16) | (dPt[30] << 8) | dPt[31]);
+                wPt[8] = 0b10000000_00000000_00000000_00000000U;
+                wPt[9] = 0;
+                wPt[10] = 0;
+                wPt[11] = 0;
+                wPt[12] = 0;
+                wPt[13] = 0;
+                wPt[14] = 0;
+                wPt[15] = 1280; // len = 160*8
+
+                wPt[16] = SSIG0(wPt[1]) + wPt[0];
+                wPt[17] = 35651585 + SSIG0(wPt[2]) + wPt[1];
+                wPt[18] = SSIG1(wPt[16]) + SSIG0(wPt[3]) + wPt[2];
+                wPt[19] = SSIG1(wPt[17]) + SSIG0(wPt[4]) + wPt[3];
+                wPt[20] = SSIG1(wPt[18]) + SSIG0(wPt[5]) + wPt[4];
+                wPt[21] = SSIG1(wPt[19]) + SSIG0(wPt[6]) + wPt[5];
+                wPt[22] = SSIG1(wPt[20]) + 1280 + SSIG0(wPt[7]) + wPt[6];
+                wPt[23] = SSIG1(wPt[21]) + wPt[16] + 285220864 + wPt[7];
+                wPt[24] = SSIG1(wPt[22]) + wPt[17] + 2147483648;
+                wPt[25] = SSIG1(wPt[23]) + wPt[18];
+                wPt[26] = SSIG1(wPt[24]) + wPt[19];
+                wPt[27] = SSIG1(wPt[25]) + wPt[20];
+                wPt[28] = SSIG1(wPt[26]) + wPt[21];
+                wPt[29] = SSIG1(wPt[27]) + wPt[22];
+                wPt[30] = SSIG1(wPt[28]) + wPt[23] + 20971690;
+                wPt[31] = SSIG1(wPt[29]) + wPt[24] + SSIG0(wPt[16]) + 1280;
+                wPt[32] = SSIG1(wPt[30]) + wPt[25] + SSIG0(wPt[17]) + wPt[16];
+                wPt[33] = SSIG1(wPt[31]) + wPt[26] + SSIG0(wPt[18]) + wPt[17];
+                wPt[34] = SSIG1(wPt[32]) + wPt[27] + SSIG0(wPt[19]) + wPt[18];
+                wPt[35] = SSIG1(wPt[33]) + wPt[28] + SSIG0(wPt[20]) + wPt[19];
+                wPt[36] = SSIG1(wPt[34]) + wPt[29] + SSIG0(wPt[21]) + wPt[20];
+                wPt[37] = SSIG1(wPt[35]) + wPt[30] + SSIG0(wPt[22]) + wPt[21];
+                wPt[38] = SSIG1(wPt[36]) + wPt[31] + SSIG0(wPt[23]) + wPt[22];
+                wPt[39] = SSIG1(wPt[37]) + wPt[32] + SSIG0(wPt[24]) + wPt[23];
+                wPt[40] = SSIG1(wPt[38]) + wPt[33] + SSIG0(wPt[25]) + wPt[24];
+                wPt[41] = SSIG1(wPt[39]) + wPt[34] + SSIG0(wPt[26]) + wPt[25];
+                wPt[42] = SSIG1(wPt[40]) + wPt[35] + SSIG0(wPt[27]) + wPt[26];
+                wPt[43] = SSIG1(wPt[41]) + wPt[36] + SSIG0(wPt[28]) + wPt[27];
+                wPt[44] = SSIG1(wPt[42]) + wPt[37] + SSIG0(wPt[29]) + wPt[28];
+                wPt[45] = SSIG1(wPt[43]) + wPt[38] + SSIG0(wPt[30]) + wPt[29];
+                wPt[46] = SSIG1(wPt[44]) + wPt[39] + SSIG0(wPt[31]) + wPt[30];
+                wPt[47] = SSIG1(wPt[45]) + wPt[40] + SSIG0(wPt[32]) + wPt[31];
+                wPt[48] = SSIG1(wPt[46]) + wPt[41] + SSIG0(wPt[33]) + wPt[32];
+                wPt[49] = SSIG1(wPt[47]) + wPt[42] + SSIG0(wPt[34]) + wPt[33];
+                wPt[50] = SSIG1(wPt[48]) + wPt[43] + SSIG0(wPt[35]) + wPt[34];
+                wPt[51] = SSIG1(wPt[49]) + wPt[44] + SSIG0(wPt[36]) + wPt[35];
+                wPt[52] = SSIG1(wPt[50]) + wPt[45] + SSIG0(wPt[37]) + wPt[36];
+                wPt[53] = SSIG1(wPt[51]) + wPt[46] + SSIG0(wPt[38]) + wPt[37];
+                wPt[54] = SSIG1(wPt[52]) + wPt[47] + SSIG0(wPt[39]) + wPt[38];
+                wPt[55] = SSIG1(wPt[53]) + wPt[48] + SSIG0(wPt[40]) + wPt[39];
+                wPt[56] = SSIG1(wPt[54]) + wPt[49] + SSIG0(wPt[41]) + wPt[40];
+                wPt[57] = SSIG1(wPt[55]) + wPt[50] + SSIG0(wPt[42]) + wPt[41];
+                wPt[58] = SSIG1(wPt[56]) + wPt[51] + SSIG0(wPt[43]) + wPt[42];
+                wPt[59] = SSIG1(wPt[57]) + wPt[52] + SSIG0(wPt[44]) + wPt[43];
+                wPt[60] = SSIG1(wPt[58]) + wPt[53] + SSIG0(wPt[45]) + wPt[44];
+                wPt[61] = SSIG1(wPt[59]) + wPt[54] + SSIG0(wPt[46]) + wPt[45];
+                wPt[62] = SSIG1(wPt[60]) + wPt[55] + SSIG0(wPt[47]) + wPt[46];
+                wPt[63] = SSIG1(wPt[61]) + wPt[56] + SSIG0(wPt[48]) + wPt[47];
+
+                CompressBlock_WithWSet(hPt, wPt);
+
+                return GetBytes(hPt);
+            }
+        }
+
+        internal unsafe byte[] ComputeTaggedHash_BIP340_challenge(byte[] rba, byte[] pba, byte[] data)
+        {
+            Debug.Assert(rba != null && rba.Length == 32);
+            Debug.Assert(pba != null && pba.Length == 32);
+            Debug.Assert(data != null && data.Length == 32);
+
+            // Total data length to be hashed is 160 ([32+32] + 32 + 32 + 32)
+            fixed (byte* rPt = &rba[0], pPt = &pba[0], dPt = &data[0])
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                // The first 64 bytes (1 block) is equal to SHA256("BIP0340/challenge") | SHA256("BIP0340/challenge")
+                // This can be pre-computed and change the HashState's initial value
+                hPt[0] = 0x9cecba11U;
+                hPt[1] = 0x23925381U;
+                hPt[2] = 0x11679112U;
+                hPt[3] = 0xd1627e0fU;
+                hPt[4] = 0x97c87550U;
+                hPt[5] = 0x003cc765U;
+                hPt[6] = 0x90f61164U;
+                hPt[7] = 0x33e9b66aU;
 
                 // The second block (64 to 128) is rBa | pBa
                 for (int i = 0, j = 0; i < 8; i++, j += 4)
