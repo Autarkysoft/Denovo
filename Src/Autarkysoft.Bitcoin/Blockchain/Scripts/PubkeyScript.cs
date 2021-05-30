@@ -557,5 +557,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             Data[5] = 0xed;
             Buffer.BlockCopy(hash, 0, Data, 6, 32);
         }
+
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public void SetToP2TR(byte[] hash)
+        {
+            if (hash == null)
+                throw new ArgumentNullException(nameof(hash), "Hash can not be null.");
+            if (hash.Length != Sha256.HashByteSize)
+                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Sha256.HashByteSize} bytes long.");
+
+            var ops = new IOperation[]
+            {
+                new PushDataOp(OP._1),
+                new PushDataOp(hash)
+            };
+            SetData(ops);
+        }
     }
 }
