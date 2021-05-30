@@ -34,6 +34,7 @@ namespace Tests.BitcoinCore
                 bip65 = false,
                 segWit = false,
                 strictDer = false,
+                tap = false,
             };
 
             // https://github.com/bitcoin/bitcoin/blob/48725e64fbfb85200dd2226386fbf1cfc8fe6c1f/src/test/transaction_tests.cpp#L43-L62
