@@ -185,6 +185,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         return PubkeyScriptSpecialType.InvalidWitness;
                     }
                 }
+                // Version 1 witness program
+                else if (consensus.IsTaprootEnabled && Data[0] == (byte)OP._1 && Data.Length == 34)
+                {
+                    return PubkeyScriptSpecialType.P2TR;
+                }
                 // OP_num PushData()
                 else
                 {

@@ -77,6 +77,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         P2WSH,
         /// <summary>
+        /// "Pay to Taproot" script type
+        /// </summary>
+        P2TR,
+        /// <summary>
         /// Any invalid witness pubkey script type that should be rejected during evaluation.
         /// </summary>
         InvalidWitness,
