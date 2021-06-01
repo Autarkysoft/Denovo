@@ -15,6 +15,19 @@ using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
+    // TODO: An idea for verification and storing the computed reusable hashes:
+    //       In SegWit transactions a couple of hashes are computed that can be reused. These hashes are currently being
+    //       computed for every input.
+    //       A new class can be defined to store these hashes and be given to SerializeForSigning() methods as a dependency.
+    //       The class itself can be stored in TransactionVerifier class and be reused for each transaction that instance verifies.
+    //       SHA256 can also be instantiated in this class and be passed to the method to avoid instantiating it for each call to
+    //       SerializeForSigning() method.
+    //       This new class would store hashPrevouts, hashSequence,... to be reused in SegWit v0 and v1 (Taproot) verification
+    //       and would improve speed.
+    //       It could also store the precomputed data needed for Schnorr batch verification, either this or the new 
+    //       EllipticCurveCalculator class has to do it.
+
+
     /// <summary>
     /// Bitcoin transaction. Note that this class stores the transaction sizes and transaction hash and if the transaction
     /// changes it will not re-compute them. There are methods available to manually force re-calculation.
@@ -530,6 +543,107 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             byte[] hashPreimage = sha.ComputeHashTwice(finalStream.ToByteArray());
             return hashPreimage;
+        }
+
+        /// <inheritdoc/>
+        public byte[] SerializeForSigningTaproot(byte epoch, byte hashType, SigHashType sht, TxOut[] spentOutputs,
+                                                 bool hasAnnex, byte extFlag, int inputIndex, byte[] annexHash)
+        {
+            // TODO: sht has to be validated by the caller
+
+            using Sha256 sha = new Sha256();
+            // Tagged hash with tag = "TapSighash"
+
+            var stream = new FastStream(206);
+
+            stream.Write(epoch);
+            // SigMsg(hash_type, ext_flag):
+            // * Control:
+            stream.Write(hashType);
+            // * Transaction data:
+            stream.Write(Version);
+            LockTime.WriteToStream(stream);
+
+            if (!sht.IsAnyoneCanPay())
+            {
+                // Outpoints are 32 byte tx hash + 4 byte index
+                var prvOutStream = new FastStream(TxInList.Length * 36);
+                foreach (var tin in TxInList)
+                {
+                    prvOutStream.Write(tin.TxHash);
+                    prvOutStream.Write(tin.Index);
+                }
+                // Note that the following is a single hash unlike SegWit v0 which is double
+                byte[] hashPrevouts = sha.ComputeHash(prvOutStream.ToByteArray());
+                stream.Write(hashPrevouts);
+
+                var amountStream = new FastStream(spentOutputs.Length * 8);
+                var pubScrStream = new FastStream(spentOutputs.Length * 36); // 36 is average size
+                foreach (var item in spentOutputs)
+                {
+                    amountStream.Write(item.Amount);
+                    item.PubScript.Serialize(pubScrStream);
+                }
+                byte[] amountHash = sha.ComputeHash(amountStream.ToByteArray());
+                byte[] pubScrHash = sha.ComputeHash(pubScrStream.ToByteArray());
+                stream.Write(amountHash);
+                stream.Write(pubScrHash);
+
+                var seqStream = new FastStream(TxInList.Length * 4);
+                foreach (var item in TxInList)
+                {
+                    seqStream.Write(item.Sequence);
+                }
+                byte[] seqHash = sha.ComputeHash(seqStream.ToByteArray());
+                stream.Write(seqHash);
+            }
+
+            // TODO: this could be simplified with == SigHashType.All
+            if (!sht.IsNone() && !sht.IsSingle())
+            {
+                // 33 is the approximate size of most TxOuts
+                var outputStream = new FastStream(TxOutList.Length * 33);
+                foreach (var tout in TxOutList)
+                {
+                    tout.Serialize(outputStream);
+                }
+
+                byte[] hashOutputs = sha.ComputeHash(outputStream.ToByteArray());
+                stream.Write(hashOutputs);
+            }
+
+            // * Data about this input:
+            int spendType = (extFlag * 2) + (hasAnnex ? 1 : 0);
+            Debug.Assert(spendType <= byte.MaxValue);
+            stream.Write((byte)spendType);
+
+            if (sht.IsAnyoneCanPay())
+            {
+                stream.Write(TxInList[inputIndex].TxHash);
+                stream.Write(TxInList[inputIndex].Index);
+                spentOutputs[inputIndex].Serialize(stream);
+                stream.Write(TxInList[inputIndex].Sequence);
+            }
+            else
+            {
+                stream.Write(inputIndex);
+            }
+
+            if (hasAnnex)
+            {
+                stream.Write(annexHash);
+            }
+
+            // * Data about this output:
+            if (sht.IsSingle())
+            {
+                var outStream = new FastStream(33);
+                TxOutList[inputIndex].Serialize(outStream);
+                byte[] outHash = sha.ComputeHash(outStream.ToByteArray());
+                stream.Write(outHash);
+            }
+
+            return sha.ComputeHash(stream.ToByteArray());
         }
 
 
