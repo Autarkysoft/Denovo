@@ -639,6 +639,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         opList.Add(new NOP10Op());
                         break;
 
+                    case OP.CheckSigAdd:
+                        opList.Add(new CheckSigAddOp());
+                        break;
+
                     default:
                         error = "Undefined OP code";
                         return false;
