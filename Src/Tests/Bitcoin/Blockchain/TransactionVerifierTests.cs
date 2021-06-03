@@ -50,7 +50,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[0], null),
+                new MockTxPropInOut(Array.Empty<TxIn>(), null),
                 false,
                 "Coinbase transaction must contain only one input.",
                 0
@@ -66,7 +66,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[1], new TxOut[0]),
+                new MockTxPropInOut(new TxIn[1], Array.Empty<TxOut>()),
                 false,
                 "Transaction must contain at least one output.",
                 0
@@ -102,8 +102,8 @@ namespace Tests.Bitcoin.Blockchain
             };
 
             var mockPassSigScr = new MockCoinbaseVerifySigScript(MockHeight, true, 100);
-            TxOut t1 = new TxOut(50, new MockSigOpCountPubScript(20));
-            TxOut t2 = new TxOut(60, new MockSigOpCountPubScript(3));
+            var t1 = new TxOut(50, new MockSigOpCountPubScript(20));
+            var t2 = new TxOut(60, new MockSigOpCountPubScript(3));
             yield return new object[]
             {
                 c,
@@ -378,7 +378,7 @@ namespace Tests.Bitcoin.Blockchain
             // *** Transaction Tests (from signtx cases) ***
             foreach (var Case in Helper.ReadResource<JArray>("SignedTxTestData"))
             {
-                Transaction prevTx = new Transaction();
+                var prevTx = new Transaction();
                 prevTx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(Case["TxToSpend"].ToString())), out string _);
                 byte[] prevTxHash = prevTx.GetTransactionHash();
                 var utxoDb = new MockUtxoDatabase();
@@ -397,7 +397,7 @@ namespace Tests.Bitcoin.Blockchain
 
                 foreach (var item in Case["Cases"])
                 {
-                    Transaction tx = new Transaction();
+                    var tx = new Transaction();
                     FastStreamReader stream = new FastStreamReader(Helper.HexToBytes(item["SignedTx"].ToString()));
                     if (!tx.TryDeserialize(stream, out string err))
                     {
@@ -422,6 +422,22 @@ namespace Tests.Bitcoin.Blockchain
                     };
                 }
             }
+
+            // P2SH special case (tx can be found on testnet)
+            var p2shSpecial = new Transaction("02000000000101270e3210e2b0feebbf577ac4640dba3f41cf93d3845f432762047d7a15de283e00000000171600145c9ac58215220fb727ad5d4592e39eade0c2f324feffffff0229511d000000000017a914b472a266d0bd89c13706a4132ccfb16f7c3b9fcb8795bff4390200000017a9149ebf6e32dbdd43b7f6b62687049454edf902358c870247304402207b1091aef93cc0f3663225a6aa82b0f4f23bb8c930bfbd48cdba7157f1de32e8022039d236eea85f2ddf31d51ab5ebbeb9acd1385209617576f311ce9f2530c7c1ec0121028d14fce7ae0b7618a7b8a18a237c836e44e8725880ef19164c0e69157262f2e756781900");
+            yield return new object[]
+            {
+                new MockUtxoDatabase(p2shSpecial.GetTransactionHash(), 
+                                     new Utxo(0, p2shSpecial.TxOutList[0].Amount,p2shSpecial.TxOutList[0].PubScript)),
+                new MockMempool(null),
+                c,
+                new Transaction("010000000163bd811526dc34ece567872b7c9e2bee5580bfbde647ba6f18f879a32f98964c00000000025100ffffffff01414d1d000000000017a914a89aec4cd53e6d74215332459b7fea3ec4aca9758700000000"),
+                true, // Verification success
+                null, // Error
+                0, // Added SigOpCount
+                1000, // Added fee
+                false, // AnySegWit
+            };
         }
         [Theory]
         [MemberData(nameof(GetTxVerifyCases))]

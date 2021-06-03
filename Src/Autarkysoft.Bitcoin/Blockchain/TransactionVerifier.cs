@@ -531,13 +531,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     // Note that the top stack item after running signature script can not be result of OP_num push
                     // eg. sig pushes OP_2 to stack, top stack item is now 2
                     // Redeem script reading 2 expects a push of 2 bytes and fails
-                    if (signatureOps.Length == 0 || !(signatureOps[^1] is PushDataOp rdmPush) || rdmPush.data == null)
+                    // This however works fine with OP_0 since redeem script reading empty array works fine
+                    if (signatureOps.Length == 0 || !(signatureOps[^1] is PushDataOp rdmPush) || rdmPush.data == null
+                                                                                              && rdmPush.OpValue != OP._0)
                     {
                         error = "Redeem script was not found.";
                         return false;
                     }
 
-                    RedeemScript redeem = new RedeemScript(rdmPush.data);
+                    var redeem = new RedeemScript(rdmPush.data);
 
                     ReadOnlySpan<byte> actualHash = hash160.ComputeHash(redeem.Data);
                     ReadOnlySpan<byte> expectedHash = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2, 20);
@@ -739,6 +741,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         return false;
                     }
+                }
+                else if (pubType == PubkeyScriptSpecialType.P2TR)
+                {
+                   
+
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
                 {
