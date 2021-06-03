@@ -636,6 +636,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
 
+                        if (signatureOps.Length != 1)
+                        {
+                            error = "Signature script of P2SH-P2WPKH must contain the redeem script only.";
+                            return false;
+                        }
+
                         TotalSigOpCount++;
                         if (!VerifyP2wpkh(tx, i, tx.WitnessList[i].Items[0], tx.WitnessList[i].Items[1],
                             redeem.Data, prevOutput.Amount, out error))
@@ -653,6 +659,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             error = $"Mandatory witness is not found." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
+                            return false;
+                        }
+
+                        if (signatureOps.Length != 1)
+                        {
+                            error = "Signature script of P2SH-P2WSH must contain the redeem script only.";
                             return false;
                         }
 
