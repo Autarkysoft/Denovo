@@ -304,7 +304,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <param name="result">Resulting signature (null in case of failure)</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if successful, otherwise false.</returns>
-        public static bool TryReadSchnorr(byte[] data, out Signature result, out string error)
+        public static bool TryReadSchnorr(ReadOnlySpan<byte> data, out Signature result, out string error)
         {
             if (data == null || data.Length == 0)
             {
@@ -313,20 +313,39 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 return false;
             }
 
-            // TODO: we assume Shrnorr sigs (bytes taken from a PushDataOp in a tx) also have the SigHash at the end 
-            // Schnorr is still a proposal at this time and there is no tx cases to check
-            if (data.Length != 65)
+            SigHashType sigHash;
+            if (data.Length == 64)
+            {
+                sigHash = SigHashType.Default;
+            }
+            else if (data.Length == 65)
+            {
+                sigHash = (SigHashType)data[^1];
+                if (sigHash == SigHashType.Default)
+                {
+                    result = null;
+                    error = "SigHashType byte can not be zero.";
+                    return false;
+                }
+                else if (!((int)sigHash <= 0x03 || ((int)sigHash >= 0x81 && (int)sigHash <= 0x83)))
+                {
+                    result = null;
+                    error = "Invalid SigHashType.";
+                    return false;
+                }
+            }
+            else
             {
                 result = null;
-                error = "Schnorr signature length must be 65 bytes.";
+                error = "Schnorr signature length must be 64 or 65 bytes.";
                 return false;
             }
 
             result = new Signature()
             {
-                R = new BigInteger(((ReadOnlySpan<byte>)data).Slice(0, 32), true, true),
-                S = new BigInteger(((ReadOnlySpan<byte>)data).Slice(32, 32), true, true),
-                SigHash = (SigHashType)data[^1]
+                R = new BigInteger(data.Slice(0, 32), true, true),
+                S = new BigInteger(data.Slice(32, 32), true, true),
+                SigHash = sigHash
             };
 
             error = null;

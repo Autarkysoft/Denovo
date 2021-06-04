@@ -15,11 +15,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// The only combination is <see cref="AnyoneCanPay"/> with any of the other 3 types.
     /// </summary>
     /// <remarks>
-    /// https://github.com/bitcoin/bitcoin/blob/e5fdda68c6d2313edb74443f0d1e6d2ce2d97f5e/src/script/interpreter.h#L21-L28
+    /// https://github.com/bitcoin/bitcoin/blob/907d636e5e76bd884a4ca1a1ebd8db68a3e64705/src/script/interpreter.h#L23-L34
     /// </remarks>
     [Flags]
     public enum SigHashType
     {
+        /// <summary>
+        /// Same as <see cref="All"/> but is used when SigHash byte is missing from signatures in Taproot
+        /// </summary>
+        Default = 0,
+
         /// <summary>
         /// Everything about the transaction is signed
         /// </summary>
