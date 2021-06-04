@@ -43,7 +43,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // It is only needed when the OP _only_ adds items or adds more items than it removes.
             // Example: DupOp -> Adds 1 new item, CheckSigOp -> removes 2 then add 1, ArithmeticOps -> remove 1/2/3 then add 1
 
-            if (opData.ItemCount + opData.AltItemCount <= 1000)
+            if (opData.ItemCount + opData.AltItemCount <= Constants.MaxScriptStackItemCount)
             {
                 error = null;
                 return true;

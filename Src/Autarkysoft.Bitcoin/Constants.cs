@@ -84,6 +84,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int MaxScriptItemLength = 520;
         /// <summary>
+        /// Maximum allowed number of items on the stack and alt-stack combined
+        /// </summary>
+        public const int MaxScriptStackItemCount = 1000;
+        /// <summary>
         /// Minimum allowed length of the coinbase signature script
         /// </summary>
         public const int MinCoinbaseScriptLength = 2;
