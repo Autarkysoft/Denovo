@@ -58,6 +58,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private Ripemd160Sha256 hash160;
         private Sha256 sha256;
 
+        private const byte AnnexTag = 0x50;
+
         /// <inheritdoc/>
         public IUtxoDatabase UtxoDb { get; }
         /// <inheritdoc/>
@@ -732,10 +734,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 else if (pubType == PubkeyScriptSpecialType.P2WSH)
                 {
                     AnySegWit = true;
+                    // TODO: write a test for OP_0 if at all possible
                     if (tx.WitnessList == null ||
                         tx.WitnessList.Length != tx.TxInList.Length ||
                         tx.WitnessList[i].Items.Length < 1 || // At least 1 item is needed as the redeem script
-                        tx.WitnessList[i].Items[^1].data == null) // That 1 item can not be a OP_num
+                                                              // That 1 item can not be a OP_num except OP_0
+                        tx.WitnessList[i].Items[^1].data == null && tx.WitnessList[i].Items[^1].OpValue != OP._0)
                     {
                         error = $"Mandatory witness is not found." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
@@ -756,8 +760,102 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2TR)
                 {
-                   
+                    // TODO: script evaluation shouldn't limit data size
+                    // https://github.com/bitcoin/bitcoin/blob/a9435e34457e0bfebd22e574fe63428537948aeb/src/script/interpreter.cpp#L452
+                    // same with OP count 
+                    // https://github.com/bitcoin/bitcoin/blob/a9435e34457e0bfebd22e574fe63428537948aeb/src/script/interpreter.cpp#L474
 
+
+                    // If PubkeyScript is returning this type the fork must be active; otherwise it should return UnknownWitness
+                    Debug.Assert(consensus.IsTaprootEnabled);
+
+                    AnySegWit = true;
+                    if (currentInput.SigScript.Data.Length != 0)
+                    {
+                        error = "Non-empty signature script for witness versoion 1.";
+                        return false;
+                    }
+                    if (tx.WitnessList == null ||
+                        tx.WitnessList.Length != tx.TxInList.Length ||
+                        tx.WitnessList[i].Items.Length < 1) // At least 1 item is needed
+                    {
+                        error = $"Mandatory witness is not found." +
+                                $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
+                        return false;
+                    }
+
+                    byte[] annexHash = null;
+                    if (tx.WitnessList[i].Items.Length >= 2 &&
+                        tx.WitnessList[i].Items[^1].data != null &&
+                        tx.WitnessList[i].Items[^1].data[0] == AnnexTag)
+                    {
+                        annexHash = sha256.ComputeHash(tx.WitnessList[i].Items[^1].data);
+                    }
+
+                    // Note that item count is checked after removing annex
+                    if (tx.WitnessList[i].Items.Length - (annexHash == null ? 1 : 0) > Constants.MaxScriptStackItemCount)
+                    {
+                        error = Err.OpStackItemOverflow;
+                        return false;
+                    }
+
+                    if (tx.WitnessList[i].Items.Length - (annexHash == null ? 1 : 0) == 1)
+                    {
+                        // Key path spending:
+                        // The item is a signature
+                        if (!Signature.TryReadSchnorr(tx.WitnessList[i].Items[0].data, out Signature sig, out error))
+                        {
+                            return false;
+                        }
+                        PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(prevOutput.PubScript.Data.SubArray(2, 32), out PublicKey pub);
+                        if (ptype == PublicKey.PublicKeyType.None || ptype == PublicKey.PublicKeyType.Unknown)
+                        {
+                            error = "Invalid public key.";
+                            return false;
+                        }
+
+                        byte[] sigHash = ((Transaction)tx).SerializeForSigningTaproot(0, sig.SigHash, null, 0, i, annexHash);
+                        if (!calc.VerifySchnorr(sigHash, sig, pub))
+                        {
+                            error = "Invalid signature.";
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        // Script path spending:
+                        var stack = new OpData()
+                        {
+                            Tx = tx,
+                            TxInIndex = i,
+
+                            ForceLowS = ForceLowS,
+                            StrictNumberEncoding = StrictNumberEncoding,
+                            // TODO: change this to accept IConsensus
+                            IsBip65Enabled = consensus.IsBip65Enabled,
+                            IsBip112Enabled = consensus.IsBip112Enabled,
+                            IsStrictDerSig = consensus.IsStrictDerSig,
+                            IsBip147Enabled = consensus.IsBip147Enabled,
+                            IsStrictConditionalOpBool = true,
+                        };
+
+                        foreach (var item in tx.WitnessList[i].Items)
+                        {
+                            if (!item.Run(stack, out error))
+                            {
+                                return false;
+                            }
+                        }
+
+                        // TODO: this could be improved
+                        if (annexHash != null)
+                        {
+                            stack.Pop();
+                        }
+
+                        error = "Not yet implemented (also Taproot is not active yet).";
+                        return false;
+                    }
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
                 {
