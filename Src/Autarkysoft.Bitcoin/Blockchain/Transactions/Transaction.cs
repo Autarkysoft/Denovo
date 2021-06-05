@@ -546,8 +546,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
         /// <inheritdoc/>
-        public byte[] SerializeForSigningTaproot(byte epoch, byte hashType, SigHashType sht, TxOut[] spentOutputs,
-                                                 bool hasAnnex, byte extFlag, int inputIndex, byte[] annexHash)
+        public byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, TxOut[] spentOutputs,
+                                                 byte extFlag, int inputIndex, byte[] annexHash)
         {
             // TODO: sht has to be validated by the caller
 
@@ -559,7 +559,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             stream.Write(epoch);
             // SigMsg(hash_type, ext_flag):
             // * Control:
-            stream.Write(hashType);
+            stream.Write((byte)sht);
             // * Transaction data:
             stream.Write(Version);
             LockTime.WriteToStream(stream);
@@ -613,7 +613,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
 
             // * Data about this input:
-            int spendType = (extFlag * 2) + (hasAnnex ? 1 : 0);
+            int spendType = (extFlag * 2) + (annexHash != null ? 1 : 0);
             Debug.Assert(spendType <= byte.MaxValue);
             stream.Write((byte)spendType);
 
@@ -629,7 +629,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 stream.Write(inputIndex);
             }
 
-            if (hasAnnex)
+            if (annexHash != null)
             {
                 stream.Write(annexHash);
             }
