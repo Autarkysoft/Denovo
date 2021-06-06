@@ -325,9 +325,10 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             using Sha256 sha = new();
             byte[] aux = Helper.HexToBytes("fac9cdf2f2b82e7d6ab47656ea4a294ab886553e6fdb08b49eb9665479be65c7");
 
-            byte[] actual = sha.ComputeTaggedHash("BIP0340/aux", aux);
+            byte[] actual = sha.ComputeTaggedHash("BIP0340/aux", out bool usedOptimization, aux);
             byte[] expected = Helper.HexToBytes("7db9b90018a2e4151d4eae8c9ab51975ab4fbc1ad59ca37330c30f41bd473a9d");
 
+            Assert.True(usedOptimization);
             Assert.Equal(expected, actual);
         }
 
@@ -339,9 +340,10 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] pub = Helper.HexToBytes("13f714f34a70147d5b2daecb30855b198d17b9e6e20c9f3766a281721bc69d19");
             byte[] data = Helper.HexToBytes("9324506850981637af6d01ebdb120f24ef4525be1a0ade0757dd8da7efa16195");
 
-            byte[] actual = sha.ComputeTaggedHash("BIP0340/challenge", r, pub, data);
+            byte[] actual = sha.ComputeTaggedHash("BIP0340/challenge", out bool usedOptimization, r, pub, data);
             byte[] expected = Helper.HexToBytes("8cb35f776c45345ddcc4658f362d080f7e4e4dc0fc425ba53b08ada81b1f5251");
 
+            Assert.True(usedOptimization);
             Assert.Equal(expected, actual);
         }
 
@@ -353,9 +355,37 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] pub = Helper.HexToBytes("13f714f34a70147d5b2daecb30855b198d17b9e6e20c9f3766a281721bc69d19");
             byte[] data = Helper.HexToBytes("9324506850981637af6d01ebdb120f24ef4525be1a0ade0757dd8da7efa16195");
 
-            byte[] actual = sha.ComputeTaggedHash("BIP0340/nonce", t, pub, data);
+            byte[] actual = sha.ComputeTaggedHash("BIP0340/nonce", out bool usedOptimization, t, pub, data);
             byte[] expected = Helper.HexToBytes("0ac9e997ceb2f96fe0d66da37df1e482695b11e38a18bd58f90d92a02ec48da9");
 
+            Assert.True(usedOptimization);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeTaggedHash_TapLeafTest()
+        {
+            using Sha256 sha = new();
+            byte[] data = Helper.HexToBytes("10d2ad9bfb6d89e7f9cc77c9b7577bede42ae9b163f151b26c416373d3786dcf7b9e6e");
+
+            byte[] actual = sha.ComputeTaggedHash("TapLeaf", out bool usedOptimization, data);
+            byte[] expected = Helper.HexToBytes("46f87ef188ab6a5728ecd6b057bbfdcc93a72169b326f35434b74c7738a977c1");
+
+            Assert.True(usedOptimization);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeTaggedHash_TapBranchTest()
+        {
+            using Sha256 sha = new();
+            byte[] data1 = Helper.HexToBytes("fbad01329a291ce067db0a8d9e60b9e53af8991851c76bc153e74bcad1ee5362");
+            byte[] data2 = Helper.HexToBytes("733098afdf59fdf2b19e3fa154d731aed93b2065dffc2bd51ae4fa0c2e2e7170");
+
+            byte[] actual = sha.ComputeTaggedHash("TapBranch", out bool usedOptimization, data1, data2);
+            byte[] expected = Helper.HexToBytes("e531c7e016aa96842da0bdde25c37ab07c27a1bb67e9106a72262e31c5617592");
+
+            Assert.True(usedOptimization);
             Assert.Equal(expected, actual);
         }
 
@@ -368,9 +398,10 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] b3 = Helper.HexToBytes("0bfb05c8f17db4587660eed4b4fc7f1c75de2873d220d8df7074feb037febce7");
             byte[] b4 = Helper.HexToBytes("6af7f125adb9822ff417532aed7a001baf1544d535db4aeb2225577d7e032078");
 
-            byte[] actual = sha.ComputeTaggedHash("Foo", b1, b2, b3, b4);
+            byte[] actual = sha.ComputeTaggedHash("Foo", out bool usedOptimization, b1, b2, b3, b4);
             byte[] expected = Helper.HexToBytes("70da727b9fd90b4ed4449fa870dfb3e52962ef3f8a783611022eae2edce7c0ce");
 
+            Assert.False(usedOptimization);
             Assert.Equal(expected, actual);
         }
 
@@ -379,16 +410,16 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         {
             using Sha256 sha = new();
 
-            Exception ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash(null, new byte[32]));
+            Exception ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash(null, out bool usedOptimization, new byte[32]));
             Assert.Contains("Tag can not be null.", ex.Message);
 
-            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo"));
+            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", out bool usedOptimization));
             Assert.Contains("The extra data can not be null or empty.", ex.Message);
 
-            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", null));
+            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", out bool usedOptimization, null));
             Assert.Contains("The extra data can not be null or empty.", ex.Message);
 
-            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", Array.Empty<byte[]>()));
+            ex = Assert.Throws<ArgumentNullException>(() => sha.ComputeTaggedHash("Foo", out bool usedOptimization, Array.Empty<byte[]>()));
             Assert.Contains("The extra data can not be null or empty.", ex.Message);
         }
 
@@ -396,27 +427,21 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         {
             yield return new object[]
             {
-                "Foo",
-                new byte[][] { new byte[32], new byte[31] },
-                "Each additional data must be 32 bytes."
-            };
-            yield return new object[]
-            {
                 "BIP0340/aux",
                 new byte[][] { new byte[32], new byte[32] },
-                "BIP0340/aux tag needs 1 data input."
+                "This tag needs 1 data input(s)."
             };
             yield return new object[]
             {
                 "BIP0340/challenge",
                 new byte[][] { new byte[32], new byte[32] },
-                "BIP0340/challenge tag needs 3 data inputs."
+                "This tag needs 3 data input(s)."
             };
             yield return new object[]
             {
                 "BIP0340/nonce",
                 new byte[][] { new byte[32], new byte[32] },
-                "BIP0340/nonce tag needs 3 data inputs."
+               "This tag needs 3 data input(s)."
             };
         }
         [Theory]
@@ -425,7 +450,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         {
             using Sha256 sha = new();
 
-            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => sha.ComputeTaggedHash(tag, data));
+            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => sha.ComputeTaggedHash(tag, out bool usedOptimization, data));
             Assert.Contains(expError, ex.Message);
         }
     }
