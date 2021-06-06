@@ -390,6 +390,33 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
         [Fact]
+        public void ComputeTaggedHash_TapTweak1Test()
+        {
+            using Sha256 sha = new();
+            byte[] data1 = Helper.HexToBytes("fbad01329a291ce067db0a8d9e60b9e53af8991851c76bc153e74bcad1ee5362");
+
+            byte[] actual = sha.ComputeTaggedHash("TapTweak", out bool usedOptimization, data1);
+            byte[] expected = Helper.HexToBytes("49c59479188504cd5e7adb367e87e09286a3bcf3263d6405f8c909cceb223d07");
+
+            Assert.True(usedOptimization);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ComputeTaggedHash_TapTweak2Test()
+        {
+            using Sha256 sha = new();
+            byte[] data1 = Helper.HexToBytes("fbad01329a291ce067db0a8d9e60b9e53af8991851c76bc153e74bcad1ee5362");
+            byte[] data2 = Helper.HexToBytes("733098afdf59fdf2b19e3fa154d731aed93b2065dffc2bd51ae4fa0c2e2e7170");
+
+            byte[] actual = sha.ComputeTaggedHash("TapTweak", out bool usedOptimization, data1, data2);
+            byte[] expected = Helper.HexToBytes("04d0bf176db1c344d1617d11170275b5c7e3b9b7a972793dc6a5d84636f854e5");
+
+            Assert.True(usedOptimization);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public void ComputeTaggedHash_GeneralTest()
         {
             using Sha256 sha = new();
