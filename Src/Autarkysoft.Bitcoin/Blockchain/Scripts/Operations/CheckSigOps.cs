@@ -336,12 +336,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             // Evaluate public key here (if len==0 => fail; if len==32 => &evalSig => checksig else => ?)
             // TODO: add a new method to PublicKey class to evaluate public keys (the new way!)
-            //if (!PublicKey.TryRead_NEW(items[2], out PublicKey pub))
-            //{
+            PublicKey.PublicKeyType t = PublicKey.TryReadTaproot(items[2], out PublicKey pub);
+            if (t == PublicKey.PublicKeyType.None)
+            {
+                error = "Invalid public key.";
+                return false;
+            }
 
-            //}
+            // TODO: maybe add a bool to IOpData (standard rule) to reject Unkown pubkey type
 
-            if (items[0].Length == 0)
+            if (items[0].Length == 0 || t == PublicKey.PublicKeyType.Unknown)
             {
                 // If signature is an empty byte[] push n to the stack
                 opData.Push(items[1]);
