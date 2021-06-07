@@ -11,6 +11,7 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Diagnostics;
+using System.Numerics;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -58,7 +59,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private Ripemd160Sha256 hash160;
         private Sha256 sha256;
 
+        private const byte TaprootLeafMask = 0xfe;
+        private const byte TaprootLeafTapscript = 0xc0;
         private const byte AnnexTag = 0x50;
+        private const int TaprootControlBaseSize = 33;
+        private const int TaprootControlNodeSize = 32;
+        private const int TaprootControlMaxNodeCount = 128;
+        private const int TaprootControlMaxSize = TaprootControlBaseSize + TaprootControlNodeSize * TaprootControlMaxNodeCount;
+        private const byte TapLeafMask = 0xfe;
 
         /// <inheritdoc/>
         public IUtxoDatabase UtxoDb { get; }
@@ -310,6 +318,66 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     "Top stack item is not true";
                 return false;
             }
+        }
+
+
+        private bool VerifyTaprootCommitment(ReadOnlySpan<byte> control, ReadOnlySpan<byte> program, IRedeemScript script)
+        {
+            int pathLen = (control.Length - TaprootControlBaseSize) / TaprootControlNodeSize;
+
+            // Internal pubkey
+            // TODO: change .ToArray() below in PublicKey
+            PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(control.Slice(1, 32).ToArray(), out PublicKey p);
+            if (ptype == PublicKey.PublicKeyType.None || ptype == PublicKey.PublicKeyType.Unknown)
+            {
+                return false;
+            }
+
+            // Output pubkey (taken from the PubKey script)
+            PublicKey.PublicKeyType qtype = PublicKey.TryReadTaproot(program.ToArray(), out PublicKey q);
+            if (qtype == PublicKey.PublicKeyType.None || qtype == PublicKey.PublicKeyType.Unknown)
+            {
+                return false;
+            }
+
+            // Compute tapleaf hash
+            var stream = new FastStream(script.Data.Length + 3);
+            byte leafVersion = (byte)(control[0] & TapLeafMask);
+            stream.Write(leafVersion);
+            script.Serialize(stream);
+            // k is tapleafHash
+            ReadOnlySpan<byte> k = sha256.ComputeTaggedHash_TapLeaf(stream.ToByteArray());
+
+            // Compute the Merkle root from the leaf and the provided path.
+            for (int i = 0; i < pathLen; ++i)
+            {
+                // e is each inner node
+                ReadOnlySpan<byte> e = control.Slice(TaprootControlBaseSize + TaprootControlNodeSize * i, TaprootControlNodeSize);
+                if (k.SequenceCompareTo(e) < 0) // k < e
+                {
+                    k = sha256.ComputeTaggedHash_TapBranch(k, e);
+                }
+                else // k >= e
+                {
+                    k = sha256.ComputeTaggedHash_TapBranch(e, k);
+                }
+            }
+
+            // Verify that the output pubkey matches the tweaked internal pubkey, after correcting for parity.
+            byte[] t = sha256.ComputeTaggedHash_TapTweak(control.Slice(1, 32), k);
+            BigInteger tInt = t.ToBigInt(true, true);
+            if (tInt >= BigInteger.Parse("115792089237316195423570985008687907852837564279074904382605163141518161494337"))
+            {
+                return false;
+            }
+
+            EllipticCurvePoint Q = calc.AddChecked(calc.MultiplyByG(tInt), p.ToPoint());
+            if (q.ToPoint().X != Q.X || (control[0] & 1) != Q.Y % 2)
+            {
+                return false;
+            }
+
+            return true;
         }
 
 
@@ -853,8 +921,44 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             stack.Pop();
                         }
 
-                        error = "Not yet implemented (also Taproot is not active yet).";
-                        return false;
+                        byte[] control = stack.Pop();
+                        if (control.Length < TaprootControlBaseSize ||
+                            control.Length > TaprootControlMaxSize ||
+                            ((control.Length - TaprootControlBaseSize) % TaprootControlNodeSize) != 0)
+                        {
+                            error = "Invalid Taproot control-block size.";
+                            return false;
+                        }
+
+                        byte[] scrBa = stack.Pop();
+                        var redeem = new RedeemScript(scrBa);
+
+                        var program = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2, 32);
+                        if (VerifyTaprootCommitment(control, program, redeem))
+                        {
+                            error = "Invalid taproot commitment.";
+                            return false;
+                        }
+
+                        if ((control[0] & TaprootLeafMask) == TaprootLeafTapscript)
+                        {
+                            // TODO: change the following method to accept sigVersion
+                            //       that way it can check if an OP is a OpSuccess and not return failure.
+                            if (!redeem.TryEvaluate(out IOperation[] rdmOps, out int opCount, out error))
+                            {
+                                return false;
+                            }
+
+                            foreach (var item in rdmOps)
+                            {
+                                if (!item.Run(stack, out error))
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+
+                        // TODO: we can add a "standard" rule here to reject other Taproot versions
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
