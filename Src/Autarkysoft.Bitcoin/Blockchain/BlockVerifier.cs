@@ -91,6 +91,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 error = "Block weight is too big.";
                 return false;
             }
+            if (!consensus.IsSegWitEnabled && block.TransactionList.Any(x => x.WitnessList != null || x.WitnessList.Length != 0))
+            {
+                error = "Blocks before activation of SegWit can not contain witness.";
+                return false;
+            }
 
             txVer.Init();
 
