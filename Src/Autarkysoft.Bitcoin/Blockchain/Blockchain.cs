@@ -63,8 +63,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
             headerList = new List<BlockHeader>(700_000);
             ReadHeaders();
             ReadBlockInfo();
-
-            // TODO: read blocks and others
         }
 
 
@@ -253,7 +251,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 if (missingBlockHashes is null)
                 {
                     missingBlockHashes = new Stack<byte[]>(headerList.Count);
-                    for (int i = headerList.Count - 1; i > 0; i--)
+                    for (int i = headerList.Count - 1; i > Height; i--)
                     {
                         missingBlockHashes.Push(headerList[i].GetHash(false));
                     }
@@ -339,6 +337,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 Task.Run(() => ProcessBlockQueue(block));
             }
 
+            if (nodeStatus.InvsToGet.Count == 0)
+            {
+                SetMissingBlockHashes(nodeStatus);
+            }
+
             return true;
         }
 
@@ -351,31 +354,23 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private void ProcessBlockQueue(IBlock block)
         {
             semaphore.Wait();
+            queue.Add(block);
 
-            if (((ReadOnlySpan<byte>)block.Header.PreviousBlockHeaderHash).SequenceEqual(tip))
+            int index = 0;
+            int max = queue.Count;
+            while (index < max)
             {
-                ProcessAndSaveBlock(block);
-            }
-            else
-            {
-                queue.Add(block);
-            }
-
-            bool b = queue.Count != 0;
-            while (b)
-            {
-                int i;
-                int max = queue.Count;
-                for (i = 0; i < queue.Count; i++)
+                if (((ReadOnlySpan<byte>)block.Header.PreviousBlockHeaderHash).SequenceEqual(tip))
                 {
-                    if (((ReadOnlySpan<byte>)block.Header.PreviousBlockHeaderHash).SequenceEqual(tip))
-                    {
-                        ProcessAndSaveBlock(block);
-                        queue.RemoveAt(i);
-                        break;
-                    }
+                    ProcessAndSaveBlock(block);
+                    queue.RemoveAt(index);
+                    index = 0;
+                    max = queue.Count;
                 }
-                b = i < max;
+                else
+                {
+                    index++;
+                }
             }
 
             semaphore.Release();
