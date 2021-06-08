@@ -1,5 +1,18 @@
 ### Next release
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.12.0.0...master)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.13.0.0...master)
+
+### Release 0.13.0 (2021-06-08)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.12.0.0...B0.13.0.0)
+* Implement Taproot with BIPs: 340, 341 and 342 (untested). That includes new PubkeyScript, signature, script evaluation, sig hash,
+SigHash type, public key (x-only) and updated Schnorr signature algorithm. 
+* Note: Taproot is disabled by default in Consensus class, it will be enabled after it is locked-in 
+and will be tested to find possible bugs
+* New OP code: OP_CheckSigAdd
+* Many new optimized Tagged hash methods in `Sha256`
+* `IBlock` and `ITransaction` have better size properties that utilize `SizeCounter` better
+* Added some consensus critical checks to BlockVerifier
+* Improve FullClient, NodePool and Blockchain in handling initial connection and synchronization
+* Various tests, code improvements, optimization and bug fixes
 
 ### Release 0.12.0 (2021-04-23)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.11.0.0...B0.12.0.0)

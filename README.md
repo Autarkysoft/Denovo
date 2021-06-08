@@ -73,6 +73,7 @@ are in separate classes. Currently:
   [143](https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki "Transaction Signature Verification for Version 0 Witness Program"), 
   [144](https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki "Segregated Witness (Peer Services)"), 
   [147](https://github.com/bitcoin/bips/blob/master/bip-0147.mediawiki "Dealing with dummy stack element malleability"), 
+  [159](https://github.com/bitcoin/bips/blob/master/bip-0159.mediawiki "NODE_NETWORK_LIMITED service bit"), 
   [173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki "Base32 address format for native v0-16 witness outputs"), 
   [350](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki "Bech32m format for v1+ witness addresses")
   * Optional: [14](https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki "Protocol Version and User Agent"),
@@ -83,12 +84,16 @@ are in separate classes. Currently:
   [43](https://github.com/bitcoin/bips/blob/master/bip-0043.mediawiki "Purpose Field for Deterministic Wallets"),
   [44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki "Multi-Account Hierarchy for Deterministic Wallets"),
   [49](https://github.com/bitcoin/bips/blob/master/bip-0049.mediawiki "Derivation scheme for P2WPKH-nested-in-P2SH based accounts"),
+  [62](https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki "Dealing with malleability"),
   [84](https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki "Derivation scheme for P2WPKH based accounts"),
   [85](https://github.com/bitcoin/bips/blob/master/bip-0085.mediawiki "Deterministic Entropy From BIP32 Keychains"),
   [137](https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki "Signatures of Messages using Private Keys"),
+  [146](https://github.com/bitcoin/bips/blob/master/bip-0146.mediawiki "Dealing with signature encoding malleability"),
   [152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki "Compact Block Relay"),
   [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF"),
-  [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1")
+  [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1"),
+  [341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki "Taproot: SegWit version 1 spending rules"),
+  [342](https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki "Validation of Taproot Scripts")
   * SLIP: [132](https://github.com/satoshilabs/slips/blob/master/slip-0132.md "Registered HD version bytes for BIP-0032")
 
 ### Future plans
