@@ -216,13 +216,33 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="data">The data to write</param>
         /// <param name="sizeWithPad">
-        /// The desired final length of the given data with padding (values &#60; data.Length are ignored)</param>
+        /// The desired final length of the given data with padding (values &#60; data.Length are ignored)
+        /// </param>
         public void Write(byte[] data, int sizeWithPad)
         {
             int finalSize = sizeWithPad >= data.Length ? sizeWithPad : data.Length;
             CheckAndResize(finalSize);
             Buffer.BlockCopy(data, 0, buffer, position, data.Length);
             position += finalSize;
+        }
+
+        /// <summary>
+        /// Writes the given byte array to stream with zero pads added before the data to reach the specified length 
+        /// defined by <paramref name="sizeWithPad"/> parameter.
+        /// <para/> eg. Write 1 byte=X with <paramref name="sizeWithPad"/>=1 => writes X
+        /// <para/> eg. Write 1 byte=X with <paramref name="sizeWithPad"/>=2 => writes 0X
+        /// </summary>
+        /// <param name="sizeWithPad">
+        /// The desired final length of the given data with padding (values &#60; data.Length are ignored)
+        /// </param>
+        /// <param name="data">The data to write</param>
+        public void Write(int sizeWithPad, byte[] data)
+        {
+            int finalSize = sizeWithPad >= data.Length ? sizeWithPad : data.Length;
+            CheckAndResize(finalSize);
+            position += finalSize - data.Length;
+            Buffer.BlockCopy(data, 0, buffer, position, data.Length);
+            position += data.Length;
         }
 
         /// <summary>

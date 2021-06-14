@@ -398,6 +398,39 @@ namespace Tests.Bitcoin
             Helper.ComparePrivateField(stream, "position", expBytes.Length);
         }
 
+        [Theory]
+        [InlineData(new byte[] { 1, 2 }, -1, new byte[] { 1, 2 }, new byte[5] { 1, 2, 0, 0, 0 })]
+        [InlineData(new byte[] { 1, 2 }, 0, new byte[] { 1, 2 }, new byte[5] { 1, 2, 0, 0, 0 })]
+        [InlineData(new byte[] { 1, 2 }, 1, new byte[] { 1, 2 }, new byte[5] { 1, 2, 0, 0, 0 })]
+        [InlineData(new byte[] { 1, 2 }, 2, new byte[] { 1, 2 }, new byte[5] { 1, 2, 0, 0, 0 })]
+        [InlineData(new byte[] { 1, 2 }, 3, new byte[] { 0, 1, 2 }, new byte[5] { 0, 1, 2, 0, 0 })]
+        [InlineData(new byte[] { 1, 2 }, 4, new byte[] { 0, 0, 1, 2 }, new byte[5] { 0, 0, 1, 2, 0 })]
+        public void Write_bytes_withPadBeforeTest(byte[] data, int pad, byte[] expBytes, byte[] expBuffer)
+        {
+            var stream = new FastStream(5);
+            stream.Write(pad, data);
+
+            Assert.Equal(expBytes, stream.ToByteArray());
+            Helper.ComparePrivateField(stream, "buffer", expBuffer);
+            Helper.ComparePrivateField(stream, "position", expBytes.Length);
+        }
+
+        [Fact]
+        public void Write_bytes_withPadBefore_ResizeTest()
+        {
+            var stream = new FastStream(1);
+            byte[] data = new byte[] { 1, 2 };
+            byte[] expBytes = new byte[] { 0, 1, 2 };
+            stream.Write(3, data);
+
+            byte[] expBuffer = new byte[FastStream.DefaultCapacity + 1];
+            Buffer.BlockCopy(expBytes, 0, expBuffer, 0, expBytes.Length);
+
+            Assert.Equal(expBytes, stream.ToByteArray());
+            Helper.ComparePrivateField(stream, "buffer", expBuffer);
+            Helper.ComparePrivateField(stream, "position", expBytes.Length);
+        }
+
         public static IEnumerable<object[]> GetWriteCompactIntCases()
         {
             var rng = new Random(17);
