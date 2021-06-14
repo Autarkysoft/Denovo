@@ -17,7 +17,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="Signature"/> with empty parameters. Can be used to read stream.
         /// </summary>
-        public Signature()
+        private Signature()
         {
         }
 
@@ -395,7 +395,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>A DER encoded signature bytes with <see cref="SigHashType"/></returns>
         public byte[] ToByteArray()
         {
-            FastStream stream = new FastStream();
+            var stream = new FastStream(72);
             WriteToStream(stream);
             return stream.ToByteArray();
         }
@@ -429,7 +429,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>A DER encoded signature bytes with <see cref="SigHashType"/></returns>
         public byte[] ToByteArraySchnorr()
         {
-            FastStream stream = new FastStream();
+            var stream = new FastStream(65);
             WriteToStreamSchnorr(stream);
             return stream.ToByteArray();
         }
@@ -442,12 +442,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <param name="stream">Stream to use</param>
         public void WriteToStreamSchnorr(FastStream stream)
         {
-            byte[] rBa = R.ToByteArray(isBigEndian: true);
-            byte[] sBa = S.ToByteArray(isBigEndian: true);
+            byte[] rBa = R.ToByteArray(isUnsigned: true, isBigEndian: true);
+            byte[] sBa = S.ToByteArray(isUnsigned: true, isBigEndian: true);
 
-            stream.Write(rBa, 32);
-            stream.Write(sBa, 32);
-            stream.Write((byte)SigHash);
+            stream.Write(32, rBa);
+            stream.Write(32, sBa);
+            if (SigHash != SigHashType.Default)
+            {
+                stream.Write((byte)SigHash);
+            }
         }
 
 
@@ -459,7 +462,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>A fixed length encoded signature with a recovery ID</returns>
         public byte[] ToByteArrayWithRecId()
         {
-            FastStream stream = new FastStream();
+            var stream = new FastStream(65);
             WriteToStreamWithRecId(stream);
             return stream.ToByteArray();
         }
@@ -473,7 +476,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>A fixed length encoded signature with a recovery ID</returns>
         public byte[] ToByteArrayWithRecId(bool isCompressed)
         {
-            FastStream stream = new FastStream();
+            var stream = new FastStream(65);
             WriteToStreamWithRecId(stream, isCompressed);
             return stream.ToByteArray();
         }

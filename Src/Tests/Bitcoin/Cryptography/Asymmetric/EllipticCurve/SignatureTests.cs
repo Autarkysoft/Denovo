@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Xunit;
@@ -16,7 +17,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [Fact]
         public void Constructor_RecIdTest()
         {
-            Signature sig = new Signature(1, 2, 3);
+            var sig = new Signature(1, 2, 3);
             Assert.Equal(1, sig.R);
             Assert.Equal(2, sig.S);
             Assert.Equal(3, sig.RecoveryId);
@@ -25,7 +26,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [Fact]
         public void Constructor_SigHashTest()
         {
-            Signature sig = new Signature(1, 2, SigHashType.None);
+            var sig = new Signature(1, 2, SigHashType.None);
             Assert.Equal(1, sig.R);
             Assert.Equal(2, sig.S);
             Assert.Equal(SigHashType.None, sig.SigHash);
@@ -393,21 +394,154 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             Assert.Equal(expErr, error);
         }
 
-        // TODO: No Schnorr tests since the BIP is not final at this point
+
+        public static IEnumerable<object[]> GetReadSchnorrCases()
+        {
+            // Signature doesn't check r and s values
+            yield return new object[] { new byte[64], BigInteger.Zero, BigInteger.Zero, SigHashType.Default };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002"),
+                BigInteger.One, new BigInteger(2), SigHashType.Default
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "01"),
+                BigInteger.One, new BigInteger(2), SigHashType.All
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "02"),
+                BigInteger.One, new BigInteger(2), SigHashType.None
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "03"),
+                BigInteger.One, new BigInteger(2), SigHashType.Single
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "81"),
+                BigInteger.One, new BigInteger(2), SigHashType.All | SigHashType.AnyoneCanPay
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "82"),
+                BigInteger.One, new BigInteger(2), SigHashType.None | SigHashType.AnyoneCanPay
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "83"),
+                BigInteger.One, new BigInteger(2), SigHashType.Single | SigHashType.AnyoneCanPay
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("ec96b19cbaa1be6f7fc252d4cbaafbd0408c9de580996411e57a0c8ea3fe8ede" +
+                                  "6a7964164fdfdbf90e85efdb041340ef8bc692f57e89f5c282d3a6d8e112d5a4"),
+                BigInteger.Parse("107012085159877311137735340893236929071772188442285938819963708477670525144798"),
+                BigInteger.Parse("48159641220829688808817566363095516375415080513392826741128866104347983009188"),
+                SigHashType.Default
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" +
+                                  "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+                BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639935"),
+                BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639935"),
+                SigHashType.Default
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetReadSchnorrCases))]
+        public void TryReadSchnorrTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
+        {
+            bool b = Signature.TryReadSchnorr(data, out Signature sig, out string error);
+
+            Assert.True(b, error);
+            Assert.Null(error);
+            Assert.Equal(expR, sig.R);
+            Assert.Equal(expS, sig.S);
+            Assert.Equal(expSH, sig.SigHash);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetReadSchnorrCases))]
+        public void ToByteArraySchnorrTest(byte[] expBytes, BigInteger r, BigInteger s, SigHashType sh)
+        {
+            var sig = new Signature(r, s, sh);
+            byte[] actualBytes = sig.ToByteArraySchnorr();
+            Assert.Equal(expBytes, actualBytes);
+        }
+
+        public static IEnumerable<object[]> GetReadSchnorrFailCases()
+        {
+            yield return new object[] { null, "Byte array can not be null or empty." };
+            yield return new object[] { Array.Empty<byte>(), "Byte array can not be null or empty." };
+            yield return new object[] { Array.Empty<byte>(), "Byte array can not be null or empty." };
+            yield return new object[] { new byte[1], "Schnorr signature length must be 64 or 65 bytes." };
+            yield return new object[] { new byte[63], "Schnorr signature length must be 64 or 65 bytes." };
+            yield return new object[] { new byte[66], "Schnorr signature length must be 64 or 65 bytes." };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "00"),
+                "SigHashType byte can not be zero."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "04"),
+                "Invalid SigHashType."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "79"),
+                "Invalid SigHashType."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "80"),
+                "Invalid SigHashType."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "84"),
+                "Invalid SigHashType."
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
+                                  "0000000000000000000000000000000000000000000000000000000000000002" + "ff"),
+                "Invalid SigHashType."
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetReadSchnorrFailCases))]
+        public void TryReadSchnorr_FailTest(byte[] data, string expErr)
+        {
+            bool b = Signature.TryReadSchnorr(data, out Signature sig, out string error);
+
+            Assert.False(b, error);
+            Assert.Null(sig);
+            Assert.Equal(expErr, error);
+        }
 
         [Theory]
         [MemberData(nameof(GetReadStrictCases))]
         public void ToByteArrayTest(byte[] expBytes, BigInteger r, BigInteger s, SigHashType sh)
         {
-            Signature sig = new Signature()
-            {
-                R = r,
-                S = s,
-                SigHash = sh
-            };
-
+            var sig = new Signature(r, s, sh);
             byte[] actualBytes = sig.ToByteArray();
-
             Assert.Equal(expBytes, actualBytes);
         }
 
@@ -445,7 +579,9 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [Theory]
         [MemberData(nameof(GetSigRecIdCases))]
 #pragma warning disable xUnit1026 // Theory methods should use all of their parameters
+#pragma warning disable IDE0060 // Remove unused parameter
         public void TryReadWithRecIdTest(BigInteger r, BigInteger s, byte v, bool isComp, byte[] toRead)
+#pragma warning restore IDE0060
 #pragma warning restore xUnit1026
         {
             bool b = Signature.TryReadWithRecId(toRead, out Signature sig, out string error);
@@ -473,7 +609,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [MemberData(nameof(GetSigRecIdCases))]
         public void ToByteArrayWithRecIdTest(BigInteger r, BigInteger s, byte v, bool isComp, byte[] expected)
         {
-            Signature sig = new Signature(r, s, v);
+            var sig = new Signature(r, s, v);
             byte[] actual = sig.ToByteArrayWithRecId(isComp);
             Assert.Equal(expected, actual);
         }
@@ -481,7 +617,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [Fact]
         public void ToByteArrayWithRecId_NochangeTest()
         {
-            Signature sig = new Signature(1, 2, 164);
+            var sig = new Signature(1, 2, 164);
             byte[] actual = sig.ToByteArrayWithRecId();
             byte[] expected = Helper.HexToBytes("a4" + "0000000000000000000000000000000000000000000000000000000000000001" +
                                                        "0000000000000000000000000000000000000000000000000000000000000002");
@@ -492,8 +628,8 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [MemberData(nameof(GetSigRecIdCases))]
         public void WriteToStreamWithRecIdTest(BigInteger r, BigInteger s, byte v, bool isComp, byte[] expected)
         {
-            Signature sig = new Signature(r, s, v);
-            FastStream stream = new FastStream();
+            var sig = new Signature(r, s, v);
+            var stream = new FastStream(65);
             sig.WriteToStreamWithRecId(stream, isComp);
 
             byte[] actual = stream.ToByteArray();
@@ -504,13 +640,12 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [Fact]
         public void WriteToStreamWithRecId_NochangeTest()
         {
-            Signature sig = new Signature(1, 2, 164);
-            FastStream stream = new FastStream();
+            var sig = new Signature(1, 2, 164);
+            var stream = new FastStream(65);
             sig.WriteToStreamWithRecId(stream);
             byte[] expected = Helper.HexToBytes("a4" + "0000000000000000000000000000000000000000000000000000000000000001" +
                                                        "0000000000000000000000000000000000000000000000000000000000000002");
             Assert.Equal(expected, stream.ToByteArray());
         }
-
     }
 }
