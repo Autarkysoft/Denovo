@@ -33,6 +33,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// Y coordinate
         /// </summary>
         public BigInteger Y { get; }
+        /// <summary>
+        /// Returns if this point is the point at infinity
+        /// </summary>
+        public bool IsInfinity => X.IsZero && Y.IsZero;
 
 
         /// <summary>
