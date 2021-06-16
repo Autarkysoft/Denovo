@@ -64,6 +64,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     bip66 = 363725;
                     bip112 = 419328;
                     seg = 481824;
+                    tap = 709632;
                     break;
                 case NetworkType.TestNet:
                     powLimit = BigInteger.Parse("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
