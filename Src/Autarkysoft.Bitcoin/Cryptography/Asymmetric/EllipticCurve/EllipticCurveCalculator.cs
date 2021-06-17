@@ -529,11 +529,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// </summary>
         /// <param name="hash">Hash(m) to use for signing</param>
         /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
+        /// <param name="rng">A cryptographic secure random number generator to get an auxilary random used to derive k</param>
         /// <returns>Signature</returns>
-        public Signature SignSchnorr(byte[] hash, byte[] key)
+        public Signature SignSchnorr(byte[] hash, byte[] key, IRandomNumberGenerator rng)
         {
             BigInteger d = key.ToBigInt(true, true);
             EllipticCurvePoint pubkPoint = MultiplyChecked(d, curve.G);
+            byte[] xBytes = pubkPoint.X.ToByteArray(true, true);
+            byte[] pubBa = new byte[32];
+            Buffer.BlockCopy(xBytes, 0, pubBa, 32 - xBytes.Length, xBytes.Length);
+
             if (!pubkPoint.Y.IsEven)
             {
                 d = curve.N - d;
@@ -546,17 +551,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             }
 
             using Sha256 sha = new Sha256();
+            byte[] auxRand = new byte[32];
             BigInteger k = 0;
-            uint count = 0;
             do
             {
-                byte[] extraEntropy = new byte[32];
-                extraEntropy[0] = (byte)count;
-                extraEntropy[1] = (byte)(count >> 8);
-                extraEntropy[2] = (byte)(count >> 16);
-                extraEntropy[3] = (byte)(count >> 24);
+                rng.GetBytes(auxRand);
+                auxRand = sha.ComputeTaggedHash_BIP340_aux(auxRand);
+                for (int i = 0; i < auxRand.Length; i++)
+                {
+                    key[i] ^= auxRand[i];
+                }
 
-                byte[] kBa = sha.ComputeTaggedHash_BIP340_nonce(key, hash, extraEntropy);
+                byte[] kBa = sha.ComputeTaggedHash_BIP340_nonce(key, pubBa, hash);
                 k = kBa.ToBigInt(true, true) % curve.N;
             } while (k == 0);
 
@@ -599,7 +605,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             BigInteger e = ComputeSchnorrE(rBa, pubPoint, hash);
             EllipticCurvePoint R = AddChecked(MultiplyChecked(sig.S, curve.G), MultiplyChecked(curve.N - e, pubPoint));
 
-            return R.Y.IsEven && R.X == sig.R;
+            return !R.IsInfinity && R.Y.IsEven && R.X == sig.R;
         }
 
         /// <summary>
