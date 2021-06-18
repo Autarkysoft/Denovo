@@ -484,7 +484,6 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         {
             yield return new object[] { null, "Byte array can not be null or empty." };
             yield return new object[] { Array.Empty<byte>(), "Byte array can not be null or empty." };
-            yield return new object[] { Array.Empty<byte>(), "Byte array can not be null or empty." };
             yield return new object[] { new byte[1], "Schnorr signature length must be 64 or 65 bytes." };
             yield return new object[] { new byte[63], "Schnorr signature length must be 64 or 65 bytes." };
             yield return new object[] { new byte[66], "Schnorr signature length must be 64 or 65 bytes." };
