@@ -97,6 +97,61 @@ namespace Autarkysoft.Bitcoin.Encoders
         }
 
         /// <summary>
+        /// Converts the given base-16 encoded string to its byte array representation in reverse order.
+        /// That is 0xabcd turns into { 0xcd, 0xab }.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="hex">Hex to convert</param>
+        /// <param name="result">Decoded result</param>
+        /// <returns>True if the input is a valid base-16 encoded string; otherwise false.</returns>
+        public static bool TryDecodeReverse(string hex, out byte[] result)
+        {
+            if (IsValid(hex))
+            {
+                int start = hex.StartsWith(Prefix) ? 2 : 0;
+                ReadOnlySpan<char> vs = hex.AsSpan(start);
+
+                result = new byte[vs.Length / 2];
+                for (int i = 0, j = result.Length - 1; i < result.Length; i++, j--)
+                {
+                    int hi = vs[i * 2] - 65;
+                    hi = hi + 10 + ((hi >> 31) & 7);
+
+                    int lo = vs[i * 2 + 1] - 65;
+                    lo = lo + 10 + ((lo >> 31) & 7) & 0x0f;
+
+                    result[j] = (byte)(lo | hi << 4);
+                }
+
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Converts the given base-16 encoded string to its byte array representation in reverse order.
+        /// That is 0xabcd turns into { 0xcd, 0xab }.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <param name="hex">Hex to convert</param>
+        /// <returns>An array of bytes</returns>
+        public static byte[] DecodeReverse(string hex)
+        {
+            if (TryDecodeReverse(hex, out byte[] result))
+            {
+                return result;
+            }
+            else
+            {
+                throw new ArgumentException($"Input is not a valid hex.");
+            }
+        }
+
+        /// <summary>
         /// Converts the given byte array to base-16 (Hexadecimal) encoded string.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>

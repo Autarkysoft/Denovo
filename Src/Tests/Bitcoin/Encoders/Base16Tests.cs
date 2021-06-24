@@ -69,6 +69,29 @@ namespace Tests.Bitcoin.Encoders
             Assert.Throws<ArgumentException>(() => Base16.Decode(hex));
         }
 
+        [Fact]
+        public void TryDecodeReverseTest()
+        {
+            // DecodeReverseTest is testing TryDecodeReverse by calling DecodeReverse
+            bool b = Base16.TryDecodeReverse("foo", out byte[] result);
+            Assert.False(b);
+            Assert.Null(result);
+        }
+
+        [Theory]
+        [InlineData(new byte[] { }, "")]
+        [InlineData(new byte[] { }, "0x")]
+        [InlineData(new byte[] { 0 }, "00")]
+        [InlineData(new byte[] { 0, 0 }, "0000")]
+        [InlineData(new byte[] { 16, 42, 255 }, "ff2a10")]
+        [InlineData(new byte[] { 16, 42, 255 }, "0xff2a10")]
+        [InlineData(new byte[] { 0, 0, 2 }, "020000")]
+        public void DecodeReverseTest(byte[] expected, string hex)
+        {
+            byte[] actual = Base16.DecodeReverse(hex);
+            Assert.Equal(expected, actual);
+        }
+
         [Theory]
         [InlineData(new byte[] { }, "")]
         [InlineData(new byte[] { 0 }, "00")]
@@ -82,17 +105,33 @@ namespace Tests.Bitcoin.Encoders
         }
 
         [Fact]
-        public void Encode_AllCharsTest()
+        public void AllCharsTest()
         {
             byte[] allHexChars = new byte[256];
+            byte[] allHexCharsRev = new byte[256];
             var sb = new StringBuilder(256 * 2);
+            var sbRev = new StringBuilder(256 * 2);
             for (int i = 0; i < 256; i++)
             {
                 allHexChars[i] = (byte)i;
+                allHexCharsRev[i] = (byte)(255 - i);
                 sb.Append($"{allHexChars[i]:x2}");
+                sbRev.Append($"{allHexCharsRev[i]:x2}");
             }
 
-            Assert.Equal(sb.ToString(), Base16.Encode(allHexChars));
+            string hex = sb.ToString();
+            string hexRev = sbRev.ToString();
+
+            string actualHex = Base16.Encode(allHexChars);
+            string actualHexRev = Base16.Encode(allHexCharsRev);
+
+            byte[] actualBytes = Base16.Decode(hex);
+            byte[] actualBytesRev = Base16.Decode(hexRev);
+
+            Assert.Equal(hex, actualHex);
+            Assert.Equal(hexRev, actualHexRev);
+            Assert.Equal(allHexChars, actualBytes);
+            Assert.Equal(allHexCharsRev, actualBytesRev);
         }
 
         [Fact]
@@ -111,20 +150,6 @@ namespace Tests.Bitcoin.Encoders
         {
             string actual = Base16.EncodeReverse(ba);
             Assert.Equal(expected, actual);
-        }
-
-        [Fact]
-        public void EncodeReverse_AllCharsTest()
-        {
-            byte[] allHexChars = new byte[256];
-            var sb = new StringBuilder(256 * 2);
-            for (int i = 255; i >= 0; i--)
-            {
-                allHexChars[i] = (byte)i;
-                sb.Append($"{allHexChars[i]:x2}");
-            }
-
-            Assert.Equal(sb.ToString(), Base16.EncodeReverse(allHexChars));
         }
 
         [Fact]
