@@ -305,17 +305,23 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
             }
 
-            // Stack has to only have 1 item left
-            if (stack.ItemCount == 1 && IsNotZero(stack.Pop()))
+            // Stack must only have 1 item left
+            if (stack.ItemCount == 1)
             {
-                error = null;
-                return true;
+                if (IsNotZero(stack.Pop()))
+                {
+                    error = null;
+                    return true;
+                }
+                else
+                {
+                    error = "Top stack item is not true";
+                    return false;
+                }
             }
             else
             {
-                error = stack.ItemCount != 1 ?
-                    "Stack has to have only 1 item after witness execution." :
-                    "Top stack item is not true";
+                error = "Stack must only have 1 item after witness execution.";
                 return false;
             }
         }
