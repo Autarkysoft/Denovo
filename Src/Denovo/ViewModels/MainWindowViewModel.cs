@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Denovo.Models;
@@ -59,6 +60,8 @@ namespace Denovo.ViewModels
         public IDenovoFileManager FileMan { get; set; }
         public bool IsInitialized { get; }
 
+        private IClientSettings clientSettings;
+
 
         private void Init(Configuration config)
         {
@@ -67,7 +70,7 @@ namespace Denovo.ViewModels
             AllNodes = new NodePool(config.MaxConnectionCount);
             var utxoDb = new UtxoDatabase(FileMan);
             var memPool = new MemoryPool();
-            var clientSettings =
+            clientSettings =
                 new ClientSettings(
                     config.AcceptIncoming,
                     config.Network,
@@ -86,7 +89,8 @@ namespace Denovo.ViewModels
 
             clientSettings.Time.WrongClockEvent += Time_WrongClockEvent;
 
-            // TODO: the following 5 lines are for testing and can be removed later
+            // TODO: the following 6 lines are for testing and can be removed later
+            clientSettings.Blockchain.State = BlockchainState.BlocksSync;
             connector = new NodeConnector(AllNodes, clientSettings);
             listener = new NodeListener(AllNodes, clientSettings);
             listener.StartListen(new IPEndPoint(IPAddress.Any, config.ListenPort));
@@ -98,11 +102,6 @@ namespace Denovo.ViewModels
                      $"Protocol version: {clientSettings.ProtocolVersion}{Environment.NewLine}" +
                      $"Max connection count: {clientSettings.MaxConnectionCount}{Environment.NewLine}" +
                      $"Best block height: {clientSettings.Blockchain.Height}{Environment.NewLine}";
-
-
-            // TODO: only the FullClient is needed
-            //FullClient cl = new FullClient(clientSettings);
-            //cl.Start();
         }
 
 
@@ -232,6 +231,24 @@ namespace Denovo.ViewModels
             {
                 AllNodes.Remove(SelectedNode);
             }
+        }
+
+
+        private FullClient fullClient;
+        public void StartFullClient()
+        {
+            if (fullClient is null)
+            {
+                fullClient = new FullClient(clientSettings);
+            }
+
+            fullClient.Start();
+        }
+
+        public void StopFullClient()
+        {
+            fullClient?.Dispose();
+            fullClient = null;
         }
 
 

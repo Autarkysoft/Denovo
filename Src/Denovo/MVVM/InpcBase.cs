@@ -8,7 +8,6 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-
 namespace Denovo.MVVM
 {
     /// <summary>

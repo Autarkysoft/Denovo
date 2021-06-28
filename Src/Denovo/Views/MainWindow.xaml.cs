@@ -6,7 +6,6 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Denovo.ViewModels;
-using System.Diagnostics;
 
 namespace Denovo.Views
 {
@@ -20,11 +19,8 @@ namespace Denovo.Views
 
         private void MainWindow_Opened(object sender, System.EventArgs e)
         {
-            var vm = DataContext as MainWindowViewModel;
-
-            Debug.Assert(vm is not null);
-
-            if (!vm.IsInitialized)
+            // Previewer doesn't have datacontext and vm will be null, checking like this prevents an exception being thrown
+            if (DataContext is MainWindowViewModel vm && !vm.IsInitialized)
             {
                 vm.OpenConfig();
             }
