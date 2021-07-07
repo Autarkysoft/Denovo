@@ -74,7 +74,10 @@ are in separate classes. Currently:
   [144](https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki "Segregated Witness (Peer Services)"), 
   [147](https://github.com/bitcoin/bips/blob/master/bip-0147.mediawiki "Dealing with dummy stack element malleability"), 
   [159](https://github.com/bitcoin/bips/blob/master/bip-0159.mediawiki "NODE_NETWORK_LIMITED service bit"), 
-  [173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki "Base32 address format for native v0-16 witness outputs"), 
+  [173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki "Base32 address format for native v0-16 witness outputs"),
+  [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1"),
+  [341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki "Taproot: SegWit version 1 spending rules"),
+  [342](https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki "Validation of Taproot Scripts"),
   [350](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki "Bech32m format for v1+ witness addresses")
   * Optional: [14](https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki "Protocol Version and User Agent"),
   [21](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki "URI Scheme"),
@@ -90,10 +93,7 @@ are in separate classes. Currently:
   [137](https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki "Signatures of Messages using Private Keys"),
   [146](https://github.com/bitcoin/bips/blob/master/bip-0146.mediawiki "Dealing with signature encoding malleability"),
   [152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki "Compact Block Relay"),
-  [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF"),
-  [340](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki "Schnorr Signatures for secp256k1"),
-  [341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki "Taproot: SegWit version 1 spending rules"),
-  [342](https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki "Validation of Taproot Scripts")
+  [178](https://github.com/bitcoin/bips/blob/master/bip-0178.mediawiki "Version Extended WIF")
   * SLIP: [132](https://github.com/satoshilabs/slips/blob/master/slip-0132.md "Registered HD version bytes for BIP-0032")
 
 ### Future plans
