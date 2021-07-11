@@ -33,6 +33,10 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <summary>
         /// Pay to witness script hash
         /// </summary>
-        P2WSH
+        P2WSH,
+        /// <summary>
+        /// Pay to Taproot (witness version 1)
+        /// </summary>
+        P2TR
     }
 }

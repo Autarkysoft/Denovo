@@ -28,6 +28,9 @@ namespace Tests.Bitcoin.Encoders
 
         public static IEnumerable<object[]> GetTypeCases()
         {
+            yield return new object[] { null, NetworkType.MainNet, AddressType.Invalid };
+            yield return new object[] { "", NetworkType.MainNet, AddressType.Invalid };
+            yield return new object[] { " ", NetworkType.MainNet, AddressType.Invalid };
             yield return new object[] { P2pkh_main, NetworkType.MainNet, AddressType.P2PKH };
             yield return new object[] { P2pkh_main, NetworkType.TestNet, AddressType.Unknown };
             yield return new object[] { P2pkh_main, NetworkType.RegTest, AddressType.P2PKH };
@@ -99,7 +102,7 @@ namespace Tests.Bitcoin.Encoders
             // BIP-350
             yield return new object[]
             {
-                "tc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq5zuyut", NetworkType.MainNet, AddressType.Unknown
+                "tc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq5zuyut", NetworkType.MainNet, AddressType.Invalid
             };
             yield return new object[]
             {
@@ -147,6 +150,20 @@ namespace Tests.Bitcoin.Encoders
             yield return new object[]
             {
                 "tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vpggkg4j", NetworkType.TestNet, AddressType.Unknown
+            };
+            yield return new object[]
+            {
+                "bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kt5nd6y",
+                NetworkType.MainNet,
+                AddressType.Unknown // Data is 40 bytes
+            };
+            yield return new object[]
+            {
+                "tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c", NetworkType.TestNet, AddressType.P2TR
+            };
+            yield return new object[]
+            {
+                "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0", NetworkType.MainNet, AddressType.P2TR
             };
         }
         [Theory]

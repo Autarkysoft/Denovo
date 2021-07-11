@@ -43,7 +43,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             data = null;
             if (string.IsNullOrWhiteSpace(address))
             {
-                return AddressType.Unknown;
+                return AddressType.Invalid;
             }
 
             // Address has to be checked by all encodings so that in case TryDecode passed for an unintended encoding
@@ -121,8 +121,21 @@ namespace Autarkysoft.Bitcoin.Encoders
                 }
                 else if (witVer == 1)
                 {
-                    // TODO: implement version 1 SegWit addresses when Taproot soft-fork is started,
-                    // for now they are considered AddressType.Unknown
+                    // If data length is not 32 bytes it is an unknown witness version 1 address 
+                    // (not supported yet and may be added through a soft fork in the future)
+                    if (decoded.Length == 32)
+                    {
+                        if ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
+                            (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                            (netType == NetworkType.RegTest && hrp == HrpRegTest))
+                        {
+                            return AddressType.P2TR;
+                        }
+                        else
+                        {
+                            return AddressType.Invalid;
+                        }
+                    }
                 }
             }
 
