@@ -68,6 +68,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [InlineData("2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc", "a9144e9f39ca4688ff102128ea4ccda34105324305b087", NetworkType.TestNet)]
         [InlineData("tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx", "0014751e76e8199196d454941c45d1b3a323f1433bd6", NetworkType.TestNet)]
         [InlineData("tb1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7qrdk8a4", "002025fd43197330d6e961ab0421247d24394c3f8e3864ef86328e8976e3756453bc", NetworkType.TestNet)]
+        [InlineData("bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0", "512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", NetworkType.MainNet)]
         public void Constructor_FromAddressTest(string addr, string hex, NetworkType net)
         {
             var scr = new PubkeyScript(addr, net);

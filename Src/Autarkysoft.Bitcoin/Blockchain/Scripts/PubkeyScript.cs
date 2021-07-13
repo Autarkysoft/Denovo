@@ -78,6 +78,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 case AddressType.P2WSH:
                     SetToP2WSH(data);
                     break;
+                case AddressType.P2TR:
+                    SetToP2TR(data);
+                    break;
                 default:
                     throw new ArgumentException("Undefined address type");
             }
