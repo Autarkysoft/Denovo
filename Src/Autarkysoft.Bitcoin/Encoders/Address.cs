@@ -129,6 +129,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                             (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
                             (netType == NetworkType.RegTest && hrp == HrpRegTest))
                         {
+                            data = decoded;
                             return AddressType.P2TR;
                         }
                         else
