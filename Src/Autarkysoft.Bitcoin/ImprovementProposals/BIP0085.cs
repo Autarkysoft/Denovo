@@ -108,6 +108,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 BIP0039.WordLists.Korean => 2,
                 BIP0039.WordLists.Spanish => 3,
                 BIP0039.WordLists.Czech => 8,
+                BIP0039.WordLists.Portuguese => 9,
                 _ => throw new ArgumentException("Word-list is not defined.", nameof(language)),
             } + HardenedIndex;
 
