@@ -35,7 +35,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="netType">Network type</param>
         /// <param name="data">
         /// Decoded data or hash extracted from the given address 
-        /// (null for <see cref="AddressType.Unknown"/> and <see cref="AddressType.Invalid"/> tyepes 
+        /// (null for <see cref="AddressType.Unknown"/> and <see cref="AddressType.Invalid"/> tyepes)
         /// </param>
         /// <returns>Address type</returns>
         public static AddressType GetAddressType(string address, NetworkType netType, out byte[] data)
@@ -71,11 +71,7 @@ namespace Autarkysoft.Bitcoin.Encoders
 
             if (Bech32.TryDecode(address, Bech32.Mode.B32, out decoded, out byte witVer, out string hrp))
             {
-                if (decoded.Length < 2 || decoded.Length > 40 || witVer > 16)
-                {
-                    return AddressType.Invalid;
-                }
-
+                // Bech32 (BIP173) addresses can only be P2WPKH (byte[20]) or P2WSH (byte[32]) with witness version 0
                 if (witVer == 0)
                 {
                     if (decoded.Length == 20 && (
@@ -218,20 +214,17 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="pubk">Public key to use</param>
-        /// <param name="witVer">Witness version to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
         /// Indicates wheter to use compressed or compressed public key to generate the address
-        /// <para/> Note: using uncompressed public keys makes the output non-standard and can lead to money loss.
+        /// <para/>Note: using uncompressed public keys makes the output non-standard and can lead to money loss.
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public static string GetP2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2wpkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
             if (pubk is null)
                 throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
-            if (witVer != 0)
-                throw new ArgumentException("Currently only address version 0 is defined for P2WPKH.", nameof(witVer));
 
             string hrp = netType switch
             {
@@ -244,7 +237,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] hash160 = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed));
 
-            return Bech32.Encode(hash160, Bech32.Mode.B32, witVer, hrp);
+            return Bech32.Encode(hash160, Bech32.Mode.B32, 0, hrp);
         }
 
 
@@ -254,25 +247,21 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="pubk">Public key to use</param>
-        /// <param name="witVer">Witness version to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
         /// Indicates wheter to use compressed or compressed public key to generate the address
-        /// <para/> Note: using uncompressed public keys makes the output non-standard and can lead to money loss.
+        /// <para/>Note: using uncompressed public keys makes the output non-standard and can lead to money loss.
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public static string GetP2sh_P2wpkh(PublicKey pubk, byte witVer, bool useCompressed = true,
-                                     NetworkType netType = NetworkType.MainNet)
+        public static string GetP2sh_P2wpkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
             if (pubk is null)
                 throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
-            if (witVer != 0)
-                throw new ArgumentException("Currently only address version 0 is defined for P2WPKH.", nameof(witVer));
             if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
                 throw new ArgumentException(Err.InvalidNetwork);
 
-            RedeemScript rdm = new RedeemScript();
+            var rdm = new RedeemScript();
             rdm.SetToP2SH_P2WPKH(pubk, useCompressed);
             return GetP2sh(rdm, netType);
         }
@@ -284,15 +273,12 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="script">Script to use</param>
-        /// <param name="witVer">Witness version to use</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public static string GetP2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2wsh(IScript script, NetworkType netType = NetworkType.MainNet)
         {
             if (script is null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
-            if (witVer != 0)
-                throw new ArgumentException("Currently only address version 0 is defined for P2WSH.", nameof(witVer));
 
             string hrp = netType switch
             {
@@ -305,7 +291,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Sha256 witHashFunc = new Sha256();
             byte[] hash = witHashFunc.ComputeHash(script.Data);
 
-            return Bech32.Encode(hash, Bech32.Mode.B32, witVer, hrp);
+            return Bech32.Encode(hash, Bech32.Mode.B32, 0, hrp);
         }
 
 
@@ -315,15 +301,12 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="script">Public key to use</param>
-        /// <param name="witVer">Witness version to use</param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public static string GetP2sh_P2wsh(IScript script, byte witVer, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2sh_P2wsh(IScript script, NetworkType netType = NetworkType.MainNet)
         {
             if (script is null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
-            if (witVer != 0)
-                throw new ArgumentException("Currently only address version 0 is defined for P2WSH-P2SH.", nameof(witVer));
             if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
                 throw new ArgumentException(Err.InvalidNetwork);
 
@@ -353,10 +336,10 @@ namespace Autarkysoft.Bitcoin.Encoders
                 case PubkeyScriptType.P2PKH:
                     if (Base58.TryDecodeWithChecksum(address, out byte[] decoded))
                     {
-                        if ((decoded[0] == P2pkhVerMainNet ||
+                        if (decoded.Length == 21 &&
+                            (decoded[0] == P2pkhVerMainNet ||
                              decoded[0] == P2pkhVerTestNet ||
-                             decoded[0] == P2pkhVerRegTest) &&
-                             decoded.Length == 21)
+                             decoded[0] == P2pkhVerRegTest))
                         {
                             hash = decoded.SubArray(1);
                             return true;
@@ -367,10 +350,10 @@ namespace Autarkysoft.Bitcoin.Encoders
                 case PubkeyScriptType.P2SH:
                     if (Base58.TryDecodeWithChecksum(address, out decoded))
                     {
-                        if ((decoded[0] == P2shVerMainNet ||
+                        if (decoded.Length == 21 &&
+                            (decoded[0] == P2shVerMainNet ||
                              decoded[0] == P2shVerTestNet ||
-                             decoded[0] == P2shVerRegTest) &&
-                             decoded.Length == 21)
+                             decoded[0] == P2shVerRegTest))
                         {
                             hash = decoded.SubArray(1);
                             return true;

@@ -194,8 +194,8 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 {
                     AddressType.P2PKH_Uncompressed => Address.GetP2pkh(new PublicKey(item), false),
                     AddressType.P2PKH_Compressed => Address.GetP2pkh(new PublicKey(item), true),
-                    AddressType.P2SH_P2WPKH => Address.GetP2sh_P2wpkh(new PublicKey(item), 0, true),
-                    AddressType.P2WPKH => Address.GetP2wpkh(new PublicKey(item), 0, true),
+                    AddressType.P2SH_P2WPKH => Address.GetP2sh_P2wpkh(new PublicKey(item), true),
+                    AddressType.P2WPKH => Address.GetP2wpkh(new PublicKey(item), true),
                     _ => throw new ArgumentException("Address type is not defined."),
                 };
 

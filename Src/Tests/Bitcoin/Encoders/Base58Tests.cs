@@ -13,7 +13,7 @@ namespace Tests.Bitcoin.Encoders
     public class Base58Tests
     {
         // Encode with checksum of empty bytes (byte[0]) is the following:
-        private const string Empty58 = "3QJmnh";
+        internal const string Empty58 = "3QJmnh";
         private const string Empty16 = "5df6e0e2";
 
         [Theory]
@@ -45,7 +45,7 @@ namespace Tests.Bitcoin.Encoders
         // https://github.com/bitcoin/bitcoin/blob/e258ce792a4849927a6db51786732d71cbbb65fc/src/test/data/base58_encode_decode.json
         public static IEnumerable<object[]> GetDecodeCases()
         {
-            yield return new object[] { "", new byte[0] };
+            yield return new object[] { "", Array.Empty<byte>() };
             yield return new object[] { "2g", new byte[] { 0x61 } };
             yield return new object[] { "a3gV", Helper.HexToBytes("626262") };
             yield return new object[] { "aPEr", Helper.HexToBytes("636363") };
@@ -80,7 +80,7 @@ namespace Tests.Bitcoin.Encoders
 
         public static IEnumerable<object[]> GetDecodeChecksumCases()
         {
-            yield return new object[] { Empty58, new byte[0] };
+            yield return new object[] { Empty58, Array.Empty<byte>() };
             yield return new object[]
             {
                 // source: https://en.bitcoin.it/wiki/Address

@@ -245,73 +245,59 @@ namespace Tests.Bitcoin.Encoders
 
         public static IEnumerable<object[]> GetP2wpkhCases()
         {
-            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.MainNet, KeyHelper.Pub1BechAddr };
-            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.MainNet, KeyHelper.Pub1BechAddrUncomp };
-            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.RegTest, "bcrt1qy9z6z37mpr5da7c4m07tn95fw85ckqfgzgvcwh" };
-            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.RegTest, "bcrt1qkutd3e9qttu3v8w27rtze6r5whyx8mmjy8yf7z" };
-            yield return new object[]
-            {
-                KeyHelper.Pub1, 0, true, NetworkType.TestNet, "tb1qy9z6z37mpr5da7c4m07tn95fw85ckqfgqp44e7"
-            };
-            yield return new object[]
-            {
-                KeyHelper.Pub1, 0, false, NetworkType.TestNet, "tb1qkutd3e9qttu3v8w27rtze6r5whyx8mmjxwayft"
-            };
-
-            yield return new object[] { KeyHelper.Pub2, 0, true, NetworkType.MainNet, KeyHelper.Pub2BechAddr };
-            yield return new object[] { KeyHelper.Pub3, 0, true, NetworkType.MainNet, KeyHelper.Pub3BechAddr };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.MainNet, KeyHelper.Pub1BechAddr };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.MainNet, KeyHelper.Pub1BechAddrUncomp };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.RegTest, "bcrt1qy9z6z37mpr5da7c4m07tn95fw85ckqfgzgvcwh" };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.RegTest, "bcrt1qkutd3e9qttu3v8w27rtze6r5whyx8mmjy8yf7z" };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.TestNet, "tb1qy9z6z37mpr5da7c4m07tn95fw85ckqfgqp44e7" };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.TestNet, "tb1qkutd3e9qttu3v8w27rtze6r5whyx8mmjxwayft" };
+            yield return new object[] { KeyHelper.Pub2, true, NetworkType.MainNet, KeyHelper.Pub2BechAddr };
+            yield return new object[] { KeyHelper.Pub3, true, NetworkType.MainNet, KeyHelper.Pub3BechAddr };
         }
         [Theory]
         [MemberData(nameof(GetP2wpkhCases))]
-        public void GetP2wpkhTest(PublicKey pub, byte ver, bool comp, NetworkType netType, string expected)
+        public void GetP2wpkhTest(PublicKey pub, bool comp, NetworkType netType, string expected)
         {
-            string actual = Address.GetP2wpkh(pub, ver, comp, netType);
+            string actual = Address.GetP2wpkh(pub, comp, netType);
             Assert.Equal(actual, expected);
         }
 
         [Fact]
         public void GetP2wpkh_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2wpkh(null, 0));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2wpkh(null));
 
-            Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2wpkh(KeyHelper.Pub1, 1, netType: (NetworkType)100));
-            Assert.Contains("witVer", ex.Message);
-
-            ex = Assert.Throws<ArgumentException>(() => Address.GetP2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
+            Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2wpkh(KeyHelper.Pub1, netType: (NetworkType)100));
             Assert.Contains(Err.InvalidNetwork, ex.Message);
         }
 
 
         public static IEnumerable<object[]> GetP2sh_P2wpkhCases()
         {
-            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.MainNet, KeyHelper.Pub1NestedSegwit };
-            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.MainNet, KeyHelper.Pub1NestedSegwitUncomp };
-            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.RegTest, KeyHelper.Pub1NestedSegwit };
-            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.RegTest, KeyHelper.Pub1NestedSegwitUncomp };
-            yield return new object[] { KeyHelper.Pub1, 0, true, NetworkType.TestNet, "2N1UvtAhuV4nYsqVznNuYTPU2R9ajf49xaV" };
-            yield return new object[] { KeyHelper.Pub1, 0, false, NetworkType.TestNet, "2N6t2wK9J7Yi8NZgCV1nXHFKGFLK4xyDkQe" };
-
-            yield return new object[] { KeyHelper.Pub2, 0, true, NetworkType.MainNet, KeyHelper.Pub2NestedSegwit };
-            yield return new object[] { KeyHelper.Pub3, 0, true, NetworkType.MainNet, KeyHelper.Pub3NestedSegwit };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.MainNet, KeyHelper.Pub1NestedSegwit };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.MainNet, KeyHelper.Pub1NestedSegwitUncomp };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.RegTest, KeyHelper.Pub1NestedSegwit };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.RegTest, KeyHelper.Pub1NestedSegwitUncomp };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.TestNet, "2N1UvtAhuV4nYsqVznNuYTPU2R9ajf49xaV" };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.TestNet, "2N6t2wK9J7Yi8NZgCV1nXHFKGFLK4xyDkQe" };
+            yield return new object[] { KeyHelper.Pub2, true, NetworkType.MainNet, KeyHelper.Pub2NestedSegwit };
+            yield return new object[] { KeyHelper.Pub3, true, NetworkType.MainNet, KeyHelper.Pub3NestedSegwit };
 
         }
         [Theory]
         [MemberData(nameof(GetP2sh_P2wpkhCases))]
-        public void GetP2sh_P2wpkhTest(PublicKey pub, byte ver, bool comp, NetworkType netType, string expected)
+        public void GetP2sh_P2wpkhTest(PublicKey pub, bool comp, NetworkType netType, string expected)
         {
-            string actual = Address.GetP2sh_P2wpkh(pub, ver, comp, netType);
+            string actual = Address.GetP2sh_P2wpkh(pub, comp, netType);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void GetP2sh_P2wpkh_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wpkh(null, 0));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wpkh(null));
 
-            Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wpkh(KeyHelper.Pub1, 1, netType: (NetworkType)100));
-            Assert.Contains("witVer", ex.Message);
-
-            ex = Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wpkh(KeyHelper.Pub1, 0, netType: (NetworkType)100));
+            Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wpkh(KeyHelper.Pub1, netType: (NetworkType)100));
             Assert.Contains(Err.InvalidNetwork, ex.Message);
         }
 
@@ -322,40 +308,40 @@ namespace Tests.Bitcoin.Encoders
             {
                 // https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki#examples
                 new MockSerializableRedeemScript(Helper.HexToBytes("210279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798ac"), 255),
-                0, NetworkType.MainNet,
+                NetworkType.MainNet,
                 "bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3"
             };
             yield return new object[]
             {
                 // https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki#examples
                 new MockSerializableRedeemScript(Helper.HexToBytes("210279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798ac"), 255),
-                0, NetworkType.TestNet,
+                NetworkType.TestNet,
                 "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7"
             };
             yield return new object[]
             {
                 new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
-                0, NetworkType.MainNet,
+                NetworkType.MainNet,
                 "bc1qqwg933hjcr95jtzn8v9y6980wlxq779ten8d22rasjs6yqgulwqs2z4mcu"
             };
             yield return new object[]
             {
                 new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
-                0, NetworkType.TestNet,
+                NetworkType.TestNet,
                 "tb1qqwg933hjcr95jtzn8v9y6980wlxq779ten8d22rasjs6yqgulwqsa2r5zn"
             };
             yield return new object[]
             {
                 new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
-                0, NetworkType.RegTest,
+                NetworkType.RegTest,
                 "bcrt1qqwg933hjcr95jtzn8v9y6980wlxq779ten8d22rasjs6yqgulwqssnfjhf"
             };
         }
         [Theory]
         [MemberData(nameof(GetP2wshCases))]
-        public void GetP2wshTest(IScript script, byte witVer, NetworkType netType, string expected)
+        public void GetP2wshTest(IScript script, NetworkType netType, string expected)
         {
-            string actual = Address.GetP2wsh(script, witVer, netType);
+            string actual = Address.GetP2wsh(script, netType);
             Assert.Equal(expected, actual);
         }
 
@@ -364,9 +350,8 @@ namespace Tests.Bitcoin.Encoders
         {
             var scr = new MockSerializableRedeemScript(Array.Empty<byte>(), 0);
 
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2wsh(null, 0));
-            Assert.Throws<ArgumentException>(() => Address.GetP2wsh(scr, 1));
-            Assert.Throws<ArgumentException>(() => Address.GetP2wsh(scr, 0, (NetworkType)100));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2wsh(null));
+            Assert.Throws<ArgumentException>(() => Address.GetP2wsh(scr, (NetworkType)100));
         }
 
 
@@ -375,27 +360,27 @@ namespace Tests.Bitcoin.Encoders
             yield return new object[]
             {
                 new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
-                0, NetworkType.MainNet,
+                NetworkType.MainNet,
                 "3DrYxHaW5vdirRa74yaLDaes3S2cghg7V4"
             };
             yield return new object[]
             {
                 new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
-                0, NetworkType.TestNet,
+                NetworkType.TestNet,
                 "2N5Qm22WXhP954DCek7CCqXe8FnEnVjZqZK"
             };
             yield return new object[]
             {
                 new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
-                0, NetworkType.MainNet,
+                NetworkType.MainNet,
                 "3DrYxHaW5vdirRa74yaLDaes3S2cghg7V4"
             };
         }
         [Theory]
         [MemberData(nameof(GetP2sh_P2wshCases))]
-        public void GetP2sh_P2wshTest(IScript script, byte witVer, NetworkType netType, string expected)
+        public void GetP2sh_P2wshTest(IScript script, NetworkType netType, string expected)
         {
-            string actual = Address.GetP2sh_P2wsh(script, witVer, netType);
+            string actual = Address.GetP2sh_P2wsh(script, netType);
             Assert.Equal(expected, actual);
         }
 
@@ -404,9 +389,8 @@ namespace Tests.Bitcoin.Encoders
         {
             var scr = new MockSerializableRedeemScript(Array.Empty<byte>(), 0);
 
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wsh(null, 0));
-            Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wsh(scr, 1));
-            Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wsh(scr, 0, (NetworkType)100));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wsh(null));
+            Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wsh(scr, (NetworkType)100));
         }
 
 
@@ -476,6 +460,8 @@ namespace Tests.Bitcoin.Encoders
             yield return new object[] { null, PubkeyScriptType.P2PKH };
             yield return new object[] { "", PubkeyScriptType.P2PKH };
             yield return new object[] { " ", PubkeyScriptType.P2PKH };
+            yield return new object[] { Base58Tests.Empty58, PubkeyScriptType.P2PKH };
+            yield return new object[] { Base58Tests.Empty58, PubkeyScriptType.P2SH };
             yield return new object[] { P2pkh_main, PubkeyScriptType.P2PK };
             yield return new object[] { P2pkh_main, PubkeyScriptType.P2SH };
             yield return new object[] { P2pkh_main, PubkeyScriptType.P2WPKH };
