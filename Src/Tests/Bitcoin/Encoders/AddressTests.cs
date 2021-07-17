@@ -394,6 +394,38 @@ namespace Tests.Bitcoin.Encoders
         }
 
 
+        public static IEnumerable<object[]> GetP2trCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433"),
+                NetworkType.TestNet,
+                "tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c"
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"),
+                NetworkType.MainNet,
+                "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0"
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetP2trCases))]
+        public void GetP2trTest(byte[] data, NetworkType netType, string expected)
+        {
+            string actual = Address.GetP2tr(data, netType);
+            Assert.Equal(actual, expected);
+        }
+
+        [Fact]
+        public void GetP2sh_P2tr_ExceptionTest()
+        {
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2tr(null));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Address.GetP2tr(new byte[31]));
+            Assert.Throws<ArgumentException>(() => Address.GetP2tr(new byte[32], (NetworkType)100));
+        }
+
+
         public static IEnumerable<object[]> GetVerifyCases()
         {
             yield return new object[]

@@ -317,6 +317,34 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
+        /// Return the pay to taproot address from the given bytes.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="data32">32 byte data to use</param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public static string GetP2tr(byte[] data32, NetworkType netType = NetworkType.MainNet)
+        {
+            if (data32 is null)
+                throw new ArgumentNullException(nameof(data32), "Data can not be null.");
+            if (data32.Length != 32)
+                throw new ArgumentOutOfRangeException(nameof(data32), "Only 32 byte data is accepted.");
+
+            string hrp = netType switch
+            {
+                NetworkType.MainNet => HrpMainNet,
+                NetworkType.TestNet => HrpTestNet,
+                NetworkType.RegTest => HrpRegTest,
+                _ => throw new ArgumentException(Err.InvalidNetwork),
+            };
+
+            return Bech32.Encode(data32, Bech32.Mode.B32m, 1, hrp);
+        }
+
+
+        /// <summary>
         /// Checks if the given address string is of the given <see cref="PubkeyScriptType"/> type and returns the
         /// decoded hash from the address.
         /// </summary>
