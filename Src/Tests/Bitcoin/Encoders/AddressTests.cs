@@ -99,9 +99,14 @@ namespace Tests.Bitcoin.Encoders
             };
             yield return new object[] { "bc1gmk9yu", NetworkType.MainNet, AddressType.Unknown };
 
+            // Zero and negative zero witness programs
             yield return new object[]
             {
                 "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9e75rs", NetworkType.MainNet, AddressType.Invalid
+            };
+            yield return new object[]
+            {
+                "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqyqskt8xg", NetworkType.MainNet, AddressType.Invalid
             };
             yield return new object[]
             {
@@ -109,12 +114,18 @@ namespace Tests.Bitcoin.Encoders
             };
             yield return new object[]
             {
+                "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqq0njhs7", NetworkType.MainNet, AddressType.Invalid
+            };
+            yield return new object[]
+            {
                 "bc1pqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqenm", NetworkType.MainNet, AddressType.Invalid
             };
             yield return new object[]
             {
-                "bc1sqqqqqqqqqqqqqqqqldq9p8", NetworkType.MainNet, AddressType.Invalid
+                "bc1pqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqq9yj7gz", NetworkType.MainNet, AddressType.Invalid
             };
+            yield return new object[] { "bc1sqqqqqqqqqqqqqqqqldq9p8", NetworkType.MainNet, AddressType.Invalid };
+            yield return new object[] { "bc1sqqqqqqqqqqqqqqyq2z4kyl", NetworkType.MainNet, AddressType.Invalid };
 
             // BIP-350
             yield return new object[]
@@ -536,6 +547,8 @@ namespace Tests.Bitcoin.Encoders
 
             yield return new object[] { "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9e75rs", PubkeyScriptType.P2WPKH };
             yield return new object[] { "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqthqst8", PubkeyScriptType.P2WSH };
+            yield return new object[] { "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqyqskt8xg", PubkeyScriptType.P2WPKH };
+            yield return new object[] { "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqq0njhs7", PubkeyScriptType.P2WSH };
         }
         [Theory]
         [MemberData(nameof(GetVerifyFailCases))]
