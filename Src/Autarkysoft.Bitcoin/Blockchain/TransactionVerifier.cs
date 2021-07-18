@@ -210,8 +210,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            var actualHash = hash160.ComputeHash(pubPush.data);
-            if (!pubScrData.Slice(2, 20).SequenceEqual(actualHash))
+            ReadOnlySpan<byte> program = pubScrData.Slice(2, 20);
+            if (!IsNotZero20(program))
+            {
+                error = Err.ZeroByteWitness;
+                return false;
+            }
+
+            byte[] actualHash = hash160.ComputeHash(pubPush.data);
+            if (!program.SequenceEqual(actualHash))
             {
                 error = "Invalid hash.";
                 return false;
@@ -242,11 +249,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
         }
 
-        private bool VerifyP2wsh(ITransaction tx, int index, IRedeemScript redeem, ReadOnlySpan<byte> expectedHash,
+        private bool VerifyP2wsh(ITransaction tx, int index, IRedeemScript redeem, ReadOnlySpan<byte> pubScrData,
                                  ulong amount, out string error)
         {
+            Debug.Assert(pubScrData.Length == 34);
+            ReadOnlySpan<byte> program = pubScrData.Slice(2, 32);
+            if (!IsNotZero32(program))
+            {
+                error = Err.ZeroByteWitness;
+                return false;
+            }
+
             ReadOnlySpan<byte> actualHash = sha256.ComputeHash(redeem.Data);
-            if (!actualHash.SequenceEqual(expectedHash))
+            if (!actualHash.SequenceEqual(program))
             {
                 error = "Invalid hash.";
                 return false;
@@ -387,7 +402,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
-        private bool IsNotZero(byte[] data)
+        internal static bool IsNotZero20(ReadOnlySpan<byte> data)
+        {
+            Debug.Assert(data.Length == 20);
+            return !data.SequenceEqual(ZeroBytes.B20) && !data.SequenceEqual(ZeroBytes.B20N);
+        }
+
+        internal static bool IsNotZero32(ReadOnlySpan<byte> data)
+        {
+            Debug.Assert(data.Length == 32);
+            return !data.SequenceEqual(ZeroBytes.B32) && !data.SequenceEqual(ZeroBytes.B32N);
+        }
+
+        internal static bool IsNotZero(ReadOnlySpan<byte> data)
         {
             for (int i = 0; i < data.Length; i++)
             {
@@ -745,8 +772,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
 
                         RedeemScript witRdm = new RedeemScript(tx.WitnessList[i].Items[^1].data);
-                        expectedHash = ((ReadOnlySpan<byte>)redeem.Data).Slice(2);
-                        if (!VerifyP2wsh(tx, i, witRdm, expectedHash, prevOutput.Amount, out error))
+                        if (!VerifyP2wsh(tx, i, witRdm, redeem.Data, prevOutput.Amount, out error))
                         {
                             return false;
                         }
@@ -769,10 +795,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                         // We already know that PubkeyScript is in form of OP_num PushData(>=2 && <=40 bytes)
                         // we only have to make sure the data is not all zeros
-                        ReadOnlySpan<byte> thePush = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
-                        if (thePush.SequenceEqual(new byte[thePush.Length]))
+                        ReadOnlySpan<byte> program = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
+                        if (!IsNotZero(program))
                         {
-                            error = "Witness program can not be all zeros.";
+                            error = Err.ZeroByteWitness;
                             return false;
                         }
                     }
@@ -826,8 +852,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
 
                     RedeemScript redeem = new RedeemScript(tx.WitnessList[i].Items[^1].data);
-                    ReadOnlySpan<byte> expectedHash = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
-                    if (!VerifyP2wsh(tx, i, redeem, expectedHash, prevOutput.Amount, out error))
+                    if (!VerifyP2wsh(tx, i, redeem, prevOutput.PubScript.Data, prevOutput.Amount, out error))
                     {
                         return false;
                     }
@@ -980,10 +1005,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                     // We already know that PubkeyScript is in form of OP_num PushData(>=2 && <=40 bytes)
                     // we only have to make sure the data is not all zeros
-                    ReadOnlySpan<byte> thePush = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
-                    if (thePush.SequenceEqual(new byte[thePush.Length]))
+                    ReadOnlySpan<byte> program = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2);
+                    if (!IsNotZero(program))
                     {
-                        error = "Witness program can not be all zeros.";
+                        error = Err.ZeroByteWitness;
                         return false;
                     }
                 }

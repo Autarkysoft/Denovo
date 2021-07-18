@@ -231,7 +231,27 @@ namespace Autarkysoft.Bitcoin
 
     internal static class ZeroBytes
     {
-        public static readonly byte[] B32 = new byte[32];
-        public static readonly byte[] B20 = new byte[20];
+        /// <summary>
+        /// 256-bit zero
+        /// </summary>
+        internal static readonly byte[] B32 = new byte[32];
+        /// <summary>
+        /// 160 bit zero
+        /// </summary>
+        internal static readonly byte[] B20 = new byte[20];
+        /// <summary>
+        /// Negative 256-bit zero
+        /// </summary>
+        internal static readonly byte[] B32N = new byte[32]
+        {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80
+        };
+        /// <summary>
+        /// Negative 160-bit zero
+        /// </summary>
+        internal static readonly byte[] B20N = new byte[20]
+        {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80
+        };
     }
 }
