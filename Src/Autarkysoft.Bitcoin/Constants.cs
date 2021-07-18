@@ -226,4 +226,12 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int TwoWeeks_Seconds = 2 * 7 * 24 * 60 * 60;
     }
+
+
+
+    internal static class ZeroBytes
+    {
+        public static readonly byte[] B32 = new byte[32];
+        public static readonly byte[] B20 = new byte[20];
+    }
 }

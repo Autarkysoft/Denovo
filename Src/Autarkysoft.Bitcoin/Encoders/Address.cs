@@ -74,16 +74,18 @@ namespace Autarkysoft.Bitcoin.Encoders
                 // Bech32 (BIP173) addresses can only be P2WPKH (byte[20]) or P2WSH (byte[32]) with witness version 0
                 if (witVer == 0)
                 {
-                    if (decoded.Length == 20 && (
-                        (netType == NetworkType.MainNet && hrp == HrpMainNet) ||
-                        (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
-                        (netType == NetworkType.RegTest && hrp == HrpRegTest)))
+                    if (decoded.Length == 20 &&
+                        !((ReadOnlySpan<byte>)decoded).SequenceEqual(ZeroBytes.B20) &&
+                        ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
+                         (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                         (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
                         data = decoded;
                         return AddressType.P2WPKH;
                     }
-                    else if (decoded.Length == 32 && (
-                             (netType == NetworkType.MainNet && hrp == HrpMainNet) ||
+                    else if (decoded.Length == 32 &&
+                            !((ReadOnlySpan<byte>)decoded).SequenceEqual(ZeroBytes.B32) &&
+                            ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
                              (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
                              (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
@@ -121,9 +123,10 @@ namespace Autarkysoft.Bitcoin.Encoders
                     // (not supported yet and may be added through a soft fork in the future)
                     if (decoded.Length == 32)
                     {
-                        if ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
-                            (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
-                            (netType == NetworkType.RegTest && hrp == HrpRegTest))
+                        if (!((ReadOnlySpan<byte>)decoded).SequenceEqual(ZeroBytes.B32) &&
+                            ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
+                             (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                             (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                         {
                             data = decoded;
                             return AddressType.P2TR;
@@ -133,6 +136,12 @@ namespace Autarkysoft.Bitcoin.Encoders
                             return AddressType.Invalid;
                         }
                     }
+                }
+
+                ReadOnlySpan<byte> zero = new byte[decoded.Length];
+                if (zero.SequenceEqual(decoded))
+                {
+                    return AddressType.Invalid;
                 }
             }
 
@@ -237,6 +246,9 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] hash160 = hashFunc.ComputeHash(pubk.ToByteArray(useCompressed));
 
+            if (((ReadOnlySpan<byte>)hash160).SequenceEqual(ZeroBytes.B20))
+                throw new ArgumentException(Err.ZeroByteWitness, nameof(hash160));
+
             return Bech32.Encode(hash160, Bech32.Mode.B32, 0, hrp);
         }
 
@@ -291,6 +303,9 @@ namespace Autarkysoft.Bitcoin.Encoders
             using Sha256 witHashFunc = new Sha256();
             byte[] hash = witHashFunc.ComputeHash(script.Data);
 
+            if (((ReadOnlySpan<byte>)hash).SequenceEqual(ZeroBytes.B32))
+                throw new ArgumentException(Err.ZeroByteWitness, nameof(hash));
+
             return Bech32.Encode(hash, Bech32.Mode.B32, 0, hrp);
         }
 
@@ -331,6 +346,8 @@ namespace Autarkysoft.Bitcoin.Encoders
                 throw new ArgumentNullException(nameof(data32), "Data can not be null.");
             if (data32.Length != 32)
                 throw new ArgumentOutOfRangeException(nameof(data32), "Only 32 byte data is accepted.");
+            if (((ReadOnlySpan<byte>)data32).SequenceEqual(ZeroBytes.B32))
+                throw new ArgumentException(Err.ZeroByteWitness, nameof(data32));
 
             string hrp = netType switch
             {
@@ -395,6 +412,11 @@ namespace Autarkysoft.Bitcoin.Encoders
                         if (witVer == 0 && decoded.Length == 20 &&
                             (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpRegTest))
                         {
+                            if (((ReadOnlySpan<byte>)decoded).SequenceEqual(ZeroBytes.B20))
+                            {
+                                return false;
+                            }
+
                             hash = decoded;
                             return true;
                         }
@@ -407,6 +429,11 @@ namespace Autarkysoft.Bitcoin.Encoders
                         if (witVer == 0 && decoded.Length == 32 &&
                             (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpRegTest))
                         {
+                            if (((ReadOnlySpan<byte>)decoded).SequenceEqual(ZeroBytes.B32))
+                            {
+                                return false;
+                            }
+
                             hash = decoded;
                             return true;
                         }

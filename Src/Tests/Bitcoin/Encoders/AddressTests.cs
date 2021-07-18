@@ -99,6 +99,23 @@ namespace Tests.Bitcoin.Encoders
             };
             yield return new object[] { "bc1gmk9yu", NetworkType.MainNet, AddressType.Unknown };
 
+            yield return new object[]
+            {
+                "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9e75rs", NetworkType.MainNet, AddressType.Invalid
+            };
+            yield return new object[]
+            {
+                "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqthqst8", NetworkType.MainNet, AddressType.Invalid
+            };
+            yield return new object[]
+            {
+                "bc1pqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqenm", NetworkType.MainNet, AddressType.Invalid
+            };
+            yield return new object[]
+            {
+                "bc1sqqqqqqqqqqqqqqqqldq9p8", NetworkType.MainNet, AddressType.Invalid
+            };
+
             // BIP-350
             yield return new object[]
             {
@@ -422,7 +439,12 @@ namespace Tests.Bitcoin.Encoders
         {
             Assert.Throws<ArgumentNullException>(() => Address.GetP2tr(null));
             Assert.Throws<ArgumentOutOfRangeException>(() => Address.GetP2tr(new byte[31]));
-            Assert.Throws<ArgumentException>(() => Address.GetP2tr(new byte[32], (NetworkType)100));
+
+            Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2tr(new byte[32]));
+            Assert.Contains(Err.ZeroByteWitness, ex.Message);
+
+            ex = Assert.Throws<ArgumentException>(() => Address.GetP2tr(Helper.GetBytes(32), (NetworkType)100));
+            Assert.Contains(Err.InvalidNetwork, ex.Message);
         }
 
 
@@ -511,6 +533,9 @@ namespace Tests.Bitcoin.Encoders
             yield return new object[] { "bc1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7q59qg86", PubkeyScriptType.P2PKH };
             yield return new object[] { "bc1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7q59qg86", PubkeyScriptType.P2SH };
             yield return new object[] { "bc1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7q59qg86", PubkeyScriptType.P2WPKH };
+
+            yield return new object[] { "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9e75rs", PubkeyScriptType.P2WPKH };
+            yield return new object[] { "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqthqst8", PubkeyScriptType.P2WSH };
         }
         [Theory]
         [MemberData(nameof(GetVerifyFailCases))]
