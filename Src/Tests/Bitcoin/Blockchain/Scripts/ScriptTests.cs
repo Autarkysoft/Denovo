@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Tests.Bitcoin.Blockchain.Scripts.Operations;
@@ -42,7 +43,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void SerializeTest()
         {
             Data = new byte[] { 1, 2, 3 };
-            FastStream stream = new FastStream(3);
+            var stream = new FastStream(3);
             Serialize(stream);
             Assert.Equal(new byte[] { 3, 1, 2, 3 }, stream.ToByteArray());
         }
@@ -53,7 +54,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [InlineData(new byte[] { 3, 10, 20, 30 }, new byte[] { 10, 20, 30 })]
         public void TryDeserializeTest(byte[] ba, byte[] expected)
         {
-            FastStreamReader stream = new FastStreamReader(ba);
+            var stream = new FastStreamReader(ba);
             bool b = TryDeserialize(stream, out string error);
 
             Assert.True(b, error);
@@ -64,7 +65,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void TryDeserialize_FailTest()
         {
-            FastStreamReader stream = new FastStreamReader(new byte[] { 1 });
+            var stream = new FastStreamReader(new byte[] { 1 });
             bool b = TryDeserialize(stream, out string error);
 
             Assert.False(b);
@@ -74,7 +75,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetSigOpCountCases()
         {
-            yield return new object[] { new byte[0], 0 };
+            yield return new object[] { Array.Empty<byte>(), 0 };
             yield return new object[] { new byte[] { (byte)OP.CheckSig }, 1 };
             yield return new object[] { new byte[] { (byte)OP.CheckSigVerify }, 1 };
 
@@ -184,7 +185,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetEvalCases()
         {
-            yield return new object[] { null, new IOperation[0], 0 };
+            yield return new object[] { null, Array.Empty<IOperation>(), 0 };
             yield return new object[] { new byte[1], new IOperation[] { new PushDataOp(OP._0) }, 0 };
             yield return new object[]
             {
@@ -272,7 +273,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[]
             {
                 new byte[] { (byte)OP.IF, (byte)OP.ELSE, (byte)OP.EndIf },
-                new IOperation[] { new IFOp(null, new IOperation[0]) },
+                new IOperation[] { new IFOp(null, Array.Empty<IOperation>()) },
                 3
             };
             yield return new object[]
@@ -321,7 +322,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 new IOperation[]
                 {
                     new PushDataOp(OP._2),
-                    new IFOp(new IOperation[] { new IFOp(new IOperation[] { new IFOp(null, new IOperation[0]) }, new IOperation[0]) }, null)
+                    new IFOp(new IOperation[] { new IFOp(new IOperation[] { new IFOp(null, Array.Empty<IOperation>()) }, Array.Empty<IOperation>()) }, null)
                 },
                 8
             };
@@ -336,7 +337,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[]
             {
                 new byte[] { (byte)OP.NotIf, (byte)OP.ELSE, (byte)OP.EndIf },
-                new IOperation[] { new NotIfOp(null, new IOperation[0]) },
+                new IOperation[] { new NotIfOp(null, Array.Empty<IOperation>()) },
                 3
             };
             yield return new object[]
@@ -386,8 +387,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 {
                     new PushDataOp(OP._2),
                     new NotIfOp(
-                                new IOperation[] { new NotIfOp(new IOperation[] { new NotIfOp(null, new IOperation[0]) },
-                                                               new IOperation[0]) },
+                                new IOperation[] { new NotIfOp(new IOperation[] { new NotIfOp(null, Array.Empty<IOperation>()) },
+                                                               Array.Empty<IOperation>()) },
                                 null)
                 },
                 8
@@ -451,17 +452,24 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryEvaluateTest(byte[] scrBa, IOperation[] expectedOps, int expectedCount)
         {
             Data = scrBa;
-            bool b = TryEvaluate(out IOperation[] actualOps, out int actualCount, out string error);
+            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] actOpsLegacy, out int actCountLegacy, out string e1);
+            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] actOpsWit0, out int actCountWit0, out string e2);
 
-            Assert.True(b, error);
-            Assert.Null(error);
-            Assert.Equal(expectedOps, actualOps);
-            Assert.Equal(expectedCount, actualCount);
+            Assert.True(b1, e1);
+            Assert.True(b2, e2);
+
+            Assert.Null(e1);
+            Assert.Null(e2);
+
+            Assert.Equal(expectedOps, actOpsLegacy);
+            Assert.Equal(expectedOps, actOpsWit0);
+
+            Assert.Equal(expectedCount, actCountLegacy);
+            Assert.Equal(expectedCount, actCountWit0);
         }
 
         public static IEnumerable<object[]> GetEvalFailCases()
         {
-            yield return new object[] { new byte[Constants.MaxScriptLength + 1], "Script data length is too big." };
             yield return new object[] { new byte[] { 2, 10 }, Err.EndOfStream };
             yield return new object[] { new byte[] { (byte)OP.VerIf }, "Invalid OP was found: OP_VerIf" };
             yield return new object[] { new byte[] { (byte)OP.VerNotIf }, "Invalid OP was found: OP_VerNotIf" };
@@ -487,21 +495,52 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryEvaluate_FailTest(byte[] scrBa, string expErr)
         {
             Data = scrBa;
-            bool b = TryEvaluate(out _, out _, out string error);
+            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out _, out _, out string e1);
+            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out _, out _, out string e2);
+            bool b3 = TryEvaluate(ScriptEvalMode.WitnessV1, out _, out _, out string e3);
 
-            Assert.False(b);
-            Assert.Equal(expErr, error);
+            Assert.False(b1);
+            Assert.False(b2);
+            Assert.False(b3);
+
+            Assert.Equal(expErr, e1);
+            Assert.Equal(expErr, e2);
+            Assert.Equal(expErr, e3);
+        }
+
+        [Fact]
+        public void TryEvaluate_DataOverflowTest()
+        {
+            Data = new byte[Constants.MaxScriptLength + 1];
+
+            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out _, out _, out string e1);
+            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out _, out _, out string e2);
+            bool b3 = TryEvaluate(ScriptEvalMode.WitnessV1, out _, out _, out string e3);
+
+            Assert.False(b1);
+            Assert.False(b2);
+            Assert.True(b3);
+
+            Assert.Equal("Script data length exceeded the maximum allowed 10000 bytes.", e1);
+            Assert.Equal("Script data length exceeded the maximum allowed 10000 bytes.", e2);
+            Assert.Null(e3);
         }
 
         [Fact]
         public void TryRead_OpOverflowTest()
         {
             int count = Constants.MaxScriptOpCount;
-            FastStreamReader stream = new FastStreamReader(new byte[] { (byte)OP.DUP });
-            bool b = TryRead(stream, new List<IOperation>(), ref count, out string error);
+            var stream = new FastStreamReader(new byte[] { (byte)OP.DUP });
+            var list = new List<IOperation>();
 
-            Assert.False(b);
-            Assert.Equal(Err.OpCountOverflow, error);
+            bool b1 = TryRead(ScriptEvalMode.Legacy, stream, list, ref count, out string e1);
+            bool b2 = TryRead(ScriptEvalMode.WitnessV0, stream, list, ref count, out string e2);
+
+            Assert.False(b1);
+            Assert.False(b2);
+
+            Assert.Equal(Err.OpCountOverflow, e1);
+            Assert.Equal(Err.OpCountOverflow, e2);
         }
     }
 }

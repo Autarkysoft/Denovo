@@ -673,7 +673,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (!((ReadOnlySpan<byte>)TxInList[inputIndex].TxHash).SequenceEqual(prvTx.GetTransactionHash()))
                 throw new ArgumentException("Wrong previous transaction or index.");
             var prvScr = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript;
-            if (!prvScr.TryEvaluate(out IOperation[] prevPubOps, out int opCount, out string error))
+            if (!prvScr.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] prevPubOps, out int opCount, out string error))
                 throw new ArgumentException($"Previous transaction pubkey script can not be evaluated: {error}.");
             if (opCount > Constants.MaxScriptOpCount)
                 throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
@@ -690,7 +690,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             {
                 if (redeem is null)
                     throw new ArgumentNullException(nameof(redeem), "Redeem script can not be null for signing P2SH outputs.");
-                if (!redeem.TryEvaluate(out IOperation[] rdmOps, out opCount, out error))
+                if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out opCount, out error))
                     throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
                 if (opCount > Constants.MaxScriptOpCount)
                     throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
@@ -720,7 +720,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     {
                         throw new ArgumentNullException(nameof(witRedeem), "To spend a P2SH-P2WSH output, a witness redeem script is needed.");
                     }
-                    if (!witRedeem.TryEvaluate(out IOperation[] witRdmOps, out opCount, out error))
+                    if (!witRedeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] witRdmOps, out opCount, out error))
                         throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
                     if (opCount > Constants.MaxScriptOpCount)
                         throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
@@ -754,7 +754,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 {
                     throw new ArgumentNullException(nameof(witRedeem), "To spend a P2WSH output, a witness redeem script is needed.");
                 }
-                if (!witRedeem.TryEvaluate(out IOperation[] witRdmOps, out opCount, out error))
+                if (!witRedeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] witRdmOps, out opCount, out error))
                     throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
                 if (opCount > Constants.MaxScriptOpCount)
                     throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
@@ -852,7 +852,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                             TxInList[inputIndex].SigScript.SetToMultiSig(sig, redeem, this, inputIndex);
                             break;
                         case RedeemScriptType.CheckLocktimeVerify:
-                            if (!redeem.TryEvaluate(out IOperation[] rdmOps, out _, out string error))
+                            if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out _, out string error))
                             {
                                 throw new ArgumentException($"Invalid redeem script. Error: {error}");
                             }

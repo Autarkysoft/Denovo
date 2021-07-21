@@ -267,7 +267,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
+            if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] redeemOps, out int redeemOpCount, out error))
             {
                 error = $"Script evaluation failed." +
                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -537,7 +537,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
-                    if (!currentInput.SigScript.TryEvaluate(out IOperation[] signatureOps, out int signatureOpCount, out error))
+                    if (!currentInput.SigScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] signatureOps,
+                                                            out int signatureOpCount, out error))
                     {
                         error = $"Invalid transaction signature script." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -563,7 +564,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         TotalSigOpCount += currentInput.SigScript.CountSigOps() * Constants.WitnessScaleFactor;
 
-                        if (!prevOutput.PubScript.TryEvaluate(out IOperation[] pubOps, out int pubOpCount, out error))
+                        if (!prevOutput.PubScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] pubOps,
+                                                              out int pubOpCount, out error))
                         {
                             error = $"Invalid input transaction pubkey script." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -623,7 +625,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     // P2SH signature script is all pushes so there is no need to count OPs in it for running which changes with
                     // OP_CheckMultiSig(Verify) Ops only (the normal count is already checked during evaluation)
-                    if (!currentInput.SigScript.TryEvaluate(out IOperation[] signatureOps, out _, out error))
+                    if (!currentInput.SigScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] signatureOps, out _, out error))
                     {
                         error = $"Invalid transaction signature script." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -699,7 +701,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                         // There is no need to run pubOps
 
-                        if (!redeem.TryEvaluate(out IOperation[] redeemOps, out int redeemOpCount, out error))
+                        if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] redeemOps, out int redeemOpCount,
+                                                out error))
                         {
                             error = $"Script evaluation failed (invalid redeem script)." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -975,7 +978,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             // TODO: change the following method to accept sigVersion
                             //       that way it can check if an OP is a OpSuccess and not return failure.
-                            if (!redeem.TryEvaluate(out IOperation[] rdmOps, out int opCount, out error))
+                            if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out int opCount, out error))
                             {
                                 return false;
                             }

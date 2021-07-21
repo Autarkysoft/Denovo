@@ -29,6 +29,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Converts <see cref="Data"/> to an array of <see cref="IOperation"/>s (result can be an empty array). 
         /// Return value indicates success.
         /// </summary>
+        /// <param name="mode">Script evaluation mode</param>
         /// <param name="result">An array of <see cref="IOperation"/>s</param>
         /// <param name="opCount">
         /// Number of OPs in this script (needs to be updated after executing 
@@ -37,6 +38,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
         /// <returns>True if evaluation was successful, false if otherwise.</returns>
-        bool TryEvaluate(out IOperation[] result, out int opCount, out string error);
+        bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out string error);
     }
 }

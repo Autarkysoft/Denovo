@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -120,7 +121,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public bool TryEvaluate(out IOperation[] result, out int opCount, out string error)
+        public bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out string error)
         {
             opCount = 0;
             if (Data.Length == 0)
@@ -129,19 +130,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 error = null;
                 return true;
             }
-            else if (Data.Length > Constants.MaxScriptLength)
+            else if ((mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0) &&
+                     Data.Length > Constants.MaxScriptLength)
             {
                 result = new IOperation[0];
-                error = "Script data length is too big.";
+                error = $"Script data length exceeded the maximum allowed {Constants.MaxScriptLength} bytes.";
                 return false;
             }
             else
             {
-                List<IOperation> tempList = new List<IOperation>();
-                FastStreamReader stream = new FastStreamReader(Data);
+                var tempList = new List<IOperation>();
+                var stream = new FastStreamReader(Data);
                 while (stream.GetRemainingBytesCount() > 0)
                 {
-                    if (!TryRead(stream, tempList, ref opCount, out error))
+                    if (!TryRead(mode, stream, tempList, ref opCount, out error))
                     {
                         result = tempList.ToArray();
                         return false;
@@ -159,6 +161,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         /// <param name="b">Byte to check</param>
         /// <returns>True if the byte is a push Op; otherwise false.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected bool IsPushOp(byte b) => b >= 0 && b <= (byte)OP._16 && b != (byte)OP.Reserved;
 
         /// <summary>
@@ -166,6 +169,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// </summary>
         /// <param name="b">Byte to check</param>
         /// <returns>True if the byte is an OP_SuccessX; otherwise false.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected bool IsOpSuccess(byte b) =>
             b == 80 || b == 98 || (b >= 126 && b <= 129) ||
             (b >= 131 && b <= 134) || (b >= 137 && b <= 138) ||
@@ -176,12 +180,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Reads a single <see cref="IOperation"/> from the given the given stream and adds the result to the given list.
         /// Return value indicates success.
         /// </summary>
+        /// <param name="mode">Script evaluation mode</param>
         /// <param name="stream">Stream of bytes to use</param>
         /// <param name="opList">The list to add the result to</param>
         /// <param name="opCount">Number of OPs in the script being read</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        protected bool TryRead(FastStreamReader stream, List<IOperation> opList, ref int opCount, out string error)
+        protected bool TryRead(ScriptEvalMode mode, FastStreamReader stream, List<IOperation> opList,
+                               ref int opCount, out string error)
         {
             if (!stream.TryPeekByte(out byte firstByte))
             {
@@ -191,7 +197,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
             if (IsPushOp(firstByte))
             {
-                PushDataOp op = new PushDataOp();
+                var op = new PushDataOp();
                 if (!op.TryRead(stream, out error))
                 {
                     return false;
@@ -201,15 +207,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 return true;
             }
 
-            if (firstByte != (byte)OP.Reserved && ++opCount > Constants.MaxScriptOpCount)
+            if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
             {
-                error = Err.OpCountOverflow;
-                return false;
+                if (firstByte != (byte)OP.Reserved && ++opCount > Constants.MaxScriptOpCount)
+                {
+                    error = Err.OpCountOverflow;
+                    return false;
+                }
             }
 
             if (firstByte == (byte)OP.RETURN)
             {
-                ReturnOp op = new ReturnOp();
+                var op = new ReturnOp();
                 if (!op.TryRead(stream, stream.GetRemainingBytesCount(), out error))
                 {
                     return false;
@@ -248,7 +257,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                     // Special case of IFs:
                     case OP.IF:
-                        IFOp ifop = new IFOp();
+                        var ifop = new IFOp();
 
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out byte nextB))
@@ -260,7 +269,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         List<IOperation> ifOps = new List<IOperation>();
                         while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
                         {
-                            if (!TryRead(stream, ifOps, ref opCount, out error))
+                            if (!TryRead(mode, stream, ifOps, ref opCount, out error))
                             {
                                 return false;
                             }
@@ -282,8 +291,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB == (byte)OP.ELSE)
                             {
-                                // Count OP_ELSE
-                                opCount++;
+                                if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
+                                {
+                                    // Count OP_ELSE
+                                    opCount++;
+                                }
                                 if (!stream.TryPeekByte(out nextB))
                                 {
                                     error = Err.EndOfStream;
@@ -293,7 +305,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 List<IOperation> elseOps = new List<IOperation>();
                                 while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf)
                                 {
-                                    if (!TryRead(stream, elseOps, ref opCount, out error))
+                                    if (!TryRead(mode, stream, elseOps, ref opCount, out error))
                                     {
                                         return false;
                                     }
@@ -308,8 +320,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 _ = stream.TryReadByte(out currentB);
                             }
 
-                            // Count OP_EndIf
-                            opCount++;
+                            if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
+                            {
+                                // Count OP_EndIf
+                                opCount++;
+                            }
 
                             if (currentB != (byte)OP.EndIf)
                             {
@@ -339,7 +354,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         ifOps = new List<IOperation>();
                         while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
                         {
-                            if (!TryRead(stream, ifOps, ref opCount, out error))
+                            if (!TryRead(mode, stream, ifOps, ref opCount, out error))
                             {
                                 return false;
                             }
@@ -361,8 +376,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB == (byte)OP.ELSE)
                             {
-                                // Count OP_ELSE
-                                opCount++;
+                                if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
+                                {
+                                    // Count OP_ELSE
+                                    opCount++;
+                                }
                                 if (!stream.TryPeekByte(out nextB))
                                 {
                                     error = Err.EndOfStream;
@@ -372,7 +390,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 List<IOperation> elseOps = new List<IOperation>();
                                 while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf)
                                 {
-                                    if (!TryRead(stream, elseOps, ref opCount, out error))
+                                    if (!TryRead(mode, stream, elseOps, ref opCount, out error))
                                     {
                                         return false;
                                     }
@@ -387,8 +405,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 _ = stream.TryReadByte(out currentB);
                             }
 
-                            // Count OP_EndIf
-                            opCount++;
+                            if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
+                            {
+                                // Count OP_EndIf
+                                opCount++;
+                            }
 
                             if (currentB != (byte)OP.EndIf)
                             {
@@ -603,9 +624,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         opList.Add(new CheckSigVerifyOp());
                         break;
                     case OP.CheckMultiSig:
+                        if (mode == ScriptEvalMode.WitnessV1)
+                        {
+                            error = "OP_CheckMultiSig is not available for Taproot scripts.";
+                            return false;
+                        }
                         opList.Add(new CheckMultiSigOp());
                         break;
                     case OP.CheckMultiSigVerify:
+                        if (mode == ScriptEvalMode.WitnessV1)
+                        {
+                            error = "OP_CheckMultiSigVerify is not available for Taproot scripts.";
+                            return false;
+                        }
                         opList.Add(new CheckMultiSigVerifyOp());
                         break;
                     case OP.NOP1:
@@ -640,6 +671,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         break;
 
                     case OP.CheckSigAdd:
+                        if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
+                        {
+                            error = "OP_CheckSigAdd is only available in Taproot scripts.";
+                            return false;
+                        }
                         opList.Add(new CheckSigAddOp());
                         break;
 
