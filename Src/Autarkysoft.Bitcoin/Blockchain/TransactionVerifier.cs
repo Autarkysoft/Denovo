@@ -862,12 +862,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (pubType == PubkeyScriptSpecialType.P2TR)
                 {
-                    // TODO: script evaluation shouldn't limit data size
-                    // https://github.com/bitcoin/bitcoin/blob/a9435e34457e0bfebd22e574fe63428537948aeb/src/script/interpreter.cpp#L452
-                    // same with OP count 
-                    // https://github.com/bitcoin/bitcoin/blob/a9435e34457e0bfebd22e574fe63428537948aeb/src/script/interpreter.cpp#L474
-
-
                     // If PubkeyScript is returning this type the fork must be active; otherwise it should return UnknownWitness
                     Debug.Assert(consensus.IsTaprootEnabled);
 
@@ -891,7 +885,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         tx.WitnessList[i].Items[^1].data != null &&
                         tx.WitnessList[i].Items[^1].data[0] == AnnexTag)
                     {
-                        annexHash = sha256.ComputeHash(tx.WitnessList[i].Items[^1].data);
+                        var tempStream = new FastStream(tx.WitnessList[i].Items[^1].data.Length + 2);
+                        tx.WitnessList[i].Items[^1].WriteToWitnessStream(tempStream);
+                        annexHash = sha256.ComputeHash(tempStream.ToByteArray());
                     }
 
                     // Note that item count is checked after removing annex
