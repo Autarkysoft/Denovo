@@ -176,6 +176,31 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             }
         }
 
+        /// <summary>
+        /// Converts the given byte array to an <see cref="EllipticCurvePoint"/> assuming it is the X-only public key
+        /// used by Schnorr signatures. Return value indicates success.
+        /// </summary>
+        /// <param name="bytes">Byte sequence to use (must be exactly 32 bytes)</param>
+        /// <param name="result">Resulting point (<see cref="EllipticCurvePoint.InfinityPoint"/> if fails)</param>
+        /// <returns>True if the conversion is successful; otherwise false.</returns>
+        public bool TryGetPointXOnly(ReadOnlySpan<byte> bytes, out EllipticCurvePoint result)
+        {
+            if (bytes == null || bytes.Length != 32)
+            {
+                return false;
+            }
+            else
+            {
+                BigInteger x = new BigInteger(bytes, true, true);
+                if (!TryFindY(x, 2, out BigInteger y))
+                {
+                    return false;
+                }
+                result = new EllipticCurvePoint(x, y);
+                return curve.IsOnCurve(result);
+            }
+        }
+
 
         /// <summary>
         /// Given a point (x,y) returns -point (x,-y) if the coin was on curve.

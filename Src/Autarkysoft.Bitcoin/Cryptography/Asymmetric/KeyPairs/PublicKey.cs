@@ -80,7 +80,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         /// <param name="pubBa">Byte array containing a public key</param>
         /// <param name="pubK">The result</param>
         /// <returns>Public key type.</returns>
-        public static PublicKeyType TryReadTaproot(byte[] pubBa, out PublicKey pubK)
+        public static PublicKeyType TryReadTaproot(ReadOnlySpan<byte> pubBa, out PublicKey pubK)
         {
             if (pubBa.Length == 0)
             {
@@ -94,7 +94,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 return PublicKeyType.Unknown;
             }
 
-            if (calc.TryGetPoint(pubBa.AppendToBeginning(0x02), out EllipticCurvePoint pt))
+            if (calc.TryGetPointXOnly(pubBa, out EllipticCurvePoint pt))
             {
                 pubK = new PublicKey(pt);
                 return PublicKeyType.Schnorr;
