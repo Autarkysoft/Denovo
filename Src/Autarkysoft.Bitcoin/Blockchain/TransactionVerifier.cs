@@ -897,6 +897,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
+                    Debug.Assert(prevOutput.PubScript.Data.Length == 34); // PubkeyScript has to have checked it
+                    var program = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2, 32);
+
                     if (tx.WitnessList[i].Items.Length - (annexHash == null ? 1 : 0) == 1)
                     {
                         // Key path spending:
@@ -905,7 +908,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             return false;
                         }
-                        PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(prevOutput.PubScript.Data.SubArray(2, 32), out PublicKey pub);
+                        PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(program, out PublicKey pub);
                         if (ptype == PublicKey.PublicKeyType.None || ptype == PublicKey.PublicKeyType.Unknown)
                         {
                             error = "Invalid public key.";
@@ -963,7 +966,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         byte[] scrBa = stack.Pop();
                         var redeem = new RedeemScript(scrBa);
 
-                        var program = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2, 32);
                         if (VerifyTaprootCommitment(control, program, redeem))
                         {
                             error = "Invalid taproot commitment.";
