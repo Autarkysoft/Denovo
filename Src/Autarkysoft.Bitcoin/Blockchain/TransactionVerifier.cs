@@ -444,6 +444,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
         }
 
+
         /// <inheritdoc/>
         public bool Verify(ITransaction tx, out string error)
         {
@@ -483,6 +484,24 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return true;
             }
 
+            var utxos = new IUtxo[tx.TxInList.Length];
+            for (int i = 0; i < utxos.Length; i++)
+            {
+                utxos[i] = UtxoDb.Find(tx.TxInList[i]);
+            }
+
+            return Verify(tx, utxos, out error);
+        }
+
+        /// <inheritdoc/>
+        public bool Verify(ITransaction tx, IUtxo[] utxos, out string error)
+        {
+            if (utxos is null ||  tx.TxInList.Length != utxos.Length)
+            {
+                error = "Invalid number of UTXOs.";
+                return false;
+            }
+
             // TODO: these 2 checks should be performed during creation of tx (ctor or Deserialize)
             if (tx.TxInList.Length == 0 || tx.TxOutList.Length == 0)
             {
@@ -503,9 +522,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             for (int i = 0; i < tx.TxInList.Length; i++)
             {
                 TxIn currentInput = tx.TxInList[i];
-                // TODO: add a condition in UTXO for when it is a coinbase transaction (they are not spendable if haven't 
-                // reached maturity ie. 100 blocks -> thisHeight - spendingCoinbaseHeight >= 100)
-                IUtxo prevOutput = UtxoDb.Find(currentInput);
+                IUtxo prevOutput = utxos[i];
                 if (prevOutput is null)
                 {
                     // TODO: add a ToString() method to TxIn?
@@ -915,7 +932,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
 
-                        byte[] sigHash = ((Transaction)tx).SerializeForSigningTaproot(0, sig.SigHash, null, 0, i, annexHash);
+                        byte[] sigHash = ((Transaction)tx).SerializeForSigningTaproot(0, sig.SigHash, utxos, 0, i, annexHash);
                         if (!calc.VerifySchnorr(sigHash, sig, pub))
                         {
                             error = "Invalid signature.";
