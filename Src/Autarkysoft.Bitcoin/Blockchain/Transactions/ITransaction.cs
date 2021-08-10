@@ -130,6 +130,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         byte[] SerializeForSigningSegWit(byte[] spendScript, int inputIndex, ulong amount, SigHashType sht);
 
         /// <summary>
+        /// A special serialization used in signing operations for SegWit version 1 transactions (Taproot).
+        /// Returned value is the hash result.
+        /// </summary>
+        /// <param name="epoch">Epoch is always 0</param>
+        /// <param name="sht">Signature hash type</param>
+        /// <param name="spentOutputs">Outputs being spent by this transaction</param>
+        /// <param name="extFlag">Flag</param>
+        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="annexHash">Annex hash</param>
+        /// <returns>32 byte hash</returns>
+        byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs,
+                                          byte extFlag, int inputIndex, byte[] annexHash);
+
+        /// <summary>
         /// Returns the hash result that needs to be signed with the private key. 
         /// <para/>This method is very strict and should only used by wallets to sign predefined (standard) transactions.
         /// For verification of already signed transactions use <see cref="TransactionVerifier"/> which calls

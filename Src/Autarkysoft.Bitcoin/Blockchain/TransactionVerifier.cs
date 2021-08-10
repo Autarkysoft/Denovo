@@ -932,7 +932,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
 
-                        byte[] sigHash = ((Transaction)tx).SerializeForSigningTaproot(0, sig.SigHash, utxos, 0, i, annexHash);
+                        byte[] sigHash = tx.SerializeForSigningTaproot(0, sig.SigHash, utxos, 0, i, annexHash);
                         if (!calc.VerifySchnorr(sigHash, sig, pub))
                         {
                             error = "Invalid signature.";

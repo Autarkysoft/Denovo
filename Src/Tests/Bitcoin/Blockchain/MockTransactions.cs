@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
@@ -49,6 +50,8 @@ namespace Tests.Bitcoin.Blockchain
             => throw new NotImplementedException();
         public virtual void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem)
             => throw new NotImplementedException();
+
+        public virtual byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs, byte extFlag, int inputIndex, byte[] annexHash) => throw new NotImplementedException();
     }
 
 
