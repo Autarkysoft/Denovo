@@ -1,5 +1,16 @@
 ### Next release
-[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.13.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.14.0.0...master)
+
+### Release 0.14.0 (2021-08-00)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.13.0.0...B0.14.0.0)
+* Address and script classes are updated for Taproot
+* Address class is more strict about Bech32 addresses
+* Add a new address type (P2TR)
+* Creating P2WPKH and P2WSH no longer requires a witness version (it is always 0)
+* Introduce script evaluation modes
+* Taproot activation height is added to `Consensus`
+* Small improvements in `TransactionVerifier`
+* Various tests, small bug fixes and code improvements
 
 ### Release 0.13.0 (2021-06-08)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.12.0.0...B0.13.0.0)
@@ -7,7 +18,7 @@
 SigHash type, public key (x-only) and updated Schnorr signature algorithm. 
 * Note: Taproot is disabled by default in Consensus class, it will be enabled after it is locked-in 
 and will be tested to find possible bugs
-* New OP code: OP_CheckSigAdd
+* New OP code: `OP_CheckSigAdd`
 * Many new optimized Tagged hash methods in `Sha256`
 * `IBlock` and `ITransaction` have better size properties that utilize `SizeCounter` better
 * Added some consensus critical checks to BlockVerifier
