@@ -1,7 +1,7 @@
 ### Next release
 [Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.14.0.0...master)
 
-### Release 0.14.0 (2021-08-00)
+### Release 0.14.0 (2021-08-11)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.13.0.0...B0.14.0.0)
 * Address and script classes are updated for Taproot
 * Address class is more strict about Bech32 addresses
