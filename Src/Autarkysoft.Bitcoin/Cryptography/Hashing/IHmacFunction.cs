@@ -36,7 +36,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="key">The secret key used for HMAC encryption. 
         /// Key size is best chosen based on recommended size for each function.</param>
         /// <returns>The computed hash</returns>
-        byte[] ComputeHash(byte[] data, byte[] key);
+        byte[] ComputeHash(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key);
 
         /// <summary>
         /// Computes HMAC hash of a given byte array with the specified hash function with the key that was specified in constructor.
@@ -44,6 +44,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// </summary>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        byte[] ComputeHash(byte[] data);
+        byte[] ComputeHash(ReadOnlySpan<byte> data);
     }
 }

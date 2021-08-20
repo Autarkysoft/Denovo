@@ -65,7 +65,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     throw new ArgumentNullException("Key can not be null.");
 
 
-                if (value.Length > hashFunc.BlockByteSize)
+                if (value.Length > Sha256.BlockByteSize)
                 {
                     _keyValue = hashFunc.ComputeHash(value);
                 }
@@ -78,8 +78,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 {
                     // In order to set pads we have to XOR key with pad values. 
                     // Since we don't know the length of the key, it is harder to loop using UInt64 so we use 2 temp pad bytes:
-                    byte[] opadB = new byte[hashFunc.BlockByteSize];
-                    byte[] ipadB = new byte[hashFunc.BlockByteSize];
+                    byte[] opadB = new byte[Sha256.BlockByteSize];
+                    byte[] ipadB = new byte[Sha256.BlockByteSize];
 
                     // Note (kp = _keyValue) can't assign to first item because key might be empty array which will throw an excpetion
                     fixed (byte* kp = _keyValue, tOpB = &opadB[0], tIpB = &ipadB[0])
@@ -119,7 +119,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="data">The byte array to compute hash for</param>
         /// <param name="key">Key to use. Arrays smaller than block size (64 bytes) will be hashed first.</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHash(byte[] data, byte[] key)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key)
         {
             if (disposedValue)
                 throw new ObjectDisposedException(nameof(HmacSha256));
@@ -133,7 +133,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             fixed (uint* oPt = &opad[0], iPt = &ipad[0])
             fixed (uint* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
-                if (key.Length > hashFunc.BlockByteSize)
+                if (key.Length > Sha256.BlockByteSize)
                 {
                     hashFunc.Init(hPt);
                     hashFunc.CompressData(kPt, key.Length, key.Length, hPt, wPt);
@@ -151,10 +151,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 }
                 else
                 {
-                    byte[] temp = new byte[hashFunc.BlockByteSize];
-                    Buffer.BlockCopy(key, 0, temp, 0, key.Length);
+                    byte[] temp = new byte[Sha256.BlockByteSize];
                     fixed (byte* tPt = &temp[0])
                     {
+                        Buffer.MemoryCopy(kPt, tPt, temp.Length, key.Length);
                         for (int i = 0, j = 0; i < 16; i++, j += 4)
                         {
                             uint val = (uint)((tPt[j] << 24) | (tPt[j + 1] << 16) | (tPt[j + 2] << 8) | tPt[j + 3]);
@@ -205,7 +205,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHash(byte[] data)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> data)
         {
             if (disposedValue)
                 throw new ObjectDisposedException($"{nameof(HmacSha256)} instance was disposed.");

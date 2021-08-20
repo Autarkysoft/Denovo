@@ -17,7 +17,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Initializes a new instance of the <see cref="HmacSha512"/>. 
         /// <para/> Useful for using the same instance for computing HMAC each time with a different key 
-        /// by calling <see cref="ComputeHash(byte[], byte[])"/>
+        /// by calling <see cref="ComputeHash(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>
         /// </summary>
         public HmacSha512()
         {
@@ -136,7 +136,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="data">The byte array to compute hash for</param>
         /// <param name="key">Key to use. Arrays smaller than block size (128 bytes) will be hashed first.</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHash(byte[] data, byte[] key)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key)
         {
             if (disposedValue)
                 throw new ObjectDisposedException(nameof(HmacSha512));
@@ -169,9 +169,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 else
                 {
                     byte[] temp = new byte[Sha512.BlockByteSize];
-                    Buffer.BlockCopy(key, 0, temp, 0, key.Length);
                     fixed (byte* tPt = &temp[0])
                     {
+                        Buffer.MemoryCopy(kPt, tPt, temp.Length, key.Length);
                         for (int i = 0, j = 0; i < 16; i++, j += 8)
                         {
                             ulong val =
@@ -231,7 +231,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHash(byte[] data)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> data)
         {
             if (disposedValue)
                 throw new ObjectDisposedException($"{nameof(HmacSha512)} instance was disposed.");

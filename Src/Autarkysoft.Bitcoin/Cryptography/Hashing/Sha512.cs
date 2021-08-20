@@ -18,9 +18,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Initializes a new instance of the <see cref="Sha512"/>.
         /// </summary>
-        public Sha512()
-        {
-        }
+        public Sha512() { }
 
 
         /// <summary>
@@ -68,7 +66,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHash(byte[] data)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> data)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
@@ -96,7 +94,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHash(byte[] buffer, int offset, int count)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> buffer, int offset, int count)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
@@ -127,7 +125,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHashTwice(byte[] data)
+        public unsafe byte[] ComputeHashTwice(ReadOnlySpan<byte> data)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
