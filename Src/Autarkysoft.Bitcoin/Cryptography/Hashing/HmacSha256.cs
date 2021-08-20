@@ -17,7 +17,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Initializes a new instance of the <see cref="HmacSha256"/>. 
         /// <para/> Useful for using the same instance for computing HMAC each time with a different key 
-        /// by calling <see cref="ComputeHash(byte[], byte[])"/>
+        /// by calling <see cref="ComputeHash(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>
         /// </summary>
         public HmacSha256()
         {

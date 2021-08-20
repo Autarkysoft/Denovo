@@ -77,13 +77,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
         /// <param name="salt">Salt</param>
         /// <param name="dkLen">Length of the returned derived key</param>
         /// <returns>The derived key</returns>
-        public unsafe byte[] GetBytes(byte[] password, byte[] salt, int dkLen)
+        public unsafe byte[] GetBytes(ReadOnlySpan<byte> password, ReadOnlySpan<byte> salt, int dkLen)
         {
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(Scrypt));
-            if (password is null)
+            if (password == null)
                 throw new ArgumentNullException(nameof(password), "Password can not be null.");
-            if (salt is null)
+            if (salt == null)
                 throw new ArgumentNullException(nameof(salt), "Salt can not be null.");
             if (dkLen <= 0)
                 throw new ArgumentOutOfRangeException(nameof(dkLen), "Derived key length must be bigger than zero.");
