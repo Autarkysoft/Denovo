@@ -94,28 +94,28 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(password), "Password can not be null.");
 
 
-            byte[] encryptedBytes = Base58.DecodeWithChecksum(encrypted);
+            ReadOnlySpan<byte> encryptedBytes = Base58.DecodeWithChecksum(encrypted);
             if (encryptedBytes.Length != EncodedLength)
             {
                 throw new FormatException("Invalid encrypted bytes length.");
             }
 
-            if (!((Span<byte>)encryptedBytes).Slice(0, 2).SequenceEqual(prefix))
+            if (!encryptedBytes.Slice(0, 2).SequenceEqual(prefix))
             {
                 throw new FormatException("Invalid prefix.");
             }
 
             isCompressed = IsCompressed(encryptedBytes[2]);
 
-            Span<byte> salt = ((Span<byte>)encryptedBytes).Slice(3, 4);
+            ReadOnlySpan<byte> salt = encryptedBytes.Slice(3, 4);
 
-            byte[] dk = scrypt.GetBytes(password, salt.ToArray(), 64);
+            byte[] dk = scrypt.GetBytes(password, salt, 64);
             byte[] decryptedResult = new byte[32];
 
             aes.Key = dk.SubArray(32, 32); // AES key is derivedhalf2
             using ICryptoTransform decryptor = aes.CreateDecryptor();
-            decryptor.TransformBlock(encryptedBytes, 7, 16, decryptedResult, 0);
-            decryptor.TransformBlock(encryptedBytes, 23, 16, decryptedResult, 16);
+            decryptor.TransformBlock(encryptedBytes.ToArray(), 7, 16, decryptedResult, 0);
+            decryptor.TransformBlock(encryptedBytes.ToArray(), 23, 16, decryptedResult, 16);
 
             // XOR method will only work on first item's length (32 byte here) so it doesn't matter of dk.Legth is 64
             PrivateKey result = new PrivateKey(XOR(decryptedResult, dk));
@@ -167,7 +167,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <param name="password">Password to use</param>
         /// <param name="isCompressed">Indicates whether to use compressed or uncompressed public key to build P2PKH address</param>
         /// <returns>Base-58 encoded encrypted result with a checksum</returns>
-        public string Encrypt(PrivateKey key, byte[] password, bool isCompressed)
+        public string Encrypt(PrivateKey key, ReadOnlySpan<byte> password, bool isCompressed)
         {
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(BIP0038), "Instance was disposed.");
