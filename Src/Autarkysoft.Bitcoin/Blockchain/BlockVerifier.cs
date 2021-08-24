@@ -22,7 +22,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
     /// <summary>
     /// Implementation of a block verifier used to validate new blocks.
     /// </summary>
-    public class BlockVerifier
+    public class BlockVerifier : IBlockVerifier
     {
         /// <summary>
         /// Initializes a new instance of <see cref="BlockVerifier"/> using the given parameters.
@@ -42,14 +42,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
 
-        /// <summary>
-        /// Verifies validity of thegiven <see cref="BlockHeader"/> by performing basic verifications (verion, target and PoW).
-        /// Return value indicates succcess.
-        /// <para/><see cref="IConsensus"/> dependency has to be updated by the caller before calling this method.
-        /// </summary>
-        /// <param name="header">Block header to verify</param>
-        /// <param name="expectedTarget">The target that this header must have (calculated considering difficulty adjustment)</param>
-        /// <returns>True if the given block header was valid; otherwise false.</returns>
+        /// <inheritdoc/>
         public bool VerifyHeader(BlockHeader header, Target expectedTarget)
         {
             BigInteger tar = header.NBits.ToBigInt();
@@ -66,14 +59,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             txVer.UtxoDb.Undo(block.TransactionList, block.TransactionList.Length - 1);
         }
 
-        /// <summary>
-        /// Verifies validity of the given block. Return value indicates succcess.
-        /// <para/>Header has to be verified before using <see cref="VerifyHeader(BlockHeader, Target)"/> method.
-        /// <para/><see cref="IConsensus"/> dependency has to be updated by the caller before calling this method.
-        /// </summary>
-        /// <param name="block">Block to use</param>
-        /// <param name="error">Error message (null if valid, otherwise contains information about the reason).</param>
-        /// <returns>True if block was valid, otherwise false.</returns>
+        /// <inheritdoc/>
         public bool Verify(IBlock block, out string error)
         {
             if (block.TransactionList.Length < 1)
