@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
@@ -36,6 +37,7 @@ namespace Tests.Bitcoin.P2PNetwork
         private const string UnexpectedCall = "Unexpected call was made";
 
         public List<Inventory> InvsToGet => throw new NotImplementedException();
+        public List<IBlock> DownloadedBlocks => throw new NotImplementedException();
 
         internal IPAddress _ip;
         public IPAddress IP

@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         /// <inheritdoc/>
         public List<Inventory> InvsToGet { get; } = new List<Inventory>(16);
+        /// <inheritdoc/>
+        public List<IBlock> DownloadedBlocks { get; } = new List<IBlock>(16);
 
         private int _v;
         /// <summary>

@@ -9,6 +9,7 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 
@@ -215,7 +216,43 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
                     if (Deser(msg.PayloadData, out BlockPayload blk))
                     {
-                        settings.Blockchain.ProcessBlock(blk.BlockData, nodeStatus);
+                        if (nodeStatus.InvsToGet.Count > 0)
+                        {
+                            ReadOnlySpan<byte> hash = blk.BlockData.Header.GetHash();
+                            int i = nodeStatus.DownloadedBlocks.Count;
+                            Debug.Assert(i < nodeStatus.InvsToGet.Count);
+
+                            if (hash.SequenceEqual(nodeStatus.InvsToGet[i].Hash))
+                            {
+                                nodeStatus.DownloadedBlocks.Add(blk.BlockData);
+                            }
+                            else
+                            {
+                                byte[] blockHash = hash.ToArray();
+                                int index = nodeStatus.InvsToGet.FindIndex(x => ((ReadOnlySpan<byte>)blockHash).SequenceEqual(x.Hash));
+                                if (index < 0)
+                                {
+                                    // TODO: handle single block or ignore (we are during block sync)
+                                }
+                                else
+                                {
+                                    // The node is either sending blocks out of order or already sent this block.
+                                    nodeStatus.AddBigViolation();
+                                    return null;
+                                }
+                            }
+
+                            if (nodeStatus.InvsToGet.Count == nodeStatus.DownloadedBlocks.Count)
+                            {
+                                nodeStatus.StopDisconnectTimer();
+                                // TODO: Process all downloaded blocks
+                                // settings.Blockchain.ProcessBlocks()
+                            }
+                            else
+                            {
+                                nodeStatus.ReStartDisconnectTimer();
+                            }
+                        }
                     }
                     break;
                 case PayloadType.BlockTxn:
