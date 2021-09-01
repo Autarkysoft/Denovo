@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Linq;
 using Xunit;
@@ -77,9 +78,15 @@ namespace Tests.Bitcoin.Blockchain
         public MockSerializableBlock(byte[] serializedResult)
         {
             ba = serializedResult;
+            using Sha256 sha = new();
+            var hdr = ((Span<byte>)ba).Slice(0, 80);
+            hash = sha.ComputeHashTwice(hdr);
         }
 
-        private readonly byte[] ba;
+        private readonly byte[] ba, hash;
+
+        public override byte[] GetBlockHash(bool recompute) => hash;
+        public override string GetBlockID(bool recompute) => Helper.BytesToHex(hash);
 
         public override void AddSerializedSize(SizeCounter counter) => counter.Add(ba.Length);
         public override void Serialize(FastStream stream)

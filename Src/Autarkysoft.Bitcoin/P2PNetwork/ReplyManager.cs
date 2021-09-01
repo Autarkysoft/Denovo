@@ -232,7 +232,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 int index = nodeStatus.InvsToGet.FindIndex(x => ((ReadOnlySpan<byte>)blockHash).SequenceEqual(x.Hash));
                                 if (index < 0)
                                 {
-                                    // TODO: handle single block or ignore (we are during block sync)
+                                    if (settings.Blockchain.State == BlockchainState.Synchronized)
+                                    {
+                                        // TODO: handle single block
+                                    }
+                                    // Else ignore the received block during block or header sync
+                                    // TODO: we may need to punish this peer if _spamming unknonw_ blocks during our sync
                                 }
                                 else
                                 {
@@ -252,6 +257,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             {
                                 nodeStatus.ReStartDisconnectTimer();
                             }
+                        }
+                        else
+                        {
+                            // TODO: handle single block or ignore (we are during block sync)
                         }
                     }
                     break;
