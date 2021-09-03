@@ -81,7 +81,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <summary>
         /// Block verifier
         /// </summary>
-        public BlockVerifier BlockVer { get; set; }
+        public IBlockVerifier BlockVer { get; set; }
         /// <summary>
         /// Client time
         /// </summary>
@@ -266,6 +266,58 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     byte[] h = missingBlockHashes.Pop();
                     nodeStatus.InvsToGet.Add(new Inventory(InventoryType.WitnessBlock, h));
+                }
+            }
+        }
+
+
+        private readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
+        private readonly object peerQLock = new object();
+
+        /// <inheritdoc/>
+        public void ProcessReceivedBlocks(INodeStatus nodeStatus)
+        {
+            Task.Run(() => ProcessPeerQueue(nodeStatus));
+        }
+
+        private void ProcessPeerQueue(INodeStatus nodeStatus)
+        {
+            lock (peerQLock)
+            {
+                peerBlocksQueue.Add(nodeStatus);
+
+                int index = 0;
+                int max = peerBlocksQueue.Count;
+                while (index < max)
+                {
+                    ReadOnlySpan<byte> prvHash = peerBlocksQueue[index].DownloadedBlocks[0].Header.PreviousBlockHeaderHash;
+                    if (prvHash.SequenceEqual(tip))
+                    {
+                        foreach (var block in peerBlocksQueue[index].DownloadedBlocks)
+                        {
+                            Consensus.BlockHeight = Height + 1;
+                            if (BlockVer.Verify(block, out string error))
+                            {
+                                Height++;
+                                tip = block.GetBlockHash(false);
+                                FileMan.WriteBlock(block);
+                            }
+                            else
+                            {
+                                nodeStatus.AddMediumViolation();
+                                // TODO: this could break things. We may need a seperate "RetryQueue" for these blocks
+                                missingBlockHashes.Push(block.GetBlockHash(false));
+                            }
+                        }
+
+                        peerBlocksQueue.RemoveAt(index);
+                        index = 0;
+                        max = queue.Count;
+                    }
+                    else
+                    {
+                        index++;
+                    }
                 }
             }
         }

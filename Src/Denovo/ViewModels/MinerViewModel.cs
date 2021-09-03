@@ -62,8 +62,8 @@ namespace Denovo.ViewModels
             public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash) => null;
 
             public void SetMissingBlockHashes(INodeStatus nodeStatus) { }
-
             public void PutBackMissingBlocks(List<Inventory> blockInvs) { }
+            public void ProcessReceivedBlocks(INodeStatus nodeStatus) { }
         }
 
         public NodePool AllNodes { get; set; }

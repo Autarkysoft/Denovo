@@ -50,6 +50,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
         Target GetNextTarget();
 
         /// <summary>
+        /// Processes all the blocks that this peer received in its <see cref="INodeStatus.DownloadedBlocks"/>
+        /// and adds violations if needed and raises the block download event.
+        /// </summary>
+        /// <param name="nodeStatus">Node status containing the received blocks</param>
+        void ProcessReceivedBlocks(INodeStatus nodeStatus);
+        /// <summary>
         /// Processes the given block by validating the header, transactions,... and adds it to the database.
         /// Should also handle forks and reorgs.
         /// The return value indicates evaluation success.

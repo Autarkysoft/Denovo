@@ -77,6 +77,12 @@ namespace Tests.Bitcoin.Blockchain
             return blkProcessSuccess;
         }
 
+        internal INodeStatus expRecvBlockNS;
+        public void ProcessReceivedBlocks(INodeStatus nodeStatus)
+        {
+            Assert.Same(expRecvBlockNS, nodeStatus);
+        }
+
         internal BlockHeader[] _expHeaders;
         internal BlockProcessResult? _expHdrProcessResult;
         public BlockProcessResult ProcessHeaders(BlockHeader[] headers)

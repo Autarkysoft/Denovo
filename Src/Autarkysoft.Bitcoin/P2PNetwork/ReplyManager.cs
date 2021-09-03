@@ -250,8 +250,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             if (nodeStatus.InvsToGet.Count == nodeStatus.DownloadedBlocks.Count)
                             {
                                 nodeStatus.StopDisconnectTimer();
-                                // TODO: Process all downloaded blocks
-                                // settings.Blockchain.ProcessBlocks()
+                                settings.Blockchain.ProcessReceivedBlocks(nodeStatus);
                             }
                             else
                             {
