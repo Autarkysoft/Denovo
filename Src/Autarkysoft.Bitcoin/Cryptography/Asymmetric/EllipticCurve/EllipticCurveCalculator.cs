@@ -8,8 +8,8 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 {
@@ -94,15 +94,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             BigInteger right = (BigInteger.Pow(x, 3) + curve.B) % curve.P;
             if (SquareRoot.TryFind(right, curve.P, out y))
             {
-                if (firstByte == 2 && !y.IsEven)
+                if ((firstByte == 2 && !y.IsEven) || (firstByte == 3 && y.IsEven))
                 {
-                    // We know point is already on curve
-                    y = PointNegChecked(new EllipticCurvePoint(x, y)).Y;
+                    y = curve.P - y;
+                    Debug.Assert(y.Sign > 0);
                 }
-                else if (firstByte == 3 && y.IsEven)
-                {
-                    y = PointNegChecked(new EllipticCurvePoint(x, y)).Y;
-                }
+
                 return true;
             }
             else
