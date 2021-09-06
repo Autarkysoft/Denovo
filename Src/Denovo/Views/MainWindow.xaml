@@ -26,6 +26,7 @@
           <Button Content="Config" Command="{Binding OpenConfig}" Width="100" HorizontalAlignment="Left"/>
           <Button Content="Miner" Command="{Binding OpenMiner}" Width="100" HorizontalAlignment="Left"/>
           <Button Content="Encrypt/Decrypt" Command="{Binding OpenEcies}" HorizontalAlignment="Left"/>
+          <Button Content="Transaction verifier" Command="{Binding OpenVerifyTx}" HorizontalAlignment="Left"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="5">
           <TextBlock Text="IP:"/>

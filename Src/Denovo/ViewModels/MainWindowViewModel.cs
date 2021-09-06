@@ -147,6 +147,12 @@ namespace Denovo.ViewModels
             await WinMan.ShowDialog(vm);
         }
 
+        public async void OpenVerifyTx()
+        {
+            var vm = new VerifyTxViewModel();
+            await WinMan.ShowDialog(vm);
+        }
+
         private Node _selNode;
         public Node SelectedNode
         {

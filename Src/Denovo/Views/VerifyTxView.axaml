@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="550"
+             x:Class="Denovo.Views.VerifyTxView"
+             FontSize="14">
+
+  <Design.DataContext>
+    <vm:VerifyTxViewModel/>
+  </Design.DataContext>
+
+  <Grid RowDefinitions="100,*,auto,70">
+    <TextBox Text="{Binding TxHex}"
+             Watermark="Transaction hex"
+             ScrollViewer.VerticalScrollBarVisibility="Visible"
+             Grid.Row="0"/>
+
+    <ItemsControl Items="{Binding UtxoList}" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Visible">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Vertical"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <StackPanel Orientation="Horizontal">
+            <TextBox Text="{Binding TxId}"
+                     TextWrapping="NoWrap"
+                     ToolTip.Tip="Transaction ID"
+                     Watermark="Transaction ID"
+                     UseFloatingWatermark="False"
+                     Width="150"/>
+
+            <TextBox Text="{Binding Index}"
+                     ToolTip.Tip="Index"
+                     Watermark="Index"
+                     UseFloatingWatermark="False"
+                     Width="50"/>
+
+            <TextBox Text="{Binding Amount}"
+                     ToolTip.Tip="Amount (satoshi)"
+                     Watermark="Amount (satoshi)"
+                     UseFloatingWatermark="False"
+                     Width="150"/>
+
+            <TextBox Text="{Binding Script}"
+                     TextWrapping="NoWrap"
+                     ToolTip.Tip="Script (hex)"
+                     Watermark="Script (hex)"
+                     UseFloatingWatermark="False"
+                     Width="370"/>
+          </StackPanel>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Button Content="Verify"
+            Command="{Binding VerifyCommand}"
+            Margin="5"
+            Grid.Row="2"/>
+
+    <TextBox Text="{Binding Result, Mode=OneWay}"
+             IsReadOnly="True"
+             Grid.Row="3"/>
+  </Grid>
+</UserControl>

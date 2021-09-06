@@ -23,6 +23,20 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public class TransactionVerifier : ITransactionVerifier, IDisposable
     {
         /// <summary>
+        /// A simplified constructor used for testing. Skips setting <see cref="UtxoDb"/> and <see cref="mempool"/>.
+        /// </summary>
+        /// <param name="consensus">Consensus rules to use</param>
+        public TransactionVerifier(IConsensus consensus)
+        {
+            this.consensus = consensus;
+
+            calc = new EllipticCurveCalculator();
+            scrSer = new ScriptSerializer();
+            hash160 = new Ripemd160Sha256();
+            sha256 = new Sha256();
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="TransactionVerifier"/> using given parameters.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
@@ -159,7 +173,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private bool VerifyP2pkh(ITransaction tx, int index, PushDataOp sigPush, PushDataOp pubPush,
                                  ReadOnlySpan<byte> pubScrData, out string error)
         {
-            var actualHash = hash160.ComputeHash(pubPush.data);
+            byte[] actualHash = hash160.ComputeHash(pubPush.data);
             if (!pubScrData.Slice(3, 20).SequenceEqual(actualHash))
             {
                 error = "Invalid hash.";
@@ -496,7 +510,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         public bool Verify(ITransaction tx, IUtxo[] utxos, out string error)
         {
-            if (utxos is null ||  tx.TxInList.Length != utxos.Length)
+            if (utxos is null || tx.TxInList.Length != utxos.Length)
             {
                 error = "Invalid number of UTXOs.";
                 return false;
