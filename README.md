@@ -18,6 +18,7 @@ Currently Denovo is in beta and has very limited features listed below:
 * **TestNet miner:** a simple but powerful miner to mine testnet blocks and broadcast them used only for testing things that can not
 be tested otherwise.  
 * **Message encryption:** encrypt and decrypt messages using Elliptic Curve Integrated Encryption Scheme (ECIES).  
+* **Transaction verifier:** verify any bitcoin transaction by entering its raw hex and all its UTXOs.  
 
 Using the latest [.net core](https://github.com/dotnet/core) version with [AvaloniaUI](https://github.com/AvaloniaUI/Avalonia)
 Denovo can run on any operating systems.  
