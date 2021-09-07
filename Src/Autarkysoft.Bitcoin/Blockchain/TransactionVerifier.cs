@@ -176,7 +176,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             byte[] actualHash = hash160.ComputeHash(pubPush.data);
             if (!pubScrData.Slice(3, 20).SequenceEqual(actualHash))
             {
-                error = "Invalid hash.";
+                error = $"Invalid hash (OP_EqualVerify failed for P2PKH input at index={index}).";
                 return false;
             }
 
@@ -185,6 +185,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 if (!Signature.TryReadStrict(sigPush.data, out sig, out error))
                 {
+                    error += $"{Environment.NewLine}(OP_CheckSig failed to read signature with strict rules" +
+                             $" for input at index={index}.";
                     return false;
                 }
             }
@@ -192,13 +194,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 if (!Signature.TryReadLoose(sigPush.data, out sig, out error))
                 {
+                    error += $"{Environment.NewLine}(OP_CheckSig failed to read signature with loose rules" +
+                             $" for input at index={index}.";
                     return false;
                 }
             }
 
             if (!PublicKey.TryRead(pubPush.data, out PublicKey pubK))
             {
-                error = "Invalid public key";
+                error = $"OP_CheckSig failed due to invalid public key for input at index={index}.";
                 return false;
             }
 
@@ -210,7 +214,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
             else
             {
-                error = "Invalid signature";
+                error = $"OP_CheckSig failed due to invalid ECDSA signature for input at index={index}.";
                 return false;
             }
         }
@@ -234,19 +238,20 @@ namespace Autarkysoft.Bitcoin.Blockchain
             byte[] actualHash = hash160.ComputeHash(pubPush.data);
             if (!program.SequenceEqual(actualHash))
             {
-                error = "Invalid hash.";
+                error = $"Invalid hash (OP_EqualVerify failed for P2WPKH input at index={index}).";
                 return false;
             }
 
             if (!Signature.TryReadStrict(sigPush.data, out Signature sig, out error))
             {
-                error = $"Invalid signature ({error})";
+                error += $"{Environment.NewLine}(OP_CheckSig failed to read signature with strict rules" +
+                         $" for input at index={index}.";
                 return false;
             }
 
             if (!PublicKey.TryRead(pubPush.data, out PublicKey pubK))
             {
-                error = "Invalid public key";
+                error = $"OP_CheckSig failed due to invalid public key for input at index={index}.";
                 return false;
             }
 
@@ -258,7 +263,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
             else
             {
-                error = "Invalid signature";
+                error = $"OP_CheckSig failed due to invalid ECDSA signature for input at index={index}.";
                 return false;
             }
         }
@@ -283,7 +288,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
             if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] redeemOps, out int redeemOpCount, out error))
             {
-                error = $"Script evaluation failed." +
+                error = $"Redeem script evaluation failed for input at index={index}." +
                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                         $"{Environment.NewLine}More info: {error}";
                 return false;
@@ -311,7 +316,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 if (!tx.WitnessList[index].Items[j].Run(stack, out error))
                 {
-                    error = $"Script evaluation failed." +
+                    error = $"Script evaluation failed on {tx.WitnessList[index].Items[j].OpValue} for input at index={index}." +
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                             $"{Environment.NewLine}More info: {error}";
                     return false;
@@ -327,7 +332,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 if (!op.Run(stack, out error))
                 {
-                    error = $"Script evaluation failed." +
+                    error = $"Script evaluation failed on {op.OpValue} for input at index={index}." +
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                             $"{Environment.NewLine}More info: {error}";
                     return false;
@@ -344,13 +349,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else
                 {
-                    error = "Top stack item is not true";
+                    error = $"Top stack item is not true for input at index={index}.";
                     return false;
                 }
             }
             else
             {
-                error = "Stack must only have 1 item after witness execution.";
+                error = $"Stack must only have 1 item after witness execution for input at index={index}.";
                 return false;
             }
         }
@@ -563,7 +568,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     // If the type is not witness there shouldn't be any witness item
                     if (tx.WitnessList != null && tx.WitnessList.Length != 0 && tx.WitnessList[i].Items.Length != 0)
                     {
-                        error = $"Unexpected witness." +
+                        error = $"Unexpected witness for input at index={i}." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
                         return false;
                     }
@@ -571,7 +576,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     if (!currentInput.SigScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] signatureOps,
                                                             out int signatureOpCount, out error))
                     {
-                        error = $"Invalid transaction signature script." +
+                        error = $"Invalid transaction signature script for input at index={i}." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                 $"{Environment.NewLine}More info: {error}";
                         return false;
@@ -598,7 +603,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         if (!prevOutput.PubScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] pubOps,
                                                               out int pubOpCount, out error))
                         {
-                            error = $"Invalid input transaction pubkey script." +
+                            error = $"Failed to evaluate given pubkey script for input at index={i}." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                     $"{Environment.NewLine}More info: {error}";
                             return false;
@@ -626,7 +631,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             if (!op.Run(stack, out error))
                             {
-                                error = $"Script evaluation failed." +
+                                error = $"Script evaluation failed on {op.OpValue} for input at index={i}." +
                                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                         $"{Environment.NewLine}More info: {error}";
                                 return false;
@@ -639,7 +644,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             if (!op.Run(stack, out error))
                             {
-                                error = $"Script evaluation failed." +
+                                error = $"Script evaluation failed on {op.OpValue} for input at index={i}." +
                                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                         $"{Environment.NewLine}More info: {error}";
                                 return false;
@@ -658,7 +663,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     // OP_CheckMultiSig(Verify) Ops only (the normal count is already checked during evaluation)
                     if (!currentInput.SigScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] signatureOps, out _, out error))
                     {
-                        error = $"Invalid transaction signature script." +
+                        error = $"Failed to evaluate signature script for input at index={i}." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                 $"{Environment.NewLine}More info: {error}";
                         return false;
@@ -681,7 +686,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     ReadOnlySpan<byte> expectedHash = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2, 20);
                     if (!actualHash.SequenceEqual(expectedHash))
                     {
-                        error = "Invalid hash.";
+                        error = $"Invalid hash (OP_Equal failed for P2SH input at index={i}).";
                         return false;
                     }
 
@@ -691,7 +696,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         if (tx.WitnessList != null && tx.WitnessList.Length != 0 && tx.WitnessList[i].Items.Length != 0)
                         {
-                            error = $"Unexpected witness." +
+                            error = $"Unexpected witness for input at index={i}." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                     $"{Environment.NewLine}More info: {error}";
                             return false;
@@ -723,7 +728,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             // Signature script of P2SH must be push-only
                             if (!(signatureOps[j] is PushDataOp) || !op.Run(stack, out error))
                             {
-                                error = $"Script evaluation failed." +
+                                error = $"Script evaluation failed on {op.OpValue} for input at index={i} ." +
                                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                         $"{Environment.NewLine}More info: {error}";
                                 return false;
@@ -749,7 +754,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             if (!op.Run(stack, out error))
                             {
-                                error = $"Script evaluation failed." +
+                                error = $"Script evaluation failed on {op.OpValue} for input at index={i} ." +
                                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
                                         $"{Environment.NewLine}More info: {error}";
                                 return false;

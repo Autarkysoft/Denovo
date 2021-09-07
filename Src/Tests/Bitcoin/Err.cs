@@ -13,6 +13,6 @@ namespace Tests.Bitcoin
         public const string OpStackItemOverflow = "Stack item count limit exceeded.";
         public const string OpCountOverflow = "Number of OPs in this script exceeds the allowed number.";
         public const string BadRNG = "The provided RNG is broken.";
-        internal const string ZeroByteWitness = "Data part of SegWit outputs can not be all zero bytes.";
+        internal const string ZeroByteWitness = "Data part of SegWit outputs can not be all zeros.";
     }
 }
