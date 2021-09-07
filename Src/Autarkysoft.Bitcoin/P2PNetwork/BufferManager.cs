@@ -3,13 +3,16 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
 {
+    [Obsolete("Will be removed in next version.")]
     internal class BufferManager
     {
+        [Obsolete("Will be removed in next version.")]
         public BufferManager(int totalBytes, int bytesPerSaea)
         {
             bufferBlock = new byte[totalBytes];
