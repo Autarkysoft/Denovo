@@ -128,7 +128,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public string UserAgent
         {
             get => _ua;
-            set => _ua = value ?? "";
+            set => _ua = value ?? string.Empty;
         }
         /// <inheritdoc/>
         public NetworkType Network { get; set; }
