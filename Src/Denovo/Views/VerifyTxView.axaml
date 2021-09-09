@@ -11,11 +11,18 @@
     <vm:VerifyTxViewModel/>
   </Design.DataContext>
 
-  <Grid RowDefinitions="100,*,auto,70">
-    <TextBox Text="{Binding TxHex}"
-             Watermark="Transaction hex"
-             ScrollViewer.VerticalScrollBarVisibility="Visible"
-             Grid.Row="0"/>
+  <Grid RowDefinitions="100,*,auto,75">
+    <Grid ColumnDefinitions="*,100">
+      <TextBox Text="{Binding TxHex}"
+               Watermark="Transaction hex"
+               ScrollViewer.VerticalScrollBarVisibility="Visible"
+               Grid.Row="0"/>
+      <NumericUpDown Value="{Binding BlockHeight}"
+                     Minimum="0"
+                     ToolTip.Tip="{Binding BlockHeightToolTip}"
+                     Height="40"
+                     Grid.Column="1"/>
+    </Grid>
 
     <ItemsControl Items="{Binding UtxoList}" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Visible">
       <ItemsControl.ItemsPanel>

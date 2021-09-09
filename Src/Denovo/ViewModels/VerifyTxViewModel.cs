@@ -23,10 +23,22 @@ namespace Denovo.ViewModels
 
 
 
+        private static readonly byte[] Empty32 = new byte[32];
         private readonly Transaction tx = new();
         // TODO: add block height and network type
-        private readonly TransactionVerifier verifier = new(new Consensus(int.MaxValue, NetworkType.MainNet));
+        private static readonly Consensus consensus = new(NetworkType.MainNet);
+        private readonly TransactionVerifier verifier = new(consensus);
 
+
+        public string BlockHeightToolTip => "Block height is used to determine which consensus rules are active." +
+            $"{Environment.NewLine}It is mandatory for verification of coinbase transactions.";
+
+        private int _blkHeight;
+        public int BlockHeight
+        {
+            get => _blkHeight;
+            set => SetField(ref _blkHeight, value);
+        }
 
         private string _txHex;
         public string TxHex
@@ -58,7 +70,17 @@ namespace Denovo.ViewModels
                         tx.ComputeTransactionHashes();
 
                         Result = string.Empty;
-                        UtxoList = tx.TxInList.Select(x => new UtxoModel(x.TxHash, x.Index)).ToArray();
+                        if (tx.TxInList.Length == 1 && ((ReadOnlySpan<byte>)tx.TxInList[0].TxHash).SequenceEqual(Empty32))
+                        {
+                            // Minimal check to guess coinbase transaction
+                            UtxoList = Array.Empty<UtxoModel>();
+                        }
+                        else
+                        {
+                            // Non-coinbase transactions have UTXOs
+                            UtxoList = tx.TxInList.Select(x => new UtxoModel(x.TxHash, x.Index)).ToArray();
+                        }
+
                         IsVerifyEnable = true;
                     }
                 }
@@ -109,7 +131,21 @@ namespace Denovo.ViewModels
             }
 
             verifier.Init();
-            if (verifier.Verify(tx, temp, out string err))
+            consensus.BlockHeight = BlockHeight;
+            if (UtxoList.Length == 0)
+            {
+                // Tx is guessed to be coinbase
+                if (verifier.VerifyCoinbasePrimary(tx, out string error))
+                {
+                    Result = $"Coinbase transaction is valid (without checking output amount ie block reward + fees)." +
+                             $"{Environment.NewLine}Transaction SigOp count: {verifier.TotalSigOpCount}";
+                }
+                else
+                {
+                    Result = $"Failed to verify the given coinbase transaction. Error: {error}";
+                }
+            }
+            else if (verifier.Verify(tx, temp, out string err))
             {
                 Result = $"Transaction is valid (assuming all given UTXOs existed and were unspent at the time)." +
                          $"{Environment.NewLine}Transaction fee: {verifier.TotalFee} satoshi" +
