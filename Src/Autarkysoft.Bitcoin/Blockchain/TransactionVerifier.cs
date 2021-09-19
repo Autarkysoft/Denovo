@@ -128,8 +128,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            var expInputHash = new ReadOnlySpan<byte>(new byte[32]);
-            if (!expInputHash.SequenceEqual(coinbase.TxInList[0].TxHash) || coinbase.TxInList[0].Index != uint.MaxValue)
+            if (!((ReadOnlySpan<byte>)coinbase.TxInList[0].TxHash).SequenceEqual(ZeroBytes.B32) ||
+                coinbase.TxInList[0].Index != uint.MaxValue)
             {
                 error = "Invalid coinbase outpoint.";
                 return false;
