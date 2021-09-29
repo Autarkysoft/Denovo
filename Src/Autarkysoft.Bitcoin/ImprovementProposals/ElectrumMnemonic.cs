@@ -308,11 +308,19 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             return MnemonicType.Undefined;
         }
 
+        /// <summary>
+        /// Returns all the 2048 words found in the given word-list.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <param name="wl">Word list to use</param>
+        /// <returns>An array of 2048 strings</returns>
+        public static string[] GetAllWords(BIP0039.WordLists wl) => BIP0039.GetAllWords(wl);
+
 
         private void SetBip32(string passPhrase)
         {
             byte[] password = Encoding.UTF8.GetBytes(Normalize(ToMnemonic()));
-            string pass = passPhrase == null ? "" : Normalize(passPhrase);
+            string pass = passPhrase == null ? string.Empty : Normalize(passPhrase);
             byte[] salt = Encoding.UTF8.GetBytes($"electrum{pass}");
 
             using PBKDF2 kdf = new PBKDF2(2048, new HmacSha512());

@@ -198,5 +198,15 @@ namespace Tests.Bitcoin.ImprovementProposals
 
             Assert.Throws<ObjectDisposedException>(() => elmn.ToMnemonic());
         }
+
+        [Fact]
+        public void GetAllWordsTest()
+        {
+            // This is a direct call to already tested BIP0039 method, a simple test here is enough
+            string[] actual = ElectrumMnemonic.GetAllWords(BIP0039.WordLists.English);
+            Assert.NotNull(actual);
+            Assert.Equal(2048, actual.Length);
+            Assert.Equal("abandon", actual[0]);
+        }
     }
 }
