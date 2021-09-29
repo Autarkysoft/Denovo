@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Autarkysoft.Bitcoin.Cryptography
@@ -85,12 +84,17 @@ namespace Autarkysoft.Bitcoin.Cryptography
 
             lock (lockObj)
             {
-                HashSet<int> hs = new HashSet<int>(count);
-                while (hs.Count < count)
+                Span<int> result = new int[count];
+                int index = 0;
+                while (index < count)
                 {
-                    hs.Add(rng.Next(min, max));
+                    int value = rng.Next(min, max);
+                    if (!result.Slice(0, index).ToArray().Contains(value))
+                    {
+                        result[index++] = value;
+                    }
                 }
-                return hs.ToArray();
+                return result.ToArray();
             }
         }
 
