@@ -18,16 +18,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public interface IClientSettings
     {
         /// <summary>
-        /// List of all nodes (peers) connected to this client.
+        /// Returns list of all nodes (peers) connected to this client.
         /// </summary>
         NodePool AllNodes { get; }
         /// <summary>
-        /// Returns the client time
+        /// Returns the client time object
         /// </summary>
         IClientTime Time { get; }
 
         /// <summary>
-        /// Gets or sets the blockchain instance to be shared among all node instances
+        /// Returns the blockchain instance to be shared among all node instances
         /// </summary>
         IBlockchain Blockchain { get; }
 
@@ -37,16 +37,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         IMemoryPool MemPool { get; set; }
 
         /// <summary>
-        /// A weak random number generator
+        /// Gets or sets the weak random number generator
         /// </summary>
         IRandomNonceGenerator Rng { get; set; }
 
         /// <summary>
-        /// Protocol version that the client supports
+        /// Gets or sets the P2P protocol version that the client supports
         /// </summary>
         int ProtocolVersion { get; set; }
         /// <summary>
-        /// Returns whether the client will relay blocks and transactions or not
+        /// Gets or sets whether the client will relay blocks and transactions or not
         /// </summary>
         bool Relay { get; set; }
         /// <summary>
@@ -54,23 +54,23 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         ulong MinTxRelayFee { get; set; }
         /// <summary>
-        /// Name of the client as defined by <see cref="ImprovementProposals.BIP0014"/>
+        /// Gets or sets name of the client as defined by <see cref="ImprovementProposals.BIP0014"/> used in version messages
         /// </summary>
         string UserAgent { get; set; }
         /// <summary>
-        /// Network type
+        /// Gets or sets the network type
         /// </summary>
         NetworkType Network { get; set; }
         /// <summary>
-        /// Services this client supports
+        /// Gets or sets the services this client supports
         /// </summary>
         NodeServiceFlags Services { get; set; }
         /// <summary>
-        /// Returns the default port to use when connecting to other peers (used for peer addresses sent by DNS seeds)
+        /// Returns the default port used when connecting to other peers (mainly for IP addresses received from DNS seeds)
         /// </summary>
         public ushort DefaultPort { get; }
         /// <summary>
-        /// Port that this client listens to
+        /// Gets or sets the port that this client listens to
         /// </summary>
         ushort ListenPort { get; set; }
         /// <summary>
@@ -79,25 +79,26 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         bool AcceptIncomingConnections { get; set; }
         /// <summary>
-        /// List of DNS seeds
+        /// Gets or sets the list of DNS seeds
         /// </summary>
         string[] DnsSeeds { get; set; }
 
         /// <summary>
-        /// Length of the buffer in bytes used by each <see cref="System.Net.Sockets.SocketAsyncEventArgs"/>
+        /// Returns total buffer size in bytes shared among all <see cref="System.Net.Sockets.SocketAsyncEventArgs"/>
+        /// instances
         /// </summary>
         int BufferLength { get; }
         /// <summary>
-        /// Maximum number of nodes to connect to. Will also determine the total allocated buffer length.
+        /// Returns maximum number of nodes to connect to. Will also determine the total allocated buffer length.
         /// </summary>
         int MaxConnectionCount { get; }
         /// <summary>
-        /// A <see cref="Semaphore"/> used to limit the number of connections based on <see cref="MaxConnectionCount"/>
+        /// Returns the <see cref="Semaphore"/> used to limit the number of connections based on <see cref="MaxConnectionCount"/>
         /// </summary>
         Semaphore MaxConnectionEnforcer { get; }
         /// <summary>
-        /// A pool (stack) of <see cref="System.Net.Sockets.SocketAsyncEventArgs"/> objects used in send/receive operations.
-        /// There should be 2 items per connection (a total of 2 * <see cref="MaxConnectionCount"/>)
+        /// Returns the pool (stack) of <see cref="System.Net.Sockets.SocketAsyncEventArgs"/> objects used in send/receive
+        /// operations. There should be 2 items per connection (a total of 2 * <see cref="MaxConnectionCount"/>)
         /// </summary>
         SocketAsyncEventArgsPool SendReceivePool { get; }
 
@@ -132,6 +133,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <returns>True if the required services are available; otherwise false.</returns>
         bool IsPruned(NodeServiceFlags flags);
 
+        // TODO: remore this method by adding a Add() method to IMemoryPool
         /// <summary>
         /// Adds the given transaction to memory pool
         /// </summary>

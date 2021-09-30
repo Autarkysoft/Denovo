@@ -27,7 +27,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     public class ClientSettings : IClientSettings
     {
         /// <summary>
-        /// 
+        /// Default constructor used for tests only
         /// </summary>
         public ClientSettings()
         {
