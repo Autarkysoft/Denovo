@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -43,7 +44,7 @@ namespace Autarkysoft.Bitcoin
 
         private void AllNodes_AddRemoveEvent(object sender, NodePool.AddRemoveEventArgs e)
         {
-            if (isDisposed) 
+            if (isDisposed)
                 return;
 
             if (e.Action == NodePool.CollectionAction.Add)
@@ -73,6 +74,7 @@ namespace Autarkysoft.Bitcoin
                 return;
 
             Settings.RemoveNodeAddr(e);
+            Debug.Assert(inQueue > 0);
             Interlocked.Decrement(ref inQueue);
             if (Settings.Blockchain.State == BlockchainState.HeadersSync)
             {
@@ -159,9 +161,11 @@ namespace Autarkysoft.Bitcoin
             NetworkAddressWithTime[] addrs = Settings.GetRandomNodeAddrs(count, false);
             if (!(addrs is null))
             {
+                // inQueue has to be incremented here instead of one at a time otherwise if halfway through the list a connection
+                // fails ConnectToPeers() will be called with a wrong count and will create a connection queue in connector.
+                Interlocked.Add(ref inQueue, addrs.Length);
                 foreach (var item in addrs)
                 {
-                    Interlocked.Increment(ref inQueue);
                     await Task.Run(() => connector.StartConnect(new IPEndPoint(item.NodeIP, item.NodePort)));
                 }
             }
@@ -184,9 +188,9 @@ namespace Autarkysoft.Bitcoin
                 }
 
                 int[] indices = Settings.Rng.GetDistinct(0, ips.Length, Math.Min(ips.Length, count));
+                Interlocked.Add(ref inQueue, indices.Length);
                 foreach (var index in indices)
                 {
-                    Interlocked.Increment(ref inQueue);
                     await Task.Run(() => connector.StartConnect(new IPEndPoint(ips[index], Settings.DefaultPort)));
                 }
             }
