@@ -153,6 +153,12 @@ namespace Denovo.ViewModels
             await WinMan.ShowDialog(vm);
         }
 
+        public async void OpenWifHelper()
+        {
+            var vm = new WifHelperViewModel();
+            await WinMan.ShowDialog(vm);
+        }
+
         private Node _selNode;
         public Node SelectedNode
         {
