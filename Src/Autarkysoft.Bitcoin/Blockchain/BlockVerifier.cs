@@ -133,37 +133,40 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     error = "Witness commitment was not found in coinbase output.";
                     return false;
                 }
-                if (txVer.AnySegWit &&
-                    coinbase.WitnessList == null || coinbase.WitnessList.Length != 1 ||
-                    coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].data?.Length != 32)
+
+                if (commitPos != -1)
                 {
-                    UndoAllUtxos(block);
-                    error = "Invalid or non-existant witness commitment in coinbase output.";
-                    return false;
-                }
+                    if (coinbase.WitnessList == null || coinbase.WitnessList.Length != 1 ||
+                        coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].data?.Length != 32)
+                    {
+                        UndoAllUtxos(block);
+                        error = "Invalid or non-existant witness commitment in coinbase output.";
+                        return false;
+                    }
 
-                byte[] commitment = coinbase.WitnessList[0].Items[0].data;
+                    byte[] commitment = coinbase.WitnessList[0].Items[0].data;
 
-                // An output expected in coinbase with its PubkeyScript.Data.Length of _at least_ 38 bytes
-                // starting with 0x6a24aa21a9ed and followed by 32 byte commitment hash
-                byte[] root = block.ComputeWitnessMerkleRoot(commitment);
-                byte[] witPubScr = new byte[38];
-                witPubScr[0] = 0x6a;
-                witPubScr[1] = 0x24;
-                witPubScr[2] = 0xaa;
-                witPubScr[3] = 0x21;
-                witPubScr[4] = 0xa9;
-                witPubScr[5] = 0xed;
-                Buffer.BlockCopy(root, 0, witPubScr, 6, 32);
+                    // An output expected in coinbase with its PubkeyScript.Data.Length of _at least_ 38 bytes
+                    // starting with 0x6a24aa21a9ed and followed by 32 byte commitment hash
+                    byte[] root = block.ComputeWitnessMerkleRoot(commitment);
+                    byte[] witPubScr = new byte[38];
+                    witPubScr[0] = 0x6a;
+                    witPubScr[1] = 0x24;
+                    witPubScr[2] = 0xaa;
+                    witPubScr[3] = 0x21;
+                    witPubScr[4] = 0xa9;
+                    witPubScr[5] = 0xed;
+                    Buffer.BlockCopy(root, 0, witPubScr, 6, 32);
 
-                // Script data size is already checked when commitPos was found and is bigger than min length.
-                if (!((ReadOnlySpan<byte>)coinbase.TxOutList[commitPos].PubScript.Data)
-                      .Slice(0, Constants.MinWitnessCommitmentLen)
-                      .SequenceEqual(witPubScr))
-                {
-                    UndoAllUtxos(block);
-                    error = "Invalid witness commitment in coinbase output.";
-                    return false;
+                    // Script data size is already checked when commitPos was found and is bigger than min length.
+                    if (!((ReadOnlySpan<byte>)coinbase.TxOutList[commitPos].PubScript.Data)
+                          .Slice(0, Constants.MinWitnessCommitmentLen)
+                          .SequenceEqual(witPubScr))
+                    {
+                        UndoAllUtxos(block);
+                        error = "Invalid witness commitment in coinbase output.";
+                        return false;
+                    }
                 }
             }
 
