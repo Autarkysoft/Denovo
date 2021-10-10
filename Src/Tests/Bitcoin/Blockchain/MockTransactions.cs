@@ -240,15 +240,7 @@ namespace Tests.Bitcoin.Blockchain
         private IWitness[] _wits;
         public override IWitness[] WitnessList
         {
-            get
-            {
-                if (_wits == null)
-                {
-                    Assert.True(false, "Witness array was not set.");
-                }
-                return _wits;
-            }
-
+            get => _wits;
             set => _wits = value;
         }
     }

@@ -53,7 +53,8 @@ namespace Tests.Bitcoin.Blockchain
                 new MockTxPropInOut(Array.Empty<TxIn>(), null),
                 false,
                 "Coinbase transaction must contain only one input.",
-                0
+                0,
+                false
             };
             yield return new object[]
             {
@@ -61,7 +62,8 @@ namespace Tests.Bitcoin.Blockchain
                 new MockTxPropInOut(new TxIn[2], null),
                 false,
                 "Coinbase transaction must contain only one input.",
-                0
+                0,
+                false
             };
             yield return new object[]
             {
@@ -69,7 +71,8 @@ namespace Tests.Bitcoin.Blockchain
                 new MockTxPropInOut(new TxIn[1], Array.Empty<TxOut>()),
                 false,
                 "Transaction must contain at least one output.",
-                0
+                0,
+                false
             };
 
             byte[] badHash = new byte[32];
@@ -80,7 +83,8 @@ namespace Tests.Bitcoin.Blockchain
                 new MockTxPropInOut(new TxIn[1] { new TxIn(badHash, uint.MaxValue, null, 1234) }, new TxOut[1]),
                 false,
                 "Invalid coinbase outpoint.",
-                0
+                0,
+                false
             };
             yield return new object[]
             {
@@ -88,7 +92,8 @@ namespace Tests.Bitcoin.Blockchain
                 new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], 0, null, 1234) }, new TxOut[1]),
                 false,
                 "Invalid coinbase outpoint.",
-                0
+                0,
+                false
             };
 
             var mockFailSigScr = new MockCoinbaseVerifySigScript(MockHeight, false);
@@ -98,7 +103,8 @@ namespace Tests.Bitcoin.Blockchain
                 new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], uint.MaxValue, mockFailSigScr, 1234) }, new TxOut[1]),
                 false,
                 "Invalid coinbase signature script.",
-                0
+                0,
+                false
             };
 
             var mockPassSigScr = new MockCoinbaseVerifySigScript(MockHeight, true, 100);
@@ -107,15 +113,28 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], uint.MaxValue, mockPassSigScr, 1234) }, new TxOut[2]{ t1, t2 }),
+                new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], uint.MaxValue, mockPassSigScr, 1234) }, 
+                                    new TxOut[2]{ t1, t2 }, Array.Empty<IWitness>()),
                 true,
                 null,
-                492 // 4*100 + 4*20 + 4*3
+                492, // 4*100 + 4*20 + 4*3
+                false
+            };
+            yield return new object[]
+            {
+                c,
+                new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], uint.MaxValue, mockPassSigScr, 1234) },
+                                    new TxOut[2]{ t1, t2 }, new Witness[1] ),
+                true,
+                null,
+                492, // 4*100 + 4*20 + 4*3
+                true
             };
         }
         [Theory]
         [MemberData(nameof(GetCoinBasePrimCases))]
-        public void VerifyCoinbasePrimaryTest(IConsensus consensus, ITransaction tx, bool expB, string expErr, int expOpCount)
+        public void VerifyCoinbasePrimaryTest(IConsensus consensus, ITransaction tx, bool expB, string expErr, int expOpCount,
+            bool expSegWit)
         {
             var verifier = new TransactionVerifier(false, new MockUtxoDatabase(), new MockMempool(null), consensus);
 
@@ -125,6 +144,7 @@ namespace Tests.Bitcoin.Blockchain
             Assert.Equal(expErr, error);
             Assert.Equal(expOpCount, verifier.TotalSigOpCount);
             Assert.Equal(0UL, verifier.TotalFee);
+            Assert.Equal(expSegWit, verifier.AnySegWit);
         }
 
         public static IEnumerable<object[]> GetCoinBaseOutputCases()

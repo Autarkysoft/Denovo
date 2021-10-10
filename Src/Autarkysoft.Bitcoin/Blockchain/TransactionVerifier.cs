@@ -146,6 +146,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 TotalSigOpCount += tout.PubScript.CountSigOps() * Constants.WitnessScaleFactor;
             }
 
+            AnySegWit = coinbase.WitnessList != null && coinbase.WitnessList.Length > 0;
+
             error = null;
             return true;
         }
