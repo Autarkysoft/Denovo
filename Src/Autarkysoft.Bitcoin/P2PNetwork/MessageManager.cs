@@ -162,7 +162,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 if (IsReceiveCompleted && rcvLen >= Constants.MessageHeaderSize)
                 {
-                    FastStreamReader stream = new FastStreamReader(buffer, offset, rcvLen);
+                    var stream = new FastStreamReader(buffer, offset, rcvLen);
                     if (stream.FindAndSkip(magicBytes))
                     {
                         int rem = stream.GetRemainingBytesCount();
@@ -182,8 +182,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                         toSendQueue.Enqueue(item);
                                     }
                                 }
-
-                                // TODO: handle received message here. eg. write received block to disk,...
 
                                 // Handle remaining data
                                 rem = stream.GetRemainingBytesCount();
