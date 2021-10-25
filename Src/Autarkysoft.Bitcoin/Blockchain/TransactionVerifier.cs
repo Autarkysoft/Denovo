@@ -437,6 +437,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         internal static bool IsNotZero(ReadOnlySpan<byte> data)
         {
+            // https://github.com/bitcoin/bitcoin/blob/04437ee721e66a7b76bef5ec2f88dd1efcd03b84/src/script/interpreter.cpp#L35-L48
             for (int i = 0; i < data.Length; i++)
             {
                 if (data[i] != 0)
@@ -453,6 +454,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
         private bool CheckStack(OpData stack, out string error)
         {
+            // https://github.com/bitcoin/bitcoin/blob/04437ee721e66a7b76bef5ec2f88dd1efcd03b84/src/script/interpreter.cpp#L1994-L1997
             if (stack.ItemCount > 0 && IsNotZero(stack.Pop()))
             {
                 error = null;
@@ -929,7 +931,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
 
                     // Note that item count is checked after removing annex
-                    if (tx.WitnessList[i].Items.Length - (annexHash == null ? 1 : 0) > Constants.MaxScriptStackItemCount)
+                    int witItemCount = tx.WitnessList[i].Items.Length - (annexHash == null ? 0 : 1);
+                    if (witItemCount > Constants.MaxScriptStackItemCount)
                     {
                         error = Err.OpStackItemOverflow;
                         return false;
@@ -938,7 +941,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     Debug.Assert(prevOutput.PubScript.Data.Length == 34); // PubkeyScript has to have checked it
                     var program = ((ReadOnlySpan<byte>)prevOutput.PubScript.Data).Slice(2, 32);
 
-                    if (tx.WitnessList[i].Items.Length - (annexHash == null ? 1 : 0) == 1)
+                    if (witItemCount == 1)
                     {
                         // Key path spending:
                         // The item is a signature
