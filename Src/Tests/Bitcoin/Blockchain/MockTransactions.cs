@@ -6,7 +6,6 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
-using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
@@ -51,7 +50,7 @@ namespace Tests.Bitcoin.Blockchain
         public virtual void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem)
             => throw new NotImplementedException();
 
-        public virtual byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs, byte extFlag, int inputIndex, byte[] annexHash) => throw new NotImplementedException();
+        public virtual byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs, byte extFlag, int inputIndex, byte[] annexHash, byte[] tapLeafHash, byte keyVersion, uint codeSeparatorPos) => throw new NotImplementedException();
     }
 
 
