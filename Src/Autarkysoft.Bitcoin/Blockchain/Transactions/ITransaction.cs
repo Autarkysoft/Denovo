@@ -139,9 +139,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="extFlag">Flag</param>
         /// <param name="inputIndex">Index of the input being signed</param>
         /// <param name="annexHash">Annex hash</param>
+        /// <param name="tapLeafHash">Tap leaf hash</param>
+        /// <param name="keyVersion">Key version is always 0</param>
+        /// <param name="codeSeparatorPos">Code separator position</param>
         /// <returns>32 byte hash</returns>
         byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs,
-                                          byte extFlag, int inputIndex, byte[] annexHash);
+                                          byte extFlag, int inputIndex, byte[] annexHash,
+                                          byte[] tapLeafHash, byte keyVersion, uint codeSeparatorPos);
 
         /// <summary>
         /// Returns the hash result that needs to be signed with the private key. 

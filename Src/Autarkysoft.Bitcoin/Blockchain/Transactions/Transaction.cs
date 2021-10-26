@@ -547,8 +547,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
         /// <inheritdoc/>
         public byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs,
-                                                 byte extFlag, int inputIndex, byte[] annexHash)
+                                                 byte extFlag, int inputIndex, byte[] annexHash,
+                                                 byte[] tapLeafHash, byte keyVersion, uint codeSeparatorPos)
         {
+            // https://github.com/bitcoin/bitcoin/blob/04437ee721e66a7b76bef5ec2f88dd1efcd03b84/src/script/interpreter.cpp#L1503-L1587
+
             // TODO: sht has to be validated by the caller
 
             using Sha256 sha = new Sha256();
@@ -642,6 +645,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 TxOutList[inputIndex].Serialize(outStream);
                 byte[] outHash = sha.ComputeHash(outStream.ToByteArray());
                 stream.Write(outHash);
+            }
+
+            if (tapLeafHash != null)
+            {
+                stream.Write(tapLeafHash);
+                stream.Write(keyVersion);
+                stream.Write(codeSeparatorPos);
             }
 
             return sha.ComputeHash(stream.ToByteArray());
