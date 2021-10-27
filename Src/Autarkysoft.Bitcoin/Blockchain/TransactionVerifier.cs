@@ -365,18 +365,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private bool VerifyTaprootCommitment(ReadOnlySpan<byte> control, ReadOnlySpan<byte> program, IRedeemScript script)
         {
-            int pathLen = (control.Length - TaprootControlBaseSize) / TaprootControlNodeSize;
-
             // Internal pubkey
-            // TODO: change .ToArray() below in PublicKey
-            PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(control.Slice(1, 32).ToArray(), out PublicKey p);
+            PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(control.Slice(1, 32), out PublicKey p);
             if (ptype == PublicKey.PublicKeyType.None || ptype == PublicKey.PublicKeyType.Unknown)
             {
                 return false;
             }
 
             // Output pubkey (taken from the PubKey script)
-            PublicKey.PublicKeyType qtype = PublicKey.TryReadTaproot(program.ToArray(), out PublicKey q);
+            PublicKey.PublicKeyType qtype = PublicKey.TryReadTaproot(program, out PublicKey q);
             if (qtype == PublicKey.PublicKeyType.None || qtype == PublicKey.PublicKeyType.Unknown)
             {
                 return false;
@@ -390,6 +387,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             // k is tapleafHash
             ReadOnlySpan<byte> k = sha256.ComputeTaggedHash_TapLeaf(stream.ToByteArray());
 
+            int pathLen = (control.Length - TaprootControlBaseSize) / TaprootControlNodeSize;
             // Compute the Merkle root from the leaf and the provided path.
             for (int i = 0; i < pathLen; ++i)
             {
@@ -994,6 +992,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             stack.Pop();
                         }
+
+                        Debug.Assert(stack.ItemCount >= 2);
 
                         byte[] control = stack.Pop();
                         if (control.Length < TaprootControlBaseSize ||
