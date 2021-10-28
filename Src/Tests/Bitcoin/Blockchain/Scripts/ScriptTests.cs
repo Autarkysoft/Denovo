@@ -182,6 +182,71 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             Assert.Equal(expected, actual);
         }
 
+        [Theory]
+        [InlineData(80)]
+        [InlineData(98)]
+        [InlineData(126)]
+        [InlineData(127)]
+        [InlineData(128)]
+        [InlineData(129)]
+        [InlineData(131)]
+        [InlineData(132)]
+        [InlineData(133)]
+        [InlineData(134)]
+        [InlineData(137)]
+        [InlineData(138)]
+        [InlineData(141)]
+        [InlineData(142)]
+        [InlineData(149)]
+        [InlineData(150)]
+        [InlineData(151)]
+        [InlineData(152)]
+        [InlineData(153)]
+        public void IsIsOpSuccess_TrueTest(byte b)
+        {
+            Assert.True(IsOpSuccess(b));
+        }
+
+        [Theory]
+        [InlineData(187, 255)]
+        public void IsIsOpSuccess_TrueRangeTest(byte start, byte end)
+        {
+            for (byte b = start; b < end; b++)
+            {
+                Assert.True(IsOpSuccess(b));
+            }
+        }
+
+        [Theory]
+        [InlineData(130)]
+        [InlineData(135)]
+        [InlineData(136)]
+        [InlineData(139)]
+        [InlineData(140)]
+        [InlineData(143)]
+        [InlineData(144)]
+        [InlineData(145)]
+        [InlineData(146)]
+        [InlineData(147)]
+        [InlineData(148)]
+        [InlineData(255)]
+        public void IsIsOpSuccess_FalseTest(byte b)
+        {
+            Assert.False(IsOpSuccess(b));
+        }
+
+        [Theory]
+        [InlineData(0, 80)]
+        [InlineData(81, 98)]
+        [InlineData(99, 126)]
+        [InlineData(154, 187)]
+        public void IsIsOpSuccess_FalseRangeTest(byte start, byte end)
+        {
+            for (byte b = start; b < end; b++)
+            {
+                Assert.False(IsOpSuccess(b));
+            }
+        }
 
         public static IEnumerable<object[]> GetEvalCases()
         {
@@ -468,6 +533,43 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             Assert.Equal(expectedCount, actCountWit0);
         }
 
+        public static IEnumerable<object[]> GetEvalWitVer1Cases()
+        {
+            yield return new object[] { null, Array.Empty<IOperation>() };
+            yield return new object[] { new byte[1], new IOperation[] { new PushDataOp(OP._0) } };
+            yield return new object[]
+            {
+                new byte[] { 0, 0x51, 0x60, 2, 10, 20 },
+                new IOperation[]
+                {
+                    new PushDataOp(OP._0), new PushDataOp(OP._1), new PushDataOp(OP._16), new PushDataOp(new byte[] { 10, 20 })
+                }
+            };
+            yield return new object[] { new byte[] { 80 }, new IOperation[] { new SuccessOp(80) } };
+            yield return new object[]
+            {
+                new byte[] { 2, 10, 20, 98 },
+                new IOperation[] { new PushDataOp(new byte[] { 10, 20 }), new SuccessOp(98) }
+            };
+            yield return new object[]
+            {
+                new byte[] { 2, 10, 20, 126, 0x51 }, // The last byte (0x51=OP_1) is ignored as we reach OP_SUCCESS
+                new IOperation[] { new PushDataOp(new byte[] { 10, 20 }), new SuccessOp(126) }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetEvalWitVer1Cases))]
+        public void TryEvaluate_WitVer1Test(byte[] scrBa, IOperation[] expectedOps)
+        {
+            Data = scrBa;
+            bool b = TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] actOps, out int actualCount, out string err);
+
+            Assert.True(b, err);
+            Assert.Null(err);
+            Assert.Equal(expectedOps, actOps);
+            Assert.Equal(0, actualCount);
+        }
+
         public static IEnumerable<object[]> GetEvalFailCases()
         {
             yield return new object[] { new byte[] { 2, 10 }, Err.EndOfStream };
@@ -497,15 +599,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             Data = scrBa;
             bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out _, out _, out string e1);
             bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out _, out _, out string e2);
-            bool b3 = TryEvaluate(ScriptEvalMode.WitnessV1, out _, out _, out string e3);
 
             Assert.False(b1);
             Assert.False(b2);
-            Assert.False(b3);
 
             Assert.Equal(expErr, e1);
             Assert.Equal(expErr, e2);
-            Assert.Equal(expErr, e3);
         }
 
         [Fact]

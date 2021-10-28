@@ -195,6 +195,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 return false;
             }
 
+            if (mode == ScriptEvalMode.WitnessV1 && IsOpSuccess(firstByte))
+            {
+                opList.Add(new SuccessOp(firstByte));
+                int rem = stream.GetRemainingBytesCount();
+                stream.Skip(rem);
+                error = null;
+                return true;
+            }
+
             if (IsPushOp(firstByte))
             {
                 var op = new PushDataOp();
