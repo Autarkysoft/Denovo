@@ -1015,18 +1015,30 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                         if ((control[0] & TaprootLeafMask) == TaprootLeafTapscript)
                         {
-                            // TODO: change the following method to accept sigVersion
-                            //       that way it can check if an OP is a OpSuccess and not return failure.
+                            // Tapscript (leaf version 0xc0)
                             if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out int opCount, out error))
                             {
                                 return false;
                             }
 
-                            foreach (var item in rdmOps)
+                            bool skip = false;
+                            for (int j = rdmOps.Length - 1; j >= 0; j--)
                             {
-                                if (!item.Run(stack, out error))
+                                if (rdmOps[j] is SuccessOp)
                                 {
-                                    return false;
+                                    skip = true;
+                                    break;
+                                }
+                            }
+
+                            if (!skip)
+                            {
+                                foreach (var item in rdmOps)
+                                {
+                                    if (!item.Run(stack, out error))
+                                    {
+                                        return false;
+                                    }
                                 }
                             }
                         }
