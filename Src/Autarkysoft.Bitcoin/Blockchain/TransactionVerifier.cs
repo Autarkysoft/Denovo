@@ -15,6 +15,17 @@ using System.Numerics;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
+    // TODO: possible bug: P2WSH (witness version 0) witness items don't have the stack item count limitation
+    //                     (reject > Constants.MaxScriptStackItemCount). It looks like "witness stack" can have 1001 items
+    //                     and be valid. When PushDataOP objects used in IWitness are run they will fail on 1001 items.
+    //                     This needs to be tested.
+    //                     A solution could be changing IWitness to hold byte[][] instead and check the item count limit
+    //                     after running each OP (in the loop) and perform an initial item length check for witness version 1.
+    //                     Reminder: either way each byte[] must be still smaller than Constants.MaxScriptItemLength
+    //                     https://github.com/bitcoin/bitcoin/blob/04437ee721e66a7b76bef5ec2f88dd1efcd03b84/src/script/interpreter.cpp#L1832-L1833
+
+
+
     /// <summary>
     /// Implementation of a transaction verifier to validate all transactions in a block while counting all the signature operations
     /// updating state of the transaction inside memory pool and UTXO set.
