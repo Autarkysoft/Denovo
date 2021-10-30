@@ -1,5 +1,16 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.14.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.15.0.0...master)
+
+### Release 0.15.0 (2021-10-30)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.14.0.0...B0.15.0.0)
+* All hash algorithms and KDFs are now accepting Span
+* Blocks received from each node is now stored in that node's `NodeStatus` and processed all at once
+* `BufferManager` class is now obsolete (will be removed in 0.16)
+* Fixed a bug in `FullClient` where incorrect in queue peer count could cause a big connection backlog
+* TransactionVerifier will now return better error messages
+* New `IOperation` added for `OP_SUCCESS`
+* Added script verification rules for tapscript leaf version 0xc0
+* Multiple important bug fixes, some small code improvements and some tests
 
 ### Release 0.14.0 (2021-08-11)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.13.0.0...B0.14.0.0)
