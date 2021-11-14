@@ -1018,7 +1018,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         byte[] scrBa = stack.Pop();
                         var redeem = new RedeemScript(scrBa);
 
-                        if (VerifyTaprootCommitment(control, program, redeem))
+                        if (!VerifyTaprootCommitment(control, program, redeem))
                         {
                             error = "Invalid taproot commitment.";
                             return false;
