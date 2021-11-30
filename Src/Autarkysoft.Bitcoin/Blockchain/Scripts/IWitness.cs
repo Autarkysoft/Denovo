@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 
@@ -15,9 +14,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     public interface IWitness : IDeserializable
     {
         /// <summary>
-        /// Items (data) to be used in this witness object (must never be null or the dependants may fail)
+        /// Stack items (must never be null or the dependants may fail)
         /// </summary>
-        PushDataOp[] Items { get; set; }
+        byte[][] Items { get; set; }
 
         /// <summary>
         /// Set this instance to the signature and public key used in claiming P2WPKH outputs.

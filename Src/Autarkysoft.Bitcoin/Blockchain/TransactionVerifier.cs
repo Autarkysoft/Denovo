@@ -232,12 +232,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
         }
 
-        private bool VerifyP2wpkh(ITransaction tx, int index, PushDataOp sigPush, PushDataOp pubPush,
+        // TODO: change the 2 byte[] to ReadOnlySpan<byte> (it needs changing Signature and PublicKey classes)
+        private bool VerifyP2wpkh(ITransaction tx, int index, byte[] sigPush, byte[] pubPush,
                                   ReadOnlySpan<byte> pubScrData, ulong amount, out string error)
         {
-            if (sigPush.data == null || pubPush.data == null)
+            if (sigPush == null || pubPush == null)
             {
-                error = "Invalid data pushes in P2WPKH witness.";
+                error = "Signature or public key in P2WPKH witness can not be null.";
                 return false;
             }
 
@@ -248,21 +249,21 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            byte[] actualHash = hash160.ComputeHash(pubPush.data);
+            byte[] actualHash = hash160.ComputeHash(pubPush);
             if (!program.SequenceEqual(actualHash))
             {
                 error = $"Invalid hash (OP_EqualVerify failed for P2WPKH input at index={index}).";
                 return false;
             }
 
-            if (!Signature.TryReadStrict(sigPush.data, out Signature sig, out error))
+            if (!Signature.TryReadStrict(sigPush, out Signature sig, out error))
             {
                 error += $"{Environment.NewLine}(OP_CheckSig failed to read signature with strict rules" +
                          $" for input at index={index}.";
                 return false;
             }
 
-            if (!PublicKey.TryRead(pubPush.data, out PublicKey pubK))
+            if (!PublicKey.TryRead(pubPush, out PublicKey pubK))
             {
                 error = $"OP_CheckSig failed due to invalid public key for input at index={index}.";
                 return false;
@@ -325,15 +326,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 IsStrictConditionalOpBool = IsStrictConditionalOpBool,
             };
 
+            // Note that the top witness item (redeem bytes) is not subject to MaxScriptItemLength check
             for (int j = 0; j < tx.WitnessList[index].Items.Length - 1; j++)
             {
-                if (!tx.WitnessList[index].Items[j].Run(stack, out error))
+                if (tx.WitnessList[index].Items[j].Length > Constants.MaxScriptItemLength)
                 {
-                    error = $"Script evaluation failed on {tx.WitnessList[index].Items[j].OpValue} for input at index={index}." +
-                            $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                            $"{Environment.NewLine}More info: {error}";
+                    error = $"Witness items can not be bigger than {Constants.MaxScriptItemLength} bytes.";
                     return false;
                 }
+                stack.Push(tx.WitnessList[index].Items[j]);
             }
 
             stack.AmountBeingSpent = amount;
@@ -579,7 +580,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 if (pubType == PubkeyScriptSpecialType.None || pubType == PubkeyScriptSpecialType.P2PKH)
                 {
                     // If the type is not witness there shouldn't be any witness item
-                    if (tx.WitnessList != null && tx.WitnessList.Length != 0 && tx.WitnessList[i].Items.Length != 0)
+                    if (tx.WitnessList != null &&
+                        tx.WitnessList.Length != 0 && tx.WitnessList.Length != tx.TxInList.Length &&
+                        tx.WitnessList[i].Items.Length != 0)
                     {
                         error = $"Unexpected witness for input at index={i}." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
@@ -707,7 +710,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                     if (rdmType == RedeemScriptSpecialType.None)
                     {
-                        if (tx.WitnessList != null && tx.WitnessList.Length != 0 && tx.WitnessList[i].Items.Length != 0)
+                        if (tx.WitnessList != null &&
+                            tx.WitnessList.Length != 0 && tx.WitnessList.Length != tx.TxInList.Length &&
+                            tx.WitnessList[i].Items.Length != 0)
                         {
                             error = $"Unexpected witness for input at index={i}." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
@@ -806,11 +811,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
                     else if (rdmType == RedeemScriptSpecialType.P2SH_P2WSH)
                     {
+                        // TODO: write a test for empty redeem script (byte[0])
                         AnySegWit = true;
                         if (tx.WitnessList == null ||
                             tx.WitnessList.Length != tx.TxInList.Length ||
-                            tx.WitnessList[i].Items.Length < 1 ||
-                            tx.WitnessList[i].Items[^1].data == null)
+                            tx.WitnessList[i].Items.Length < 1)
                         {
                             error = $"Mandatory witness is not found." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
@@ -823,7 +828,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
 
-                        RedeemScript witRdm = new RedeemScript(tx.WitnessList[i].Items[^1].data);
+                        RedeemScript witRdm = new RedeemScript(tx.WitnessList[i].Items[^1]);
                         if (!VerifyP2wsh(tx, i, witRdm, redeem.Data, prevOutput.Amount, out error))
                         {
                             return false;
@@ -886,12 +891,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 else if (pubType == PubkeyScriptSpecialType.P2WSH)
                 {
                     AnySegWit = true;
-                    // TODO: write a test for OP_0 if at all possible
+                    // TODO: write a test for empty redeem script (byte[0])
                     if (tx.WitnessList == null ||
                         tx.WitnessList.Length != tx.TxInList.Length ||
-                        tx.WitnessList[i].Items.Length < 1 || // At least 1 item is needed as the redeem script
-                                                              // That 1 item can not be a OP_num except OP_0
-                        tx.WitnessList[i].Items[^1].data == null && tx.WitnessList[i].Items[^1].OpValue != OP._0)
+                        tx.WitnessList[i].Items.Length < 1) // At least 1 item is needed as the redeem script
                     {
                         error = $"Mandatory witness is not found." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
@@ -903,7 +906,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
-                    RedeemScript redeem = new RedeemScript(tx.WitnessList[i].Items[^1].data);
+                    RedeemScript redeem = new RedeemScript(tx.WitnessList[i].Items[^1]);
                     if (!VerifyP2wsh(tx, i, redeem, prevOutput.PubScript.Data, prevOutput.Amount, out error))
                     {
                         return false;
@@ -931,11 +934,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                     byte[] annexHash = null;
                     if (tx.WitnessList[i].Items.Length >= 2 &&
-                        tx.WitnessList[i].Items[^1].data != null &&
-                        tx.WitnessList[i].Items[^1].data[0] == AnnexTag)
+                        tx.WitnessList[i].Items[^1].Length > 0 &&
+                        tx.WitnessList[i].Items[^1][0] == AnnexTag)
                     {
-                        var tempStream = new FastStream(tx.WitnessList[i].Items[^1].data.Length + 2);
-                        tx.WitnessList[i].Items[^1].WriteToWitnessStream(tempStream);
+                        var tempStream = new FastStream(tx.WitnessList[i].Items[^1].Length + 2);
+                        tempStream.WriteWithCompactIntLength(tx.WitnessList[i].Items[^1]);
                         annexHash = sha256.ComputeHash(tempStream.ToByteArray());
                     }
 
@@ -954,7 +957,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         // Key path spending:
                         // The item is a signature
-                        if (!Signature.TryReadSchnorr(tx.WitnessList[i].Items[0].data, out Signature sig, out error))
+                        if (!Signature.TryReadSchnorr(tx.WitnessList[i].Items[0], out Signature sig, out error))
                         {
                             return false;
                         }
@@ -990,18 +993,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             IsStrictConditionalOpBool = true,
                         };
 
-                        foreach (var item in tx.WitnessList[i].Items)
-                        {
-                            if (!item.Run(stack, out error))
-                            {
-                                return false;
-                            }
-                        }
+                        stack.Push(tx.WitnessList[i].Items);
 
                         // TODO: this could be improved
                         if (annexHash != null)
                         {
-                            stack.Pop();
+                            _ = stack.Pop();
                         }
 
                         Debug.Assert(stack.ItemCount >= 2);
@@ -1044,6 +1041,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                             if (!skip)
                             {
+                                if (stack.ItemCount > Constants.MaxScriptStackItemCount)
+                                {
+                                    error = Err.OpStackItemOverflow;
+                                    return false;
+                                }
+
                                 foreach (var item in rdmOps)
                                 {
                                     if (!item.Run(stack, out error))

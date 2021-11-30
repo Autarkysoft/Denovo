@@ -137,14 +137,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 if (commitPos != -1)
                 {
                     if (coinbase.WitnessList == null || coinbase.WitnessList.Length != 1 ||
-                        coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].data?.Length != 32)
+                        coinbase.WitnessList[0].Items.Length != 1 || coinbase.WitnessList[0].Items[0].Length != 32)
                     {
                         UndoAllUtxos(block);
                         error = "Invalid or non-existant witness commitment in coinbase output.";
                         return false;
                     }
 
-                    byte[] commitment = coinbase.WitnessList[0].Items[0].data;
+                    byte[] commitment = coinbase.WitnessList[0].Items[0];
 
                     // An output expected in coinbase with its PubkeyScript.Data.Length of _at least_ 38 bytes
                     // starting with 0x6a24aa21a9ed and followed by 32 byte commitment hash

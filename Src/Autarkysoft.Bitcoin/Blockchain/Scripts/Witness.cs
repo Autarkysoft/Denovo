@@ -3,10 +3,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System;
+using System.Linq;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -31,23 +31,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="dataItems">An array of byte arrays to use as witness items</param>
         public Witness(byte[][] dataItems)
         {
-            if (dataItems == null)
+            if (dataItems.Any(x => x is null))
                 throw new ArgumentNullException(nameof(dataItems), "Data items can not be null.");
 
-            Items = new PushDataOp[dataItems.Length];
-            for (int i = 0; i < Items.Length; i++)
-            {
-                Items[i] = new PushDataOp(dataItems[i]);
-            }
+            Items = dataItems;
         }
 
 
-        private PushDataOp[] _items = new PushDataOp[0];
+        private byte[][] _items = Array.Empty<byte[]>();
         /// <inheritdoc/>
-        public PushDataOp[] Items
+        public byte[][] Items
         {
             get => _items;
-            set => _items = value ?? new PushDataOp[0];
+            set => _items = value ?? Array.Empty<byte[]>();
         }
 
 
@@ -63,7 +59,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 counter.AddCompactIntCount(Items.Length);
                 foreach (var item in Items)
                 {
-                    item.GetSerializedWitnessSize(counter);
+                    counter.AddWithCompactIntLength(item.Length);
                 }
             }
         }
@@ -81,7 +77,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 count.WriteToStream(stream);
                 foreach (var item in Items)
                 {
-                    item.WriteToWitnessStream(stream);
+                    stream.WriteWithCompactIntLength(item);
                 }
             }
         }
@@ -89,6 +85,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out string error)
         {
+            if (stream is null)
+            {
+                error = "Stream can not be null.";
+                return false;
+            }
+
             if (!CompactInt.TryRead(stream, out CompactInt count, out error))
             {
                 return false;
@@ -100,12 +102,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 error = "Item count is too big.";
                 return false;
             }
-            Items = new PushDataOp[(int)count];
+            Items = new byte[(int)count][];
             for (int i = 0; i < Items.Length; i++)
             {
-                PushDataOp temp = new PushDataOp();
-                if (!temp.TryReadWitness(stream, out error))
+                if (!stream.TryReadByteArrayCompactInt(out byte[] temp))
                 {
+                    error = Err.EndOfStream;
                     return false;
                 }
                 Items[i] = temp;
@@ -116,35 +118,26 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
+        /// <exception cref="NullReferenceException"/>
         public void SetToP2WPKH(Signature sig, PublicKey pubKey, bool useCompressed = true)
         {
-            byte[] sigBa = sig.ToByteArray();
-            byte[] pubkBa = pubKey.ToByteArray(useCompressed);
-
-            Items = new PushDataOp[]
+            Items = new byte[2][]
             {
-                new PushDataOp(sigBa),
-                new PushDataOp(pubkBa)
+                sig.ToByteArray(),
+                pubKey.ToByteArray(useCompressed)
             };
         }
 
         /// <inheritdoc/>
         public void SetToP2WSH_MultiSig(Signature[] sigs, RedeemScript redeem)
         {
-            Items = new PushDataOp[sigs.Length + 2]; // OP_0 | Sig1 | sig2 | .... | sig(n) | redeemScript
-
-            Items[0] = new PushDataOp(OP._0);
-
+            Items = new byte[sigs.Length + 2][]; // OP_0 | Sig1 | sig2 | .... | sig(n) | redeemScript
+            Items[0] = Array.Empty<byte>();
             for (int i = 1; i <= sigs.Length; i++)
             {
-                Items[i] = new PushDataOp(sigs[i].ToByteArray());
+                Items[i] = sigs[i].ToByteArray();
             }
-
-            FastStream stream = new FastStream();
-            PushDataOp temp = new PushDataOp(redeem.Data);
-            temp.WriteToStream(stream);
-
-            Items[^1] = new PushDataOp(stream.ToByteArray());
+            Items[^1] = redeem.Data;
         }
     }
 }
