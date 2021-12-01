@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/Autarkysoft/Denovo.svg?branch=master)](https://travis-ci.org/Autarkysoft/Denovo)
+[![.NET-CI](https://github.com/Autarkysoft/Denovo/actions/workflows/dotnetCI.yml/badge.svg?branch=master)](https://github.com/Autarkysoft/Denovo/actions/workflows/dotnetCI.yml) [![Build Status](https://travis-ci.org/Autarkysoft/Denovo.svg?branch=master)](https://travis-ci.org/Autarkysoft/Denovo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Autarkysoft/Denovo/blob/master/License)  
 
 <p align="center">
