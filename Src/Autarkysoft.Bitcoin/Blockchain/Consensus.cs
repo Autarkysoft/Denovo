@@ -48,9 +48,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="netType">Network type</param>
         public Consensus(int height, NetworkType netType)
         {
-            // TODO: change this value to the specified block height after Taproot soft fork takes place
-            tap = int.MaxValue;
-
             // https://github.com/bitcoin/bitcoin/blob/544709763e1f45148d1926831e07ff03487673ee/src/chainparams.cpp
             switch (netType)
             {
@@ -76,6 +73,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     bip66 = 330776;
                     bip112 = 770112;
                     seg = 834624;
+                    tap = 2064268;
                     break;
                 case NetworkType.RegTest:
                     powLimit = BigInteger.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
@@ -87,6 +85,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     bip66 = 1251;
                     bip112 = 432;
                     seg = 0;
+                    tap = 0;
                     break;
                 default:
                     throw new ArgumentException("Network type is not defined.");
