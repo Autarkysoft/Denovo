@@ -1024,7 +1024,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         if ((control[0] & TaprootLeafMask) == TaprootLeafTapscript)
                         {
                             // Tapscript (leaf version 0xc0)
-                            if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out int opCount, out error))
+                            if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out _, out error))
                             {
                                 return false;
                             }
