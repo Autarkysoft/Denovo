@@ -581,8 +581,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     // If the type is not witness there shouldn't be any witness item
                     if (tx.WitnessList != null &&
-                        tx.WitnessList.Length != 0 && tx.WitnessList.Length != tx.TxInList.Length &&
-                        tx.WitnessList[i].Items.Length != 0)
+                        tx.WitnessList.Length != 0 && tx.WitnessList.Length != tx.TxInList.Length ||
+                        (tx.WitnessList != null && tx.WitnessList[i].Items.Length != 0))
                     {
                         error = $"Unexpected witness for input at index={i}." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
