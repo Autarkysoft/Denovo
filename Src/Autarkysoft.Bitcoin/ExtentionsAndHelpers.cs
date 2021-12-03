@@ -435,6 +435,19 @@ namespace Autarkysoft.Bitcoin
         /// <returns>True if the type is <see cref="SigHashType.Single"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsSingle(this SigHashType sht) => ((int)sht & 0b0001_1111) == (int)SigHashType.Single;
+
+        /// <summary>
+        /// Modifies the given <see cref="SigHashType"/> the way it is used in Taproot scripts.
+        /// </summary>
+        /// <param name="sht"><see cref="SigHashType"/> to change</param>
+        /// <returns>the modified <see cref="SigHashType"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SigHashType ToOutputType(this SigHashType sht)
+        {
+            // https://github.com/bitcoin/bitcoin/blob/8b4d53e4d6e6a4b6e65a43a78b31d9d091be5b0e/src/script/interpreter.cpp#L1534
+            // Node that this can return SigHashType.Default too
+            return sht == SigHashType.Default ? SigHashType.All : sht & SigHashType.Single;
+        }
     }
 
 

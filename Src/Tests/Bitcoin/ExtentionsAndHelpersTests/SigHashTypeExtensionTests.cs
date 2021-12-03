@@ -15,15 +15,16 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
     public class SigHashTypeExtensionTests
     {
         [Theory]
+        [InlineData(SigHashType.Default, false)]
         [InlineData(SigHashType.All, false)]
         [InlineData(SigHashType.None, false)]
         [InlineData(SigHashType.Single, false)]
+        [InlineData(SigHashType.Default | SigHashType.AnyoneCanPay, true)]
         [InlineData(SigHashType.All | SigHashType.AnyoneCanPay, true)]
         [InlineData(SigHashType.None | SigHashType.AnyoneCanPay, true)]
         [InlineData(SigHashType.Single | SigHashType.AnyoneCanPay, true)]
         [InlineData((SigHashType)0b011_11111, false)]
         [InlineData((SigHashType)0b111_11111, true)]
-        [InlineData((SigHashType)0b100_00000, true)]
         [InlineData((SigHashType)0b100_10000, true)]
         [InlineData((SigHashType)0b110_00000, true)]
         public void IsAnyoneCanPayTest(SigHashType sht, bool expected)
@@ -32,9 +33,11 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         }
 
         [Theory]
+        [InlineData(SigHashType.Default, false)]
         [InlineData(SigHashType.All, false)]
         [InlineData(SigHashType.None, true)]
         [InlineData(SigHashType.Single, false)]
+        [InlineData(SigHashType.Default | SigHashType.AnyoneCanPay, false)]
         [InlineData(SigHashType.All | SigHashType.AnyoneCanPay, false)]
         [InlineData(SigHashType.None | SigHashType.AnyoneCanPay, true)]
         [InlineData(SigHashType.Single | SigHashType.AnyoneCanPay, false)]
@@ -50,9 +53,11 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         }
 
         [Theory]
+        [InlineData(SigHashType.Default, false)]
         [InlineData(SigHashType.All, false)]
         [InlineData(SigHashType.None, false)]
         [InlineData(SigHashType.Single, true)]
+        [InlineData(SigHashType.Default | SigHashType.AnyoneCanPay, false)]
         [InlineData(SigHashType.All | SigHashType.AnyoneCanPay, false)]
         [InlineData(SigHashType.None | SigHashType.AnyoneCanPay, false)]
         [InlineData(SigHashType.Single | SigHashType.AnyoneCanPay, true)]
@@ -65,6 +70,33 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         public void IsSingleTest(SigHashType sht, bool expected)
         {
             Assert.Equal(expected, sht.IsSingle());
+        }
+
+
+        [Theory]
+        [InlineData(SigHashType.Default, SigHashType.All)]
+        [InlineData(SigHashType.All, SigHashType.All)]
+        [InlineData(SigHashType.None, SigHashType.None)]
+        [InlineData(SigHashType.Single, SigHashType.Single)]
+        [InlineData(SigHashType.Default | SigHashType.AnyoneCanPay, SigHashType.Default)]
+        [InlineData(SigHashType.All | SigHashType.AnyoneCanPay, SigHashType.All)]
+        [InlineData(SigHashType.None | SigHashType.AnyoneCanPay, SigHashType.None)]
+        [InlineData(SigHashType.Single | SigHashType.AnyoneCanPay, SigHashType.Single)]
+        [InlineData((SigHashType)0b000_00100, SigHashType.Default)]
+        [InlineData((SigHashType)0b010_00100, SigHashType.Default)]
+        [InlineData((SigHashType)0b110_00100, SigHashType.Default)]
+        [InlineData((SigHashType)0b000_00101, SigHashType.All)]
+        [InlineData((SigHashType)0b010_00101, SigHashType.All)]
+        [InlineData((SigHashType)0b110_00101, SigHashType.All)]
+        [InlineData((SigHashType)0b000_00110, SigHashType.None)]
+        [InlineData((SigHashType)0b010_00110, SigHashType.None)]
+        [InlineData((SigHashType)0b110_00110, SigHashType.None)]
+        [InlineData((SigHashType)0b000_00111, SigHashType.Single)]
+        [InlineData((SigHashType)0b010_00111, SigHashType.Single)]
+        [InlineData((SigHashType)0b110_00111, SigHashType.Single)]
+        public void ToOutputTypeTest(SigHashType sht, SigHashType expected)
+        {
+            Assert.Equal(expected, sht.ToOutputType());
         }
     }
 }
