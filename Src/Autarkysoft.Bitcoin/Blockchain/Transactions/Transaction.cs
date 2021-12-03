@@ -655,6 +655,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             // * Data about this output:
             if (outputType == SigHashType.Single)
             {
+                // Caller should make sure index is not out of range
                 var outStream = new FastStream(33);
                 TxOutList[inputIndex].Serialize(outStream);
                 byte[] outHash = sha.ComputeHash(outStream.ToByteArray());

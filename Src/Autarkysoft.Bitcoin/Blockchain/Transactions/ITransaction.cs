@@ -137,7 +137,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="sht">Signature hash type</param>
         /// <param name="spentOutputs">Outputs being spent by this transaction</param>
         /// <param name="extFlag">Flag</param>
-        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="inputIndex">
+        /// Index of the input being signed (caller must make sure it is in range for SigHash_Single)
+        /// </param>
         /// <param name="annexHash">Annex hash</param>
         /// <param name="tapLeafHash">Tap leaf hash</param>
         /// <param name="keyVersion">Key version is always 0</param>
@@ -154,7 +156,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// </summary>
         /// <param name="sht">Signature hash type</param>
         /// <param name="spentOutputs">Outputs being spent by this transaction</param>
-        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="inputIndex">
+        /// Index of the input being signed (caller must make sure it is in range for SigHash_Single)
+        /// </param>
         /// <param name="annexHash">Annex hash</param>
         /// <returns>32 byte hash</returns>
         byte[] SerializeForSigningTaproot_KeyPath(SigHashType sht, IUtxo[] spentOutputs, int inputIndex, byte[] annexHash);
@@ -166,7 +170,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// </summary>
         /// <param name="sht">Signature hash type</param>
         /// <param name="spentOutputs">Outputs being spent by this transaction</param>
-        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="inputIndex">
+        /// Index of the input being signed (caller must make sure it is in range for SigHash_Single)
+        /// </param>
         /// <param name="annexHash">Annex hash</param>
         /// <param name="tapLeafHash">Tap leaf hash</param>
         /// <param name="codeSeparatorPos">Code separator position</param>
