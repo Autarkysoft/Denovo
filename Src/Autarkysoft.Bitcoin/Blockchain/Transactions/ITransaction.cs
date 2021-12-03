@@ -148,6 +148,33 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                                           byte[] tapLeafHash, byte keyVersion, uint codeSeparatorPos);
 
         /// <summary>
+        /// A special serialization used in signing operations for SegWit version 1 transactions (Taproot) when
+        /// Key Path spending route is used.
+        /// Returned value is the hash result.
+        /// </summary>
+        /// <param name="sht">Signature hash type</param>
+        /// <param name="spentOutputs">Outputs being spent by this transaction</param>
+        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="annexHash">Annex hash</param>
+        /// <returns>32 byte hash</returns>
+        byte[] SerializeForSigningTaproot_KeyPath(SigHashType sht, IUtxo[] spentOutputs, int inputIndex, byte[] annexHash);
+
+        /// <summary>
+        /// A special serialization used in signing operations for SegWit version 1 transactions (Taproot) when
+        /// Script Path spending route is used.
+        /// Returned value is the hash result.
+        /// </summary>
+        /// <param name="sht">Signature hash type</param>
+        /// <param name="spentOutputs">Outputs being spent by this transaction</param>
+        /// <param name="inputIndex">Index of the input being signed</param>
+        /// <param name="annexHash">Annex hash</param>
+        /// <param name="tapLeafHash">Tap leaf hash</param>
+        /// <param name="codeSeparatorPos">Code separator position</param>
+        /// <returns>32 byte hash</returns>
+        public byte[] SerializeForSigningTaproot_ScriptPath(SigHashType sht, IUtxo[] spentOutputs, int inputIndex,
+                                                            byte[] annexHash, byte[] tapLeafHash, uint codeSeparatorPos);
+
+        /// <summary>
         /// Returns the hash result that needs to be signed with the private key. 
         /// <para/>This method is very strict and should only used by wallets to sign predefined (standard) transactions.
         /// For verification of already signed transactions use <see cref="TransactionVerifier"/> which calls

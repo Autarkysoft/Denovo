@@ -545,6 +545,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             return hashPreimage;
         }
 
+
+        /// <inheritdoc/>
+        public byte[] SerializeForSigningTaproot_KeyPath(SigHashType sht, IUtxo[] spentOutputs, int inputIndex, byte[] annexHash)
+        {
+            return SerializeForSigningTaproot(0, sht, spentOutputs, 0, inputIndex, annexHash, null, 0, 0);
+        }
+
+        /// <inheritdoc/>
+        public byte[] SerializeForSigningTaproot_ScriptPath(SigHashType sht, IUtxo[] spentOutputs, int inputIndex,
+                                                            byte[] annexHash, byte[] tapLeafHash, uint codeSeparatorPos)
+        {
+            return SerializeForSigningTaproot(0, sht, spentOutputs, 1, inputIndex, annexHash, tapLeafHash, 0, codeSeparatorPos);
+        }
+
         /// <inheritdoc/>
         public byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs,
                                                  byte extFlag, int inputIndex, byte[] annexHash,
@@ -601,8 +615,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 stream.Write(seqHash);
             }
 
-            // TODO: this could be simplified with == SigHashType.All
-            if (!sht.IsNone() && !sht.IsSingle())
+            SigHashType outputType = sht.ToOutputType();
+            if (outputType == SigHashType.All)
             {
                 // 33 is the approximate size of most TxOuts
                 var outputStream = new FastStream(TxOutList.Length * 33);
@@ -639,7 +653,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             }
 
             // * Data about this output:
-            if (sht.IsSingle())
+            if (outputType == SigHashType.Single)
             {
                 var outStream = new FastStream(33);
                 TxOutList[inputIndex].Serialize(outStream);

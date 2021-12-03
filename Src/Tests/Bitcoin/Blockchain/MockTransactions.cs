@@ -51,6 +51,10 @@ namespace Tests.Bitcoin.Blockchain
             => throw new NotImplementedException();
 
         public virtual byte[] SerializeForSigningTaproot(byte epoch, SigHashType sht, IUtxo[] spentOutputs, byte extFlag, int inputIndex, byte[] annexHash, byte[] tapLeafHash, byte keyVersion, uint codeSeparatorPos) => throw new NotImplementedException();
+
+        public byte[] SerializeForSigningTaproot_KeyPath(SigHashType sht, IUtxo[] spentOutputs, int inputIndex, byte[] annexHash) => throw new NotImplementedException();
+
+        public byte[] SerializeForSigningTaproot_ScriptPath(SigHashType sht, IUtxo[] spentOutputs, int inputIndex, byte[] annexHash, byte[] tapLeafHash, uint codeSeparatorPos) => throw new NotImplementedException();
     }
 
 

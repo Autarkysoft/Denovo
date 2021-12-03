@@ -445,7 +445,7 @@ namespace Autarkysoft.Bitcoin
         public static SigHashType ToOutputType(this SigHashType sht)
         {
             // https://github.com/bitcoin/bitcoin/blob/8b4d53e4d6e6a4b6e65a43a78b31d9d091be5b0e/src/script/interpreter.cpp#L1534
-            // Node that this can return SigHashType.Default too
+            // Note that this can return SigHashType.Default too!
             return sht == SigHashType.Default ? SigHashType.All : sht & SigHashType.Single;
         }
     }
