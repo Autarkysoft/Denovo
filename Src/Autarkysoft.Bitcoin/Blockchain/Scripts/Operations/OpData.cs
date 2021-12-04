@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System;
+using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -18,6 +19,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// <para/>All indexes are zero based whether it is normal index from beginning or index from end:
     /// Item at the end (length-1) is at index 0.
     /// </summary>
+    [DebuggerDisplay("Item count = {ItemCount}, Alt item count = {AltItemCount}")]
     public class OpData : IOpData
     {
         /// <summary>
@@ -114,6 +116,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// otherwise it can be anything.
         /// </summary>
         public bool IsBip147Enabled { get; set; }
+
+        /// <inheritdoc/>
+        public byte[] AnnexHash { get; set; }
+
+        /// <inheritdoc/>
+        public byte[] TapLeafHash { get; set; }
 
 
         /// <inheritdoc/>

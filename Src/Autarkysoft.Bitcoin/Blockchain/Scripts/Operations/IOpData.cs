@@ -46,6 +46,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         int OpCount { get; set; }
 
         /// <summary>
+        /// Gets or sets the annex hash for Taproot scripts. Will be null if annex was not present.
+        /// </summary>
+        byte[] AnnexHash { get; set; }
+
+        /// <summary>
+        /// Gets or sets the TapLeaf hash used in Taproot scripts.
+        /// </summary>
+        byte[] TapLeafHash { get; set; }
+
+        /// <summary>
         /// Verifies correctness of the given signature with the given public key using
         /// the transaction and scripts set in constructor.
         /// </summary>

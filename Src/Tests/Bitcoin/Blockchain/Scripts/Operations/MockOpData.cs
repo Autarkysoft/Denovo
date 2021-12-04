@@ -200,6 +200,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             }
         }
 
+        public byte[] AnnexHash { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         internal byte[][] altPopData;
         private int altPopDataIndex;
         public byte[] AltPop()
