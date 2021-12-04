@@ -932,22 +932,20 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         return false;
                     }
 
+                    // This is our stack size too since signature script is empty (pubkey script is already checked and 
+                    // removed from stack)
+                    int witItemCount = tx.WitnessList[i].Items.Length;
+
                     byte[] annexHash = null;
-                    if (tx.WitnessList[i].Items.Length >= 2 &&
+                    if (witItemCount >= 2 &&
                         tx.WitnessList[i].Items[^1].Length > 0 &&
                         tx.WitnessList[i].Items[^1][0] == AnnexTag)
                     {
                         var tempStream = new FastStream(tx.WitnessList[i].Items[^1].Length + 2);
                         tempStream.WriteWithCompactIntLength(tx.WitnessList[i].Items[^1]);
                         annexHash = sha256.ComputeHash(tempStream.ToByteArray());
-                    }
-
-                    // Note that item count is checked after removing annex
-                    int witItemCount = tx.WitnessList[i].Items.Length - (annexHash == null ? 0 : 1);
-                    if (witItemCount > Constants.MaxScriptStackItemCount)
-                    {
-                        error = Err.OpStackItemOverflow;
-                        return false;
+                        // Annex is removed from stack (we don't remove it from witness items, just change the loop)
+                        witItemCount--;
                     }
 
                     Debug.Assert(prevOutput.PubScript.Data.Length == 34); // PubkeyScript has to have checked it
@@ -956,11 +954,17 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     if (witItemCount == 1)
                     {
                         // Key path spending:
-                        // The item is a signature
+                        // The witness item is a signature
                         if (!Signature.TryReadSchnorr(tx.WitnessList[i].Items[0], out Signature sig, out error))
                         {
                             return false;
                         }
+                        if (sig.SigHash.ToOutputType() == SigHashType.Single && i >= tx.TxOutList.Length)
+                        {
+                            error = "Index for SigHash_Single is out of range.";
+                            return false;
+                        }
+
                         PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(program, out PublicKey pub);
                         if (ptype == PublicKey.PublicKeyType.None || ptype == PublicKey.PublicKeyType.Unknown)
                         {
@@ -968,14 +972,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
 
-                        byte[] sigHash = tx.SerializeForSigningTaproot(0, sig.SigHash, utxos, 0, i, annexHash, null, 0, 0);
+                        byte[] sigHash = tx.SerializeForSigningTaproot_KeyPath(sig.SigHash, utxos, i, annexHash);
                         if (!calc.VerifySchnorr(sigHash, sig, pub))
                         {
                             error = "Invalid signature.";
                             return false;
                         }
                     }
-                    else
+                    else if (witItemCount <= Constants.MaxScriptStackItemCount)
                     {
                         // Script path spending:
                         var stack = new OpData()
@@ -1058,6 +1062,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         }
 
                         // TODO: we can add a "standard" rule here to reject other Taproot versions
+                    }
+                    else // witItemCount > Constants.MaxScriptStackItemCount
+                    {
+                        error = Err.OpStackItemOverflow;
+                        return false;
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
