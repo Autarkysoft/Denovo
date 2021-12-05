@@ -12,6 +12,7 @@ namespace Autarkysoft.Bitcoin
     /// <summary>
     /// A size counter, to be used to calculate size of <see cref="IDeserializable"/> objects without actually serializing them.
     /// </summary>
+    [DebuggerDisplay("Size = {Size}")]
     public class SizeCounter
     {
         /// <summary>
