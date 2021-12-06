@@ -13,6 +13,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// </summary>
     public class CodeSeparatorOp : BaseOperation
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="CodeSeparatorOp"/>.
+        /// </summary>
+        public CodeSeparatorOp()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="CodeSeparatorOp"/> with the given position.
+        /// </summary>
+        /// <param name="pos">Position of this <see cref="CodeSeparatorOp"/> inside a Taproot script</param>
+        public CodeSeparatorOp(uint pos)
+        {
+            Position = pos;
+        }
+
+
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CodeSeparator;
 
@@ -20,6 +37,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Indicates whether this operation was executed or not.
         /// </summary>
         public bool IsExecuted = false;
+
+        /// <summary>
+        /// Returns the position of this <see cref="OP.CodeSeparator"/> inside the Taproot script.
+        /// </summary>
+        public uint Position { get; }
 
         /// <summary>
         /// Does nothing. 

@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Scripts.Operations
@@ -13,9 +14,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
     public class CodeSeparatorOpTests
     {
         [Fact]
+        public void ConstructorTest()
+        {
+            var cs1 = new CodeSeparatorOp();
+            var cs2 = new CodeSeparatorOp(0);
+            var cs3 = new CodeSeparatorOp(1);
+
+            Assert.Equal(0u, cs1.Position);
+            Assert.Equal(0u, cs2.Position);
+            Assert.Equal(1u, cs3.Position);
+        }
+
+
+        [Fact]
         public void RunTest()
         {
-            CodeSeparatorOp op = new CodeSeparatorOp();
+            CodeSeparatorOp op = new();
 
             Assert.False(op.IsExecuted);
             Assert.Equal(OP.CodeSeparator, op.OpValue);
@@ -31,8 +45,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public void WriteToStreamTest()
         {
             // This test makes sure WriteToStream is not overriden and performs correctly
-            CodeSeparatorOp op = new CodeSeparatorOp();
-            FastStream stream = new FastStream(5);
+            CodeSeparatorOp op = new();
+            FastStream stream = new(5);
 
             op.WriteToStream(stream);
 
@@ -42,41 +56,41 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void WriteToStreamForSigningTest()
         {
-            FastStream stream = new FastStream(5);
+            FastStream stream = new(5);
 
-            CodeSeparatorOp op = new CodeSeparatorOp();
+            CodeSeparatorOp op = new();
             op.WriteToStreamForSigning(stream, new byte[] { 1, 2 });
 
             // Execution should not make any difference
             op.IsExecuted = true;
             op.WriteToStreamForSigning(stream, new byte[] { 1, 2 });
 
-            Assert.Equal(new byte[0], stream.ToByteArray());
+            Assert.Equal(Array.Empty<byte>(), stream.ToByteArray());
         }
 
         [Fact]
         public void WriteToStreamForSigning_MultiTest()
         {
-            FastStream stream = new FastStream(5);
+            FastStream stream = new(5);
 
-            CodeSeparatorOp op = new CodeSeparatorOp();
+            CodeSeparatorOp op = new();
             op.WriteToStreamForSigning(stream, new byte[][] { new byte[] { 1, 2 } });
 
             // Execution should not make any difference
             op.IsExecuted = true;
             op.WriteToStreamForSigning(stream, new byte[][] { new byte[] { 1, 2 } });
 
-            Assert.Equal(new byte[0], stream.ToByteArray());
+            Assert.Equal(Array.Empty<byte>(), stream.ToByteArray());
         }
 
         [Fact]
         public void WriteToStreamForSigningSegWit_NotExecutedTest()
         {
-            CodeSeparatorOp op = new CodeSeparatorOp()
+            CodeSeparatorOp op = new()
             {
                 IsExecuted = false
             };
-            FastStream stream = new FastStream(5);
+            FastStream stream = new(5);
 
             op.WriteToStreamForSigningSegWit(stream);
 
@@ -85,15 +99,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void WriteToStreamForSigningSegWit_ExecutedTest()
         {
-            CodeSeparatorOp op = new CodeSeparatorOp()
+            CodeSeparatorOp op = new()
             {
                 IsExecuted = true
             };
-            FastStream stream = new FastStream(5);
+            FastStream stream = new(5);
 
             op.WriteToStreamForSigningSegWit(stream);
 
-            Assert.Equal(new byte[0], stream.ToByteArray());
+            Assert.Equal(Array.Empty<byte>(), stream.ToByteArray());
         }
     }
 }
