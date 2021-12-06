@@ -112,6 +112,14 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int MinWitnessCommitmentLen = 38;
         /// <summary>
+        /// Validation weight per passing signature
+        /// </summary>
+        public const int ValidationWeightPerSigOp = 50;
+        /// <summary>
+        /// How much weight budget is added to the witness size 
+        /// </summary>
+        public const int ValidationWeightOffset = 50;
+        /// <summary>
         /// The constant string that is attached to the beginning of a message before it is signed
         /// </summary>
         public const string MsgSignConst = "Bitcoin Signed Message:\n";
