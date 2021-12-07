@@ -123,6 +123,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <inheritdoc/>
         public byte[] TapLeafHash { get; set; }
 
+        /// <inheritdoc/>
+        public int SigOpLimitLeft { get; set; }
+        
+        /// <inheritdoc/>
+        public int CodeSeparatorPosition { get; set; }
+
 
         /// <inheritdoc/>
         public bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa)

@@ -56,6 +56,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         byte[] TapLeafHash { get; set; }
 
         /// <summary>
+        /// Gets or sets the remaining SigOp limit for Taproot scripts.
+        /// </summary>
+        /// <remarks>
+        /// Set the value once at the start of evaluation and reduce by 50 for each SigOp
+        /// </remarks>
+        int SigOpLimitLeft { get; set; }
+
+        /// <summary>
+        /// Gets or sets the position of the last executed <see cref="OP.CodeSeparator"/> to be used by Taproot scripts.
+        /// Set to <see cref="uint.MaxValue"/> if none existed.
+        /// </summary>
+        int CodeSeparatorPosition { get; set; }
+
+        /// <summary>
         /// Verifies correctness of the given signature with the given public key using
         /// the transaction and scripts set in constructor.
         /// </summary>
