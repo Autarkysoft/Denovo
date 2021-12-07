@@ -669,7 +669,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 stream.Write(codeSeparatorPos);
             }
 
-            return sha.ComputeHash(stream.ToByteArray());
+            return sha.ComputeTaggedHash_TapSighash(stream.ToByteArray());
         }
 
 
