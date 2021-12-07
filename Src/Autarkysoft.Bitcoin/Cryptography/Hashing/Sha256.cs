@@ -299,7 +299,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     {
                         throw new ArgumentException();
                     }
-
+                case "TapSighash":
+                    if (data.Length == 1 && data[0] != null && data[0].Length > 0)
+                    {
+                        return ComputeTaggedHash_TapSighash(data[0]);
+                    }
+                    else
+                    {
+                        throw new ArgumentException();
+                    }
             }
             usedOptimization = false;
 
@@ -916,6 +924,32 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 wPt[63] = 0x9c18607f;
 
                 CompressBlock_WithWSet(hPt, wPt);
+
+                return GetBytes(hPt);
+            }
+        }
+
+
+        internal unsafe byte[] ComputeTaggedHash_TapSighash(ReadOnlySpan<byte> data)
+        {
+            Debug.Assert(data != null && data.Length > 0);
+
+            // Total data length to be hashed is unknown ([32+32] + ?)
+            fixed (byte* pt1 = &data[0])
+            fixed (uint* hPt = &hashState[0], wPt = &w[0])
+            {
+                // The first 64 bytes (1 block) is equal to SHA256("TapSighash") | SHA256("TapSighash")
+                // This can be pre-computed and change the HashState's initial value
+                hPt[0] = 0xf504a425;
+                hPt[1] = 0xd7f8783b;
+                hPt[2] = 0x1363868a;
+                hPt[3] = 0xe3e55658;
+                hPt[4] = 0x6eee945d;
+                hPt[5] = 0xbc7888dd;
+                hPt[6] = 0x02a6e2c3;
+                hPt[7] = 0x1873fe9f;
+
+                CompressData(pt1, data.Length, 64 + data.Length, hPt, wPt);
 
                 return GetBytes(hPt);
             }
