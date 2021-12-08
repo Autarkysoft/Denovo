@@ -629,11 +629,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryRead_OpOverflowTest()
         {
             int count = Constants.MaxScriptOpCount;
+            uint pos = 0;
             var stream = new FastStreamReader(new byte[] { (byte)OP.DUP });
             var list = new List<IOperation>();
 
-            bool b1 = TryRead(ScriptEvalMode.Legacy, stream, list, ref count, out string e1);
-            bool b2 = TryRead(ScriptEvalMode.WitnessV0, stream, list, ref count, out string e2);
+            bool b1 = TryRead(ScriptEvalMode.Legacy, stream, list, ref count, ref pos, out string e1);
+            bool b2 = TryRead(ScriptEvalMode.WitnessV0, stream, list, ref count, ref pos, out string e2);
 
             Assert.False(b1);
             Assert.False(b2);

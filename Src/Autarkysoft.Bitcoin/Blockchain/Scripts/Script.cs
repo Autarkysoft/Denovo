@@ -141,9 +141,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             {
                 var tempList = new List<IOperation>();
                 var stream = new FastStreamReader(Data);
+                uint opPos = 0;
                 while (stream.GetRemainingBytesCount() > 0)
                 {
-                    if (!TryRead(mode, stream, tempList, ref opCount, out error))
+                    if (!TryRead(mode, stream, tempList, ref opCount, ref opPos, out error))
                     {
                         result = tempList.ToArray();
                         return false;
@@ -184,16 +185,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="stream">Stream of bytes to use</param>
         /// <param name="opList">The list to add the result to</param>
         /// <param name="opCount">Number of OPs in the script being read</param>
+        /// <param name="opPosition">Position of current OP code (used in CodeSeparatorOp only for Taproot scripts)</param>
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
         protected bool TryRead(ScriptEvalMode mode, FastStreamReader stream, List<IOperation> opList,
-                               ref int opCount, out string error)
+                               ref int opCount, ref uint opPosition, out string error)
         {
             if (!stream.TryPeekByte(out byte firstByte))
             {
                 error = Err.EndOfStream;
                 return false;
             }
+
+            opPosition++;
 
             if (mode == ScriptEvalMode.WitnessV1 && IsOpSuccess(firstByte))
             {
@@ -275,10 +279,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                             return false;
                         }
 
-                        List<IOperation> ifOps = new List<IOperation>();
+                        var ifOps = new List<IOperation>();
                         while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
                         {
-                            if (!TryRead(mode, stream, ifOps, ref opCount, out error))
+                            if (!TryRead(mode, stream, ifOps, ref opCount, ref opPosition, out error))
                             {
                                 return false;
                             }
@@ -300,6 +304,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB == (byte)OP.ELSE)
                             {
+                                opPosition++;
                                 if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
                                 {
                                     // Count OP_ELSE
@@ -311,10 +316,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                     return false;
                                 }
 
-                                List<IOperation> elseOps = new List<IOperation>();
+                                var elseOps = new List<IOperation>();
                                 while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf)
                                 {
-                                    if (!TryRead(mode, stream, elseOps, ref opCount, out error))
+                                    if (!TryRead(mode, stream, elseOps, ref opCount, ref opPosition, out error))
                                     {
                                         return false;
                                     }
@@ -340,6 +345,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 error = "Mandatory OP_EndIf is missing.";
                                 return false;
                             }
+                            opPosition++; // +1 for OP_EndIf
                         }
                         else
                         {
@@ -353,6 +359,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                     case OP.NotIf:
                         NotIfOp notifOp = new NotIfOp();
+
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out nextB))
                         {
@@ -363,7 +370,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         ifOps = new List<IOperation>();
                         while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf && nextB != (byte)OP.ELSE)
                         {
-                            if (!TryRead(mode, stream, ifOps, ref opCount, out error))
+                            if (!TryRead(mode, stream, ifOps, ref opCount, ref opPosition, out error))
                             {
                                 return false;
                             }
@@ -385,6 +392,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB == (byte)OP.ELSE)
                             {
+                                opPosition++;
                                 if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
                                 {
                                     // Count OP_ELSE
@@ -399,7 +407,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 List<IOperation> elseOps = new List<IOperation>();
                                 while (stream.GetRemainingBytesCount() > 0 && nextB != (byte)OP.EndIf)
                                 {
-                                    if (!TryRead(mode, stream, elseOps, ref opCount, out error))
+                                    if (!TryRead(mode, stream, elseOps, ref opCount, ref opPosition, out error))
                                     {
                                         return false;
                                     }
@@ -425,6 +433,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 error = "Mandatory OP_EndIf is missing.";
                                 return false;
                             }
+                            opPosition++; // +1 for OP_EndIf
                         }
                         else
                         {
@@ -624,7 +633,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         opList.Add(new Hash256Op());
                         break;
                     case OP.CodeSeparator:
-                        opList.Add(new CodeSeparatorOp());
+                        opList.Add(new CodeSeparatorOp(opPosition - 1));
                         break;
                     case OP.CheckSig:
                         opList.Add(new CheckSigOp());
