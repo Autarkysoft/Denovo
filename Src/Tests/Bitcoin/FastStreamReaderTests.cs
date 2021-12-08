@@ -130,6 +130,23 @@ namespace Tests.Bitcoin
         }
 
         [Theory]
+        [InlineData(new byte[0], 0, true)]
+        [InlineData(new byte[0], 1, false)]
+        [InlineData(new byte[1] { 0 }, 0, true)]
+        [InlineData(new byte[1] { 0 }, 1, true)]
+        [InlineData(new byte[1] { 0 }, 2, false)]
+        [InlineData(new byte[2] { 0, 0 }, 0, true)]
+        [InlineData(new byte[2] { 0, 0 }, 1, true)]
+        [InlineData(new byte[2] { 0, 0 }, 2, true)]
+        [InlineData(new byte[2] { 0, 0 }, 3, false)]
+        public void TrySkip(byte[] data, int count, bool expected)
+        {
+            var stream = new FastStreamReader(data);
+            bool actual = stream.TrySkip(count);
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
         [InlineData(new byte[] { 1 }, new byte[] { 1 }, false, true)]
         [InlineData(new byte[] { 1 }, new byte[] { 2 }, false, false)]
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3 }, false, true)]
@@ -169,7 +186,7 @@ namespace Tests.Bitcoin
             var stream = new FastStreamReader(new byte[] { 1, 2, 3, 4, 5, 6 });
 
             byte[] actual = stream.ReadByteArrayChecked(0);
-            byte[] expected = new byte[0];
+            byte[] expected = Array.Empty<byte>();
             Assert.Equal(expected, actual);
             Helper.ComparePrivateField(stream, "position", 0);
 
@@ -225,7 +242,7 @@ namespace Tests.Bitcoin
 
         public static IEnumerable<object[]> GetCompactReadCases()
         {
-            yield return new object[] { new byte[1], new byte[0] };
+            yield return new object[] { new byte[1], Array.Empty<byte>() };
             yield return new object[] { new byte[] { 1, 255 }, new byte[] { 255 } };
             yield return new object[] { new byte[] { 2, 10, 20 }, new byte[] { 10, 20 } };
 

@@ -95,6 +95,24 @@ namespace Autarkysoft.Bitcoin
         /// <param name="i">Number of bytes to skip</param>
         public void Skip(int i) => position += i;
 
+        /// <summary>
+        /// Skips the specified number of bytes if there are enough bytes remaining. Return value indicates success.
+        /// </summary>
+        /// <param name="count">Number of bytes to skip</param>
+        /// <returns>True if there were enough bytes left to skip; otherwise false</returns>
+        public bool TrySkip(int count)
+        {
+            if (CheckRemaining(count))
+            {
+                position += count;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         internal void ChangePosition(int i) => position = i;
 
 
