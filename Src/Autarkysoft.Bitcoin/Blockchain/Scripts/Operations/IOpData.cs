@@ -67,7 +67,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Gets or sets the position of the last executed <see cref="OP.CodeSeparator"/> to be used by Taproot scripts.
         /// Set to <see cref="uint.MaxValue"/> if none existed.
         /// </summary>
-        int CodeSeparatorPosition { get; set; }
+        uint CodeSeparatorPosition { get; set; }
 
         /// <summary>
         /// Verifies correctness of the given signature with the given public key using

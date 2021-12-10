@@ -127,7 +127,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public int SigOpLimitLeft { get; set; }
         
         /// <inheritdoc/>
-        public int CodeSeparatorPosition { get; set; }
+        public uint CodeSeparatorPosition { get; set; }
 
 
         /// <inheritdoc/>
