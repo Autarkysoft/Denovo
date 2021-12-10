@@ -121,6 +121,58 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
+        public bool TryEvaluateOpSuccess(out bool hasOpSuccess)
+        {
+            // https://github.com/bitcoin/bitcoin/blob/6223e550c5566c97e3e7a8e305890a38c7b8e444/src/script/interpreter.cpp#L1817-L1830
+            // https://github.com/bitcoin/bitcoin/blob/6db7e43d420dd87943542ce8d5e8681dc52c7d7f/src/script/script.cpp#L283-L333
+            hasOpSuccess = false;
+            var stream = new FastStreamReader(Data);
+            while (stream.GetRemainingBytesCount() > 0)
+            {
+                byte b = stream.ReadByteChecked();
+                if (b <= (byte)OP.PushData4)
+                {
+                    if (b < (byte)OP.PushData1)
+                    {
+                        if (!stream.TrySkip(b))
+                        {
+                            return false;
+                        }
+                    }
+                    else if (b == (byte)OP.PushData1)
+                    {
+                        if (!stream.TryReadByte(out b) || !stream.TrySkip(b))
+                        {
+                            return false;
+                        }
+                    }
+                    else if (b == (byte)OP.PushData2)
+                    {
+                        if (!stream.TryReadUInt16(out ushort len) || !stream.TrySkip(len))
+                        {
+                            return false;
+                        }
+                    }
+                    else if (b == (byte)OP.PushData4)
+                    {
+                        if (!stream.TryReadUInt32(out uint len) || len > int.MaxValue || !stream.TrySkip((int)len))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else if (IsOpSuccess(b))
+                {
+                    // Note that script evaluation has to be good until OP_SUCCESS but will stop as it is reached
+                    hasOpSuccess = true;
+                    break;
+                }
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
         public bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out string error)
         {
             opCount = 0;
