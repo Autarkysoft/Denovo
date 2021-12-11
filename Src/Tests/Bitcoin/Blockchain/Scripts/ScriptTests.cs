@@ -248,6 +248,33 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             }
         }
 
+
+        public static IEnumerable<object[]> GetEvalOpSuccessCases()
+        {
+            byte ops1 = 80;
+            byte ops2 = 98;
+            byte ops3 = 126;
+
+            yield return new object[] { Array.Empty<byte>(), true, false };
+            yield return new object[] { new byte[1] { 0 }, true, false };
+            yield return new object[] { new byte[1] { 1 }, false, false };
+            yield return new object[] { new byte[2] { 1, 1 }, true, false };
+            yield return new object[] { new byte[2] { ops1, 1 }, true, true }; // Note how this script is broken
+            yield return new object[] { new byte[2] { (byte)OP.DUP, 0 }, true, false };
+            yield return new object[] { new byte[2] { (byte)OP.DUP, ops2 }, true, true };
+            yield return new object[] { new byte[2] { (byte)OP.IF, ops3 }, true, true }; // Another broken script
+            yield return new object[] { new byte[4] { (byte)OP.IF, 0, ops3, 3 }, true, true }; // Another broken script
+        }
+        [Theory]
+        [MemberData(nameof(GetEvalOpSuccessCases))]
+        public void TryEvaluateOpSuccessTest(byte[] data, bool expectedEvaluate, bool expectedHasOpSuccess)
+        {
+            Data = data;
+            bool actualEvaluate = TryEvaluateOpSuccess(out bool actualHasOpSuccess);
+            Assert.Equal(expectedEvaluate, actualEvaluate);
+            Assert.Equal(expectedHasOpSuccess, actualHasOpSuccess);
+        }
+
         public static IEnumerable<object[]> GetEvalCases()
         {
             yield return new object[] { null, Array.Empty<IOperation>(), 0 };
@@ -641,6 +668,43 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
             Assert.Equal(Err.OpCountOverflow, e1);
             Assert.Equal(Err.OpCountOverflow, e2);
+        }
+
+        public static IEnumerable<object[]> GetPositionCases()
+        {
+            yield return new object[] { new byte[] { 0 }, 1 };
+            yield return new object[] { new byte[] { 1, 1 }, 1 };
+            yield return new object[] { new byte[] { 4, 1, 2, 3, 4 }, 1 };
+            yield return new object[] { new byte[] { 4, 1, 2, 3, 4, (byte)OP.ABS }, 2 };
+            yield return new object[] { new byte[] { 4, 1, 2, 3, 4, (byte)OP.ABS, (byte)OP.ABS }, 3 };
+            yield return new object[] { new byte[] { (byte)OP.CheckSig, (byte)OP.CodeSeparator, (byte)OP.DUP, (byte)OP._16 }, 4 };
+            yield return new object[]
+            {
+                new byte[]
+                {
+                    (byte)OP.DUP, (byte)OP.IF, (byte)OP.DUP, (byte)OP.IF, (byte)OP.DUP, (byte)OP.ELSE, (byte)OP.DUP,
+                    (byte)OP.EndIf, (byte)OP.EndIf, 2, 10, 20
+                },
+                10
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetPositionCases))]
+        public void TryRead_OpPositionTest(byte[] scrBa, uint expectedPos)
+        {
+            int count = 0;
+            uint actualPos = 0;
+            var stream = new FastStreamReader(scrBa);
+            var list = new List<IOperation>();
+
+            while (stream.GetRemainingBytesCount() > 0)
+            {
+                bool b = TryRead(ScriptEvalMode.WitnessV1, stream, list, ref count, ref actualPos, out string err);
+                Assert.True(b, err);
+                Assert.Null(err);
+            }
+
+            Assert.Equal(expectedPos, actualPos);
         }
     }
 }
