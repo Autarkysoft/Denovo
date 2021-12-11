@@ -29,16 +29,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void RunTest()
         {
-            CodeSeparatorOp op = new();
+            uint mockPos = 5;
+            CodeSeparatorOp op = new(mockPos);
+            MockOpData mockStack = new();
 
             Assert.False(op.IsExecuted);
             Assert.Equal(OP.CodeSeparator, op.OpValue);
+            Assert.Equal(0U, mockStack.CodeSeparatorPosition);
 
-            bool b = op.Run(new MockOpData(), out string error);
+            bool b = op.Run(mockStack, out string error);
 
             Assert.True(b, error);
             Assert.Null(error);
             Assert.True(op.IsExecuted);
+            Assert.Equal(mockPos, mockStack.CodeSeparatorPosition);
         }
 
         [Fact]

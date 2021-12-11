@@ -54,6 +54,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         public override bool Run(IOpData opData, out string error)
         {
             IsExecuted = true;
+            opData.CodeSeparatorPosition = Position;
             error = null;
             return true;
         }
