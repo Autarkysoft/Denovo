@@ -91,6 +91,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out string error);
 
         /// <summary>
+        /// Verifies correctness of the given signature with the given public key using
+        /// the transaction and scripts set in constructor for Taproot scripts.
+        /// </summary>
+        /// <param name="sig">Signature bytes</param>
+        /// <param name="pub">Public key</param>
+        /// <param name="error">Error message (null if successful, otherwise will contain information about failure)</param>
+        /// <returns>True if all verifications succeed, otherwise false.</returns>
+        bool VerifySchnorr(ReadOnlySpan<byte> sig, PublicKey pub, out string error);
+
+        /// <summary>
         /// Checks to see if the extra (last) item that a <see cref="OP.CheckMultiSig"/> operation pops is valid
         /// according to consensus rules.
         /// </summary>

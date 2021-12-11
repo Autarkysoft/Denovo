@@ -70,6 +70,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             return sigVerificationSuccess;
         }
 
+        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out string error)
+        {
+            throw new NotImplementedException();
+        }
+
         internal byte[] expectedMultiSigGarbage;
         internal bool garbageCheckResult = true;
         public bool CheckMultiSigGarbage(byte[] garbage)

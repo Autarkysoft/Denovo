@@ -79,6 +79,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         public int TxInIndex { get; set; }
         /// <summary>
+        /// List of UTXOs spent by the transaction (only used in Taproot scripts).
+        /// </summary>
+        public IUtxo[] UtxoList { get; set; }
+        /// <summary>
         /// An array of operations taken from the script being executed (eg. pubkey script, redeem script,...)
         /// </summary>
         public IOperation[] ExecutingScript { get; set; }
@@ -125,9 +129,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
         /// <inheritdoc/>
         public int SigOpLimitLeft { get; set; }
-        
+
         /// <inheritdoc/>
-        public uint CodeSeparatorPosition { get; set; }
+        public uint CodeSeparatorPosition { get; set; } = uint.MaxValue;
 
 
         /// <inheritdoc/>
@@ -218,6 +222,35 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             error = null;
             return m == 0;
+        }
+
+        /// <inheritdoc/>
+        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out string error)
+        {
+            Debug.Assert(UtxoList != null);
+
+            if (!Signature.TryReadSchnorr(sigBa, out Signature sig, out error))
+            {
+                return false;
+            }
+
+            if (sig.SigHash.ToOutputType() == SigHashType.Single && TxInIndex >= Tx.TxOutList.Length)
+            {
+                error = "Index for SigHash_Single is out of range.";
+                return false;
+            }
+
+            byte[] sigHash = Tx.SerializeForSigningTaproot_ScriptPath(sig.SigHash, UtxoList, TxInIndex, AnnexHash, TapLeafHash, CodeSeparatorPosition);
+            if (calc.VerifySchnorr(sigHash, sig, pub))
+            {
+                error = null;
+                return true;
+            }
+            else
+            {
+                error = "Invalid signature.";
+                return false;
+            }
         }
 
         /// <inheritdoc/>
