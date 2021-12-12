@@ -114,7 +114,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// If true only strict encoding of true/false is accepted for conditional operations.
         /// This is a standard rule for legacy and witness version 0, and a consensus rule for Taproot scripts.
         /// </summary>
-        public bool IsStrictConditionalOpBool { get; set; }
+        public bool IsStrictConditionalOpBool { get; set; } = false;
 
 
         /// <inheritdoc/>
@@ -353,29 +353,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
             }
 
-            // Stack must only have 1 item left
-            if (stack.ItemCount == 1)
-            {
-                if (IsNotZero(stack.Pop()))
-                {
-                    error = null;
-                    return true;
-                }
-                else
-                {
-                    error = $"Top stack item is not true for input at index={index}.";
-                    return false;
-                }
-            }
-            else
-            {
-                error = $"Stack must only have 1 item after witness execution for input at index={index}.";
-                return false;
-            }
+            return CheckWitnessStack(stack, out error);
         }
 
 
-        private bool VerifyTaprootCommitment(ReadOnlySpan<byte> control, ReadOnlySpan<byte> program, IRedeemScript script)
+        private bool VerifyTaprootCommitment(ReadOnlySpan<byte> control, ReadOnlySpan<byte> program, ReadOnlySpan<byte> k)
         {
             // Internal pubkey
             PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(control.Slice(1, 32), out PublicKey p);
@@ -390,14 +372,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 return false;
             }
-
-            // Compute tapleaf hash
-            var stream = new FastStream(script.Data.Length + 3);
-            byte leafVersion = (byte)(control[0] & TapLeafMask);
-            stream.Write(leafVersion);
-            script.Serialize(stream);
-            // k is tapleafHash
-            ReadOnlySpan<byte> k = sha256.ComputeTaggedHash_TapLeaf(stream.ToByteArray());
 
             int pathLen = (control.Length - TaprootControlBaseSize) / TaprootControlNodeSize;
             // Compute the Merkle root from the leaf and the provided path.
@@ -473,6 +447,30 @@ namespace Autarkysoft.Bitcoin.Blockchain
             else
             {
                 error = stack.ItemCount == 0 ? "Emtpy stack" : "Top stack item is not true.";
+                return false;
+            }
+        }
+
+        private bool CheckWitnessStack(OpData stack, out string error)
+        {
+            // https://github.com/bitcoin/bitcoin/blob/57982f419e36d0023c83af2dd0d683ca3160dc2a/src/script/interpreter.cpp#L1845-L1846
+            // Stack must only have 1 item left
+            if (stack.ItemCount == 1)
+            {
+                if (IsNotZero(stack.Pop()))
+                {
+                    error = null;
+                    return true;
+                }
+                else
+                {
+                    error = "Top stack item is not true.";
+                    return false;
+                }
+            }
+            else
+            {
+                error = "Stack must only have 1 item after witness execution.";
                 return false;
             }
         }
@@ -979,35 +977,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
                     }
-                    else if (witItemCount <= Constants.MaxScriptStackItemCount)
+                    else
                     {
                         // Script path spending:
-                        var stack = new OpData()
-                        {
-                            Tx = tx,
-                            TxInIndex = i,
+                        Debug.Assert(witItemCount >= 2);
 
-                            ForceLowS = ForceLowS,
-                            StrictNumberEncoding = StrictNumberEncoding,
-                            // TODO: change this to accept IConsensus
-                            IsBip65Enabled = consensus.IsBip65Enabled,
-                            IsBip112Enabled = consensus.IsBip112Enabled,
-                            IsStrictDerSig = consensus.IsStrictDerSig,
-                            IsBip147Enabled = consensus.IsBip147Enabled,
-                            IsStrictConditionalOpBool = true,
-                        };
-
-                        stack.Push(tx.WitnessList[i].Items);
-
-                        // TODO: this could be improved
-                        if (annexHash != null)
-                        {
-                            _ = stack.Pop();
-                        }
-
-                        Debug.Assert(stack.ItemCount >= 2);
-
-                        byte[] control = stack.Pop();
+                        byte[] control = tx.WitnessList[i].Items[--witItemCount];
                         if (control.Length < TaprootControlBaseSize ||
                             control.Length > TaprootControlMaxSize ||
                             ((control.Length - TaprootControlBaseSize) % TaprootControlNodeSize) != 0)
@@ -1016,10 +991,18 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
 
-                        byte[] scrBa = stack.Pop();
+                        byte[] scrBa = tx.WitnessList[i].Items[--witItemCount];
                         var redeem = new RedeemScript(scrBa);
 
-                        if (!VerifyTaprootCommitment(control, program, redeem))
+                        // Compute tapleaf hash
+                        var stream = new FastStream(redeem.Data.Length + 3);
+                        byte leafVersion = (byte)(control[0] & TapLeafMask);
+                        stream.Write(leafVersion);
+                        redeem.Serialize(stream);
+                        // k is tapleafHash
+                        byte[] tapLeafHash = sha256.ComputeTaggedHash_TapLeaf(stream.ToByteArray());
+
+                        if (!VerifyTaprootCommitment(control, program, tapLeafHash))
                         {
                             error = "Invalid taproot commitment.";
                             return false;
@@ -1028,45 +1011,79 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         if ((control[0] & TaprootLeafMask) == TaprootLeafTapscript)
                         {
                             // Tapscript (leaf version 0xc0)
-                            if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out _, out error))
-                            {
-                                return false;
-                            }
 
-                            bool skip = false;
-                            for (int j = rdmOps.Length - 1; j >= 0; j--)
+                            // Note that the following evaluation is a minimal check of validity of the script. It will
+                            // continue until it reaches OP_SUCCESS or the end.
+                            // https://github.com/bitcoin/bitcoin/blob/57982f419e36d0023c83af2dd0d683ca3160dc2a/src/script/interpreter.cpp#L1817-L1830
+                            if (!redeem.TryEvaluateOpSuccess(out bool skip))
                             {
-                                if (rdmOps[j] is SuccessOp)
-                                {
-                                    skip = true;
-                                    break;
-                                }
+                                error = "Failed to evaluate redeem script.";
+                                return false;
                             }
 
                             if (!skip)
                             {
-                                if (stack.ItemCount > Constants.MaxScriptStackItemCount)
+                                if (witItemCount > Constants.MaxScriptStackItemCount)
                                 {
                                     error = Err.OpStackItemOverflow;
                                     return false;
                                 }
 
-                                foreach (var item in rdmOps)
+                                var counter = new SizeCounter();
+                                tx.WitnessList[i].AddSerializedSize(counter);
+
+                                var stack = new OpData()
                                 {
-                                    if (!item.Run(stack, out error))
+                                    Tx = tx,
+                                    TxInIndex = i,
+                                    AnnexHash = annexHash,
+                                    TapLeafHash = tapLeafHash,
+                                    SigOpLimitLeft = counter.Size + Constants.ValidationWeightOffset,
+                                    UtxoList = utxos,
+
+                                    ForceLowS = ForceLowS,
+                                    StrictNumberEncoding = StrictNumberEncoding,
+                                    // TODO: change this to accept IConsensus
+                                    IsBip65Enabled = consensus.IsBip65Enabled,
+                                    IsBip112Enabled = consensus.IsBip112Enabled,
+                                    IsStrictDerSig = consensus.IsStrictDerSig,
+                                    IsBip147Enabled = consensus.IsBip147Enabled,
+                                    IsStrictConditionalOpBool = true,
+                                };
+
+                                for (int j = 0; j < witItemCount; j++)
+                                {
+                                    if (tx.WitnessList[i].Items[j].Length > Constants.MaxScriptItemLength)
+                                    {
+                                        error = $"Witness item can not be bigger than {Constants.MaxScriptItemLength} bytes";
+                                        return false;
+                                    }
+                                    stack.Push(tx.WitnessList[i].Items[j]);
+                                }
+
+                                Debug.Assert(stack.ItemCount <= Constants.MaxScriptStackItemCount);
+
+                                if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out _, out error))
+                                {
+                                    return false;
+                                }
+
+                                foreach (var op in rdmOps)
+                                {
+                                    if (!op.Run(stack, out error))
                                     {
                                         return false;
                                     }
+                                }
+
+                                if (!CheckWitnessStack(stack, out error))
+                                {
+                                    return false;
                                 }
                             }
                         }
 
                         // TODO: we can add a "standard" rule here to reject other Taproot versions
-                    }
-                    else // witItemCount > Constants.MaxScriptStackItemCount
-                    {
-                        error = Err.OpStackItemOverflow;
-                        return false;
                     }
                 }
                 else if (pubType == PubkeyScriptSpecialType.UnknownWitness)
