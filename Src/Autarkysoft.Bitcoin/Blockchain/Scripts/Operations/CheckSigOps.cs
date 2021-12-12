@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -16,7 +17,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     {
         /// <summary>
         /// Removes top two stack items as public key and signature and calls 
-        /// <see cref="IOpData.Verify(Signature, PublicKey, System.ReadOnlySpan{byte})"/>.
+        /// <see cref="IOpData.Verify(Signature, PublicKey, ReadOnlySpan{byte})"/>.
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
@@ -312,10 +313,113 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
     /// <summary>
+    /// Base (abstract) class for signle check signature operations in Taproot scripts.
+    /// Inherits from <see cref="BaseOperation"/>.
+    /// </summary>
+    public abstract class CheckSigTapOpBase : BaseOperation
+    {
+        /// <summary>
+        /// Performs verification steps for Taproot scripts
+        /// </summary>
+        /// <param name="opData">Stack to use</param>
+        /// <param name="sigBa">Signature bytes</param>
+        /// <param name="pubBa">Public key</param>
+        /// <param name="success"></param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if operation was successful, false if otherwise</returns>
+        public bool Verify(IOpData opData, ReadOnlySpan<byte> sigBa, ReadOnlySpan<byte> pubBa, out bool success, out string error)
+        {
+            success = sigBa.Length != 0;
+            if (success)
+            {
+                opData.SigOpLimitLeft -= Constants.ValidationWeightPerSigOp;
+                if (opData.SigOpLimitLeft < 0)
+                {
+                    error = "Too much signature validation relative to witness weight";
+                    return false;
+                }
+            }
+
+            PublicKey.PublicKeyType kt = PublicKey.TryReadTaproot(pubBa, out PublicKey pubK);
+            if (kt == PublicKey.PublicKeyType.None)
+            {
+                error = "Invalid public key.";
+                return false;
+            }
+            else if (kt == PublicKey.PublicKeyType.Schnorr)
+            {
+                if (success && !opData.VerifySchnorr(sigBa, pubK, out error))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                // TODO: a standard rule can be added to IOpData to reject pubkeys here
+            }
+
+            error = null;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Operation to check the transaction signature in Taproot scripts.
+    /// </summary>
+    public class CheckSigTapOp : CheckSigTapOpBase
+    {
+        /// <summary>
+        /// Initializes a new instance of <see cref="CheckSigTapOp"/> with the given parameter.
+        /// </summary>
+        /// <param name="isVerify">Set to true to run <see cref="OP.VERIFY"/> at the end</param>
+        public CheckSigTapOp(bool isVerify)
+        {
+            verify = isVerify;
+            OpValue = verify ? OP.CheckSigVerify : OP.CheckSig;
+        }
+
+        private readonly bool verify;
+
+        /// <inheritdoc cref="IOperation.OpValue"/>
+        public override OP OpValue { get; }
+
+        /// <summary>
+        /// Removes top two stack items (signature and public key) and verifies the transaction signature.
+        /// </summary>
+        /// <param name="opData">Stack to use</param>
+        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <returns>True if operation was successful, false if otherwise</returns>
+        public override bool Run(IOpData opData, out string error)
+        {
+            if (opData.ItemCount < 2)
+            {
+                error = Err.OpNotEnoughItems;
+                return false;
+            }
+
+            byte[][] values = opData.Pop(2);
+
+            if (Verify(opData, values[0], values[1], out bool success, out error))
+            {
+                if (!verify)
+                {
+                    opData.Push(success);
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+
+    /// <summary>
     /// Operation to perform signature verification based on BIPs 340, 341 and 342 in Taproot scripts.
     /// <para/>Inherits from <see cref="BaseOperation"/>.
     /// </summary>
-    public class CheckSigAddOp : BaseOperation
+    public class CheckSigAddOp : CheckSigTapOpBase
     {
         /// <inheritdoc cref="IOperation.OpValue"/>
         public override OP OpValue => OP.CheckSigAdd;
@@ -334,35 +438,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             byte[][] items = opData.Pop(3);
 
-            // Evaluate public key here (if len==0 => fail; if len==32 => &evalSig => checksig else => ?)
-            // TODO: add a new method to PublicKey class to evaluate public keys (the new way!)
-            PublicKey.PublicKeyType t = PublicKey.TryReadTaproot(items[2], out PublicKey pub);
-            if (t == PublicKey.PublicKeyType.None)
-            {
-                error = "Invalid public key.";
-                return false;
-            }
-
-            // TODO: maybe add a bool to IOpData (standard rule) to reject Unkown pubkey type
-
-            if (items[0].Length == 0 || t == PublicKey.PublicKeyType.Unknown)
-            {
-                // If signature is an empty byte[] push n to the stack
-                opData.Push(items[1]);
-                error = null;
-                return true;
-            }
-
             if (!TryConvertToLong(items[1], out long n, opData.StrictNumberEncoding, 4))
             {
                 error = "Invalid number format.";
                 return false;
             }
 
-            // TODO: evaluate signature for Taproot scripts.
-
-            error = "OP_CheckSigAdd is not activated yet";
-            return false;
+            if (Verify(opData, items[0], items[2], out bool success, out error))
+            {
+                // TODO: is "if(success) n++" better?
+                long toPush = n + (success ? 1 : 0);
+                opData.Push(IntToByteArray(toPush));
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

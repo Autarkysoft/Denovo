@@ -688,10 +688,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         opList.Add(new CodeSeparatorOp(opPosition - 1));
                         break;
                     case OP.CheckSig:
-                        opList.Add(new CheckSigOp());
+                        if (mode == ScriptEvalMode.WitnessV1)
+                        {
+                            opList.Add(new CheckSigTapOp(false));
+                        }
+                        else
+                        {
+                            opList.Add(new CheckSigOp());
+                        }
                         break;
                     case OP.CheckSigVerify:
-                        opList.Add(new CheckSigVerifyOp());
+                        if (mode == ScriptEvalMode.WitnessV1)
+                        {
+                            opList.Add(new CheckSigTapOp(true));
+                        }
+                        else
+                        {
+                            opList.Add(new CheckSigVerifyOp());
+                        }
                         break;
                     case OP.CheckMultiSig:
                         if (mode == ScriptEvalMode.WitnessV1)
