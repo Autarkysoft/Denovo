@@ -1,5 +1,14 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.15.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.16.0.0...master)
+
+### Release 0.16.0 (2021-12-13)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.15.0.0...B0.16.0.0)
+* `BufferManager` class is removed
+* `(I)Witness` is changed to use `byte[]`s instead of `PushDataOp` (ie. to be stack items)
+* Taproot activation height for TestNet and RegTest were added
+* Add new IOperations for CheckSig ops in Taproot scripts
+* `TransactionVerifier` is improved to be able to verify all Taproot transactions
+* Various bug fixes, improvements and some additional tests
 
 ### Release 0.15.0 (2021-10-30)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.14.0.0...B0.15.0.0)
