@@ -249,6 +249,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="stream">Stream to use</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
+        [Obsolete]
         public bool TryReadWitness(FastStreamReader stream, out string error)
         {
             // Since the first byte could be an OP_num or it could be the length we only peek at it
@@ -323,6 +324,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Adds the serialized size of this instance to the given counter as if it was inside an <see cref="IWitness"/>.
         /// </summary>
         /// <param name="counter">Size counter to use</param>
+        [Obsolete]
         public void GetSerializedWitnessSize(SizeCounter counter)
         {
             if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
