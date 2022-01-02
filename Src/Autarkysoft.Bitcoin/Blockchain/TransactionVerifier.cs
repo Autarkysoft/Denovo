@@ -439,14 +439,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private bool CheckStack(OpData stack, out string error)
         {
             // https://github.com/bitcoin/bitcoin/blob/04437ee721e66a7b76bef5ec2f88dd1efcd03b84/src/script/interpreter.cpp#L1994-L1997
-            if (stack.ItemCount > 0 && IsNotZero(stack.Pop()))
+            if (stack.ItemCount == 0)
+            {
+                error = "Emtpy stack";
+                return false;
+            }
+            else if (IsNotZero(stack.Pop()))
             {
                 error = null;
                 return true;
             }
             else
             {
-                error = stack.ItemCount == 0 ? "Emtpy stack" : "Top stack item is not true.";
+                error = "Top stack item is not true.";
                 return false;
             }
         }
