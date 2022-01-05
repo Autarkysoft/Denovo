@@ -42,7 +42,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
 
 
-        private readonly IECurveFp curve;
+        internal readonly IECurveFp curve;
 
 
 

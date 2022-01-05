@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.IO;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -140,6 +141,55 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         public EllipticCurvePoint ToPoint()
         {
             return point;
+        }
+
+
+        /// <summary>
+        /// Returns the 32 byte tweaked public key used in Taproot scripts
+        /// </summary>
+        /// <param name="parity">Y parity bit required for spending the output with a script path.</param>
+        /// <returns>256-bit byte array</returns>
+        public byte[] ToTweaked(out int parity)
+        {
+            using Sha256 sha = new Sha256();
+            byte[] xBytes = point.X.ToByteArray(true, true);
+            if (xBytes.Length != 32)
+            {
+                byte[] temp = new byte[32];
+                Buffer.BlockCopy(xBytes, 0, temp, 32 - xBytes.Length, xBytes.Length);
+                xBytes = temp;
+            }
+            byte[] t = sha.ComputeTaggedHash_TapTweak(xBytes);
+            BigInteger tInt = t.ToBigInt(true, true);
+            if (tInt >= calc.curve.N)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+            EllipticCurvePoint point1 = calc.MultiplyByG(tInt);
+
+            // lift_x
+            var y_sq = (BigInteger.ModPow(point.X, 3, calc.curve.P) + 7) % calc.curve.P;
+            var y = BigInteger.ModPow(y_sq, (calc.curve.P + 1) / 4, calc.curve.P);
+            if (BigInteger.ModPow(y, 2, calc.curve.P) != y_sq)
+                throw new ArgumentException();
+
+            var point2 = new EllipticCurvePoint(point.X, ((y & 1) == 0) ? y : calc.curve.P - y);
+
+            EllipticCurvePoint q = calc.Add(point1, point2);
+
+            parity = q.Y.IsEven ? 0 : 1;
+
+            xBytes = q.X.ToByteArray(true, true);
+            if (xBytes.Length == 32)
+            {
+                return xBytes;
+            }
+            else
+            {
+                byte[] temp = new byte[32];
+                Buffer.BlockCopy(xBytes, 0, temp, 32 - xBytes.Length, xBytes.Length);
+                return temp;
+            }
         }
 
         /// <summary>
