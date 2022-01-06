@@ -448,7 +448,10 @@ namespace Tests.Bitcoin.Encoders
         [Fact]
         public void GetP2sh_P2tr_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2tr(null));
+            byte[] nba = null;
+            PublicKey npub = null;
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2tr(nba));
+            Assert.Throws<ArgumentNullException>(() => Address.GetP2tr(npub));
             Assert.Throws<ArgumentOutOfRangeException>(() => Address.GetP2tr(new byte[31]));
 
             Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2tr(new byte[32]));
