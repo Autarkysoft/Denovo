@@ -360,6 +360,24 @@ namespace Autarkysoft.Bitcoin.Encoders
             return Bech32.Encode(data32, Bech32.Mode.B32m, 1, hrp);
         }
 
+        /// <summary>
+        /// Return the pay to taproot address from the given public key.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="pub">Public key to use</param>
+        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        /// <returns>The resulting address</returns>
+        public static string GetP2tr(PublicKey pub, NetworkType netType = NetworkType.MainNet)
+        {
+            if (pub is null)
+                throw new ArgumentNullException(nameof(pub), "Public key can not be null.");
+
+            byte[] tweaked = pub.ToTweaked(out _);
+            return GetP2tr(tweaked, netType);
+        }
+
 
         /// <summary>
         /// Checks if the given address string is of the given <see cref="PubkeyScriptType"/> type and returns the
