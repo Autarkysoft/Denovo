@@ -147,6 +147,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         /// <summary>
         /// Returns the 32 byte tweaked public key used in Taproot scripts
         /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="parity">Y parity bit required for spending the output with a script path.</param>
         /// <returns>256-bit byte array</returns>
         public byte[] ToTweaked(out int parity)
@@ -163,7 +165,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             BigInteger tInt = t.ToBigInt(true, true);
             if (tInt >= calc.curve.N)
             {
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(t), "This public key can not be used for Taproot.");
             }
             EllipticCurvePoint point1 = calc.MultiplyByG(tInt);
 
@@ -171,7 +173,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             var y_sq = (BigInteger.ModPow(point.X, 3, calc.curve.P) + 7) % calc.curve.P;
             var y = BigInteger.ModPow(y_sq, (calc.curve.P + 1) / 4, calc.curve.P);
             if (BigInteger.ModPow(y, 2, calc.curve.P) != y_sq)
-                throw new ArgumentException();
+                throw new ArgumentException("This public key can not be used for Taproot.");
 
             var point2 = new EllipticCurvePoint(point.X, ((y & 1) == 0) ? y : calc.curve.P - y);
 
