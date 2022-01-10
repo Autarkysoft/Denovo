@@ -28,10 +28,10 @@ namespace Autarkysoft.Bitcoin.Clients
         public FullClient(IClientSettings settings)
         {
             Settings = settings;
-            connector = new NodeConnector(settings.AllNodes, settings);
+            connector = new NodeConnector(settings);
             if (settings.AcceptIncomingConnections)
             {
-                listener = new NodeListener(settings.AllNodes, settings);
+                listener = new NodeListener(settings);
             }
 
             connector.ConnectFailureEvent += Connector_ConnectFailureEvent;

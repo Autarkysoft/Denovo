@@ -18,11 +18,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Initializes a new instance of the <see cref="NodeConnector"/> using the given parameters.
         /// </summary>
-        /// <param name="peerList">List of peers (is used to add the connected node to)</param>
         /// <param name="cs">Client settings</param>
-        public NodeConnector(ICollection<Node> peerList, IClientSettings cs)
+        public NodeConnector(IClientSettings cs)
         {
-            peers = peerList;
+            peers = cs.AllNodes;
             settings = cs;
 
             connectPool = new SocketAsyncEventArgsPool(cs.MaxConnectionCount);

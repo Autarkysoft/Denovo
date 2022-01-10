@@ -33,7 +33,7 @@ namespace Denovo.ViewModels
                 Relay = false,
                 Network = NetworkType.TestNet,
             };
-            connector = new NodeConnector(AllNodes, clientSettings);
+            connector = new NodeConnector(clientSettings);
         }
 
 

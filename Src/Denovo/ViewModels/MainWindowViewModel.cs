@@ -92,8 +92,8 @@ namespace Denovo.ViewModels
 
             // TODO: the following 6 lines are for testing and can be removed later
             clientSettings.Blockchain.State = BlockchainState.BlocksSync;
-            connector = new NodeConnector(AllNodes, clientSettings);
-            listener = new NodeListener(AllNodes, clientSettings);
+            connector = new NodeConnector(clientSettings);
+            listener = new NodeListener(clientSettings);
             listener.StartListen(new IPEndPoint(IPAddress.Any, config.ListenPort));
             port = config.ListenPort;
 
