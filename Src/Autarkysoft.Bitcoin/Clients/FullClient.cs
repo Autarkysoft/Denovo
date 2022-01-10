@@ -14,7 +14,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Autarkysoft.Bitcoin
+namespace Autarkysoft.Bitcoin.Clients
 {
     /// <summary>
     /// Implementation of a full verifying node
