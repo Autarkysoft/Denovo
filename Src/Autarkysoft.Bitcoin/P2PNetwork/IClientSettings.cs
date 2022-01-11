@@ -172,5 +172,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         /// <param name="addr">IP address to use</param>
         void UpdateMyIP(IPAddress addr);
+
+        /// <summary>
+        /// Creates and returns a new instance <see cref="IReplyManager"/>.
+        /// </summary>
+        /// <param name="nodeStatus">Node status</param>
+        /// <returns>A new instance of <see cref="IReplyManager"/></returns>
+        IReplyManager CreateReplyManager(INodeStatus nodeStatus);
     }
 }

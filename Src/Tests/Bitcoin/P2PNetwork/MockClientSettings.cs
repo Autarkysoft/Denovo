@@ -308,6 +308,13 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.Equal(expUpdateAddr, addr);
         }
 
+        internal IReplyManager repMan;
+        public IReplyManager CreateReplyManager(INodeStatus nodeStatus)
+        {
+            Assert.NotNull(repMan);
+            return repMan;
+        }
+
 #pragma warning restore CS0649 // Field is never assigned to
     }
 }

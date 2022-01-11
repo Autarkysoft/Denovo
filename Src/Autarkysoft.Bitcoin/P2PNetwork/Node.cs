@@ -31,7 +31,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 NodeStatus.Port = (ushort)ep.Port;
             }
 
-            var repMan = new ReplyManager(NodeStatus, cs);
+            var repMan = cs.CreateReplyManager(NodeStatus);
 
             sendReceiveSAEA = cs.SendReceivePool.Pop();
             sendReceiveSAEA.AcceptSocket = socket;

@@ -387,5 +387,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 }
             }
         }
+
+        /// <inheritdoc/>
+        public IReplyManager CreateReplyManager(INodeStatus nodeStatus) => new ReplyManager(nodeStatus, this);
     }
 }
