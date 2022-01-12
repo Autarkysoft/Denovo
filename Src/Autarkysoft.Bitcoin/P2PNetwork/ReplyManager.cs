@@ -18,24 +18,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// <summary>
     /// Implementation of a reply manager to handle creation of new <see cref="Message"/>s to return in response to
     /// received <see cref="Message"/>s.
-    /// Implements <see cref="IReplyManager"/>.
+    /// Inherits from <see cref="ReplyManagerBase"/>.
     /// </summary>
-    public class ReplyManager : IReplyManager
+    public class ReplyManager : ReplyManagerBase
     {
         /// <summary>
         /// Initializes a new instanse of <see cref="ReplyManager"/> using the given parameters.
         /// </summary>
         /// <param name="ns">Node status</param>
         /// <param name="cs">Client settings</param>
-        public ReplyManager(INodeStatus ns, IClientSettings cs)
+        public ReplyManager(INodeStatus ns, IClientSettings cs) : base(ns, cs)
         {
-            nodeStatus = ns;
-            settings = cs;
         }
-
-
-        private readonly INodeStatus nodeStatus;
-        private readonly IClientSettings settings;
 
 
         private Message[] GetSettingsMessages(Message extraMsg)
@@ -123,56 +117,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             };
         }
 
-        /// <inheritdoc/>
-        public Message GetPingMsg()
-        {
-            long nonce = settings.Rng.NextInt64();
-            // TODO: latency may have a small error this way (maybe the following line should be moved to Node class)
-            // Chances of nonce being repeated is 1 in 2^64 which is why the returned bool is ignored here
-            nodeStatus.StorePing(nonce);
-            return new Message(new PingPayload(nonce), settings.Network);
-        }
 
         /// <inheritdoc/>
-        // Node constructor sets the IP and port on INodeStatus
-        // TODO: this is bitcoin-core's behavior, it can be changed if needed
-        public Message GetVersionMsg() => GetVersionMsg(new NetworkAddress(0, nodeStatus.IP, nodeStatus.Port));
-
-        /// <inheritdoc/>
-        public Message GetVersionMsg(NetworkAddress recvAddr)
-        {
-            var ver = new VersionPayload()
-            {
-                Version = settings.ProtocolVersion,
-                Services = settings.Services,
-                Timestamp = settings.Time.Now,
-                ReceivingNodeNetworkAddress = recvAddr,
-                // TODO: IP and port zero are bitcoin-core's behavior, it can be changed if needed
-                TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.IPv6Any, 0),
-                Nonce = (ulong)settings.Rng.NextInt64(),
-                UserAgent = settings.UserAgent,
-                StartHeight = settings.Blockchain.Height,
-                Relay = settings.Relay
-            };
-            return new Message(ver, settings.Network);
-        }
-
-        private bool Deser<T>(byte[] data, out T pl) where T : IMessagePayload, new()
-        {
-            pl = new T();
-            if (pl.TryDeserialize(new FastStreamReader(data), out string error))
-            {
-                return true;
-            }
-            else
-            {
-                nodeStatus.AddSmallViolation();
-                return false;
-            }
-        }
-
-        /// <inheritdoc/>
-        public Message[] GetReply(Message msg)
+        public override Message[] GetReply(Message msg)
         {
             if (!msg.TryGetPayloadType(out PayloadType plt))
             {
