@@ -5,8 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography;
-using Autarkysoft.Bitcoin.ImprovementProposals;
+using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
@@ -14,7 +13,6 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Threading;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -22,9 +20,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
     /// <summary>
     /// Defines client settings. One instance should be used by the client and passed to all node instance through both
     /// <see cref="NodeListener"/> and <see cref="NodeConnector"/>.
-    /// Implements <see cref="IClientSettings"/>.
+    /// Implements <see cref="IFullClientSettings"/>.
     /// </summary>
-    public class ClientSettings : IClientSettings
+    public class ClientSettings : ClientSettingsBase, IFullClientSettings
     {
         /// <summary>
         /// Default constructor used for tests only
@@ -98,59 +96,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private readonly bool supportsIpV6;
 
         /// <inheritdoc/>
-        public NodePool AllNodes { get; }
-
-        /// <inheritdoc/>
-        public IClientTime Time { get; } = new ClientTime();
-
-        /// <inheritdoc/>
         public IFileManager FileMan { get; }
-
         /// <inheritdoc/>
         public IBlockchain Blockchain { get; }
-
         /// <inheritdoc/>
         public IMemoryPool MemPool { get; set; }
-
-        /// <inheritdoc/>
-        public IRandomNonceGenerator Rng { get; set; } = new RandomNonceGenerator();
-
-        /// <inheritdoc/>
-        public int ProtocolVersion { get; set; } = Constants.P2PProtocolVersion;
-        /// <inheritdoc/>
-        public bool Relay { get; set; }
         /// <inheritdoc/>
         public ulong MinTxRelayFee { get; set; }
-
-        private string _ua =
-            new BIP0014("Bitcoin.Net", Assembly.GetExecutingAssembly().GetName().Version, "Bitcoin from scratch").ToString();
-        /// <inheritdoc/>
-        public string UserAgent
-        {
-            get => _ua;
-            set => _ua = value ?? string.Empty;
-        }
-        /// <inheritdoc/>
-        public NetworkType Network { get; set; }
-        /// <inheritdoc/>
-        public NodeServiceFlags Services { get; set; }
-        /// <inheritdoc/>
-        public ushort DefaultPort { get; }
-        /// <inheritdoc/>
-        public ushort ListenPort { get; set; }
         /// <inheritdoc/>
         public bool AcceptIncomingConnections { get; set; }
-        /// <inheritdoc/>
-        public string[] DnsSeeds { get; set; }
-
-        /// <inheritdoc/>
-        public int BufferLength { get; }
-        /// <inheritdoc/>
-        public int MaxConnectionCount { get; }
-        /// <inheritdoc/>
-        public Semaphore MaxConnectionEnforcer { get; }
-        /// <inheritdoc/>
-        public SocketAsyncEventArgsPool SendReceivePool { get; }
 
 
         private const ulong HdrSyncMask = (ulong)(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited);
@@ -343,52 +297,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             }
         }
 
-
-        /// <summary>
-        /// A list of IP addresses that other peers claimed are ours with the number of times each were received.
-        /// </summary>
-        public Dictionary<IPAddress, int> localIP = new Dictionary<IPAddress, int>(MaxIpCapacity);
-        private readonly object ipLock = new object();
-        private const int MaxIpCapacity = 4;
-
         /// <inheritdoc/>
-        public IPAddress GetMyIP()
-        {
-            lock (ipLock)
-            {
-                if (localIP.Count > 0)
-                {
-                    KeyValuePair<IPAddress, int> best = localIP.Aggregate((a, b) => a.Value > b.Value ? a : b);
-                    if (best.Value > 3)
-                    {
-                        // at least 4 nodes have approved this IP
-                        return best.Key;
-                    }
-                }
-                return IPAddress.Loopback;
-            }
-        }
-
-        /// <inheritdoc/>
-        public void UpdateMyIP(IPAddress addr)
-        {
-            lock (ipLock)
-            {
-                // Prevent the dictionary from becoming too big.
-                if (localIP.Count >= MaxIpCapacity)
-                {
-                    KeyValuePair<IPAddress, int> smallest = localIP.Aggregate((a, b) => a.Value < b.Value ? a : b);
-                    localIP.Remove(smallest.Key);
-                }
-
-                if (!IPAddress.IsLoopback(addr) && !localIP.TryAdd(addr, 0))
-                {
-                    localIP[addr]++;
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        public IReplyManager CreateReplyManager(INodeStatus nodeStatus) => new ReplyManager(nodeStatus, this);
+        public override IReplyManager CreateReplyManager(INodeStatus nodeStatus) => new ReplyManager(nodeStatus, this);
     }
 }

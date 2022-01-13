@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
@@ -16,7 +17,7 @@ using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
 {
-    public class MockClientSettings : IClientSettings
+    public class MockClientSettings : IFullClientSettings
     {
 #pragma warning disable CS0649 // Field is never assigned to
 

@@ -25,7 +25,7 @@ namespace Autarkysoft.Bitcoin.Clients
         /// Initializes a new instance of <see cref="FullClient"/> using the given parameters.
         /// </summary>
         /// <param name="settings">Client settings</param>
-        public FullClient(IClientSettings settings)
+        public FullClient(IFullClientSettings settings)
         {
             Settings = settings;
             connector = new NodeConnector(settings);
@@ -117,7 +117,7 @@ namespace Autarkysoft.Bitcoin.Clients
         /// <summary>
         /// Settings used in this client
         /// </summary>
-        public IClientSettings Settings { get; set; }
+        public IFullClientSettings Settings { get; set; }
 
 
         private async Task<IPAddress[]> DigDnsSeeds(bool all)

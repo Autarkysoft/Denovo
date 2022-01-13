@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Net;
@@ -252,9 +253,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                         secondSendLimiter.Dispose();
                     secondSendLimiter = null;
 
-                    if (settings.Blockchain.State == Blockchain.BlockchainState.BlocksSync && NodeStatus.InvsToGet?.Count != 0)
+                    if (settings is IFullClientSettings fs &&
+                        fs.Blockchain.State == Blockchain.BlockchainState.BlocksSync && NodeStatus.InvsToGet?.Count != 0)
                     {
-                        settings.Blockchain.PutBackMissingBlocks(NodeStatus.InvsToGet);
+                        fs.Blockchain.PutBackMissingBlocks(NodeStatus.InvsToGet);
                     }
 
                     settings.MaxConnectionEnforcer.Release();

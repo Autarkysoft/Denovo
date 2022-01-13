@@ -61,7 +61,7 @@ namespace Denovo.ViewModels
         public IDenovoFileManager FileMan { get; set; }
         public bool IsInitialized { get; }
 
-        private IClientSettings clientSettings;
+        private IFullClientSettings clientSettings;
 
 
         private void Init(Configuration config)

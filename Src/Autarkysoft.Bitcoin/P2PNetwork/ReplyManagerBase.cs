@@ -3,8 +3,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
+using System.Diagnostics;
 using System.Net;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork
@@ -49,14 +51,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         // Node constructor sets the IP and port on INodeStatus
         // TODO: this is bitcoin-core's behavior, it can be changed if needed
-        public Message GetVersionMsg() => GetVersionMsg(new NetworkAddress(0, nodeStatus.IP, nodeStatus.Port));
+        public abstract Message GetVersionMsg();
 
         /// <summary>
         /// Creates a new version message using the given network address.
         /// </summary>
         /// <param name="recvAddr">Network address to use</param>
+        /// <param name="height">Best block height</param>
         /// <returns>A new version message</returns>
-        public Message GetVersionMsg(NetworkAddress recvAddr)
+        public Message GetVersionMsg(NetworkAddress recvAddr, int height)
         {
             var ver = new VersionPayload()
             {
@@ -68,7 +71,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                 TransmittingNodeNetworkAddress = new NetworkAddress(settings.Services, IPAddress.IPv6Any, 0),
                 Nonce = (ulong)settings.Rng.NextInt64(),
                 UserAgent = settings.UserAgent,
-                StartHeight = settings.Blockchain.Height,
+                StartHeight = height,
                 Relay = settings.Relay
             };
             return new Message(ver, settings.Network);
@@ -87,6 +90,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             pl = new T();
             if (pl.TryDeserialize(new FastStreamReader(data), out string error))
             {
+                Debug.Assert(error is null);
                 return true;
             }
             else

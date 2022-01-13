@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
@@ -327,7 +328,7 @@ namespace Tests.Bitcoin.P2PNetwork
         }
         [Theory]
         [MemberData(nameof(GetReplyCases))]
-        public void GetReplyTest(MockNodeStatus ns, IClientSettings cs, Message msg, Message[] expected)
+        public void GetReplyTest(MockNodeStatus ns, IFullClientSettings cs, Message msg, Message[] expected)
         {
             var rep = new ReplyManager(ns, cs);
 
@@ -451,7 +452,7 @@ namespace Tests.Bitcoin.P2PNetwork
         }
         [Theory]
         [MemberData(nameof(GetReplyBlockMsgCases))]
-        public void GetReply_BlockMsg_Test(MockNodeStatus ns, IClientSettings cs, Message msg, Message[] expected)
+        public void GetReply_BlockMsg_Test(MockNodeStatus ns, IFullClientSettings cs, Message msg, Message[] expected)
         {
             var rep = new ReplyManager(ns, cs);
 
@@ -1067,7 +1068,7 @@ namespace Tests.Bitcoin.P2PNetwork
         }
         [Theory]
         [MemberData(nameof(GetVerackCases))]
-        public void CheckVerackTest(MockNodeStatus ns, IClientSettings cs, Message[] expected)
+        public void CheckVerackTest(MockNodeStatus ns, IFullClientSettings cs, Message[] expected)
         {
             var rep = new ReplyManager(ns, cs);
             var msg = new Message(new VerackPayload(), NetworkType.MainNet);
@@ -1243,7 +1244,7 @@ namespace Tests.Bitcoin.P2PNetwork
         }
         [Theory]
         [MemberData(nameof(GetVersionCases))]
-        public void CheckVersionTest(MockNodeStatus ns, IClientSettings cs, Message msg, Message[] expected)
+        public void CheckVersionTest(MockNodeStatus ns, IFullClientSettings cs, Message msg, Message[] expected)
         {
             var rep = new ReplyManager(ns, cs);
             Message[] actual = rep.GetReply(msg);
