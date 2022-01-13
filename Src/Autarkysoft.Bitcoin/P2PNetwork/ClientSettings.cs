@@ -27,7 +27,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <summary>
         /// Default constructor used for tests only
         /// </summary>
-        public ClientSettings()
+        public ClientSettings() : base(NetworkType.MainNet, 2, null, NodeServiceFlags.NodeNone)
         {
         }
 
@@ -46,39 +46,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="maxConnection">Maximum number of connections</param>
         public ClientSettings(bool listen, NetworkType netType, int maxConnection, NodeServiceFlags servs,
                               NodePool nodes, IFileManager fileMan, IUtxoDatabase utxoDb, IMemoryPool memPool)
+            : base(netType, maxConnection, nodes, servs)
         {
             // TODO: add AcceptSAEAPool here based on listen
             AcceptIncomingConnections = listen;
-            Network = netType;
-            MaxConnectionCount = maxConnection;
-            Services = servs;
-            AllNodes = nodes ?? new NodePool(maxConnection);
             FileMan = fileMan ?? throw new ArgumentNullException();
-
-            DefaultPort = Network switch
-            {
-                NetworkType.MainNet => Constants.MainNetPort,
-                NetworkType.TestNet => Constants.TestNetPort,
-                NetworkType.RegTest => Constants.RegTestPort,
-                _ => throw new ArgumentException("Undefined network"),
-            };
-
-            ListenPort = DefaultPort;
-
-            // TODO: the following values are for testing, they should be set by the caller
-            //       they need more checks for correct and optimal values
-            BufferLength = 16384; // 16 KB
-            int totalBytes = BufferLength * MaxConnectionCount * 2;
-            MaxConnectionEnforcer = new Semaphore(MaxConnectionCount, MaxConnectionCount);
-            SendReceivePool = new SocketAsyncEventArgsPool(MaxConnectionCount * 2);
-            // TODO: can Memory<byte> be used here instead of byte[]?
-            byte[] bufferBlock = new byte[totalBytes];
-            for (int i = 0; i < MaxConnectionCount * 2; i++)
-            {
-                var sArg = new SocketAsyncEventArgs();
-                sArg.SetBuffer(bufferBlock, i * BufferLength, BufferLength);
-                SendReceivePool.Push(sArg);
-            }
 
             // TODO: find a better way for this
             supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));

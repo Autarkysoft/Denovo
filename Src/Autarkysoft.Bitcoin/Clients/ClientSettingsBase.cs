@@ -7,9 +7,11 @@ using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 
@@ -21,8 +23,49 @@ namespace Autarkysoft.Bitcoin.Clients
     /// </summary>
     public abstract class ClientSettingsBase : IClientSettings
     {
+        /// <summary>
+        /// Initializes a new instance of <see cref="ClientSettingsBase"/> with the given parameters.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        /// <param name="netType">Network type</param>
+        /// <param name="maxConnection">Maximum number of connections</param>
+        /// <param name="nodes">List of peers (can be null)</param>
+        /// <param name="servs">Services supported by this node</param>
+        public ClientSettingsBase(NetworkType netType, int maxConnection, NodePool nodes, NodeServiceFlags servs)
+        {
+            Network = netType;
+            MaxConnectionCount = maxConnection;
+            Services = servs;
+            AllNodes = nodes ?? new NodePool(maxConnection);
+
+            DefaultPort = Network switch
+            {
+                NetworkType.MainNet => Constants.MainNetPort,
+                NetworkType.TestNet => Constants.TestNetPort,
+                NetworkType.RegTest => Constants.RegTestPort,
+                _ => throw new ArgumentException("Undefined network"),
+            };
+
+            ListenPort = DefaultPort;
+
+            // TODO: the following values are for testing, they should be set by the caller
+            //       they need more checks for correct and optimal values
+            BufferLength = 16384; // 16 KB
+            int totalBytes = BufferLength * MaxConnectionCount * 2;
+            MaxConnectionEnforcer = new Semaphore(MaxConnectionCount, MaxConnectionCount);
+            SendReceivePool = new SocketAsyncEventArgsPool(MaxConnectionCount * 2);
+            // TODO: can Memory<byte> be used here instead of byte[]?
+            byte[] bufferBlock = new byte[totalBytes];
+            for (int i = 0; i < MaxConnectionCount * 2; i++)
+            {
+                var sArg = new SocketAsyncEventArgs();
+                sArg.SetBuffer(bufferBlock, i * BufferLength, BufferLength);
+                SendReceivePool.Push(sArg);
+            }
+        }
+
         /// <inheritdoc/>
-        public NodePool AllNodes { get; protected set; }
+        public NodePool AllNodes { get; }
         /// <inheritdoc/>
         public IClientTime Time { get; } = new ClientTime();
         /// <inheritdoc/>
@@ -47,7 +90,7 @@ namespace Autarkysoft.Bitcoin.Clients
         /// <inheritdoc/>
         public NodeServiceFlags Services { get; set; }
         /// <inheritdoc/>
-        public ushort DefaultPort { get; protected set; }
+        public ushort DefaultPort { get; }
         /// <inheritdoc/>
         public ushort ListenPort { get; set; }
 
@@ -55,13 +98,13 @@ namespace Autarkysoft.Bitcoin.Clients
         public string[] DnsSeeds { get; set; }
 
         /// <inheritdoc/>
-        public int BufferLength { get; protected set; }
+        public int BufferLength { get; }
         /// <inheritdoc/>
-        public int MaxConnectionCount { get; protected set; }
+        public int MaxConnectionCount { get; }
         /// <inheritdoc/>
-        public Semaphore MaxConnectionEnforcer { get; protected set; }
+        public Semaphore MaxConnectionEnforcer { get; }
         /// <inheritdoc/>
-        public SocketAsyncEventArgsPool SendReceivePool { get; protected set; }
+        public SocketAsyncEventArgsPool SendReceivePool { get; }
 
         /// <inheritdoc/>
         public abstract IReplyManager CreateReplyManager(INodeStatus nodeStatus);
