@@ -4,19 +4,17 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
+using Denovo.Models;
 using Denovo.MVVM;
 using Denovo.Services;
 using System;
-using System.Collections.Generic;
-using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Denovo.ViewModels
 {
@@ -25,49 +23,19 @@ namespace Denovo.ViewModels
         public MinerViewModel() : base(650, 650)
         {
             AllNodes = new NodePool(5);
-            var fileMan = new FileManager(NetworkType.TestNet);
-            var clientSettings = new ClientSettings(false, NetworkType.TestNet, 5, NodeServiceFlags.NodeNone,
-                                                    AllNodes, fileMan, new UtxoDatabase(fileMan), new MemoryPool())
+            var clientSettings = new MinimalClientSettings(NetworkType.TestNet, 5, AllNodes)
             {
-                UserAgent = "/Satoshi:0.20.1/",
-                Relay = false,
-                Network = NetworkType.TestNet,
+                DnsSeeds = Configuration.DnsTest,
+                UserAgent = "/Satoshi:0.22.0/",
             };
-            connector = new NodeConnector(clientSettings);
+            client = new MinimalClient(clientSettings);
+
+            client.Start();
         }
 
 
-        internal class MockBlockChain : IBlockchain
-        {
-            public int Height => 1;
-
-            public BlockchainState State { get => BlockchainState.None; set { } }
-
-            public event EventHandler HeaderSyncEndEvent;
-            public event EventHandler BlockSyncEndEvent;
-
-            public int FindHeight(ReadOnlySpan<byte> prevHash) => -1;
-            public Target GetNextTarget() => throw new NotImplementedException();
-            public bool ProcessBlock(IBlock block, INodeStatus nodeStatus) => true;
-            public BlockProcessResult ProcessHeaders(BlockHeader[] headers) => BlockProcessResult.Success;
-
-            public BlockHeader[] GetBlockHeaderLocator()
-            {
-                return new BlockHeader[]
-                {
-                    new Consensus(NetworkType.TestNet).GetGenesisBlock().Header
-                };
-            }
-
-            public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash) => null;
-
-            public void SetMissingBlockHashes(INodeStatus nodeStatus) { }
-            public void PutBackMissingBlocks(List<Inventory> blockInvs) { }
-            public void ProcessReceivedBlocks(INodeStatus nodeStatus) { }
-        }
-
+        private readonly MinimalClient client;
         public NodePool AllNodes { get; set; }
-        private readonly NodeConnector connector;
 
         private Node _selNode;
         public Node SelectedNode
@@ -95,7 +63,7 @@ namespace Denovo.ViewModels
             $"Latency: {SelectedNode.NodeStatus.Latency.TotalMilliseconds} ms{Environment.NewLine}" +
             $"Violation: {((NodeStatus)SelectedNode.NodeStatus).Violation}{Environment.NewLine}";
 
-        private int _blkH = 1905232;
+        private int _blkH = 2135863;
         public int BlockHeight
         {
             get => _blkH;
@@ -125,30 +93,18 @@ namespace Denovo.ViewModels
             tokenSource = null;
 
             var prvBlock = new Block();
-            try
+            if (!Base16.TryDecode(PreviousBlockHex, out byte[] data))
             {
-                if (!prvBlock.Header.TryDeserialize(new FastStreamReader(Base16.Decode(PreviousBlockHex)), out string error))
-                {
-                    throw new ArgumentException(error);
-                }
+                BlockHex = "Invalid hex.";
+                return;
             }
-            catch (Exception ex)
+            else if (!prvBlock.Header.TryDeserialize(new FastStreamReader(data), out string error))
             {
-                BlockHex = ex.ToString();
+                BlockHex = $"Error occured while deserializing header: {error}";
                 return;
             }
 
-
-            IPAddress[] addrs = Dns.GetHostAddresses("seed.tbtc.petertodd.org");
-
-            TestNetMiner miner = new TestNetMiner();
-
-            if (!(tokenSource is null))
-            {
-                tokenSource.Dispose();
-                tokenSource = null;
-            }
-
+            TestNetMiner miner = new();
             tokenSource = new CancellationTokenSource();
 
             IBlock result = await miner.Start(prvBlock, BlockHeight, tokenSource.Token);
@@ -161,19 +117,7 @@ namespace Denovo.ViewModels
 
                 var msg = new Message(new BlockPayload(result), NetworkType.TestNet);
 
-                connector.StartConnect(new IPEndPoint(addrs[0], 18333));
-                connector.StartConnect(new IPEndPoint(addrs[1], 18333));
-                connector.StartConnect(new IPEndPoint(addrs[2], 18333));
-                connector.StartConnect(new IPEndPoint(addrs[3], 18333));
-                connector.StartConnect(new IPEndPoint(addrs[4], 18333));
-
-
-                await Task.Delay(TimeSpan.FromSeconds(5));
-
-                foreach (var node in AllNodes)
-                {
-                    node.Send(msg);
-                }
+                client.Send(msg);
             }
             else
             {
