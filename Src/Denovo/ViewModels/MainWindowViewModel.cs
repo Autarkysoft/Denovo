@@ -72,7 +72,7 @@ namespace Denovo.ViewModels
             var utxoDb = new UtxoDatabase(FileMan);
             var memPool = new MemoryPool();
             clientSettings =
-                new ClientSettings(
+                new FullClientSettings(
                     config.AcceptIncoming,
                     config.Network,
                     config.MaxConnectionCount,

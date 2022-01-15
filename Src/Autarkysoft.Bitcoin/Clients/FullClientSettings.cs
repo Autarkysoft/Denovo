@@ -5,7 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Clients;
+using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
@@ -13,26 +13,25 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Threading;
 
-namespace Autarkysoft.Bitcoin.P2PNetwork
+namespace Autarkysoft.Bitcoin.Clients
 {
     /// <summary>
     /// Defines client settings. One instance should be used by the client and passed to all node instance through both
     /// <see cref="NodeListener"/> and <see cref="NodeConnector"/>.
     /// Implements <see cref="IFullClientSettings"/>.
     /// </summary>
-    public class ClientSettings : ClientSettingsBase, IFullClientSettings
+    public class FullClientSettings : ClientSettingsBase, IFullClientSettings
     {
         /// <summary>
         /// Default constructor used for tests only
         /// </summary>
-        public ClientSettings() : base(NetworkType.MainNet, 2, null, NodeServiceFlags.NodeNone)
+        public FullClientSettings() : base(NetworkType.MainNet, 2, null, NodeServiceFlags.NodeNone)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of <see cref="ClientSettings"/> with the given parameters.
+        /// Initializes a new instance of <see cref="FullClientSettings"/> with the given parameters.
         /// </summary>
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
@@ -44,7 +43,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <param name="utxoDb">UTXO database</param>
         /// <param name="memPool">Memory pool</param>
         /// <param name="maxConnection">Maximum number of connections</param>
-        public ClientSettings(bool listen, NetworkType netType, int maxConnection, NodeServiceFlags servs,
+        public FullClientSettings(bool listen, NetworkType netType, int maxConnection, NodeServiceFlags servs,
                               NodePool nodes, IFileManager fileMan, IUtxoDatabase utxoDb, IMemoryPool memPool)
             : base(netType, maxConnection, nodes, servs)
         {

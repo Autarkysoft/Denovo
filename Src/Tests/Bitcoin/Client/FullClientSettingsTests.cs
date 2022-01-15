@@ -4,13 +4,13 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Net;
 using Tests.Bitcoin.Blockchain;
 using Xunit;
 
-namespace Tests.Bitcoin.P2PNetwork
+namespace Tests.Bitcoin.Client
 {
     public class ClientSettingsTests
     {
@@ -23,7 +23,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeWitness, BlockchainState.BlocksSync, true)]
         public void HasNeededServicesTest(NodeServiceFlags flags, BlockchainState state, bool expected)
         {
-            var cs = new ClientSettings();
+            var cs = new FullClientSettings();
             Helper.SetReadonlyProperty(cs, nameof(cs.Blockchain), new MockBlockchain() { _stateToReturn = state });
             bool actual = cs.HasNeededServices(flags);
             Assert.Equal(expected, actual);
@@ -40,7 +40,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [InlineData(NodeServiceFlags.NodeNetwork | NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeWitness, true)]
         public void IsGoodForHeaderSyncTest(NodeServiceFlags flags, bool expected)
         {
-            var cs = new ClientSettings();
+            var cs = new FullClientSettings();
             bool actual = cs.IsGoodForHeaderSync(flags);
             Assert.Equal(expected, actual);
         }
@@ -58,7 +58,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [InlineData(NodeServiceFlags.NodeNetworkLimited | NodeServiceFlags.NodeWitness, false)]
         public void IsGoodForBlockSyncTest(NodeServiceFlags flags, bool expected)
         {
-            var cs = new ClientSettings();
+            var cs = new FullClientSettings();
             bool actual = cs.IsGoodForBlockSync(flags);
             Assert.Equal(expected, actual);
         }
@@ -74,7 +74,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [InlineData(NodeServiceFlags.NodeNetworkLimited, true)]
         public void IsPrunedTest(NodeServiceFlags flags, bool expected)
         {
-            var cs = new ClientSettings();
+            var cs = new FullClientSettings();
             bool actual = cs.IsPruned(flags);
             Assert.Equal(expected, actual);
         }
@@ -83,7 +83,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void UpdateMyIP_GetMyIP_Test()
         {
-            var cs = new ClientSettings();
+            var cs = new FullClientSettings();
 
             var ip1_1 = IPAddress.Parse("1.1.1.1");
             var ip1_2 = IPAddress.Parse("1.1.1.1");
