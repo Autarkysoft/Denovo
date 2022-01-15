@@ -468,7 +468,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     }
                     else if (Deser(msg.PayloadData, out TxPayload tx))
                     {
-                        if (!fullSettings.AddToMempool(tx.Tx))
+                        if (!fullSettings.MemPool.Add(tx.Tx))
                         {
                             nodeStatus.AddMediumViolation();
                         }

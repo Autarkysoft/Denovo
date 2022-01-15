@@ -13,6 +13,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public interface IMemoryPool
     {
         /// <summary>
+        /// Adds the given transaction to memory pool
+        /// </summary>
+        /// <param name="tx">Transaction to add</param>
+        /// <returns>True if the transaction was valid; otherwise false.</returns>
+        bool Add(ITransaction tx);
+        /// <summary>
         /// Returns if the given transaction is found inside memory pool.
         /// </summary>
         /// <param name="tx">Transaction to check</param>

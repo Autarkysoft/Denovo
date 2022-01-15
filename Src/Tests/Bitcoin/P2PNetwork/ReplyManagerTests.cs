@@ -305,8 +305,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _relay = true,
-                    _expMemPoolTx = tx,
-                    _addToMemPoolReturn = true
+                    _memPool = new MockMempool(tx.GetTransactionHash())
                 },
                 new Message(new TxPayload(tx), NetworkType.MainNet),
                 null

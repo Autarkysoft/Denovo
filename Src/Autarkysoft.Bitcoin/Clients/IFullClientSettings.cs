@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System.Net;
@@ -37,13 +36,6 @@ namespace Autarkysoft.Bitcoin.Clients
         /// </summary>
         bool AcceptIncomingConnections { get; set; }
 
-        // TODO: remore this method by adding a Add() method to IMemoryPool
-        /// <summary>
-        /// Adds the given transaction to memory pool
-        /// </summary>
-        /// <param name="tx"></param>
-        /// <returns></returns>
-        bool AddToMempool(ITransaction tx);
         /// <summary>
         /// Returns up to <paramref name="count"/> number of <see cref="NetworkAddressWithTime"/>s at random.
         /// If the node address file is not found or is corrupted, returns null.

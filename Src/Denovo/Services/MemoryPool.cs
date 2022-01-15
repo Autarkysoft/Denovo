@@ -10,9 +10,9 @@ namespace Denovo.Services
 {
     public class MemoryPool : IMemoryPool
     {
-        public void Add(ITransaction tx)
+        public bool Add(ITransaction tx)
         {
-
+            return true;
         }
 
         public bool Contains(ITransaction tx)

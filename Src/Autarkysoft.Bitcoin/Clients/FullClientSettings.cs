@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
@@ -103,14 +102,6 @@ namespace Autarkysoft.Bitcoin.Clients
         /// <inheritdoc/>
         public bool IsPruned(NodeServiceFlags flags) => flags.HasFlag(NodeServiceFlags.NodeNetworkLimited) &&
                                                         !flags.HasFlag(NodeServiceFlags.NodeNetwork);
-
-        /// <inheritdoc/>
-        public bool AddToMempool(ITransaction tx)
-        {
-            // TODO: this needs improvement of IMemoryPool first, it needs to return a report, 
-            //       invalid tx, existing tx, double spend tx, ... aren't added but some may need adding violation to nodes status
-            return true;
-        }
 
 
         private readonly object addrLock = new object();

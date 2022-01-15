@@ -18,6 +18,12 @@ namespace Tests.Bitcoin.Blockchain
 
         private readonly byte[] hash;
 
+        public bool Add(ITransaction tx)
+        {
+            Assert.Equal(hash, tx.GetTransactionHash());
+            return true;
+        }
+
         public bool Contains(ITransaction tx)
         {
             if (hash == null)

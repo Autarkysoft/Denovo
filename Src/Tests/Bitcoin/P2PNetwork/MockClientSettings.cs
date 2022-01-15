@@ -248,16 +248,6 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
 
-
-        internal ITransaction _expMemPoolTx;
-        internal bool _addToMemPoolReturn;
-        public bool AddToMempool(ITransaction tx)
-        {
-            Assert.NotNull(_expMemPoolTx);
-            Assert.Equal(_expMemPoolTx.GetTransactionHash(), tx.GetTransactionHash());
-            return _addToMemPoolReturn;
-        }
-
         internal NetworkAddressWithTime[] addrsToReturn;
         internal int countRandAddr;
         internal bool? randAddrSkipCheck;
