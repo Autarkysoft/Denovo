@@ -1,5 +1,12 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.16.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.17.0.0...master)
+
+### Release 0.17.0 (2022-01-16)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.16.0.0...B0.17.0.0)
+* Added `MinimalClient` 
+* All clients are now in a new namespace
+* Add a new method to `PublicKey` and `Address` classes to handle Taproot keys
+* Small improvements
 
 ### Release 0.16.0 (2021-12-13)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.15.0.0...B0.16.0.0)
