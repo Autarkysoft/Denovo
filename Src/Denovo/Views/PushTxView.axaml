@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
+             mc:Ignorable="d" d:DesignWidth="650" d:DesignHeight="450"
+             x:Class="Denovo.Views.PushTxView">
+
+  <Design.DataContext>
+    <vm:PushTxViewModel/>
+  </Design.DataContext>
+
+  <Grid RowDefinitions="auto,*,*">
+    <StackPanel Orientation="Horizontal" Spacing="3" Grid.Row="0">
+      <ComboBox Items="{Binding NetworkList}"
+                SelectedItem="{Binding SelectedNetwork}"
+                IsEnabled="{Binding !IsConnected}"/>
+      <Button Content="Connect"
+              Command="{Binding ConnectCommand}"/>
+      <Button Content="Push"
+              Command="{Binding PushCommand}"/>
+    </StackPanel>
+
+    <TextBox Text="{Binding TxHex}"
+             Grid.Row="1"/>
+
+    <TextBlock Text="{Binding Result}"
+               Grid.Row="2"/>
+  </Grid>
+</UserControl>

@@ -160,6 +160,13 @@ namespace Denovo.ViewModels
             await WinMan.ShowDialog(vm);
         }
 
+        public async void OpenPushTx()
+        {
+            var vm = new PushTxViewModel();
+            await WinMan.ShowDialog(vm);
+            vm.Dispose();
+        }
+
         private Node _selNode;
         public Node SelectedNode
         {
