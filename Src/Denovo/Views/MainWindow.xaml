@@ -20,16 +20,19 @@
       <TextBlock Text="{Binding Risk}" TextWrapping="Wrap"/>
     </StackPanel>
 
-    <Grid>
-      <StackPanel Margin="5" Spacing="5">
-        <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,30">
-          <Button Content="Config" Command="{Binding OpenConfig}" Width="100" HorizontalAlignment="Left"/>
-          <Button Content="Miner" Command="{Binding OpenMiner}" Width="100" HorizontalAlignment="Left"/>
-          <Button Content="Encrypt/Decrypt" Command="{Binding OpenEcies}" HorizontalAlignment="Left"/>
-          <Button Content="Transaction verifier" Command="{Binding OpenVerifyTx}" HorizontalAlignment="Left"/>
-          <Button Content="WIF helper" Command="{Binding OpenWifHelper}" HorizontalAlignment="Left"/>
-          <Button Content="Push Tx" Command="{Binding OpenPushTx}" HorizontalAlignment="Left"/>
-        </StackPanel>
+    <Grid RowDefinitions="auto,*">
+      <Menu Grid.Row="0">
+        <MenuItem Header="Tools">
+          <MenuItem Header="TestNet miner" Command="{Binding OpenMiner}"/>
+          <MenuItem Header="Encrypt/Decrypt" Command="{Binding OpenEcies}"/>
+          <MenuItem Header="Transaction verifier" Command="{Binding OpenVerifyTx}"/>
+          <MenuItem Header="WIF helper" Command="{Binding OpenWifHelper}"/>
+          <MenuItem Header="Push tx" Command="{Binding OpenPushTx}"/>
+          <Separator/>
+          <MenuItem Header="Configuration" Command="{Binding OpenConfig}"/>
+        </MenuItem>
+      </Menu>
+      <StackPanel Margin="5" Spacing="5" Grid.Row="1">
         <StackPanel Orientation="Horizontal" Spacing="5">
           <TextBlock Text="IP:"/>
           <TextBox Text="{Binding IpAddress}" Width="200"/>
