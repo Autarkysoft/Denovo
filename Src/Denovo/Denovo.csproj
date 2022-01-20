@@ -2,14 +2,14 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
     <Authors>Coding-Enthusiast</Authors>
     <Company>Autarkysoft</Company>
     <PackageProjectUrl>https://github.com/Autarkysoft/Denovo</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Autarkysoft/Denovo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <FileVersion>0.1.0.0</FileVersion>
-    <Version>0.1.0</Version>
+    <FileVersion>0.2.0.0</FileVersion>
+    <Version>0.2.0</Version>
     <Copyright>Copyright (c) 2020 Autarkysoft</Copyright>
   </PropertyGroup>
 
