@@ -130,7 +130,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
             // Important note is to perform BlockMix one more time to get the final X that is not in V but will be used later
 
             // Convert data byte[] to uint[]
-            // On each call to this function we work on 1 blockSize hence the length of the foor loop
+            // On each call to this function we work on 1 blockSize hence the length of the for loop
             // data pointer is moved forward by the caller.
             // This loop sets V0
             for (int i = 0, index = 0; i < blockSize; i += 4, index++)
@@ -205,7 +205,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
             // Treat block as 2r 64 byte chunks
             fixed (uint* xPt = &blockMixBuffer[0])
             {
-                Copy64(srcPt + blockSizeUint - 16, xPt);
+                *(Block64*)xPt = *(Block64*)(srcPt + blockSizeUint - 16);
 
                 uint* block = srcPt;
 
@@ -220,12 +220,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
                     //      Y[0], Y[2], ..., Y[2 * r - 2], Y[1], Y[3], ..., Y[2 * r - 1]
                     if ((i & 1) == 0) // i = 0,2,4,...
                     {
-                        Copy64(xPt, dstPt + i1);
+                        *(Block64*)(dstPt + i1) = *(Block64*)xPt;
                         i1 += 16;
                     }
                     else
                     {
-                        Copy64(xPt, dstPt + i2);
+                        *(Block64*)(dstPt + i2) = *(Block64*)xPt;
                         i2 += 16;
                     }
 
@@ -309,15 +309,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private uint R(uint a, int b) => unchecked((a << b) | (a >> (32 - b)));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void Copy64(uint* src, uint* dst)
-        {
-            for (int i = 0; i < 16; i += 2)
-            {
-                *(ulong*)(dst + i) = *(ulong*)(src + i);
-            }
-        }
 
 
         private bool isDisposed = false;
