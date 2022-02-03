@@ -10,7 +10,8 @@
 
 # Denovo
 [![Version](https://img.shields.io/badge/dynamic/xml?color=orange&label=version&query=%2F%2FAssemblyVersion%5B1%5D&url=https%3A%2F%2Fgithub.com%2FAutarkysoft%2FDenovo%2Fraw%2Fmaster%2FSrc%2FDenovo%2FDenovo.csproj&style=for-the-badge)](https://github.com/Autarkysoft/Denovo/blob/master/Src/Autarkysoft.Bitcoin/Autarkysoft.Bitcoin.csproj)
-[![Target](https://img.shields.io/badge/dynamic/xml?color=%23512bd4&label=target&query=%2F%2FTargetFramework%5B1%5D&url=https%3A%2F%2Fgithub.com%2FAutarkysoft%2FDenovo%2Fraw%2Fmaster%2FSrc%2FDenovo%2FDenovo.csproj&logo=.net&style=for-the-badge)](https://github.com/Autarkysoft/Denovo/blob/master/Src/Autarkysoft.Bitcoin/Autarkysoft.Bitcoin.csproj) 
+[![GitHub all releases](https://img.shields.io/github/downloads/Autarkysoft/Denovo/total?style=for-the-badge)](https://github.com/Autarkysoft/Denovo/releases)
+[![Target](https://img.shields.io/badge/dynamic/xml?color=%23512bd4&label=target&query=%2F%2FTargetFramework%5B1%5D&url=https%3A%2F%2Fgithub.com%2FAutarkysoft%2FDenovo%2Fraw%2Fmaster%2FSrc%2FDenovo%2FDenovo.csproj&logo=.net&style=for-the-badge)](https://github.com/Autarkysoft/Denovo/blob/master/Src/Denovo/Denovo.csproj) 
 
 Denovo will eventually be a very flexible and easy to use tool with lots of features from a simple offline tool to handle keys and transaction signing to a full client
 capable of working as a full node or a SPV node and ultimately a second layer node (such as Lightning network node).  
@@ -19,6 +20,8 @@ Currently Denovo is in beta and has very limited features listed below:
 be tested otherwise.  
 * **Message encryption:** encrypt and decrypt messages using Elliptic Curve Integrated Encryption Scheme (ECIES).  
 * **Transaction verifier:** verify any bitcoin transaction by entering its raw hex and all its UTXOs.  
+* **WIF helper:** an experimental feature to convert WIFs to mnemonic and back
+* **Push transaction:** broadcast transactions to other bitcoin nodes on mainnet and testnet
 
 Using the latest [.net core](https://github.com/dotnet/core) version with [AvaloniaUI](https://github.com/AvaloniaUI/Avalonia)
 Denovo can run on any operating systems.  
