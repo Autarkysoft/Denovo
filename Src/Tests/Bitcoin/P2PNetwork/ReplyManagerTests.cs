@@ -66,7 +66,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 _ua = "foo",
                 _relay = true,
                 _netType = NetworkType.TestNet,
-                _bchain = new MockBlockchain() { _height = 12345 },
+                _bchain = new MockChain() { _height = 12345 },
                 _rng = new MockNonceRng(RngReturnValue)
             };
 
@@ -83,7 +83,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public static IEnumerable<object[]> GetReplyCases()
         {
-            var bc = new MockBlockchain();
+            var bc = new MockChain();
             var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _bchain = bc };
             var mockAddr1 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("200.2.3.4"), 23, 98);
             var mockAddr2 = new NetworkAddressWithTime(NodeServiceFlags.All, IPAddress.Parse("1.2.3.4"), 8080, 665412);
@@ -115,7 +115,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.HeadersSync
                     }
@@ -376,7 +376,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.BlocksSync,
                     }
@@ -397,7 +397,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.BlocksSync,
                     }
@@ -419,7 +419,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.BlocksSync,
                     }
@@ -440,7 +440,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.BlocksSync,
                     }
@@ -515,7 +515,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 smallViolation = true,
                 updateTime = true
             };
-            var chain = new MockBlockchain() { _stateToReturn = BlockchainState.Synchronized };
+            var chain = new MockChain() { _stateToReturn = BlockchainState.Synchronized };
             var rep = new ReplyManager(ns, new MockClientSettings() { _relay = true, _bchain = chain });
 
             Message[] actual = rep.GetReply(msg);
@@ -601,7 +601,7 @@ namespace Tests.Bitcoin.P2PNetwork
             var sendHdr = new Message(new SendHeadersPayload(), NetworkType.MainNet);
             BlockHeader hdr = BlockHeaderTests.GetSampleBlockHeader();
             var getHdrs = new Message(new GetHeadersPayload(mockProtoVer, new BlockHeader[] { hdr }, null), NetworkType.MainNet);
-            var syncBC = new MockBlockchain()
+            var syncBC = new MockChain()
             {
                 _stateToReturn = BlockchainState.Synchronized,
                 headerLocatorToReturn = new BlockHeader[] { hdr }
@@ -682,7 +682,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true, // Dependency fake pass on given flag
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.HeadersSync,
                         headerLocatorToReturn = new BlockHeader[] { hdr }
@@ -708,7 +708,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.HeadersSync,
                         headerLocatorToReturn = new BlockHeader[] { hdr }
@@ -734,7 +734,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.HeadersSync,
                         headerLocatorToReturn = new BlockHeader[] { hdr }
@@ -762,7 +762,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protoVer = mockProtoVer,
                     expHasNeededServicesFlags = NodeServiceFlags.NodeGetUtxo,
                     _hasNeededServices = true, // Fake pass
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.BlocksSync,
                         headerLocatorToReturn = new BlockHeader[] { hdr }
@@ -1115,7 +1115,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 _ua = "foo",
                 _relay = true,
                 _netType = NetworkType.MainNet,
-                _bchain = new MockBlockchain() { _height = 12345, _stateToReturn = BlockchainState.Synchronized },
+                _bchain = new MockChain() { _height = 12345, _stateToReturn = BlockchainState.Synchronized },
                 expUpdateAddr = mockIp,
                 _rng = new MockNonceRng(RngReturnValue)
             };
@@ -1214,7 +1214,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _ua = cs._ua,
                     _netType = cs._netType,
                     expUpdateAddr = cs.expUpdateAddr,
-                    _bchain = new MockBlockchain()
+                    _bchain = new MockChain()
                     {
                         _stateToReturn = BlockchainState.Synchronized,
                         headerLocatorToReturn = new BlockHeader[] { hdr }

@@ -55,7 +55,7 @@ namespace Autarkysoft.Bitcoin.Clients
 
             var c = new Consensus(netType);
             var txVer = new TransactionVerifier(false, utxoDb, memPool, c);
-            Blockchain = new Blockchain.Blockchain(FileMan, new BlockVerifier(txVer, c), c)
+            Blockchain = new Chain(FileMan, new BlockVerifier(txVer, c), c)
             {
                 Time = Time,
                 State = BlockchainState.None
@@ -68,7 +68,7 @@ namespace Autarkysoft.Bitcoin.Clients
         /// <inheritdoc/>
         public IFileManager FileMan { get; }
         /// <inheritdoc/>
-        public IBlockchain Blockchain { get; }
+        public IChain Blockchain { get; }
         /// <inheritdoc/>
         public IMemoryPool MemPool { get; set; }
         /// <inheritdoc/>

@@ -37,8 +37,8 @@ namespace Tests.Bitcoin.P2PNetwork
             }
         }
 
-        internal IBlockchain _bchain;
-        public IBlockchain Blockchain
+        internal IChain _bchain;
+        public IChain Blockchain
         {
             get
             {

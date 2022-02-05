@@ -16,15 +16,15 @@ using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
-    public class BlockchainTests
+    public class ChainTests
     {
-        private static Autarkysoft.Bitcoin.Blockchain.Blockchain GetChain(IFileManager fman, BlockVerifier bver, IConsensus c)
+        private static Chain GetChain(IFileManager fman, BlockVerifier bver, IConsensus c)
         {
             // TODO: we can mock Time too
-            return new Autarkysoft.Bitcoin.Blockchain.Blockchain(fman, bver, c) { Time = new ClientTime() };
+            return new Chain(fman, bver, c) { Time = new ClientTime() };
         }
 
-        private static Autarkysoft.Bitcoin.Blockchain.Blockchain GetChain()
+        private static Chain GetChain()
         {
             var c = new Consensus();
             var fman = new MockFileManager()
@@ -351,7 +351,7 @@ namespace Tests.Bitcoin.Blockchain
 
         [Theory]
         [MemberData(nameof(GetLocatorCases))]
-        public void GetBlockHeaderLocatorTest(Autarkysoft.Bitcoin.Blockchain.Blockchain chain,
+        public void GetBlockHeaderLocatorTest(Autarkysoft.Bitcoin.Blockchain.Chain chain,
                                               BlockHeader[] toSet, BlockHeader[] expected)
         {
             Helper.SetPrivateField(chain, "headerList", new List<BlockHeader>(toSet));

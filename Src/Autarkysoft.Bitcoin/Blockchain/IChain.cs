@@ -14,7 +14,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
     /// <summary>
     /// Defines methods and properties that a blockchain (or database) manager implements.
     /// </summary>
-    public interface IBlockchain
+    public interface IChain
     {
         /// <summary>
         /// Gets or sets the current blockchain state

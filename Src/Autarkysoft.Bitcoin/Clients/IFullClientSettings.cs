@@ -19,7 +19,7 @@ namespace Autarkysoft.Bitcoin.Clients
         /// <summary>
         /// Returns the blockchain instance to be shared among all node instances
         /// </summary>
-        IBlockchain Blockchain { get; }
+        IChain Blockchain { get; }
 
         /// <summary>
         /// Gets or sets the memory pool instance that is shared by all node instances
@@ -58,7 +58,7 @@ namespace Autarkysoft.Bitcoin.Clients
         void UpdateNodeAddrs(NetworkAddressWithTime[] nodeAddresses);
         /// <summary>
         /// Returns if the provided service flags contains services that are needed for syncing based on
-        /// <see cref="IBlockchain"/>'s current state.
+        /// <see cref="IChain"/>'s current state.
         /// </summary>
         /// <param name="flags">Flags to check</param>
         /// <returns>True if the required services are available; otherwise false.</returns>

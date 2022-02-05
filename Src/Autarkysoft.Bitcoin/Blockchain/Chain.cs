@@ -42,18 +42,18 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
     /// <summary>
     /// Implementation of the blockchain that handles validation and storage of blocks and block headers.
-    /// <para/>Implements <see cref="IBlockchain"/>.
+    /// <para/>Implements <see cref="IChain"/>.
     /// </summary>
-    public class Blockchain : IBlockchain
+    public class Chain : IChain
     {
         /// <summary>
-        /// Initializes a new instance of <see cref="Blockchain"/> using the given parameters.
+        /// Initializes a new instance of <see cref="Chain"/> using the given parameters.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="fileMan">File manager</param>
         /// <param name="blockVerifier">Block verifier</param>
         /// <param name="consensus">Consensus rules</param>
-        public Blockchain(IFileManager fileMan, BlockVerifier blockVerifier, IConsensus consensus)
+        public Chain(IFileManager fileMan, BlockVerifier blockVerifier, IConsensus consensus)
         {
             FileMan = fileMan ?? throw new ArgumentNullException(nameof(fileMan));
             Consensus = consensus ?? throw new ArgumentNullException(nameof(consensus));

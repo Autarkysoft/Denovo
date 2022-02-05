@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
-    public class MockBlockchain : IBlockchain
+    public class MockChain : IChain
     {
 #pragma warning disable CS0649 // Field is never assigned to
 #pragma warning disable CS0067 // Field is never used

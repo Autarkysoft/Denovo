@@ -24,7 +24,7 @@ namespace Tests.Bitcoin.Client
         public void HasNeededServicesTest(NodeServiceFlags flags, BlockchainState state, bool expected)
         {
             var cs = new FullClientSettings();
-            Helper.SetReadonlyProperty(cs, nameof(cs.Blockchain), new MockBlockchain() { _stateToReturn = state });
+            Helper.SetReadonlyProperty(cs, nameof(cs.Blockchain), new MockChain() { _stateToReturn = state });
             bool actual = cs.HasNeededServices(flags);
             Assert.Equal(expected, actual);
         }
