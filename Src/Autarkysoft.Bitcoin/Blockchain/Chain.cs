@@ -121,7 +121,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private void ReadHeaders()
         {
             byte[] hadba = FileMan.ReadData(HeadersFile);
-            if (hadba is null || hadba.Length % Constants.BlockHeaderSize != 0)
+            if (hadba is null || hadba.Length % BlockHeader.Size != 0)
             {
                 // File doesn't exist or is corrupted
                 BlockHeader genesis = Consensus.GetGenesisBlock().Header;
@@ -130,7 +130,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
             else
             {
-                int count = hadba.Length / Constants.BlockHeaderSize;
+                int count = hadba.Length / BlockHeader.Size;
                 var stream = new FastStreamReader(hadba);
                 for (int i = 0; i < count; i++)
                 {
@@ -547,7 +547,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private void AppendHeadrs(IEnumerable<BlockHeader> headers, int count)
         {
-            var stream = new FastStream(count * Constants.BlockHeaderSize);
+            var stream = new FastStream(count * BlockHeader.Size);
             foreach (var item in headers)
             {
                 item.Serialize(stream);

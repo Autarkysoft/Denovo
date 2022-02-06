@@ -27,9 +27,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             if (block is null)
                 throw new ArgumentNullException(nameof(block), "Block can not be null.");
 
-            FastStream stream = new FastStream(Constants.BlockHeaderSize);
+            FastStream stream = new FastStream(BlockHeader.Size);
             block.Header.Serialize(stream);
-            BlockHeader = stream.ToByteArray();
+            Header = stream.ToByteArray();
         }
 
 
@@ -37,15 +37,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <summary>
         /// 80 byte block header
         /// </summary>
-        public byte[] BlockHeader
+        public byte[] Header
         {
             get => _header;
             set
             {
                 if (value == null)
-                    throw new ArgumentNullException(nameof(BlockHeader), "Block header can not be null.");
-                if (value.Length != Constants.BlockHeaderSize)
-                    throw new ArgumentOutOfRangeException(nameof(BlockHeader), $"Header length must be {Constants.BlockHeaderSize}");
+                    throw new ArgumentNullException(nameof(Header), "Block header can not be null.");
+                if (value.Length != BlockHeader.Size)
+                    throw new ArgumentOutOfRangeException(nameof(Header), $"Header length must be {BlockHeader.Size}");
 
                 _header = value;
             }
@@ -69,7 +69,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <inheritdoc/>
         public override void AddSerializedSize(SizeCounter counter)
         {
-            counter.Add(BlockHeader.Length);
+            counter.Add(Header.Length);
             counter.AddUInt64();
             counter.AddCompactIntCount(ShortIDs.Length);
             counter.Add(ShortIDs.Length * 6);
@@ -83,7 +83,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <inheritdoc/>
         public override void Serialize(FastStream stream)
         {
-            stream.Write(BlockHeader);
+            stream.Write(Header);
             stream.Write(Nonce);
             new CompactInt(ShortIDs.Length).WriteToStream(stream);
             foreach (var val in ShortIDs)

@@ -38,13 +38,13 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public void SerializeTest()
         {
             var pl = new HeadersPayload(new BlockHeader[] { BlockHeaderTests.GetSampleBlockHeader() });
-            var stream = new FastStream(Constants.BlockHeaderSize + 2);
+            var stream = new FastStream(BlockHeader.Size + 2);
             pl.Serialize(stream);
 
             byte[] hd = BlockHeaderTests.GetSampleBlockHeaderBytes();
-            byte[] expected = new byte[Constants.BlockHeaderSize + 2];
+            byte[] expected = new byte[BlockHeader.Size + 2];
             expected[0] = 1;
-            Buffer.BlockCopy(hd, 0, expected, 1, Constants.BlockHeaderSize);
+            Buffer.BlockCopy(hd, 0, expected, 1, BlockHeader.Size);
             expected[^1] = 0;
 
             Assert.Equal(expected, stream.ToByteArray());
@@ -54,7 +54,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public void Serialize_MultiTest()
         {
             int count = 254;
-            int totalSize = 3 + (Constants.BlockHeaderSize + 1) * count;
+            int totalSize = 3 + (BlockHeader.Size + 1) * count;
 
             var hds = Enumerable.Repeat(BlockHeaderTests.GetSampleBlockHeader(), count);
             var pl = new HeadersPayload(hds.ToArray());
@@ -69,8 +69,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             expected[j++] = 0;
             for (int i = 0; i < count; i++)
             {
-                Buffer.BlockCopy(hd, 0, expected, j, Constants.BlockHeaderSize);
-                j += Constants.BlockHeaderSize;
+                Buffer.BlockCopy(hd, 0, expected, j, BlockHeader.Size);
+                j += BlockHeader.Size;
                 expected[j++] = 0;
             }
 
@@ -81,12 +81,12 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public void TryDeserializeTest()
         {
             byte[] hd = BlockHeaderTests.GetSampleBlockHeaderBytes();
-            byte[] data = new byte[(Constants.BlockHeaderSize * 2) + 3];
+            byte[] data = new byte[(BlockHeader.Size * 2) + 3];
             data[0] = 2;
-            Buffer.BlockCopy(hd, 0, data, 1, Constants.BlockHeaderSize);
-            data[Constants.BlockHeaderSize + 1] = 0;
-            Buffer.BlockCopy(hd, 0, data, Constants.BlockHeaderSize + 2, Constants.BlockHeaderSize);
-            data[(Constants.BlockHeaderSize * 2) + 2] = 0;
+            Buffer.BlockCopy(hd, 0, data, 1, BlockHeader.Size);
+            data[BlockHeader.Size + 1] = 0;
+            Buffer.BlockCopy(hd, 0, data, BlockHeader.Size + 2, BlockHeader.Size);
+            data[(BlockHeader.Size * 2) + 2] = 0;
 
             var pl = new HeadersPayload();
             var stream = new FastStreamReader(data);

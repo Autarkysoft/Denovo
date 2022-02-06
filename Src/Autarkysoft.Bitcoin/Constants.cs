@@ -58,10 +58,6 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int Sha256Length = 32;
         /// <summary>
-        /// Byte length of the block headers
-        /// </summary>
-        public const int BlockHeaderSize = 80;
-        /// <summary>
         /// Maximum allowed block weight (BIP-141)
         /// </summary>
         public const int MaxBlockWeight = 4_000_000;

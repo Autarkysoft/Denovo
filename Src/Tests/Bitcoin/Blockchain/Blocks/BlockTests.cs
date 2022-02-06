@@ -414,7 +414,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             blk.Serialize(stream);
 
             byte[] expected = new byte[80 + 1 + (3 + 3 + 2)];
-            Buffer.BlockCopy(BlockHeaderTests.GetSampleBlockHeaderBytes(), 0, expected, 0, Constants.BlockHeaderSize);
+            Buffer.BlockCopy(BlockHeaderTests.GetSampleBlockHeaderBytes(), 0, expected, 0, BlockHeader.Size);
             expected[80] = 3; // Tx count
             expected[81] = 1;
             expected[82] = 2;
@@ -476,17 +476,17 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             yield return new object[]
             {
-                new byte[Constants.BlockHeaderSize -1],
+                new byte[BlockHeader.Size -1],
                 Err.EndOfStream
             };
             yield return new object[]
             {
-                Helper.ConcatBytes(Constants.BlockHeaderSize + 5, hdba, new byte[] { 0xfe, 0x00, 0x00, 0x00, 0x80 }),
+                Helper.ConcatBytes(BlockHeader.Size + 5, hdba, new byte[] { 0xfe, 0x00, 0x00, 0x00, 0x80 }),
                 "Number of transactions is too big."
             };
             yield return new object[]
             {
-                Helper.ConcatBytes(Constants.BlockHeaderSize + 1, hdba, new byte[] { 1 }),
+                Helper.ConcatBytes(BlockHeader.Size + 1, hdba, new byte[] { 1 }),
                 Err.EndOfStream
             };
         }
