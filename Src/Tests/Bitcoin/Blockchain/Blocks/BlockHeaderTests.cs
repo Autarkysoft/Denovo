@@ -55,7 +55,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void GetHashTest()
         {
-            var hdr = GetSampleBlockHeader();
+            BlockHeader hdr = GetSampleBlockHeader();
             byte[] actualHash1 = hdr.GetHash();
             Assert.Equal(GetSampleBlockHash(), actualHash1);
 
@@ -73,8 +73,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void GetHash_NullFieldTest()
         {
-            var hdr = GetSampleBlockHeader();
-            // Requesting re-hash while the stored value is null
+            BlockHeader hdr = GetSampleBlockHeader();
+            // Requesting re-hash while the "hash" field is null
             byte[] actualHash1 = hdr.GetHash(true);
             Assert.Equal(GetSampleBlockHash(), actualHash1);
         }
@@ -82,7 +82,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void GetIDTest()
         {
-            var hdr = GetSampleBlockHeader();
+            BlockHeader hdr = GetSampleBlockHeader();
             string actual1 = hdr.GetID(false);
             // Call again to make sure the hash field is not changed
             string actual2 = hdr.GetID(false);
@@ -104,8 +104,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void AddSerializedSizeTest()
         {
-            var hd = new BlockHeader();
-            var counter = new SizeCounter();
+            BlockHeader hd = new();
+            SizeCounter counter = new();
             hd.AddSerializedSize(counter);
             Assert.Equal(BlockHeader.Size, counter.Size);
         }
@@ -115,7 +115,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         {
             BlockHeader hd = GetSampleBlockHeader();
 
-            var stream = new FastStream();
+            FastStream stream = new();
             hd.Serialize(stream);
 
             byte[] expected = GetSampleBlockHeaderBytes();
@@ -127,7 +127,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void TryDeserializeTest()
         {
-            var hd = new BlockHeader();
+            BlockHeader hd = new();
             bool b = hd.TryDeserialize(new FastStreamReader(GetSampleBlockHeaderBytes()), out string error);
             BlockHeader expected = GetSampleBlockHeader();
 
@@ -145,7 +145,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         {
             yield return new object[]
             {
-                new byte[Constants.BlockHeaderSize -1],
+                new byte[BlockHeader.Size -1],
                 Err.EndOfStream
             };
         }
@@ -153,7 +153,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [MemberData(nameof(GetDeserFailCases))]
         public void TryDeserialize_FailTests(byte[] data, string expErr)
         {
-            var hd = new BlockHeader();
+            BlockHeader hd = new();
             bool b = hd.TryDeserialize(new FastStreamReader(data), out string error);
 
             Assert.False(b, error);
