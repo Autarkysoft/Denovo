@@ -15,18 +15,18 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void ConstructorTests()
         {
-            LockTime zeroI = new LockTime(0);
-            LockTime zeroU = new LockTime(0U);
+            LockTime zeroI = new(0);
+            LockTime zeroU = new(0U);
             Helper.ComparePrivateField(zeroI, "value", 0U);
             Helper.ComparePrivateField(zeroU, "value", 0U);
 
-            LockTime ltI = new LockTime(123);
-            LockTime ltU = new LockTime(123U);
+            LockTime ltI = new(123);
+            LockTime ltU = new(123U);
             Helper.ComparePrivateField(ltI, "value", 123U);
             Helper.ComparePrivateField(ltU, "value", 123U);
 
-            LockTime maxI = new LockTime(int.MaxValue);
-            LockTime maxU = new LockTime(uint.MaxValue);
+            LockTime maxI = new(int.MaxValue);
+            LockTime maxU = new(uint.MaxValue);
             Helper.ComparePrivateField(maxI, "value", (uint)int.MaxValue);
             Helper.ComparePrivateField(maxU, "value", uint.MaxValue);
 
@@ -37,15 +37,15 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Constructor_FromDateTimeTest()
         {
-            DateTime today = new DateTime(2019, 2, 24, 14, 17, 38);
+            DateTime today = new(2019, 2, 24, 14, 17, 38);
             Helper.ComparePrivateField(new LockTime(today), "value", 1551017858U);
 
-            DateTime smallestValidDt = new DateTime(1985, 11, 5, 0, 53, 20);
+            DateTime smallestValidDt = new(1985, 11, 5, 0, 53, 20);
             Helper.ComparePrivateField(new LockTime(smallestValidDt), "value", 500000000U);
 
-            DateTime negTwoDt = new DateTime(1969, 12, 31, 23, 59, 58); //-2
-            DateTime smallDt = new DateTime(1985, 11, 5, 0, 53, 19); //499999999
-            DateTime maxDt = new DateTime(2106, 2, 7, 6, 28, 16); //uint.MaxValue
+            DateTime negTwoDt = new(1969, 12, 31, 23, 59, 58); //-2
+            DateTime smallDt = new(1985, 11, 5, 0, 53, 19); //499999999
+            DateTime maxDt = new(2106, 2, 7, 6, 28, 16); //uint.MaxValue
 
             Assert.Throws<ArgumentOutOfRangeException>(() => new LockTime(negTwoDt));
             Assert.Throws<ArgumentOutOfRangeException>(() => new LockTime(smallDt));
@@ -72,7 +72,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [InlineData(uint.MaxValue, uint.MaxValue, true)]
         public void IsSameTypeTest(uint ltVal, long value, bool expected)
         {
-            LockTime lt = new LockTime(ltVal);
+            LockTime lt = new(ltVal);
             bool actual = lt.IsSameType(value);
             Assert.Equal(expected, actual);
         }
@@ -90,11 +90,11 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void TryReadTest(byte[] data, uint expected)
         {
-            FastStreamReader stream = new FastStreamReader(data);
-            bool b = LockTime.TryRead(stream, out LockTime actual, out string error);
+            FastStreamReader stream = new(data);
+            bool b = LockTime.TryRead(stream, out LockTime actual, out Errors error);
 
-            Assert.True(b);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Helper.ComparePrivateField(stream, "position", 4);
             Helper.ComparePrivateField(actual, "value", expected);
         }
@@ -102,21 +102,21 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void TryRead_Fail_NullStreamTest()
         {
-            bool b = LockTime.TryRead(null, out LockTime actual, out string error);
+            bool b = LockTime.TryRead(null, out LockTime actual, out Errors error);
 
             Assert.False(b);
-            Assert.Equal("Stream can not be null.", error);
+            Assert.Equal(Errors.NullStream, error);
             Helper.ComparePrivateField(actual, "value", 0U);
         }
 
         [Fact]
         public void TryRead_Fail_SmallStreamTest()
         {
-            FastStreamReader stream = new FastStreamReader(new byte[3] { 1, 2, 3 });
-            bool b = LockTime.TryRead(stream, out LockTime actual, out string error);
+            FastStreamReader stream = new(new byte[3] { 1, 2, 3 });
+            bool b = LockTime.TryRead(stream, out LockTime actual, out Errors error);
 
             Assert.False(b);
-            Assert.Equal(Err.EndOfStream, error);
+            Assert.Equal(Errors.EndOfStream, error);
             Helper.ComparePrivateField(actual, "value", 0U);
         }
 
@@ -124,8 +124,8 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void WriteToStreamTest(byte[] expected, uint value)
         {
-            LockTime lt = new LockTime(value);
-            FastStream stream = new FastStream();
+            LockTime lt = new(value);
+            FastStream stream = new();
             lt.WriteToStream(stream);
 
             Assert.Equal(expected, stream.ToByteArray());
@@ -140,8 +140,8 @@ namespace Tests.Bitcoin.ValueTypesTests
             uint ui = 10;
             int i = 10;
             int negi = -10;
-            DateTime dt = new DateTime(2019, 2, 24, 14, 17, 38);
-            DateTime smallDt = new DateTime(1985, 11, 5, 0, 53, 19); //499999999
+            DateTime dt = new(2019, 2, 24, 14, 17, 38);
+            DateTime smallDt = new(1985, 11, 5, 0, 53, 19); //499999999
 
             LockTime lt1 = b;
             LockTime lt2 = us;
@@ -165,8 +165,8 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void CastTest2()
         {
-            LockTime lt1 = new LockTime(10);
-            LockTime lt2 = new LockTime(uint.MaxValue);
+            LockTime lt1 = new(10);
+            LockTime lt2 = new(uint.MaxValue);
 
             uint ui1 = lt1;
             uint ui2 = lt2;
@@ -188,7 +188,7 @@ namespace Tests.Bitcoin.ValueTypesTests
             Assert.Equal(10, i1);
             Assert.Equal(unchecked((int)uint.MaxValue), i2);
 
-            LockTime lt3 = new LockTime(1551017858U);
+            LockTime lt3 = new(1551017858U);
             DateTime dt = (DateTime)lt3;
             Assert.Equal(new DateTime(2019, 2, 24, 14, 17, 38), dt);
         }
@@ -201,7 +201,7 @@ namespace Tests.Bitcoin.ValueTypesTests
 
             DateTime actual1 = (DateTime)lt1;
             DateTime actual2 = (DateTime)lt2;
-            DateTime expected = new DateTime(1970, 1, 1, 0, 0, 0);
+            DateTime expected = new(1970, 1, 1, 0, 0, 0);
 
             Assert.Equal(expected, actual1);
             Assert.Equal(expected, actual2);
@@ -353,7 +353,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void CompareTo_EdgeTest()
         {
-            LockTime lt = new LockTime(100);
+            LockTime lt = new(100);
             object nObj = null;
             object sObj = "LockTime!";
 
@@ -364,7 +364,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Equals_EdgeTest()
         {
-            LockTime lt = new LockTime(100);
+            LockTime lt = new(100);
             object sObj = "LockTime!";
 
             Assert.False(lt.Equals(sObj));
@@ -382,7 +382,7 @@ namespace Tests.Bitcoin.ValueTypesTests
 
         public static IEnumerable<object[]> GetToStringCases()
         {
-            DateTime today = new DateTime(2019, 2, 24, 14, 17, 38);
+            DateTime today = new(2019, 2, 24, 14, 17, 38);
 
             yield return new object[] { new LockTime(0), "0" };
             yield return new object[] { new LockTime(LockTime.Threshold - 1), "499999999" };

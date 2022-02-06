@@ -14,8 +14,9 @@ namespace Tests.Bitcoin.ValueTypesTests
 {
     public class TargetTests
     {
-        private const uint Example = 0x1d00ffffU;
-        private const uint NotNegative = 0x00800000U;
+        internal const uint Example = 0x1d00ffffU;
+        internal const uint NotNegative = 0x00800000U;
+        internal const uint Negative = 0x04800001U;
 
         [Fact]
         public void Constructor_FromIntTest()
@@ -131,66 +132,35 @@ namespace Tests.Bitcoin.ValueTypesTests
         public void TryReadTest(byte[] data, uint expected)
         {
             var stream = new FastStreamReader(data);
-            bool b = Target.TryRead(stream, out Target actual, out string error);
+            bool b = Target.TryRead(stream, out Target actual, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Helper.ComparePrivateField(stream, "position", 4);
             Helper.ComparePrivateField(actual, "value", expected);
         }
 
         public static IEnumerable<object[]> GetReadFailCases()
         {
-            yield return new object[] { Array.Empty<byte>(), 0, Err.EndOfStream };
-            yield return new object[] { new byte[] { 0xcb }, 0, Err.EndOfStream };
-            yield return new object[]
-            {
-                new byte[] { 0x01, 0x00, 0x80, 0x04 },
-                4,
-                "Target can not be negative."
-            };
-            yield return new object[]
-            {
-                new byte[] { 0x01, 0x00, 0x80, 0x03 },
-                4,
-                "Target can not be negative."
-            };
-            yield return new object[]
-            {
-                new byte[] { 0x00, 0x01, 0x80, 0x02 },
-                4,
-                "Target can not be negative."
-            };
-
-            yield return new object[]
-            {
-                // 0x01fedcba
-                new byte[] { 0xba, 0xdc, 0xfe, 0x01 },
-                4,
-                "Target can not be negative."
-            };
-            yield return new object[]
-            {
-                // 0x04923456
-                new byte[] { 0x56, 0x34, 0x92, 0x04 },
-                4,
-                "Target can not be negative."
-            };
-            yield return new object[]
-            {
-                // 0xff123456
-                new byte[] { 0x56, 0x34, 0x12, 0xff },
-                4,
-                "Target is defined as a 256-bit number (value overflow)."
-            };
+            yield return new object[] { Array.Empty<byte>(), 0, Errors.EndOfStream };
+            yield return new object[] { new byte[] { 0xcb }, 0, Errors.EndOfStream };
+            yield return new object[] { new byte[] { 0x01, 0x00, 0x80, 0x04 }, 4, Errors.NegativeTarget };
+            yield return new object[] { new byte[] { 0x01, 0x00, 0x80, 0x03 }, 4, Errors.NegativeTarget };
+            yield return new object[] { new byte[] { 0x00, 0x01, 0x80, 0x02 }, 4, Errors.NegativeTarget };
+            // 0x01fedcba
+            yield return new object[] { new byte[] { 0xba, 0xdc, 0xfe, 0x01 }, 4, Errors.NegativeTarget };
+            // 0x04923456
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x92, 0x04 }, 4, Errors.NegativeTarget };
+            // 0xff123456
+            yield return new object[] { new byte[] { 0x56, 0x34, 0x12, 0xff }, 4, Errors.TargetOverflow };
         }
 
         [Theory]
         [MemberData(nameof(GetReadFailCases))]
-        public void TryRead_FailTest(byte[] data, int finalPos, string expError)
+        public void TryRead_FailTest(byte[] data, int finalPos, Errors expError)
         {
             var stream = new FastStreamReader(data);
-            bool b = Target.TryRead(stream, out Target actual, out string error);
+            bool b = Target.TryRead(stream, out Target actual, out Errors error);
 
             Assert.False(b);
             Assert.Equal(expError, error);
@@ -201,10 +171,10 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void TryRead_Fail_NullStreamTest()
         {
-            bool b = Target.TryRead(null, out Target actual, out string error);
+            bool b = Target.TryRead(null, out Target actual, out Errors error);
 
             Assert.False(b);
-            Assert.Equal("Stream can not be null.", error);
+            Assert.Equal(Errors.NullStream, error);
             Helper.ComparePrivateField(actual, "value", 0U);
         }
 

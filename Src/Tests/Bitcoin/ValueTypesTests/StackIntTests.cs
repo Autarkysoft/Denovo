@@ -16,18 +16,18 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void ConstructorTests()
         {
-            StackInt zeroI = new StackInt(0);
-            StackInt zeroU = new StackInt(0U);
+            StackInt zeroI = new(0);
+            StackInt zeroU = new(0U);
             Helper.ComparePrivateField(zeroI, "value", 0U);
             Helper.ComparePrivateField(zeroU, "value", 0U);
 
-            StackInt cI = new StackInt(123);
-            StackInt cU = new StackInt(123U);
+            StackInt cI = new(123);
+            StackInt cU = new(123U);
             Helper.ComparePrivateField(cI, "value", 123U);
             Helper.ComparePrivateField(cU, "value", 123U);
 
-            StackInt maxI = new StackInt(int.MaxValue);
-            StackInt maxU = new StackInt(uint.MaxValue);
+            StackInt maxI = new(int.MaxValue);
+            StackInt maxU = new(uint.MaxValue);
             Helper.ComparePrivateField(maxI, "value", (uint)int.MaxValue);
             Helper.ComparePrivateField(maxU, "value", uint.MaxValue);
 
@@ -50,7 +50,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [InlineData(uint.MaxValue, OP.PushData4)]
         public void GetOpCodeTest(uint val, OP expected)
         {
-            StackInt si = new StackInt(val);
+            StackInt si = new(val);
             OP actual = si.GetOpCode();
 
             Assert.Equal(expected, actual);
@@ -59,30 +59,30 @@ namespace Tests.Bitcoin.ValueTypesTests
 
         public static IEnumerable<object[]> GetTryReadCases()
         {
-            string err1 = "For OP_PushData1 the data value must be bigger than 75.";
-            string err2 = "For OP_PushData2 the data value must be bigger than 255.";
-            string err3 = "For OP_PushData4 the data value must be bigger than 65535.";
+            Errors err1 = Errors.SmallOPPushData1;
+            Errors err2 = Errors.SmallOPPushData2;
+            Errors err3 = Errors.SmallOPPushData4;
 
             // Not enough bytes to read
-            yield return new object[] { new byte[] { }, false, null, Err.EndOfStream, 0, 0 };
+            yield return new object[] { Array.Empty<byte>(), false, null, Errors.EndOfStream, 0, 0 };
 
             // 1 byte correct encoding (<0x4c)
-            yield return new object[] { new byte[] { 0 }, true, null, null, 1, 0 };
-            yield return new object[] { new byte[] { 5, 1, 2 }, true, null, null, 1, 5 };
-            yield return new object[] { new byte[] { 75 }, true, null, null, 1, 75 };
+            yield return new object[] { new byte[] { 0 }, true, null, Errors.None, 1, 0 };
+            yield return new object[] { new byte[] { 5, 1, 2 }, true, null, Errors.None, 1, 5 };
+            yield return new object[] { new byte[] { 75 }, true, null, Errors.None, 1, 75 };
 
             // 2 bytes correct encoding (>=0x4c && <=255)
-            yield return new object[] { new byte[] { 76, 76 }, true, null, null, 2, 76 };
-            yield return new object[] { new byte[] { 76, 77 }, true, null, null, 2, 77 };
-            yield return new object[] { new byte[] { 76, 78 }, true, null, null, 2, 78 };
-            yield return new object[] { new byte[] { 76, 79 }, true, null, null, 2, 79 };
-            yield return new object[] { new byte[] { 76, 132, 10, 20, 30 }, true, null, null, 2, 132 };
-            yield return new object[] { new byte[] { 76, 255, 12 }, true, null, null, 2, 255 };
+            yield return new object[] { new byte[] { 76, 76 }, true, null, Errors.None, 2, 76 };
+            yield return new object[] { new byte[] { 76, 77 }, true, null, Errors.None, 2, 77 };
+            yield return new object[] { new byte[] { 76, 78 }, true, null, Errors.None, 2, 78 };
+            yield return new object[] { new byte[] { 76, 79 }, true, null, Errors.None, 2, 79 };
+            yield return new object[] { new byte[] { 76, 132, 10, 20, 30 }, true, null, Errors.None, 2, 132 };
+            yield return new object[] { new byte[] { 76, 255, 12 }, true, null, Errors.None, 2, 255 };
 
             // 2 byte not enough bytes to read
             yield return new object[]
             {
-                new byte[] { 76 }, false, null, "OP_PushData1 needs to be followed by at least one byte.", 1, 0
+                new byte[] { 76 }, false, null, Errors.ShortOPPushData1, 1, 0
             };
 
             // 2 bytes wrong encoding (any value < 0x4c)
@@ -92,18 +92,18 @@ namespace Tests.Bitcoin.ValueTypesTests
             yield return new object[] { new byte[] { 76, 75 }, true, new byte[2] { 76, 75 }, err1, 2, 75 };
 
             // 3 bytes correct encoding (> 255 && <= 0xffff)
-            yield return new object[] { new byte[] { 77, 0, 1 }, true, null, null, 3, 256 };
-            yield return new object[] { new byte[] { 77, 171, 205 }, true, null, null, 3, 52651 };
-            yield return new object[] { new byte[] { 77, 255, 255 }, true, null, null, 3, ushort.MaxValue };
+            yield return new object[] { new byte[] { 77, 0, 1 }, true, null, Errors.None, 3, 256 };
+            yield return new object[] { new byte[] { 77, 171, 205 }, true, null, Errors.None, 3, 52651 };
+            yield return new object[] { new byte[] { 77, 255, 255 }, true, null, Errors.None, 3, ushort.MaxValue };
 
             // 3 bytes not enough bytes to read
             yield return new object[]
             {
-                new byte[] { 77 }, false, null, "OP_PushData2 needs to be followed by at least two byte.", 1, 0
+                new byte[] { 77 }, false, null, Errors.ShortOPPushData2, 1, 0
             };
             yield return new object[]
             {
-                new byte[] { 77, 255 }, false, null, "OP_PushData2 needs to be followed by at least two byte.", 1, 0
+                new byte[] { 77, 255 }, false, null, Errors.ShortOPPushData2, 1, 0
             };
 
             // 3 bytes wrong encoding
@@ -116,12 +116,12 @@ namespace Tests.Bitcoin.ValueTypesTests
             yield return new object[] { new byte[] { 77, 255, 0 }, true, new byte[3] { 77, 255, 0 }, err2, 3, 255 };
 
             // 5 bytes correct encoding
-            yield return new object[] { new byte[] { 78, 0, 0, 1, 0 }, true, null, null, 5, ushort.MaxValue + 1 };
-            yield return new object[] { new byte[] { 78, 2, 1, 15, 15 }, true, null, null, 5, 252641538 };
-            yield return new object[] { new byte[] { 78, 255, 255, 255, 255 }, true, null, null, 5, uint.MaxValue };
+            yield return new object[] { new byte[] { 78, 0, 0, 1, 0 }, true, null, Errors.None, 5, ushort.MaxValue + 1 };
+            yield return new object[] { new byte[] { 78, 2, 1, 15, 15 }, true, null, Errors.None, 5, 252641538 };
+            yield return new object[] { new byte[] { 78, 255, 255, 255, 255 }, true, null, Errors.None, 5, uint.MaxValue };
 
             // 5 bytes not enough bytes to read
-            string push4Error = "OP_PushData4 needs to be followed by at least 4 byte.";
+            Errors push4Error = Errors.ShortOPPushData4;
             yield return new object[] { new byte[] { 78 }, false, null, push4Error, 1, 0 };
             yield return new object[] { new byte[] { 78, 255 }, false, null, push4Error, 1, 0 };
             yield return new object[] { new byte[] { 78, 255, 255 }, false, null, push4Error, 1, 0 };
@@ -141,16 +141,16 @@ namespace Tests.Bitcoin.ValueTypesTests
             };
 
             // Wrong first byte to be a StackInt
-            yield return new object[] { new byte[] { 79, 255, 255, 0, 0 }, false, null, "Unknown OP_Push value.", 1, 0 };
-            yield return new object[] { new byte[] { 100, 77, 1, 0 }, false, null, "Unknown OP_Push value.", 1, 0 };
-            yield return new object[] { new byte[] { 255 }, false, null, "Unknown OP_Push value.", 1, 0 };
+            yield return new object[] { new byte[] { 79, 255, 255, 0, 0 }, false, null, Errors.UnknownOpPush, 1, 0 };
+            yield return new object[] { new byte[] { 100, 77, 1, 0 }, false, null, Errors.UnknownOpPush, 1, 0 };
+            yield return new object[] { new byte[] { 255 }, false, null, Errors.UnknownOpPush, 1, 0 };
         }
         [Theory]
         [MemberData(nameof(GetTryReadCases))]
-        public void TryReadTest(byte[] data, bool expSuccess, byte[] expBytes, string expErr, int finalPos, uint expected)
+        public void TryReadTest(byte[] data, bool expSuccess, byte[] expBytes, Errors expErr, int finalPos, uint expected)
         {
             var stream = new FastStreamReader(data);
-            bool actSuccess = StackInt.TryRead(stream, out byte[] actBytes, out StackInt actual, out string error);
+            bool actSuccess = StackInt.TryRead(stream, out byte[] actBytes, out StackInt actual, out Errors error);
 
             Assert.Equal(expSuccess, actSuccess);
             Assert.Equal(expBytes, actBytes);
@@ -162,10 +162,10 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void TryRead_Fail_NullStreamTest()
         {
-            bool b = StackInt.TryRead(null, out _, out StackInt actual, out string error);
+            bool b = StackInt.TryRead(null, out _, out StackInt actual, out Errors error);
 
             Assert.False(b);
-            Assert.Equal("Stream can not be null.", error);
+            Assert.Equal(Errors.NullStream, error);
             Helper.ComparePrivateField(actual, "value", 0U);
         }
 
@@ -188,8 +188,8 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void ToByteArrayTest(byte[] data, int finalOffset, uint val)
         {
-            StackInt ci = new StackInt(val);
-            FastStream stream = new FastStream(10);
+            StackInt ci = new(val);
+            FastStream stream = new(10);
             ci.WriteToStream(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -225,8 +225,8 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Cast_ToNumberTest()
         {
-            StackInt c1 = new StackInt(10);
-            StackInt c2 = new StackInt(uint.MaxValue);
+            StackInt c1 = new(10);
+            StackInt c2 = new(uint.MaxValue);
 
             uint ui1 = c1;
             uint ui2 = c2;
@@ -381,7 +381,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void CompareTo_EdgeTest()
         {
-            StackInt si = new StackInt(100);
+            StackInt si = new(100);
             object nObj = null;
             object sObj = "StackInt!";
 
@@ -392,7 +392,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Equals_EdgeTest()
         {
-            StackInt si = new StackInt(100);
+            StackInt si = new(100);
             object sObj = "StackInt!";
             object nl = null;
 
@@ -412,7 +412,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void ToStringTest()
         {
-            StackInt si = new StackInt(123);
+            StackInt si = new(123);
             string actual = si.ToString();
 
             Assert.Equal("123", actual);

@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
@@ -447,6 +448,44 @@ namespace Autarkysoft.Bitcoin
             // https://github.com/bitcoin/bitcoin/blob/8b4d53e4d6e6a4b6e65a43a78b31d9d091be5b0e/src/script/interpreter.cpp#L1534
             // Note that this can return SigHashType.Default too!
             return sht == SigHashType.Default ? SigHashType.All : sht & SigHashType.Single;
+        }
+    }
+
+
+
+
+
+    /// <summary>
+    /// Errors extensions
+    /// </summary>
+    public static class ErrorsExtension
+    {
+        /// <summary>
+        /// Converts the given <see cref="Errors"/> enum to a user friendly string.
+        /// </summary>
+        /// <param name="err"></param>
+        /// <returns></returns>
+        public static string Convert(this Errors err)
+        {
+            return err switch
+            {
+                Errors.None => string.Empty,
+                Errors.NullStream => "Stream can not be null.",
+                Errors.EndOfStream => "Reached end of stream.",
+
+                Errors.ShortOPPushData1 => "OP_PushData1 needs to be followed by at least one byte.",
+                Errors.SmallOPPushData1 => $"For OP_PushData1 the data value must be bigger than {(byte)OP.PushData1 - 1}.",
+                Errors.ShortOPPushData2 => "OP_PushData2 needs to be followed by at least two byte.",
+                Errors.SmallOPPushData2 => $"For OP_PushData2 the data value must be bigger than {byte.MaxValue}.",
+                Errors.ShortOPPushData4 => "OP_PushData4 needs to be followed by at least 4 byte.",
+                Errors.SmallOPPushData4 => $"For OP_PushData4 the data value must be bigger than {ushort.MaxValue}.",
+                Errors.UnknownOpPush => "Unknown OP_Push value.",
+
+                Errors.NegativeTarget => "Target can not be negative.",
+                Errors.TargetOverflow => "Target is defined as a 256-bit number (value overflow).",
+
+                _ => "Error message is not defined."
+            };
         }
     }
 

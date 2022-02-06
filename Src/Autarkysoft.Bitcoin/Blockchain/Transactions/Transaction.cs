@@ -1122,8 +1122,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 WitnessList = null;
             }
 
-            if (!LockTime.TryRead(stream, out _lockTime, out error))
+            if (!LockTime.TryRead(stream, out _lockTime, out Errors err))
             {
+                error = err.Convert();
                 return false;
             }
 

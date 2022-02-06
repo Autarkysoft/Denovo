@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
 using System.Collections.Generic;
+using Tests.Bitcoin.ValueTypesTests;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Blocks
@@ -16,8 +17,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void Constructor_NullExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new BlockHeader(1, null, new byte[32], 123, 0x1d00ffffU, 0));
-            Assert.Throws<ArgumentNullException>(() => new BlockHeader(1, new byte[32], null, 123, 0x1d00ffffU, 0));
+            Assert.Throws<ArgumentNullException>(() => new BlockHeader(1, null, new byte[32], 123, TargetTests.Example, 0));
+            Assert.Throws<ArgumentNullException>(() => new BlockHeader(1, new byte[32], null, 123, TargetTests.Example, 0));
         }
 
         public static IEnumerable<object[]> GetCtorOutOfRangeCases()
@@ -29,7 +30,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [MemberData(nameof(GetCtorOutOfRangeCases))]
         public void Constructor_OutOfRangeExceptionTest(byte[] header, byte[] merkle)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BlockHeader(1, header, merkle, 123, 0x1d00ffffU, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BlockHeader(1, header, merkle, 123, TargetTests.Example, 0));
         }
 
 
@@ -147,6 +148,11 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             {
                 new byte[BlockHeader.Size -1],
                 Err.EndOfStream
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("00e0ff3f97e4833c21eab4dfc5153eadc3b33701c8420ea1310000000000000000000000afbdfb477c57f95a59a9e7f1d004568c505eb7e70fb73fb0d6bb1cca0fb1a7b7c6b1715e01008004696a432a"),
+                Errors.NegativeTarget.Convert()
             };
         }
         [Theory]

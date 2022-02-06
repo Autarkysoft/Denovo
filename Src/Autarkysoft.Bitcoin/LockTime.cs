@@ -103,26 +103,26 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="stream">Stream containing the <see cref="LockTime"/></param>
         /// <param name="result">The result</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        public static bool TryRead(FastStreamReader stream, out LockTime result, out string error)
+        public static bool TryRead(FastStreamReader stream, out LockTime result, out Errors error)
         {
             if (stream is null)
             {
                 result = 0;
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.TryReadUInt32(out uint val))
             {
                 result = 0;
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
             result = new LockTime(val);
-            error = null;
+            error = Errors.None;
             return true;
         }
 

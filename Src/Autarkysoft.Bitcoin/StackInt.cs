@@ -77,22 +77,22 @@ namespace Autarkysoft.Bitcoin
         /// If the <see cref="StackInt"/> is not strictly encoded it will contain the wrong encoding, otherwise will be null.
         /// </param>
         /// <param name="result">The result</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        public static bool TryRead(FastStreamReader stream, out byte[] bytes, out StackInt result, out string error)
+        public static bool TryRead(FastStreamReader stream, out byte[] bytes, out StackInt result, out Errors error)
         {
-            error = null;
+            error = Errors.None;
             bytes = null;
             if (stream is null)
             {
                 result = 0;
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
             if (!stream.TryReadByte(out byte firstByte))
             {
                 result = 0;
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -104,7 +104,7 @@ namespace Autarkysoft.Bitcoin
             {
                 if (!stream.TryReadByte(out byte val))
                 {
-                    error = $"OP_{OP.PushData1} needs to be followed by at least one byte.";
+                    error = Errors.ShortOPPushData1;
                     result = 0;
                     return false;
                 }
@@ -112,7 +112,7 @@ namespace Autarkysoft.Bitcoin
                 if (val < (byte)OP.PushData1)
                 {
                     bytes = new byte[2] { firstByte, val };
-                    error = $"For OP_{OP.PushData1} the data value must be bigger than {(byte)OP.PushData1 - 1}.";
+                    error = Errors.SmallOPPushData1;
                 }
 
                 result = new StackInt((uint)val);
@@ -121,7 +121,7 @@ namespace Autarkysoft.Bitcoin
             {
                 if (!stream.TryReadByteArray(sizeof(ushort), out byte[] temp))
                 {
-                    error = $"OP_{OP.PushData2} needs to be followed by at least two byte.";
+                    error = Errors.ShortOPPushData2;
                     result = 0;
                     return false;
                 }
@@ -130,7 +130,7 @@ namespace Autarkysoft.Bitcoin
                 if (val <= byte.MaxValue)
                 {
                     bytes = new byte[3] { firstByte, temp[0], temp[1] };
-                    error = $"For OP_{OP.PushData2} the data value must be bigger than {byte.MaxValue}.";
+                    error = Errors.SmallOPPushData2;
                 }
                 result = new StackInt((uint)val);
             }
@@ -138,7 +138,7 @@ namespace Autarkysoft.Bitcoin
             {
                 if (!stream.TryReadByteArray(sizeof(uint), out byte[] temp))
                 {
-                    error = $"OP_{OP.PushData4} needs to be followed by at least 4 byte.";
+                    error = Errors.ShortOPPushData4;
                     result = 0;
                     return false;
                 }
@@ -147,13 +147,13 @@ namespace Autarkysoft.Bitcoin
                 if (val <= ushort.MaxValue)
                 {
                     bytes = new byte[5] { firstByte, temp[0], temp[1], temp[2], temp[3] };
-                    error = $"For OP_{OP.PushData4} the data value must be bigger than {ushort.MaxValue}.";
+                    error = Errors.SmallOPPushData4;
                 }
                 result = new StackInt(val);
             }
             else
             {
-                error = "Unknown OP_Push value.";
+                error = Errors.UnknownOpPush;
                 result = 0;
                 return false;
             }
