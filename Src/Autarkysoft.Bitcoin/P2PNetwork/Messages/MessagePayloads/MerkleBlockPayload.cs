@@ -84,8 +84,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt hashCount, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt hashCount, out Errors err))
             {
+                error = err.Convert();
                 return false;
             }
             if (hashCount > int.MaxValue)
@@ -103,8 +104,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 }
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt flagsLength, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt flagsLength, out err))
             {
+                error = err.Convert();
                 return false;
             }
             if (flagsLength > int.MaxValue)

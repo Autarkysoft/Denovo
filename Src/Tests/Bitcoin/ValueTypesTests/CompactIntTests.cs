@@ -15,18 +15,18 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Constructor_FromIntTest()
         {
-            var zeroI = new CompactInt(0);
-            var zeroL = new CompactInt(0L);
+            CompactInt zeroI = new(0);
+            CompactInt zeroL = new(0L);
             Helper.ComparePrivateField(zeroI, "value", 0UL);
             Helper.ComparePrivateField(zeroL, "value", 0UL);
 
-            var cI = new CompactInt(123);
-            var cL = new CompactInt((long)123);
+            CompactInt cI = new(123);
+            CompactInt cL = new((long)123);
             Helper.ComparePrivateField(cI, "value", 123UL);
             Helper.ComparePrivateField(cL, "value", 123UL);
 
-            var maxI = new CompactInt(int.MaxValue);
-            var maxL = new CompactInt(long.MaxValue);
+            CompactInt maxI = new(int.MaxValue);
+            CompactInt maxL = new(long.MaxValue);
             Helper.ComparePrivateField(maxI, "value", (ulong)int.MaxValue);
             Helper.ComparePrivateField(maxL, "value", (ulong)long.MaxValue);
 
@@ -39,18 +39,18 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Constructor_FromUIntTest()
         {
-            var zeroUI = new CompactInt(0U);
-            var zeroUL = new CompactInt(0UL);
+            CompactInt zeroUI = new(0U);
+            CompactInt zeroUL = new(0UL);
             Helper.ComparePrivateField(zeroUI, "value", 0UL);
             Helper.ComparePrivateField(zeroUL, "value", 0UL);
 
-            var cUI = new CompactInt(123U);
-            var cUL = new CompactInt(123UL);
+            CompactInt cUI = new(123U);
+            CompactInt cUL = new(123UL);
             Helper.ComparePrivateField(cUI, "value", 123UL);
             Helper.ComparePrivateField(cUL, "value", 123UL);
 
-            var maxUI = new CompactInt(uint.MaxValue);
-            var maxUL = new CompactInt(ulong.MaxValue);
+            CompactInt maxUI = new(uint.MaxValue);
+            CompactInt maxUL = new(ulong.MaxValue);
             Helper.ComparePrivateField(maxUI, "value", (ulong)uint.MaxValue);
             Helper.ComparePrivateField(maxUL, "value", ulong.MaxValue);
         }
@@ -84,11 +84,11 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void TryReadTest(byte[] data, int finalPos, ulong expected)
         {
-            var stream = new FastStreamReader(data);
-            bool b = CompactInt.TryRead(stream, out CompactInt actual, out string error);
+            FastStreamReader stream = new(data);
+            bool b = CompactInt.TryRead(stream, out CompactInt actual, out Errors error);
 
-            Assert.True(b);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Helper.ComparePrivateField(stream, "position", finalPos);
             Helper.ComparePrivateField(actual, "value", expected);
         }
@@ -96,53 +96,23 @@ namespace Tests.Bitcoin.ValueTypesTests
 
         public static IEnumerable<object[]> GetReadFailCases()
         {
-            yield return new object[] { Array.Empty<byte>(), 0, Err.EndOfStream };
-            yield return new object[] { new byte[] { 253 }, 1, "First byte 253 needs to be followed by at least 2 byte." };
-            yield return new object[]
-            {
-                new byte[] { 253, 1, 0 },
-                3,
-                $"For values less than 253, one byte format of {nameof(CompactInt)} should be used."
-            };
-            yield return new object[]
-            {
-                new byte[] { 253, 252, 0 },
-                3,
-                $"For values less than 253, one byte format of {nameof(CompactInt)} should be used."
-            };
-            yield return new object[] { new byte[] { 254 }, 1, "First byte 254 needs to be followed by at least 4 byte." };
-            yield return new object[]
-            {
-                new byte[] { 254, 255, 255, 255 },
-                1,
-                "First byte 254 needs to be followed by at least 4 byte."
-            };
-            yield return new object[]
-            {
-                new byte[] { 254, 255, 255, 0, 0 },
-                5,
-                "For values less than 2 bytes, the [253, ushort] format should be used."
-            };
-            yield return new object[] { new byte[] { 255 }, 1, "First byte 255 needs to be followed by at least 8 byte." };
-            yield return new object[]
-            {
-                new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 },
-                1,
-                "First byte 255 needs to be followed by at least 8 byte."
-            };
-            yield return new object[]
-            {
-                new byte[] { 255, 1, 0, 0, 0, 0, 0, 0, 0 },
-                9,
-                "For values less than 4 bytes, the [254, uint] format should be used."
-            };
+            yield return new object[] { Array.Empty<byte>(), 0, Errors.EndOfStream };
+            yield return new object[] { new byte[] { 253 }, 1, Errors.ShortCompactInt2 };
+            yield return new object[] { new byte[] { 253, 1, 0 }, 3, Errors.SmallCompactInt2 };
+            yield return new object[] { new byte[] { 253, 252, 0 }, 3, Errors.SmallCompactInt2 };
+            yield return new object[] { new byte[] { 254 }, 1, Errors.ShortCompactInt4 };
+            yield return new object[] { new byte[] { 254, 255, 255, 255 }, 1, Errors.ShortCompactInt4 };
+            yield return new object[] { new byte[] { 254, 255, 255, 0, 0 }, 5, Errors.SmallCompactInt4 };
+            yield return new object[] { new byte[] { 255 }, 1, Errors.ShortCompactInt8 };
+            yield return new object[] { new byte[] { 255, 255, 255, 255, 255, 255, 255, 255 }, 1, Errors.ShortCompactInt8 };
+            yield return new object[] { new byte[] { 255, 1, 0, 0, 0, 0, 0, 0, 0 }, 9, Errors.SmallCompactInt8 };
         }
         [Theory]
         [MemberData(nameof(GetReadFailCases))]
-        public void TryRead_FailTest(byte[] data, int finalPos, string expError)
+        public void TryRead_FailTest(byte[] data, int finalPos, Errors expError)
         {
-            var stream = new FastStreamReader(data);
-            bool b = CompactInt.TryRead(stream, out CompactInt actual, out string error);
+            FastStreamReader stream = new(data);
+            bool b = CompactInt.TryRead(stream, out CompactInt actual, out Errors error);
 
             Assert.False(b);
             Assert.Equal(expError, error);
@@ -153,10 +123,10 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void TryRead_Fail_NullStreamTest()
         {
-            bool b = CompactInt.TryRead(null, out CompactInt actual, out string error);
+            bool b = CompactInt.TryRead(null, out CompactInt actual, out Errors error);
 
             Assert.False(b);
-            Assert.Equal("Stream can not be null.", error);
+            Assert.Equal(Errors.NullStream, error);
             Helper.ComparePrivateField(actual, "value", 0UL);
         }
 
@@ -173,11 +143,11 @@ namespace Tests.Bitcoin.ValueTypesTests
         [InlineData(ulong.MaxValue, 3, 12)]
         public void AddSerializedSizeTest(ulong val, int init, int expected)
         {
-            var ci = new CompactInt(val);
-            var counter = new SizeCounter(init);
+            CompactInt ci = new(val);
+            SizeCounter counter = new(init);
             ci.AddSerializedSize(counter);
 
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             ci.WriteToStream(stream);
             Assert.Equal(expected, stream.GetSize() + init);
 
@@ -189,8 +159,8 @@ namespace Tests.Bitcoin.ValueTypesTests
         [MemberData(nameof(GetReadCases))]
         public void WriteToStreamTest(byte[] data, int finalOffset, ulong val)
         {
-            var ci = new CompactInt(val);
-            var stream = new FastStream(10);
+            CompactInt ci = new(val);
+            FastStream stream = new(10);
             ci.WriteToStream(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -235,8 +205,8 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Cast_ToNumberTest()
         {
-            var c1 = new CompactInt(10);
-            var c2 = new CompactInt(ulong.MaxValue);
+            CompactInt c1 = new(10);
+            CompactInt c2 = new(ulong.MaxValue);
 
             ulong ul1 = c1;
             ulong ul2 = c2;
@@ -411,7 +381,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void CompareTo_EdgeTest()
         {
-            var ci = new CompactInt(1);
+            CompactInt ci = new(1);
             object nObj = null;
             object sObj = "CompactInt!";
 
@@ -422,7 +392,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void Equals_EdgeTest()
         {
-            var ci = new CompactInt(100);
+            CompactInt ci = new(100);
             object sObj = "CompactInt!";
             object nl = null;
 
@@ -442,7 +412,7 @@ namespace Tests.Bitcoin.ValueTypesTests
         [Fact]
         public void ToStringTest()
         {
-            var ci = new CompactInt(123);
+            CompactInt ci = new(123);
             Assert.Equal("123", ci.ToString());
         }
     }

@@ -115,8 +115,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt count, out Errors err))
             {
+                error = err.Convert();
                 return false;
             }
 
@@ -138,8 +139,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                          | ((ulong)temp[5] << 40);
             }
 
-            if (!CompactInt.TryRead(stream, out count, out error))
+            if (!CompactInt.TryRead(stream, out count, out err))
             {
+                error = err.Convert();
                 return false;
             }
 

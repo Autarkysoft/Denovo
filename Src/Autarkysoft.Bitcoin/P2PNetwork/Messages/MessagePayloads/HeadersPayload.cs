@@ -121,8 +121,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
                 // Headers messages contain a tx count that is not used anywhere specially since it is always set to 0!
                 // https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L3455
-                if (!CompactInt.TryRead(stream, out _, out error))
+                if (!CompactInt.TryRead(stream, out _, out Errors err))
                 {
+                    error = err.Convert();
                     return false;
                 }
             }

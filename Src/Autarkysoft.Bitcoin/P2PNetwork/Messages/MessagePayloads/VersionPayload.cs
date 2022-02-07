@@ -223,8 +223,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt UASize, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt UASize, out Errors err))
             {
+                error = err.Convert();
                 return false;
             }
             if (UASize > UserAgentMaxSize)

@@ -74,19 +74,19 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="stream">Stream containing the <see cref="CompactInt"/></param>
         /// <param name="result">The result</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        public static bool TryRead(FastStreamReader stream, out CompactInt result, out string error)
+        public static bool TryRead(FastStreamReader stream, out CompactInt result, out Errors error)
         {
             result = 0;
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
             if (!stream.TryReadByte(out byte firstByte))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -98,14 +98,14 @@ namespace Autarkysoft.Bitcoin
             {
                 if (!stream.TryReadUInt16(out ushort val))
                 {
-                    error = "First byte 253 needs to be followed by at least 2 byte.";
+                    error = Errors.ShortCompactInt2;
                     result = 0;
                     return false;
                 }
 
                 if (val <= 252)
                 {
-                    error = $"For values less than 253, one byte format of {nameof(CompactInt)} should be used.";
+                    error = Errors.SmallCompactInt2;
                     result = 0;
                     return false;
                 }
@@ -115,14 +115,14 @@ namespace Autarkysoft.Bitcoin
             {
                 if (!stream.TryReadUInt32(out uint val))
                 {
-                    error = "First byte 254 needs to be followed by at least 4 byte.";
+                    error = Errors.ShortCompactInt4;
                     result = 0;
                     return false;
                 }
 
                 if (val <= ushort.MaxValue)
                 {
-                    error = "For values less than 2 bytes, the [253, ushort] format should be used.";
+                    error = Errors.SmallCompactInt4;
                     result = 0;
                     return false;
                 }
@@ -132,21 +132,21 @@ namespace Autarkysoft.Bitcoin
             {
                 if (!stream.TryReadUInt64(out ulong val))
                 {
-                    error = "First byte 255 needs to be followed by at least 8 byte.";
+                    error = Errors.ShortCompactInt8;
                     result = 0;
                     return false;
                 }
 
                 if (val <= uint.MaxValue)
                 {
-                    error = "For values less than 4 bytes, the [254, uint] format should be used.";
+                    error = Errors.SmallCompactInt8;
                     result = 0;
                     return false;
                 }
                 result = new CompactInt(val);
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 

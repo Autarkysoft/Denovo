@@ -23,6 +23,30 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         EndOfStream,
 
+        /// <summary>
+        /// First byte 253 needs to read at least 2 bytes
+        /// </summary>
+        ShortCompactInt2,
+        /// <summary>
+        /// Values smaller than 253 should use one byte
+        /// </summary>
+        SmallCompactInt2,
+        /// <summary>
+        /// First byte 254 needs to read at least 4 bytes
+        /// </summary>
+        ShortCompactInt4,
+        /// <summary>
+        /// Values smaller than 2 bytes should use [253, ushort] format
+        /// </summary>
+        SmallCompactInt4,
+        /// <summary>
+        /// First byte 255 needs to read at least 8 bytes
+        /// </summary>
+        ShortCompactInt8,
+        /// <summary>
+        /// Values smaller than 253 should use [254, uint]
+        /// </summary>
+        SmallCompactInt8,
 
         /// <summary>
         /// OP_PushData1 needs to read at least 1 byte

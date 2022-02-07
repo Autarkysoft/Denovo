@@ -269,8 +269,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                if (!CompactInt.TryRead(stream, out CompactInt size, out error))
+                if (!CompactInt.TryRead(stream, out CompactInt size, out Errors err))
                 {
+                    error = err.Convert();
                     return false;
                 }
 

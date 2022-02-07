@@ -30,8 +30,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out string error)
         {
-            if (!CompactInt.TryRead(stream, out _index, out error))
+            if (!CompactInt.TryRead(stream, out _index, out Errors err))
             {
+                error = err.Convert();
                 return false;
             }
 

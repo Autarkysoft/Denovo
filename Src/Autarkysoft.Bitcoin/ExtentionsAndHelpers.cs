@@ -473,6 +473,13 @@ namespace Autarkysoft.Bitcoin
                 Errors.NullStream => "Stream can not be null.",
                 Errors.EndOfStream => "Reached end of stream.",
 
+                Errors.ShortCompactInt2 => "First byte 253 needs to be followed by at least 2 byte.",
+                Errors.SmallCompactInt2 => "For values less than 253, one byte format of CompactInt should be used.",
+                Errors.ShortCompactInt4 => "First byte 254 needs to be followed by at least 4 byte.",
+                Errors.SmallCompactInt4 => "For values less than 2 bytes, the [253, ushort] format should be used.",
+                Errors.ShortCompactInt8 => "First byte 255 needs to be followed by at least 8 byte.",
+                Errors.SmallCompactInt8 => "For values less than 4 bytes, the [254, uint] format should be used.",
+
                 Errors.ShortOPPushData1 => "OP_PushData1 needs to be followed by at least one byte.",
                 Errors.SmallOPPushData1 => $"For OP_PushData1 the data value must be bigger than {(byte)OP.PushData1 - 1}.",
                 Errors.ShortOPPushData2 => "OP_PushData2 needs to be followed by at least two byte.",
@@ -484,7 +491,7 @@ namespace Autarkysoft.Bitcoin
                 Errors.NegativeTarget => "Target can not be negative.",
                 Errors.TargetOverflow => "Target is defined as a 256-bit number (value overflow).",
 
-                _ => "Error message is not defined."
+                _ => $"Error message ({err}) is not defined."
             };
         }
     }

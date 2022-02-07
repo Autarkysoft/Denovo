@@ -1050,8 +1050,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 }
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt tinCount, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt tinCount, out Errors err))
             {
+                error = err.Convert();
                 return false;
             }
             if (tinCount > int.MaxValue) // TODO: set a better value to check against.
@@ -1077,8 +1078,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 TxInList[i] = temp;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt toutCount, out error))
+            if (!CompactInt.TryRead(stream, out CompactInt toutCount, out err))
             {
+                error = err.Convert();
                 return false;
             }
             if (toutCount > int.MaxValue) // TODO: set a better value to check against.
@@ -1122,7 +1124,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 WitnessList = null;
             }
 
-            if (!LockTime.TryRead(stream, out _lockTime, out Errors err))
+            if (!LockTime.TryRead(stream, out _lockTime, out err))
             {
                 error = err.Convert();
                 return false;
