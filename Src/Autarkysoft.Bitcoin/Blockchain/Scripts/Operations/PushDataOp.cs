@@ -242,62 +242,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <summary>
-        /// Reads the push data from the given stream as a witness item. 
-        /// Expects the following encoding: [CompactInt Data.length][Data]
-        /// The return value indicates success.
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
-        /// <returns>True if reading was successful, false if otherwise.</returns>
-        [Obsolete]
-        public bool TryReadWitness(FastStreamReader stream, out string error)
-        {
-            // Since the first byte could be an OP_num or it could be the length we only peek at it
-            if (!stream.TryPeekByte(out byte firstByte))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
-
-            if (firstByte == (byte)OP._0 || firstByte == (byte)OP.Negative1 ||
-                (firstByte >= (byte)OP._1 && firstByte <= (byte)OP._16))
-            {
-                stream.SkipOneByte();
-                _opVal = (OP)firstByte;
-                data = null;
-            }
-            else
-            {
-                if (!CompactInt.TryRead(stream, out CompactInt size, out Errors err))
-                {
-                    error = err.Convert();
-                    return false;
-                }
-
-                // There is no size restriction for witnesses
-                // https://github.com/bitcoin/bips/blob/cb071df902eafb7054635201a8b12e76f42774ad/bip-0141.mediawiki#new-script-system
-                // Only a quick check to prevent data loss while casting
-                if (size > int.MaxValue)
-                {
-                    error = "Data size is too big.";
-                    return false;
-                }
-
-                if (!stream.TryReadByteArray((int)size, out data))
-                {
-                    error = Err.EndOfStream;
-                    return false;
-                }
-                // Hack OpValue for equality comparisons
-                _opVal = new StackInt((int)size).GetOpCode();
-            }
-
-            error = null;
-            return true;
-        }
-
-
-        /// <summary>
         /// Adds the serialized size of this instance to the given counter as if it was inside an <see cref="IScript"/>.
         /// </summary>
         /// <param name="counter">Size counter to use</param>
