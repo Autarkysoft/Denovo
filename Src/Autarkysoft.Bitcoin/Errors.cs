@@ -22,6 +22,64 @@ namespace Autarkysoft.Bitcoin
         /// Reached end of stream
         /// </summary>
         EndOfStream,
+        /// <summary>
+        /// Data size is bigger than <see cref="int"/>
+        /// </summary>
+        DataTooBig,
+
+        /// <summary>
+        /// Script length bigger than <see cref="Constants.MaxScriptLength"/>
+        /// </summary>
+        ScriptOverflow,
+        /// <summary>
+        /// OP count in a script exceeded the allowed number
+        /// </summary>
+        OpCountOverflow,
+        /// <summary>
+        /// Invalid OP code
+        /// </summary>
+        InvalidOP,
+        /// <summary>
+        /// Disabled OP code
+        /// </summary>
+        DisabledOP,
+        /// <summary>
+        /// Undefined OP code
+        /// </summary>
+        UndefinedOp,
+        /// <summary>
+        /// Missing OP_EndIf
+        /// </summary>
+        MissingOpEndIf,
+        /// <summary>
+        /// OP_ELSE without OP_(NOT)IF
+        /// </summary>
+        OpElseNoOpIf,
+        /// <summary>
+        /// OP_EndIf without OP_(NOT)IF
+        /// </summary>
+        OpEndIfNoOpIf,
+        /// <summary>
+        /// OP_CheckMultiSig should not be used in Taproot scripts
+        /// </summary>
+        OpCheckMultiSigTaproot,
+        /// <summary>
+        /// OP_CheckMultiSigVerify should not be used in Taproot scripts
+        /// </summary>
+        OpCheckMultiSigVerifyTaproot,
+        /// <summary>
+        /// OP_CheckSigAdd should not be used in legacy and SegWit v0 scripts
+        /// </summary>
+        OpCheckSigAddPreTaproot,
+
+        /// <summary>
+        /// Stream doesn't start with 0x6a
+        /// </summary>
+        WrongOpReturnByte,
+        /// <summary>
+        /// OP_RETURN stream must contain at least one byte
+        /// </summary>
+        ShortOpReturn,
 
         /// <summary>
         /// First byte 253 needs to read at least 2 bytes
@@ -85,5 +143,10 @@ namespace Autarkysoft.Bitcoin
         /// <see cref="Target"/> value overflow
         /// </summary>
         TargetOverflow,
+
+        /// <summary>
+        /// This is only used for testing
+        /// </summary>
+        ForTesting
     }
 }

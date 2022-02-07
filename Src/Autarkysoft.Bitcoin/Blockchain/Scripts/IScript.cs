@@ -36,8 +36,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <see cref="OP.CheckMultiSig"/> or <see cref="OP.CheckMultiSigVerify"/> operations based on number of pubkeys).
         /// <para/>Has to also check if count is under allowed number
         /// </param>
-        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if evaluation was successful, false if otherwise.</returns>
-        bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out string error);
+        bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out Errors error);
     }
 }

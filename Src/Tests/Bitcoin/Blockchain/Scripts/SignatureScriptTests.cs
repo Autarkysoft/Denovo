@@ -21,7 +21,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void ConstructorTest()
         {
-            SignatureScript scr = new SignatureScript();
+            SignatureScript scr = new();
             Assert.Empty(scr.Data);
         }
 
@@ -29,7 +29,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithNullBytesTest()
         {
             byte[] data = null;
-            SignatureScript scr = new SignatureScript(data);
+            SignatureScript scr = new(data);
             Assert.Empty(scr.Data); // NotNull
         }
 
@@ -37,7 +37,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithBytesTest()
         {
             byte[] data = { 1, 2, 3 };
-            SignatureScript scr = new SignatureScript(data);
+            SignatureScript scr = new(data);
             data[0] = 255; // Make sure data is cloned
             Assert.Equal(new byte[] { 1, 2, 3 }, scr.Data);
         }
@@ -45,15 +45,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void Constructor_OpsTest()
         {
-            SignatureScript scr = new SignatureScript(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
+            SignatureScript scr = new(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
             Assert.Equal(new byte[] { (byte)OP.DUP, 3, 10, 20, 30 }, scr.Data);
         }
 
         [Fact]
         public void Constructor_EmptyOpsTest()
         {
-            SignatureScript scr = new SignatureScript(new IOperation[0]);
-            Assert.Equal(new byte[0], scr.Data);
+            SignatureScript scr = new(Array.Empty<IOperation>());
+            Assert.Equal(Array.Empty<byte>(), scr.Data);
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [InlineData(600000, new byte[] { 10, 20, 30, 40, 50 }, new byte[] { 3, 192, 39, 9, 5, 10, 20, 30, 40, 50 })]
         public void Constructor_CoinbaseTest(int height, byte[] extra, byte[] expected)
         {
-            SignatureScript scr = new SignatureScript(height, extra);
+            SignatureScript scr = new(height, extra);
             Assert.Equal(expected, scr.Data);
         }
 
@@ -87,7 +87,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void Data_PropertySetter_Test()
         {
-            SignatureScript scr = new SignatureScript()
+            SignatureScript scr = new()
             {
                 Data = null
             };
@@ -97,7 +97,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetVerifyCoinbaseCases()
         {
-            yield return new object[] { new byte[0], null, false };
+            yield return new object[] { Array.Empty<byte>(), null, false };
             yield return new object[] { new byte[1], null, false };
             yield return new object[] { new byte[101], null, false };
             yield return new object[] { new byte[2], new MockConsensus() { expHeight = 123, bip34 = false }, true };
@@ -124,7 +124,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetVerifyCoinbaseCases))]
         public void VerifyCoinbaseTest(byte[] data, IConsensus consensus, bool expected)
         {
-            SignatureScript scr = new SignatureScript(data);
+            SignatureScript scr = new(data);
             bool actual = scr.VerifyCoinbase(consensus);
             Assert.Equal(expected, actual);
         }
@@ -132,7 +132,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToEmptyTest()
         {
-            SignatureScript scr = new SignatureScript(new byte[2]);
+            SignatureScript scr = new(new byte[2]);
             Assert.NotEmpty(scr.Data);
             scr.SetToEmpty();
             Assert.Empty(scr.Data);
@@ -141,7 +141,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2PKTest()
         {
-            SignatureScript scr = new SignatureScript();
+            SignatureScript scr = new();
             scr.SetToP2PK(Helper.ShortSig1);
             byte[] expected = Helper.HexToBytes($"{Helper.ShortSig1Hex.Length / 2:x2}{Helper.ShortSig1Hex}");
 
@@ -151,7 +151,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2PKTest_ExceptionTest()
         {
-            SignatureScript scr = new SignatureScript();
+            SignatureScript scr = new();
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PK(null));
         }
 
@@ -173,7 +173,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetP2PKHCases))]
         public void SetToP2PKHTest(bool useComp, PublicKey pub, Signature sig, byte[] expected)
         {
-            SignatureScript scr = new SignatureScript();
+            SignatureScript scr = new();
             scr.SetToP2PKH(sig, pub, useComp);
             Assert.Equal(expected, scr.Data);
         }
@@ -181,7 +181,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2PKH_ExceptionTest()
         {
-            SignatureScript scr = new SignatureScript();
+            SignatureScript scr = new();
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(null, KeyHelper.Pub1, true));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(Helper.ShortSig1, null, true));
@@ -287,15 +287,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetMultiSigCases))]
         public void SetToMultiSigTest(byte[] scrData, Signature sig, IRedeemScript rdm, ITransaction tx, int index, byte[] expected)
         {
-            var scr = new SignatureScript(scrData);
+            SignatureScript scr = new(scrData);
             scr.SetToMultiSig(sig, rdm, tx, index);
             Assert.Equal(expected, scr.Data);
         }
 
         public static IEnumerable<object[]> GetMultiSigNullExCases()
         {
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.MultiSig, new byte[1], 0);
-            var tx = new MockTxIdTx("") { TxInList = new TxIn[1] };
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.MultiSig, new byte[1], 0);
+            MockTxIdTx tx = new("") { TxInList = new TxIn[1] };
 
             yield return new object[] { null, rdm, tx, 0, "Signature can not be null." };
             yield return new object[] { Helper.ShortSig1, null, tx, 0, "Redeem script can not be null." };
@@ -305,20 +305,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetMultiSigNullExCases))]
         public void SetToMultiSig_NullExceptionTest(Signature sig, IRedeemScript rdm, ITransaction tx, int index, string expErr)
         {
-            var scr = new SignatureScript();
+            SignatureScript scr = new();
             Exception ex = Assert.Throws<ArgumentNullException>(() => scr.SetToMultiSig(sig, rdm, tx, index));
             Assert.Contains(expErr, ex.Message);
         }
 
         public static IEnumerable<object[]> GetMultiSigOutOfRangeExCases()
         {
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.MultiSig, new byte[1], 0);
-            var tx = new MockTxIdTx("") { TxInList = new TxIn[1] };
-            var zero = new PushDataOp(OP._0);
-            var one = new PushDataOp(OP._1);
-            var two = new PushDataOp(OP._2);
-            var neg = new PushDataOp(OP.Negative1);
-            var chsig = new CheckMultiSigOp();
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.MultiSig, new byte[1], 0);
+            MockTxIdTx tx = new("") { TxInList = new TxIn[1] };
+            PushDataOp zero = new(OP._0);
+            PushDataOp one = new(OP._1);
+            PushDataOp two = new(OP._2);
+            PushDataOp neg = new(OP.Negative1);
+            CheckMultiSigOp chsig = new();
 
             yield return new object[] { Helper.ShortSig1, rdm, tx, -1, "Invalid input index." };
             yield return new object[] { Helper.ShortSig1, rdm, tx, 1, "Invalid input index." };
@@ -363,28 +363,28 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetMultiSigOutOfRangeExCases))]
         public void SetToMultiSig_OutOfRangeExceptionTest(Signature sig, IRedeemScript rdm, ITransaction tx, int index, string expErr)
         {
-            var scr = new SignatureScript();
+            SignatureScript scr = new();
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToMultiSig(sig, rdm, tx, index));
             Assert.Contains(expErr, ex.Message);
         }
 
         public static IEnumerable<object[]> GetMultiSigArgExCases()
         {
-            var tx = new MockTxIdTx("") { TxInList = new TxIn[1] };
-            PushDataOp badNum = new PushDataOp();
+            MockTxIdTx tx = new("") { TxInList = new TxIn[1] };
+            PushDataOp badNum = new();
             badNum.TryRead(new FastStreamReader(new byte[] { 1, 0 }), out _);
-            var two = new PushDataOp(OP._2);
-            var chsig = new CheckMultiSigOp();
+            PushDataOp two = new(OP._2);
+            CheckMultiSigOp chsig = new();
 
             yield return new object[]
             {
-                Helper.ShortSig1, new MockSerializableRedeemScript(RedeemScriptType.Empty, new byte[0], 0),
+                Helper.ShortSig1, new MockSerializableRedeemScript(RedeemScriptType.Empty, Array.Empty<byte>(), 0),
                 tx, 0, "Invalid redeem script type."
             };
             yield return new object[]
             {
                 Helper.ShortSig1, new MockEvaluatableRedeemScript(RedeemScriptType.MultiSig, null, 0),
-                tx, 0, "Can not evaluate redeem script: Foo"
+                tx, 0, $"Can not evaluate redeem script: {Errors.ForTesting.Convert()}"
             };
             yield return new object[]
             {
@@ -403,7 +403,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetMultiSigArgExCases))]
         public void SetToMultiSig_ArgumentExceptionTest(Signature sig, IRedeemScript rdm, ITransaction tx, int index, string expErr)
         {
-            var scr = new SignatureScript();
+            SignatureScript scr = new();
             Exception ex = Assert.Throws<ArgumentException>(() => scr.SetToMultiSig(sig, rdm, tx, index));
             Assert.Contains(expErr, ex.Message);
         }
@@ -412,8 +412,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WPKH_FromScriptTest()
         {
-            SignatureScript scr = new SignatureScript();
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.P2SH_P2WPKH, new byte[] { 1, 2, 3 }, 255);
+            SignatureScript scr = new();
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.P2SH_P2WPKH, new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2SH_P2WPKH(rdm);
             byte[] expected = new byte[] { 3, 1, 2, 3 };
             Assert.Equal(expected, scr.Data);
@@ -428,7 +428,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetP2sh_P2wpkhCases))]
         public void SetToP2SH_P2WPKH_FromPubkeyTest(PublicKey pub, bool comp, byte[] expected)
         {
-            SignatureScript scr = new SignatureScript();
+            SignatureScript scr = new();
             scr.SetToP2SH_P2WPKH(pub, comp);
             Assert.Equal(expected, scr.Data);
         }
@@ -436,8 +436,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WPKH_ExceptionTest()
         {
-            SignatureScript scr = new SignatureScript();
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.Empty, new byte[0], 0);
+            SignatureScript scr = new();
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.Empty, Array.Empty<byte>(), 0);
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null, true));
@@ -448,8 +448,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WSHTest()
         {
-            SignatureScript scr = new SignatureScript();
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.P2SH_P2WSH, new byte[] { 1, 2, 3 }, 255);
+            SignatureScript scr = new();
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.P2SH_P2WSH, new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2SH_P2WSH(rdm);
             byte[] expected = new byte[] { 3, 1, 2, 3 };
             Assert.Equal(expected, scr.Data);
@@ -458,8 +458,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WSH_ExceptionTest()
         {
-            SignatureScript scr = new SignatureScript();
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.Empty, new byte[0], 0);
+            SignatureScript scr = new();
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.Empty, Array.Empty<byte>(), 0);
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WSH(null));
             Assert.Throws<ArgumentException>(() => scr.SetToP2SH_P2WSH(rdm));
@@ -469,8 +469,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToCheckLocktimeVerifyTest()
         {
-            SignatureScript scr = new SignatureScript();
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.CheckLocktimeVerify, new byte[] { 1, 2, 3 }, 255);
+            SignatureScript scr = new();
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.CheckLocktimeVerify, new byte[] { 1, 2, 3 }, 255);
             scr.SetToCheckLocktimeVerify(Helper.ShortSig1, rdm);
             byte[] expected = Helper.HexToBytes($"{Helper.ShortSig1Hex.Length / 2:x2}{Helper.ShortSig1Hex}03010203");
 
@@ -480,8 +480,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToCheckLocktimeVerify_ExceptionTest()
         {
-            SignatureScript scr = new SignatureScript();
-            var rdm = new MockSerializableRedeemScript(RedeemScriptType.Empty, new byte[] { 1, 2, 3 }, 255);
+            SignatureScript scr = new();
+            MockSerializableRedeemScript rdm = new(RedeemScriptType.Empty, new byte[] { 1, 2, 3 }, 255);
 
             Assert.Throws<ArgumentException>(() => scr.SetToCheckLocktimeVerify(Helper.ShortSig1, rdm));
             Assert.Throws<ArgumentNullException>(() => scr.SetToCheckLocktimeVerify(null, rdm));

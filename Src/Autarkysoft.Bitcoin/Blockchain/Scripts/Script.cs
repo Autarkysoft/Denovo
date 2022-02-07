@@ -173,20 +173,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out string error)
+        public bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out Errors error)
         {
             opCount = 0;
             if (Data.Length == 0)
             {
                 result = new IOperation[0];
-                error = null;
+                error = Errors.None;
                 return true;
             }
             else if ((mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0) &&
                      Data.Length > Constants.MaxScriptLength)
             {
                 result = new IOperation[0];
-                error = $"Script data length exceeded the maximum allowed {Constants.MaxScriptLength} bytes.";
+                error = Errors.ScriptOverflow;
                 return false;
             }
             else
@@ -204,7 +204,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 }
 
                 result = tempList.ToArray();
-                error = null;
+                error = Errors.None;
                 return true;
             }
         }
@@ -241,11 +241,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
         protected bool TryRead(ScriptEvalMode mode, FastStreamReader stream, List<IOperation> opList,
-                               ref int opCount, ref uint opPosition, out string error)
+                               ref int opCount, ref uint opPosition, out Errors error)
         {
             if (!stream.TryPeekByte(out byte firstByte))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -256,7 +256,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 opList.Add(new SuccessOp(firstByte));
                 int rem = stream.GetRemainingBytesCount();
                 stream.Skip(rem);
-                error = null;
+                error = Errors.None;
                 return true;
             }
 
@@ -268,7 +268,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     return false;
                 }
                 opList.Add(op);
-                error = null;
+                error = Errors.None;
                 return true;
             }
 
@@ -276,7 +276,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             {
                 if (firstByte != (byte)OP.Reserved && ++opCount > Constants.MaxScriptOpCount)
                 {
-                    error = Err.OpCountOverflow;
+                    error = Errors.OpCountOverflow;
                     return false;
                 }
             }
@@ -295,10 +295,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 stream.SkipOneByte();
                 switch ((OP)firstByte)
                 {
+                    // TODO: should we remove all invalid/disabled OP (enum)s?
+
                     // Invalid OPs:
                     case OP.VerIf:
                     case OP.VerNotIf:
-                        error = $"Invalid OP was found: OP_{(OP)firstByte}";
+                        error = Errors.InvalidOP;
                         return false;
 
                     // Disabled OPs:
@@ -317,7 +319,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     case OP.MOD:
                     case OP.LSHIFT:
                     case OP.RSHIFT:
-                        error = $"Disabled OP was found: OP_{(OP)firstByte}";
+                        error = Errors.DisabledOP;
                         return false;
 
                     // Special case of IFs:
@@ -327,7 +329,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out byte nextB))
                         {
-                            error = Err.EndOfStream;
+                            error = Errors.EndOfStream;
                             return false;
                         }
 
@@ -340,7 +342,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                             }
                             if (!stream.TryPeekByte(out nextB))
                             {
-                                error = Err.EndOfStream;
+                                error = Errors.EndOfStream;
                                 return false;
                             }
                         }
@@ -350,7 +352,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         {
                             if (!stream.TryReadByte(out byte currentB))
                             {
-                                error = Err.EndOfStream;
+                                error = Errors.EndOfStream;
                                 return false;
                             }
 
@@ -364,7 +366,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 }
                                 if (!stream.TryPeekByte(out nextB))
                                 {
-                                    error = Err.EndOfStream;
+                                    error = Errors.EndOfStream;
                                     return false;
                                 }
 
@@ -377,7 +379,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                     }
                                     if (!stream.TryPeekByte(out nextB))
                                     {
-                                        error = Err.EndOfStream;
+                                        error = Errors.EndOfStream;
                                         return false;
                                     }
                                 }
@@ -394,14 +396,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB != (byte)OP.EndIf)
                             {
-                                error = "Mandatory OP_EndIf is missing.";
+                                error = Errors.MissingOpEndIf; ;
                                 return false;
                             }
                             opPosition++; // +1 for OP_EndIf
                         }
                         else
                         {
-                            error = Err.EndOfStream + " Mandatory OP_EndIf is missing.";
+                            error = Errors.MissingOpEndIf;
                             return false;
                         }
 
@@ -415,7 +417,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         // Peek at next byte to check if it is OP_EndIf or OP_Else
                         if (!stream.TryPeekByte(out nextB))
                         {
-                            error = Err.EndOfStream;
+                            error = Errors.EndOfStream;
                             return false;
                         }
 
@@ -428,7 +430,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                             }
                             if (!stream.TryPeekByte(out nextB))
                             {
-                                error = Err.EndOfStream;
+                                error = Errors.EndOfStream;
                                 return false;
                             }
                         }
@@ -438,7 +440,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         {
                             if (!stream.TryReadByte(out byte currentB))
                             {
-                                error = Err.EndOfStream;
+                                error = Errors.EndOfStream;
                                 return false;
                             }
 
@@ -452,7 +454,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                 }
                                 if (!stream.TryPeekByte(out nextB))
                                 {
-                                    error = Err.EndOfStream;
+                                    error = Errors.EndOfStream;
                                     return false;
                                 }
 
@@ -465,7 +467,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                                     }
                                     if (!stream.TryPeekByte(out nextB))
                                     {
-                                        error = Err.EndOfStream;
+                                        error = Errors.EndOfStream;
                                         return false;
                                     }
                                 }
@@ -482,14 +484,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB != (byte)OP.EndIf)
                             {
-                                error = "Mandatory OP_EndIf is missing.";
+                                error = Errors.MissingOpEndIf;
                                 return false;
                             }
                             opPosition++; // +1 for OP_EndIf
                         }
                         else
                         {
-                            error = Err.EndOfStream + " Mandatory OP_EndIf is missing.";
+                            error = Errors.MissingOpEndIf;
                             return false;
                         }
 
@@ -497,10 +499,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                         break;
 
                     case OP.ELSE:
-                        error = "OP_ELSE found without prior OP_IF or OP_NOTIF.";
+                        error = Errors.OpElseNoOpIf;
                         return false;
                     case OP.EndIf:
-                        error = "OP_EndIf found without prior OP_IF or OP_NOTIF.";
+                        error = Errors.OpEndIfNoOpIf;
                         return false;
 
                     // From OP_0 to OP_16 except OP_Reserved is already handled.
@@ -710,7 +712,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     case OP.CheckMultiSig:
                         if (mode == ScriptEvalMode.WitnessV1)
                         {
-                            error = "OP_CheckMultiSig is not available for Taproot scripts.";
+                            error = Errors.OpCheckMultiSigTaproot;
                             return false;
                         }
                         opList.Add(new CheckMultiSigOp());
@@ -718,7 +720,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     case OP.CheckMultiSigVerify:
                         if (mode == ScriptEvalMode.WitnessV1)
                         {
-                            error = "OP_CheckMultiSigVerify is not available for Taproot scripts.";
+                            error = Errors.OpCheckMultiSigVerifyTaproot;
                             return false;
                         }
                         opList.Add(new CheckMultiSigVerifyOp());
@@ -757,19 +759,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     case OP.CheckSigAdd:
                         if (mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0)
                         {
-                            error = "OP_CheckSigAdd is only available in Taproot scripts.";
+                            error = Errors.OpCheckSigAddPreTaproot;
                             return false;
                         }
                         opList.Add(new CheckSigAddOp());
                         break;
 
                     default:
-                        error = "Undefined OP code";
+                        error = Errors.UndefinedOp;
                         return false;
                 }
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

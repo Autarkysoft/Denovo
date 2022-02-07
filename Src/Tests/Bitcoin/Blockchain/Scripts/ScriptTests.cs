@@ -544,14 +544,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryEvaluateTest(byte[] scrBa, IOperation[] expectedOps, int expectedCount)
         {
             Data = scrBa;
-            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] actOpsLegacy, out int actCountLegacy, out string e1);
-            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] actOpsWit0, out int actCountWit0, out string e2);
+            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] actOpsLegacy, out int actCountLegacy, out Errors e1);
+            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] actOpsWit0, out int actCountWit0, out Errors e2);
 
-            Assert.True(b1, e1);
-            Assert.True(b2, e2);
+            Assert.True(b1, e1.Convert());
+            Assert.True(b2, e2.Convert());
 
-            Assert.Null(e1);
-            Assert.Null(e2);
+            Assert.Equal(Errors.None, e1);
+            Assert.Equal(Errors.None, e2);
 
             Assert.Equal(expectedOps, actOpsLegacy);
             Assert.Equal(expectedOps, actOpsWit0);
@@ -589,43 +589,43 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryEvaluate_WitVer1Test(byte[] scrBa, IOperation[] expectedOps)
         {
             Data = scrBa;
-            bool b = TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] actOps, out int actualCount, out string err);
+            bool b = TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] actOps, out int actualCount, out Errors err);
 
-            Assert.True(b, err);
-            Assert.Null(err);
+            Assert.True(b, err.Convert());
+            Assert.Equal(Errors.None, err);
             Assert.Equal(expectedOps, actOps);
             Assert.Equal(0, actualCount);
         }
 
         public static IEnumerable<object[]> GetEvalFailCases()
         {
-            yield return new object[] { new byte[] { 2, 10 }, Err.EndOfStream };
-            yield return new object[] { new byte[] { (byte)OP.VerIf }, "Invalid OP was found: OP_VerIf" };
-            yield return new object[] { new byte[] { (byte)OP.VerNotIf }, "Invalid OP was found: OP_VerNotIf" };
-            yield return new object[] { new byte[] { (byte)OP.CAT }, "Disabled OP was found: OP_CAT" };
-            yield return new object[] { new byte[] { (byte)OP.SubStr }, "Disabled OP was found: OP_SubStr" };
-            yield return new object[] { new byte[] { (byte)OP.LEFT }, "Disabled OP was found: OP_LEFT" };
-            yield return new object[] { new byte[] { (byte)OP.RIGHT }, "Disabled OP was found: OP_RIGHT" };
-            yield return new object[] { new byte[] { (byte)OP.INVERT }, "Disabled OP was found: OP_INVERT" };
-            yield return new object[] { new byte[] { (byte)OP.AND }, "Disabled OP was found: OP_AND" };
-            yield return new object[] { new byte[] { (byte)OP.OR }, "Disabled OP was found: OP_OR" };
-            yield return new object[] { new byte[] { (byte)OP.XOR }, "Disabled OP was found: OP_XOR" };
-            yield return new object[] { new byte[] { (byte)OP.MUL2 }, "Disabled OP was found: OP_MUL2" };
-            yield return new object[] { new byte[] { (byte)OP.DIV2 }, "Disabled OP was found: OP_DIV2" };
-            yield return new object[] { new byte[] { (byte)OP.MUL }, "Disabled OP was found: OP_MUL" };
-            yield return new object[] { new byte[] { (byte)OP.DIV }, "Disabled OP was found: OP_DIV" };
-            yield return new object[] { new byte[] { (byte)OP.MOD }, "Disabled OP was found: OP_MOD" };
-            yield return new object[] { new byte[] { (byte)OP.LSHIFT }, "Disabled OP was found: OP_LSHIFT" };
-            yield return new object[] { new byte[] { (byte)OP.RSHIFT }, "Disabled OP was found: OP_RSHIFT" };
-            yield return new object[] { new byte[] { 255 }, "Undefined OP code" };
+            yield return new object[] { new byte[] { 2, 10 }, Errors.EndOfStream };
+            yield return new object[] { new byte[] { (byte)OP.VerIf }, Errors.InvalidOP };
+            yield return new object[] { new byte[] { (byte)OP.VerNotIf }, Errors.InvalidOP };
+            yield return new object[] { new byte[] { (byte)OP.CAT }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.SubStr }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.LEFT }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.RIGHT }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.INVERT }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.AND }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.OR }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.XOR }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.MUL2 }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.DIV2 }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.MUL }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.DIV }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.MOD }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.LSHIFT }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { (byte)OP.RSHIFT }, Errors.DisabledOP };
+            yield return new object[] { new byte[] { 255 }, Errors.UndefinedOp };
         }
         [Theory]
         [MemberData(nameof(GetEvalFailCases))]
-        public void TryEvaluate_FailTest(byte[] scrBa, string expErr)
+        public void TryEvaluate_FailTest(byte[] scrBa, Errors expErr)
         {
             Data = scrBa;
-            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out _, out _, out string e1);
-            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out _, out _, out string e2);
+            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out _, out _, out Errors e1);
+            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out _, out _, out Errors e2);
 
             Assert.False(b1);
             Assert.False(b2);
@@ -639,17 +639,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             Data = new byte[Constants.MaxScriptLength + 1];
 
-            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out _, out _, out string e1);
-            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out _, out _, out string e2);
-            bool b3 = TryEvaluate(ScriptEvalMode.WitnessV1, out _, out _, out string e3);
+            bool b1 = TryEvaluate(ScriptEvalMode.Legacy, out _, out _, out Errors e1);
+            bool b2 = TryEvaluate(ScriptEvalMode.WitnessV0, out _, out _, out Errors e2);
+            bool b3 = TryEvaluate(ScriptEvalMode.WitnessV1, out _, out _, out Errors e3);
 
             Assert.False(b1);
             Assert.False(b2);
             Assert.True(b3);
 
-            Assert.Equal("Script data length exceeded the maximum allowed 10000 bytes.", e1);
-            Assert.Equal("Script data length exceeded the maximum allowed 10000 bytes.", e2);
-            Assert.Null(e3);
+            Assert.Equal(Errors.ScriptOverflow, e1);
+            Assert.Equal(Errors.ScriptOverflow, e2);
+            Assert.Equal(Errors.None, e3);
         }
 
         [Fact]
@@ -660,14 +660,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             var stream = new FastStreamReader(new byte[] { (byte)OP.DUP });
             var list = new List<IOperation>();
 
-            bool b1 = TryRead(ScriptEvalMode.Legacy, stream, list, ref count, ref pos, out string e1);
-            bool b2 = TryRead(ScriptEvalMode.WitnessV0, stream, list, ref count, ref pos, out string e2);
+            bool b1 = TryRead(ScriptEvalMode.Legacy, stream, list, ref count, ref pos, out Errors e1);
+            bool b2 = TryRead(ScriptEvalMode.WitnessV0, stream, list, ref count, ref pos, out Errors e2);
 
             Assert.False(b1);
             Assert.False(b2);
 
-            Assert.Equal(Err.OpCountOverflow, e1);
-            Assert.Equal(Err.OpCountOverflow, e2);
+            Assert.Equal(Errors.OpCountOverflow, e1);
+            Assert.Equal(Errors.OpCountOverflow, e2);
         }
 
         public static IEnumerable<object[]> GetPositionCases()
@@ -699,9 +699,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
             while (stream.GetRemainingBytesCount() > 0)
             {
-                bool b = TryRead(ScriptEvalMode.WitnessV1, stream, list, ref count, ref actualPos, out string err);
-                Assert.True(b, err);
-                Assert.Null(err);
+                bool b = TryRead(ScriptEvalMode.WitnessV1, stream, list, ref count, ref actualPos, out Errors err);
+                Assert.True(b, err.Convert());
+                Assert.Equal(Errors.None, err);
             }
 
             Assert.Equal(expectedPos, actualPos);

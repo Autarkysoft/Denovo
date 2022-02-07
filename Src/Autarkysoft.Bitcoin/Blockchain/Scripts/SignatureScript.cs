@@ -154,17 +154,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 throw new ArgumentOutOfRangeException(nameof(redeem), "Redeem script is bigger than allowed length.");
             if (redeem.GetRedeemScriptType() != RedeemScriptType.MultiSig)
                 throw new ArgumentException("Invalid redeem script type.");
-            if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out _, out string error))
-                throw new ArgumentException($"Can not evaluate redeem script: {error}");
+            if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out _, out Errors error))
+                throw new ArgumentException($"Can not evaluate redeem script: {error.Convert()}");
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
-            if (!((PushDataOp)rdmOps[0]).TryGetNumber(out long m, out error))
-                throw new ArgumentException($"Invalid m ({error}).");
+            if (!((PushDataOp)rdmOps[0]).TryGetNumber(out long m, out string e))
+                throw new ArgumentException($"Invalid m ({e}).");
             if (m < 0)
                 throw new ArgumentOutOfRangeException(nameof(m), "M can not be negative.");
             if (m == 0)
                 throw new ArgumentOutOfRangeException(nameof(m), "M value zero is not allowed to prevent funds being stolen.");
-            if (!((PushDataOp)rdmOps[^2]).TryGetNumber(out long n, out error))
-                throw new ArgumentException($"Invalid n ({error}).");
+            if (!((PushDataOp)rdmOps[^2]).TryGetNumber(out long n, out e))
+                throw new ArgumentException($"Invalid n ({e}).");
             if (n < 0)
                 throw new ArgumentOutOfRangeException(nameof(n), "N can not be negative.");
             if (n == 0)

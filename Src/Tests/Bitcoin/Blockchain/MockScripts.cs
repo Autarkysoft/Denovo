@@ -18,7 +18,7 @@ namespace Tests.Bitcoin.Blockchain
     public abstract class MockScriptBase : IScript
     {
         public virtual byte[] Data { get; set; }
-        public virtual bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out string error) => throw new NotImplementedException();
+        public virtual bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out Errors error) => throw new NotImplementedException();
         public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
@@ -265,19 +265,19 @@ namespace Tests.Bitcoin.Blockchain
         private readonly int count;
 
         public RedeemScriptType GetRedeemScriptType() => typeToReturn;
-        public override bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out string error)
+        public override bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out Errors error)
         {
             result = opsToReturn;
             opCount = count;
 
             if (opsToReturn is null)
             {
-                error = "Foo";
+                error = Errors.ForTesting;
                 return false;
             }
             else
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
         }

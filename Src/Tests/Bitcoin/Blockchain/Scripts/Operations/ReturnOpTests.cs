@@ -16,10 +16,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Constructor_EmptyTest()
         {
-            ReturnOp op = new ReturnOp();
+            ReturnOp op = new();
 
             Assert.Equal(OP.RETURN, op.OpValue);
-            Helper.ComparePrivateField<ReturnOp, byte[]>(op, "data", new byte[1] { 0x6a });
+            Helper.ComparePrivateField(op, "data", new byte[1] { 0x6a });
         }
 
         [Theory]
@@ -29,7 +29,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 0x6a, 3, 1, 2, 3 })]
         public void Constructor_DataWithSizeTest(byte[] ba, byte[] expected)
         {
-            ReturnOp op = new ReturnOp(ba, true);
+            ReturnOp op = new(ba, true);
             Helper.ComparePrivateField(op, "data", expected);
         }
 
@@ -40,15 +40,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 0x6a, 1, 2, 3 })]
         public void Constructor_DataNoSizeTest(byte[] ba, byte[] expected)
         {
-            ReturnOp op = new ReturnOp(ba, false);
+            ReturnOp op = new(ba, false);
             Helper.ComparePrivateField(op, "data", expected);
         }
 
         [Fact]
         public void Constructor_ScriptWithSizeTest()
         {
-            var scr = new MockSerializableScript(new byte[] { 100, 200 }, 255);
-            ReturnOp op = new ReturnOp(scr, true);
+            MockSerializableScript scr = new(new byte[] { 100, 200 }, 255);
+            ReturnOp op = new(scr, true);
             byte[] expected = new byte[] { 0x6a, 2, 100, 200 };
 
             Helper.ComparePrivateField(op, "data", expected);
@@ -57,8 +57,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Constructor_ScriptNoSizeTest()
         {
-            var scr = new MockSerializableScript(new byte[] { 100, 200 }, 255);
-            ReturnOp op = new ReturnOp(scr, false);
+            MockSerializableScript scr = new(new byte[] { 100, 200 }, 255);
+            ReturnOp op = new(scr, false);
             byte[] expected = new byte[] { 0x6a, 100, 200 };
 
             Helper.ComparePrivateField(op, "data", expected);
@@ -78,26 +78,26 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 0x6a, 1, 2, 3 }, 3, new byte[] { 0x6a, 1, 2 })]
         public void TryReadTest(byte[] ba, int len, byte[] expData)
         {
-            ReturnOp op = new ReturnOp();
-            FastStreamReader stream = new FastStreamReader(ba);
-            bool b = op.TryRead(stream, len, out string err);
+            ReturnOp op = new();
+            FastStreamReader stream = new(ba);
+            bool b = op.TryRead(stream, len, out Errors err);
 
-            Assert.True(b);
-            Assert.Null(err);
+            Assert.True(b, err.Convert());
+            Assert.Equal(Errors.None, err);
             Helper.ComparePrivateField(op, "data", expData);
         }
 
         [Theory]
-        [InlineData(new byte[0], 1, Err.EndOfStream)]
-        [InlineData(new byte[] { 0x6a }, 0, "OP_RETURN script length must be at least 1 byte.")]
-        [InlineData(new byte[] { 0x6a }, -1, "OP_RETURN script length must be at least 1 byte.")]
-        [InlineData(new byte[] { 0x6b }, 0, "Stream doesn't start with appropriate (OP_Return) byte.")]
-        [InlineData(new byte[] { 0x6a }, 2, Err.EndOfStream)]
-        public void TryRead_FailTest(byte[] ba, int len, string expErr)
+        [InlineData(new byte[0], 1, Errors.EndOfStream)]
+        [InlineData(new byte[] { 0x6a }, 0, Errors.ShortOpReturn)]
+        [InlineData(new byte[] { 0x6a }, -1, Errors.ShortOpReturn)]
+        [InlineData(new byte[] { 0x6b }, 0, Errors.WrongOpReturnByte)]
+        [InlineData(new byte[] { 0x6a }, 2, Errors.EndOfStream)]
+        public void TryRead_FailTest(byte[] ba, int len, Errors expErr)
         {
-            ReturnOp op = new ReturnOp();
-            FastStreamReader stream = new FastStreamReader(ba);
-            bool b = op.TryRead(stream, len, out string err);
+            ReturnOp op = new();
+            FastStreamReader stream = new(ba);
+            bool b = op.TryRead(stream, len, out Errors err);
 
             Assert.False(b);
             Assert.Equal(expErr, err);
@@ -106,12 +106,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void TryRead_NullStreamFailTest()
         {
-            ReturnOp op = new ReturnOp();
+            ReturnOp op = new();
             FastStreamReader stream = null;
-            bool b = op.TryRead(stream, 3, out string err);
+            bool b = op.TryRead(stream, 3, out Errors err);
 
             Assert.False(b);
-            Assert.Equal("Stream can not be null.", err);
+            Assert.Equal(Errors.NullStream, err);
         }
 
 
@@ -122,8 +122,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 0x6a, 1, 2, 3 })]
         public void WriteToStreamTest(byte[] ba, byte[] expected)
         {
-            ReturnOp op = new ReturnOp(ba, false);
-            FastStream stream = new FastStream();
+            ReturnOp op = new(ba, false);
+            FastStream stream = new();
 
             op.WriteToStream(stream);
             byte[] actual = stream.ToByteArray();
@@ -156,9 +156,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void GetHashCodeTest()
         {
-            var r1 = new ReturnOp(new byte[] { 1, 2 });
-            var r2 = new ReturnOp(new byte[] { 1, 2 });
-            var r3 = new ReturnOp(new byte[] { 1, 2, 3 });
+            ReturnOp r1 = new(new byte[] { 1, 2 });
+            ReturnOp r2 = new(new byte[] { 1, 2 });
+            ReturnOp r3 = new(new byte[] { 1, 2, 3 });
 
             int h1 = r1.GetHashCode();
             int h2 = r2.GetHashCode();

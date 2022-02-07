@@ -300,11 +300,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] redeemOps, out int redeemOpCount, out error))
+            if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] redeemOps, out int redeemOpCount, out Errors e))
             {
                 error = $"Redeem script evaluation failed for input at index={index}." +
                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                        $"{Environment.NewLine}More info: {error}";
+                        $"{Environment.NewLine}More info: {e.Convert()}";
                 return false;
             }
 
@@ -593,11 +593,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     }
 
                     if (!currentInput.SigScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] signatureOps,
-                                                            out int signatureOpCount, out error))
+                                                            out int signatureOpCount, out Errors e))
                     {
                         error = $"Invalid transaction signature script for input at index={i}." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
+                                $"{Environment.NewLine}More info: {e.Convert()}";
                         return false;
                     }
 
@@ -620,11 +620,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         TotalSigOpCount += currentInput.SigScript.CountSigOps() * Constants.WitnessScaleFactor;
 
                         if (!prevOutput.PubScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] pubOps,
-                                                              out int pubOpCount, out error))
+                                                              out int pubOpCount, out e))
                         {
                             error = $"Failed to evaluate given pubkey script for input at index={i}." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
+                                    $"{Environment.NewLine}More info: {e.Convert()}";
                             return false;
                         }
 
@@ -680,11 +680,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     // P2SH signature script is all pushes so there is no need to count OPs in it for running which changes with
                     // OP_CheckMultiSig(Verify) Ops only (the normal count is already checked during evaluation)
-                    if (!currentInput.SigScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] signatureOps, out _, out error))
+                    if (!currentInput.SigScript.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] signatureOps, out _, out Errors e))
                     {
                         error = $"Failed to evaluate signature script for input at index={i}." +
                                 $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                $"{Environment.NewLine}More info: {error}";
+                                $"{Environment.NewLine}More info: {e.Convert()}";
                         return false;
                     }
 
@@ -718,8 +718,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             tx.WitnessList[i].Items.Length != 0)
                         {
                             error = $"Unexpected witness for input at index={i}." +
-                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
+                                    $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
                             return false;
                         }
 
@@ -750,8 +749,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             if (!(signatureOps[j] is PushDataOp) || !op.Run(stack, out error))
                             {
                                 error = $"Script evaluation failed on {op.OpValue} for input at index={i} ." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
+                                // TODO: fix the following line:
+                                        //$"{Environment.NewLine}More info: {error}";
                                 return false;
                             }
                         }
@@ -759,11 +759,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         // There is no need to run pubOps
 
                         if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] redeemOps, out int redeemOpCount,
-                                                out error))
+                                                out e))
                         {
                             error = $"Script evaluation failed (invalid redeem script)." +
                                     $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                    $"{Environment.NewLine}More info: {error}";
+                                    $"{Environment.NewLine}More info: {e.Convert()}";
                             return false;
                         }
 
@@ -1068,8 +1068,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                                 Debug.Assert(stack.ItemCount <= Constants.MaxScriptStackItemCount);
 
-                                if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out _, out error))
+                                if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out _, out Errors e))
                                 {
+                                    error = e.Convert();
                                     return false;
                                 }
 

@@ -196,14 +196,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Reads the push data from the given stream. The return value indicates success.
         /// </summary>
         /// <param name="stream">Stream to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure).</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        public bool TryRead(FastStreamReader stream, out string error)
+        public bool TryRead(FastStreamReader stream, out Errors error)
         {
             // Since the first byte could be an OP_num or it could be the length we only peek at it
             if (!stream.TryPeekByte(out byte firstByte))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -216,9 +216,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
             else
             {
-                if (!StackInt.TryRead(stream, out stackIntBytes, out StackInt size, out Errors err))
+                if (!StackInt.TryRead(stream, out stackIntBytes, out StackInt size, out error))
                 {
-                    error = err.Convert();
                     return false;
                 }
 
@@ -226,18 +225,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 // Only a quick check to prevent data loss while casting.
                 if (size > int.MaxValue)
                 {
-                    error = "Data size is too big.";
+                    error = Errors.DataTooBig;
                     return false;
                 }
 
                 if (!stream.TryReadByteArray((int)size, out data))
                 {
-                    error = Err.EndOfStream;
+                    error = Errors.EndOfStream;
                     return false;
                 }
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 

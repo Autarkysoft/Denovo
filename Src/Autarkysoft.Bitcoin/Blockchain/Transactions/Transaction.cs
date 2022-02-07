@@ -699,7 +699,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (!((ReadOnlySpan<byte>)TxInList[inputIndex].TxHash).SequenceEqual(prvTx.GetTransactionHash()))
                 throw new ArgumentException("Wrong previous transaction or index.");
             var prvScr = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript;
-            if (!prvScr.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] prevPubOps, out int opCount, out string error))
+            if (!prvScr.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] prevPubOps, out int opCount, out Errors error))
                 throw new ArgumentException($"Previous transaction pubkey script can not be evaluated: {error}.");
             if (opCount > Constants.MaxScriptOpCount)
                 throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
@@ -878,7 +878,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                             TxInList[inputIndex].SigScript.SetToMultiSig(sig, redeem, this, inputIndex);
                             break;
                         case RedeemScriptType.CheckLocktimeVerify:
-                            if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out _, out string error))
+                            if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out _, out Errors error))
                             {
                                 throw new ArgumentException($"Invalid redeem script. Error: {error}");
                             }
@@ -886,9 +886,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                             // Only run PushData(locktime) and CheckLockTimeVerify
                             for (int i = 0; i < 2; i++)
                             {
-                                if (!rdmOps[i].Run(stack, out error))
+                                if (!rdmOps[i].Run(stack, out string e))
                                 {
-                                    throw new ArgumentException($"Invalid redeem script. Error: {error}");
+                                    throw new ArgumentException($"Invalid redeem script. Error: {e}");
                                 }
                             }
 

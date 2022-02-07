@@ -472,6 +472,22 @@ namespace Autarkysoft.Bitcoin
                 Errors.None => string.Empty,
                 Errors.NullStream => "Stream can not be null.",
                 Errors.EndOfStream => "Reached end of stream.",
+                Errors.DataTooBig => "Data size is bigger than int",
+
+                Errors.ScriptOverflow => $"Script data length exceeded the maximum allowed {Constants.MaxScriptLength} bytes.",
+                Errors.OpCountOverflow => "Number of OPs in this script exceeds the allowed number.",
+                Errors.InvalidOP => "Invalid OP code.",
+                Errors.DisabledOP => "Disabled OP code.",
+                Errors.UndefinedOp => "Undefined OP code.",
+                Errors.MissingOpEndIf => "OP_EndIf was not found.",
+                Errors.OpElseNoOpIf => "OP_ELSE found without prior OP_IF or OP_NOTIF.",
+                Errors.OpEndIfNoOpIf => "OP_EndIf found without prior OP_IF or OP_NOTIF.",
+                Errors.OpCheckMultiSigTaproot => "OP_CheckMultiSig is not available for Taproot scripts.",
+                Errors.OpCheckMultiSigVerifyTaproot => "OP_CheckMultiSigVerify is not available for Taproot scripts.",
+                Errors.OpCheckSigAddPreTaproot => "OP_CheckSigAdd is only available in Taproot scripts.",
+
+                Errors.WrongOpReturnByte => $"Stream doesn't start with correct OP_Return byte ({(byte)OP.RETURN}).",
+                Errors.ShortOpReturn => "OP_RETURN script length must be at least 1 byte.",
 
                 Errors.ShortCompactInt2 => "First byte 253 needs to be followed by at least 2 byte.",
                 Errors.SmallCompactInt2 => "For values less than 253, one byte format of CompactInt should be used.",
