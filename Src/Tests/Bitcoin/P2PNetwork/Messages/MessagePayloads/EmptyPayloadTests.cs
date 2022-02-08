@@ -49,7 +49,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public void TryDeserializeTest()
         {
             var mock = new MockEmptyPayload();
-            var stream = new FastStreamReader(new byte[0]);
+            var stream = new FastStreamReader(Array.Empty<byte>());
             bool b = mock.TryDeserialize(stream, out string error);
 
             Assert.True(b);

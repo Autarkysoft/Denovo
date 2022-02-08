@@ -15,7 +15,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
     {
         public static IEnumerable<object[]> GetCtorCases()
         {
-            yield return new object[] { new byte[0], false };
+            yield return new object[] { Array.Empty<byte>(), false };
             yield return new object[] { Helper.GetBytes(1), false };
             yield return new object[] { Helper.GetBytes(64), false };
             yield return new object[] { Helper.GetBytes(65), true };

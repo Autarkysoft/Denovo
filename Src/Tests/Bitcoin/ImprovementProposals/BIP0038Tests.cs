@@ -43,7 +43,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetEncryptCases))]
         public void DecryptTest(PrivateKey key, string pass, string encryptedComp, string encryptedUnComp)
         {
-            using BIP0038 bip = new BIP0038();
+            using BIP0038 bip = new();
             PrivateKey actualKey = bip.Decrypt(encryptedComp, pass, out bool isComp1);
             PrivateKey actualKey2 = bip.Decrypt(encryptedUnComp, pass, out bool isComp2);
 
@@ -58,7 +58,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Decrypt_NullExceptionTest()
         {
-            using BIP0038 bip = new BIP0038();
+            using BIP0038 bip = new();
             string nstr = null;
             byte[] nba = null;
 
@@ -73,7 +73,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Decrypt_DisposedExceptionTest()
         {
-            BIP0038 bip = new BIP0038();
+            BIP0038 bip = new();
             bip.Dispose();
             Assert.Throws<ObjectDisposedException>(() => bip.Decrypt("aa", "", out bool isComp));
         }
@@ -85,7 +85,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData("6PRW5o9FLp4gJDDVqJQKJFTpMvdsSGJxMYHtHaQBF3ooa8mwD69bapcDQn", "Wrong password (derived address hash is not the same).")]
         public void Decrypt_FormatExceptionTest(string encrypted, string expError)
         {
-            using BIP0038 bip = new BIP0038();
+            using BIP0038 bip = new();
             Exception ex = Assert.Throws<FormatException>(() => bip.Decrypt(encrypted, "wrong pass!", out _));
             Assert.Contains(expError, ex.Message);
         }
@@ -95,7 +95,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [MemberData(nameof(GetEncryptCases))]
         public void EncryptTest(PrivateKey key, string pass, string expectedComp, string expectedUncomp)
         {
-            using BIP0038 bip = new BIP0038();
+            using BIP0038 bip = new();
             string actualComp = bip.Encrypt(key, pass, true);
             string actualUncomp = bip.Encrypt(key, pass, false);
 
@@ -106,7 +106,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Encrypt_String_ExceptionTest()
         {
-            BIP0038 bip = new BIP0038();
+            BIP0038 bip = new();
             PrivateKey k = KeyHelper.Prv1;
             string nstr = null;
 
@@ -127,7 +127,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Encrypt_Bytes_ExceptionTest()
         {
-            BIP0038 bip = new BIP0038();
+            BIP0038 bip = new();
             PrivateKey k = KeyHelper.Prv1;
             byte[] nba = null;
 
@@ -137,7 +137,7 @@ namespace Tests.Bitcoin.ImprovementProposals
             ex = Assert.Throws<ArgumentNullException>(() => bip.Encrypt(k, nba, true));
             Assert.Contains("Password can not be null or empty.", ex.Message);
 
-            ex = Assert.Throws<ArgumentNullException>(() => bip.Encrypt(k, new byte[0], true));
+            ex = Assert.Throws<ArgumentNullException>(() => bip.Encrypt(k, Array.Empty<byte>(), true));
             Assert.Contains("Password can not be null or empty.", ex.Message);
 
             bip.Dispose();

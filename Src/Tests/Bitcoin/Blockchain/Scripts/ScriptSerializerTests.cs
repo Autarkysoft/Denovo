@@ -17,9 +17,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             yield return new object[]
             {
-                new IOperation[] { },
+                Array.Empty<IOperation>(),
                 Helper.HexToBytes("0102"),
-                new byte[0]
+                Array.Empty<byte>()
             };
             yield return new object[]
             {
@@ -31,7 +31,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             {
                 new IOperation[] { new PushDataOp(new byte[] { 10, 20, 30, 40 }) },
                 new byte[] { 10, 20, 30, 40 },
-                new byte[0]
+                Array.Empty<byte>()
             };
             yield return new object[]
             {
@@ -218,7 +218,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetSingleSigCases))]
         public void Convert_SingleSigTest(IOperation[] ops, byte[] sig, byte[] expected)
         {
-            ScriptSerializer ser = new ScriptSerializer();
+            ScriptSerializer ser = new();
             byte[] actual = ser.Convert(ops, sig);
             Assert.Equal(expected, actual);
         }
@@ -228,9 +228,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             yield return new object[]
             {
-                new IOperation[] { },
+                Array.Empty<IOperation>(),
                 new byte[][] { Helper.HexToBytes("0102") },
-                new byte[0]
+                Array.Empty<byte>()
             };
             yield return new object[]
             {
@@ -327,7 +327,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetMultiSigCases))]
         public void Convert_MultiSigTest(IOperation[] ops, byte[][] sigs, byte[] expected)
         {
-            ScriptSerializer ser = new ScriptSerializer();
+            ScriptSerializer ser = new();
             byte[] actual = ser.ConvertMulti(ops, sigs);
             Assert.Equal(expected, actual);
         }
@@ -336,7 +336,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void ConvertP2wpkhTest()
         {
             IOperation[] ops = new IOperation[2] { new PushDataOp(OP._0), new PushDataOp(Helper.GetBytes(20)) };
-            ScriptSerializer ser = new ScriptSerializer();
+            ScriptSerializer ser = new();
             byte[] actual = ser.ConvertP2wpkh(ops);
             byte[] expected = Helper.HexToBytes($"76a914{Helper.GetBytesHex(20)}88ac");
 
@@ -353,7 +353,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             expWit76[0] = 76;
             Buffer.BlockCopy(data76, 0, expWit76, 1, data76.Length);
 
-            yield return new object[] { new IOperation[0], new byte[0] };
+            yield return new object[] { Array.Empty<IOperation>(), Array.Empty<byte>() };
             yield return new object[]
             {
                 new IOperation[] { new AddOp(), new DUP3Op() },
@@ -508,7 +508,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetWitCases))]
         public void ConvertWitnessTest(IOperation[] ops, byte[] expected)
         {
-            ScriptSerializer ser = new ScriptSerializer();
+            ScriptSerializer ser = new();
             byte[] actual = ser.ConvertWitness(ops);
             Assert.Equal(expected, actual);
         }

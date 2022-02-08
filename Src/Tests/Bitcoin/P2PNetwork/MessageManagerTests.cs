@@ -19,9 +19,9 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void ConstructorTest()
         {
-            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
+            MockClientSettings cs = new() { _netType = NetworkType.MainNet, _buffLen = 10 };
 
-            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus());
+            MessageManager man = new(cs, new MockReplyManager(), new NodeStatus());
 
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
@@ -31,12 +31,12 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void GetPingMsgTest()
         {
-            var cs = new MockClientSettings() { _netType = NetworkType.TestNet, _buffLen = 10 };
-            var expectedPing = new Message(new PingPayload(1), NetworkType.TestNet);
-            var repMan = new MockReplyManager() { pingMsg = expectedPing };
-            MessageManager man = new MessageManager(cs, repMan, new NodeStatus());
+            MockClientSettings cs = new() { _netType = NetworkType.TestNet, _buffLen = 10 };
+            Message expectedPing = new(new PingPayload(1), NetworkType.TestNet);
+            MockReplyManager repMan = new() { pingMsg = expectedPing };
+            MessageManager man = new(cs, repMan, new NodeStatus());
 
-            var actualPing = man.GetPingMsg();
+            Message actualPing = man.GetPingMsg();
 
             Assert.Same(expectedPing, actualPing);
         }
@@ -44,8 +44,8 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void DataToSendTest()
         {
-            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
-            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus())
+            MockClientSettings cs = new() { _netType = NetworkType.MainNet, _buffLen = 10 };
+            MessageManager man = new(cs, new MockReplyManager(), new NodeStatus())
             {
                 DataToSend = null
             };
@@ -53,7 +53,7 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.True(man.IsReceiveCompleted);
             Assert.False(man.HasDataToSend);
 
-            man.DataToSend = new byte[0];
+            man.DataToSend = Array.Empty<byte>();
             Assert.True(man.IsReceiveCompleted);
             Assert.True(man.HasDataToSend);
 
@@ -126,7 +126,7 @@ namespace Tests.Bitcoin.P2PNetwork
         [MemberData(nameof(GetSetBufferCases))]
         public void SetSendBufferTest(int buffLen, byte[] toSend, byte[][] expecBuffers, int lastSendLen)
         {
-            using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
+            using SocketAsyncEventArgs sarg = new();
             // There are 5 bytes before and 5 bytes after the buffer used by socket and is set to 254 and should not change.
             byte[] buffer = new byte[buffLen + 10];
             buffer[0] = 254;
@@ -143,8 +143,8 @@ namespace Tests.Bitcoin.P2PNetwork
             // Create a copy to use as expected buffer
             byte[] expectedBuffer = buffer.CloneByteArray();
 
-            var cs = new MockClientSettings() { _buffLen = buffLen, _netType = NetworkType.MainNet };
-            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus())
+            MockClientSettings cs = new() { _buffLen = buffLen, _netType = NetworkType.MainNet };
+            MessageManager man = new(cs, new MockReplyManager(), new NodeStatus())
             {
                 DataToSend = toSend
             };
@@ -220,11 +220,11 @@ namespace Tests.Bitcoin.P2PNetwork
         public void SetSendBuffer_WithMsgTest(int buffLen, Message toSend, byte[] expecBuffer1, byte[] expecBuffer2,
                                               int sendLen1, int sendLen2)
         {
-            using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
+            using SocketAsyncEventArgs sarg = new();
             sarg.SetBuffer(new byte[buffLen], 0, buffLen);
 
-            var cs = new MockClientSettings() { _buffLen = buffLen, _netType = NetworkType.MainNet };
-            MessageManager man = new MessageManager(cs, new MockReplyManager(), new NodeStatus());
+            MockClientSettings cs = new() { _buffLen = buffLen, _netType = NetworkType.MainNet };
+            MessageManager man = new(cs, new MockReplyManager(), new NodeStatus());
 
             Assert.False(man.HasDataToSend);
 
@@ -254,13 +254,13 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void StartHandShakeTest()
         {
-            var pl = new MockSerializableMessagePayload(PayloadType.Version, new byte[3] { 1, 2, 3 });
-            Message msg = new Message(pl, NetworkType.MainNet);
+            MockSerializableMessagePayload pl = new(PayloadType.Version, new byte[3] { 1, 2, 3 });
+            Message msg = new(pl, NetworkType.MainNet);
             byte[] msgSer = Helper.HexToBytes("f9beb4d976657273696f6e00000000000300000019c6197e010203");
-            var repMan = new MockReplyManager() { verMessage = msg };
-            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 30 };
-            MessageManager man = new MessageManager(cs, repMan, new NodeStatus());
-            using SocketAsyncEventArgs sarg = new SocketAsyncEventArgs();
+            MockReplyManager repMan = new() { verMessage = msg };
+            MockClientSettings cs = new() { _netType = NetworkType.MainNet, _buffLen = 30 };
+            MessageManager man = new(cs, repMan, new NodeStatus());
+            using SocketAsyncEventArgs sarg = new();
             sarg.SetBuffer(new byte[30], 0, 30);
 
             byte[] expBuffer = new byte[30];
@@ -278,15 +278,15 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public static IEnumerable<object[]> GetReadBytesCases()
         {
-            var mockPlt = (PayloadType)10000;
-            var mockMsg = new Message(new MockSerializableMessagePayload(mockPlt, new byte[] { 1, 2, 3 }), NetworkType.MainNet);
+            PayloadType mockPlt = (PayloadType)10000;
+            Message mockMsg = new(new MockSerializableMessagePayload(mockPlt, new byte[] { 1, 2, 3 }), NetworkType.MainNet);
 
             yield return new object[]
             {
                 // Receive length is 0
                 new MockReplyManager(),
                 new MockNodeStatus(),
-                new byte[][] { new byte[0], new byte[0] },
+                new byte[][] { Array.Empty<byte>(), Array.Empty<byte>() },
                 0,
                 new int[] { 0, 0 },
                 new byte[][] { null, null },
@@ -418,7 +418,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockReplyManager()
                 {
                     toReceive = new PayloadType[] { PayloadType.Verack },
-                    toReceiveBytes = new byte[][] { new byte[0] }
+                    toReceiveBytes = new byte[][] { Array.Empty<byte>() }
                 },
                 new MockNodeStatus(),
                 new byte[][]
@@ -442,7 +442,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockReplyManager()
                 {
                     toReceive = new PayloadType[] { PayloadType.Verack },
-                    toReceiveBytes = new byte[][] { new byte[0] },
+                    toReceiveBytes = new byte[][] { Array.Empty<byte>() },
                     toReply = new Message[][] { new Message[] { mockMsg } }
                 },
                 new MockNodeStatus(),
@@ -467,7 +467,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockReplyManager()
                 {
                     toReceive = new PayloadType[] { PayloadType.Verack },
-                    toReceiveBytes = new byte[][] { new byte[0] },
+                    toReceiveBytes = new byte[][] { Array.Empty<byte>() },
                 },
                 new MockNodeStatus(),
                 new byte[][]
@@ -491,7 +491,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockReplyManager()
                 {
                     toReceive = new PayloadType[] { PayloadType.Verack, PayloadType.Verack },
-                    toReceiveBytes = new byte[][] { new byte[0], new byte[1] { 0x23 } },
+                    toReceiveBytes = new byte[][] { Array.Empty<byte>(), new byte[1] { 0x23 } },
                 },
                 new MockNodeStatus(),
                 new byte[][]
@@ -517,7 +517,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockReplyManager()
                 {
                     toReceive = new PayloadType[] { PayloadType.Verack, PayloadType.Verack },
-                    toReceiveBytes = new byte[][] { new byte[0], new byte[1] { 0x23 } },
+                    toReceiveBytes = new byte[][] { Array.Empty<byte>(), new byte[1] { 0x23 } },
                 },
                 new MockNodeStatus(),
                 new byte[][]
@@ -538,7 +538,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 new MockReplyManager()
                 {
                     toReceive = new PayloadType[] { PayloadType.Verack, PayloadType.Verack },
-                    toReceiveBytes = new byte[][] { new byte[0], new byte[1] { 0x23 } },
+                    toReceiveBytes = new byte[][] { Array.Empty<byte>(), new byte[1] { 0x23 } },
                 },
                 new MockNodeStatus(),
                 new byte[][]
@@ -593,8 +593,8 @@ namespace Tests.Bitcoin.P2PNetwork
         public void ReadBytesTest(IReplyManager repMan, MockNodeStatus ns, byte[][] buffers, int offset, int[] recvLens,
                                   byte[][] leftovers, bool[] rcvComplete, bool[] hasSend)
         {
-            var cs = new MockClientSettings() { _netType = NetworkType.MainNet, _buffLen = 10 };
-            var man = new MessageManager(cs, repMan, ns);
+            MockClientSettings cs = new() { _netType = NetworkType.MainNet, _buffLen = 10 };
+            MessageManager man = new(cs, repMan, ns);
 
             Assert.Equal(buffers.Length, recvLens.Length);
             Assert.Equal(buffers.Length, leftovers.Length);

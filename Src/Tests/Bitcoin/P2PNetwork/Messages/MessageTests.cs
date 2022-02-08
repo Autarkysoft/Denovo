@@ -53,7 +53,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [InlineData("f9beb4d96e6f74666f756e6300000000000000005df6e0e2", false, PayloadType.Addr)]
         public void TryGetPayloadTypeTest(string hex, bool expSuccess, PayloadType expPlt)
         {
-            Message msg = new Message(NetworkType.MainNet);
+            Message msg = new(NetworkType.MainNet);
             Assert.True(msg.TryDeserialize(new FastStreamReader(Helper.HexToBytes(hex)), out string error), error);
             Assert.Equal(expSuccess, msg.TryGetPayloadType(out PayloadType actualPlt));
             Assert.Equal(expPlt, actualPlt);
@@ -75,7 +75,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
 
         public static IEnumerable<object[]> GetReadCases()
         {
-            yield return new object[] { new byte[0], Message.ReadResult.NotEnoughBytes };
+            yield return new object[] { Array.Empty<byte>(), Message.ReadResult.NotEnoughBytes };
             yield return new object[] { new byte[Constants.MessageHeaderSize - 1], Message.ReadResult.NotEnoughBytes };
             yield return new object[]
             {

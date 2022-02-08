@@ -22,7 +22,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             Assert.Throws<ArgumentNullException>(() => new BlockTxnPayload(null, txs));
             Assert.Throws<ArgumentOutOfRangeException>(() => new BlockTxnPayload(new byte[10], txs));
             Assert.Throws<ArgumentNullException>(() => new BlockTxnPayload(new byte[32], null));
-            Assert.Throws<ArgumentNullException>(() => new BlockTxnPayload(new byte[32], new ITransaction[0]));
+            Assert.Throws<ArgumentNullException>(() => new BlockTxnPayload(new byte[32], Array.Empty<ITransaction>()));
         }
 
         [Fact]

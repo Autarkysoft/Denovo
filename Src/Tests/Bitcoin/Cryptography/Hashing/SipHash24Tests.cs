@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         public void ComputeHashTest()
         {
             // From last page of https://131002.net/siphash/siphash.pdf
-            SipHash24 hash = new SipHash24();
+            SipHash24 hash = new();
 
             byte[] key = Enumerable.Range(0, 16).Select(x => (byte)x).ToArray();
             byte[] data = Enumerable.Range(0, 15).Select(x => (byte)x).ToArray();
@@ -96,7 +96,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         {
             // Tests from: https://github.com/veorq/SipHash/blob/bab35c64d10f63587a3693a71200620f0ee03cc4/vectors.h#L3-L196
             // How its used: https://github.com/veorq/SipHash/blob/bab35c64d10f63587a3693a71200620f0ee03cc4/test.c#L69
-            SipHash24 hash = new SipHash24();
+            SipHash24 hash = new();
             byte[] key = Enumerable.Range(0, 16).Select(x => (byte)x).ToArray();
             byte[] data = Enumerable.Range(0, len).Select(x => (byte)x).ToArray();
 
@@ -116,11 +116,11 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_ExceptionTest()
         {
-            SipHash24 hash = new SipHash24();
+            SipHash24 hash = new();
 
-            Assert.Throws<ArgumentNullException>(() => hash.ComputeHash(null, new byte[0]));
-            Assert.Throws<ArgumentNullException>(() => hash.ComputeHash(new byte[0], null));
-            Assert.Throws<ArgumentOutOfRangeException>(() => hash.ComputeHash(new byte[0], new byte[0]));
+            Assert.Throws<ArgumentNullException>(() => hash.ComputeHash(null, Array.Empty<byte>()));
+            Assert.Throws<ArgumentNullException>(() => hash.ComputeHash(Array.Empty<byte>(), null));
+            Assert.Throws<ArgumentOutOfRangeException>(() => hash.ComputeHash(Array.Empty<byte>(), Array.Empty<byte>()));
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public void Constructor_ExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => new InvPayload(null));
-            Assert.Throws<ArgumentNullException>(() => new InvPayload(new Inventory[0]));
+            Assert.Throws<ArgumentNullException>(() => new InvPayload(Array.Empty<Inventory>()));
             Assert.Throws<ArgumentOutOfRangeException>(() => new InvPayload(new Inventory[InvPayload.MaxInvCount + 1]));
         }
 
@@ -116,7 +116,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public static IEnumerable<object[]> GetDeserFailCases()
         {
             yield return new object[] { null, "Stream can not be null." };
-            yield return new object[] { new FastStreamReader(new byte[0]), "Count is too big or an invalid CompactInt." };
+            yield return new object[] { new FastStreamReader(Array.Empty<byte>()), "Count is too big or an invalid CompactInt." };
             yield return new object[] { new FastStreamReader(new byte[] { 1 }), Err.EndOfStream };
             yield return new object[]
             {

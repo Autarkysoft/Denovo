@@ -20,7 +20,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void ConstructorTest()
         {
-            var scr = new RedeemScript();
+            RedeemScript scr = new();
             Assert.Empty(scr.Data);
         }
 
@@ -28,7 +28,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithNullBytesTest()
         {
             byte[] data = null;
-            var scr = new RedeemScript(data);
+            RedeemScript scr = new(data);
             Assert.Empty(scr.Data); // NotNull
         }
 
@@ -36,22 +36,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithBytesTest()
         {
             byte[] data = Helper.GetBytes(10);
-            var scr = new RedeemScript(data);
+            RedeemScript scr = new(data);
             Assert.Equal(data, scr.Data);
         }
 
         [Fact]
         public void Constructor_OpsTest()
         {
-            var scr = new RedeemScript(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
+            RedeemScript scr = new(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
             Assert.Equal(new byte[] { (byte)OP.DUP, 3, 10, 20, 30 }, scr.Data);
         }
 
         [Fact]
         public void Constructor_EmptyOpsTest()
         {
-            var scr = new RedeemScript(new IOperation[0]);
-            Assert.Equal(new byte[0], scr.Data);
+            RedeemScript scr = new(Array.Empty<IOperation>());
+            Assert.Equal(Array.Empty<byte>(), scr.Data);
         }
 
         [Fact]
@@ -303,14 +303,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetSpecialScrTypeCases))]
         public void RedeemScriptSpecialTypeTest(IConsensus c, byte[] data, RedeemScriptSpecialType expected)
         {
-            var scr = new RedeemScript(data);
+            RedeemScript scr = new(data);
             RedeemScriptSpecialType actual = scr.GetSpecialType(c);
             Assert.Equal(expected, actual);
         }
 
         public static IEnumerable<object[]> GetSigOpCountCases()
         {
-            yield return new object[] { new IOperation[0], 0 };
+            yield return new object[] { Array.Empty<IOperation>(), 0 };
             yield return new object[] { new IOperation[] { new DUPOp(), new Hash160Op(), new Sha1Op() }, 0 };
             yield return new object[] { new IOperation[] { new ADD1Op(), new CheckSigOp(), new CheckSigVerifyOp() }, 2 };
             yield return new object[]
@@ -358,7 +358,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetSigOpCountCases))]
         public void CountSigOpsTest(IOperation[] ops, int expected)
         {
-            var scr = new RedeemScript();
+            RedeemScript scr = new();
             int actual = scr.CountSigOps(ops);
             Assert.Equal(expected, actual);
         }
@@ -367,7 +367,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void CountSigOps_OverrideMethodTest(IOperation[] ops, int expected)
         {
             // Make sure the default sigop counter is overriden
-            var scr = new RedeemScript(ops);
+            RedeemScript scr = new(ops);
             int actual = scr.CountSigOps();
             Assert.Equal(expected, actual);
         }
@@ -404,7 +404,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetSetToMultiSigCases))]
         public void SetToMultiSigTest(int m, PublicKey[] pubs, bool comp, byte[] expected)
         {
-            RedeemScript scr = new RedeemScript();
+            RedeemScript scr = new();
             scr.SetToMultiSig(m, pubs, comp);
 
             Assert.Equal(expected, scr.Data);
@@ -452,7 +452,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetSetToMultiSigFailCases))]
         public void SetToMultiSig_OutOfRangeExceptionTest(int m, PublicKey[] pubs, bool comp, string expError)
         {
-            RedeemScript scr = new RedeemScript();
+            RedeemScript scr = new();
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToMultiSig(m, pubs, comp));
             Assert.Contains(expError, ex.Message);
         }
@@ -460,16 +460,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToMultiSig_NullExceptionTest()
         {
-            RedeemScript scr = new RedeemScript();
+            RedeemScript scr = new();
             Assert.Throws<ArgumentNullException>(() => scr.SetToMultiSig(1, null, true));
-            Assert.Throws<ArgumentNullException>(() => scr.SetToMultiSig(1, new PublicKey[0], true));
+            Assert.Throws<ArgumentNullException>(() => scr.SetToMultiSig(1, Array.Empty<PublicKey>(), true));
         }
 
 
         [Fact]
         public void SetToP2SH_P2WPKH_CompTest()
         {
-            RedeemScript scr = new RedeemScript();
+            RedeemScript scr = new();
             scr.SetToP2SH_P2WPKH(KeyHelper.Pub1, true);
             byte[] expected = Helper.HexToBytes($"0014{KeyHelper.Pub1CompHashHex}");
 
@@ -479,7 +479,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WPKH_UnCompTest()
         {
-            RedeemScript scr = new RedeemScript();
+            RedeemScript scr = new();
             // This is non-standard
             scr.SetToP2SH_P2WPKH(KeyHelper.Pub1, false);
 
@@ -491,7 +491,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WPKH_ExceptionTest()
         {
-            RedeemScript scr = new RedeemScript();
+            RedeemScript scr = new();
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null, false));
         }
 
@@ -499,8 +499,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WSHTest()
         {
-            RedeemScript scr = new RedeemScript();
-            MockSerializableScript mockScr = new MockSerializableScript(new byte[] { 1, 2, 3 }, 255);
+            RedeemScript scr = new();
+            MockSerializableScript mockScr = new(new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2SH_P2WSH(mockScr);
             byte[] expected = Helper.HexToBytes("0020039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81");
 
@@ -510,7 +510,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WSH_ExceptionTest()
         {
-            RedeemScript scr = new RedeemScript();
+            RedeemScript scr = new();
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WSH(null));
         }
     }

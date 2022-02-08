@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -34,7 +35,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             };
             yield return new object[]
             {
-                new byte[0],
+                Array.Empty<byte>(),
                 Helper.HexToBytes("b472a266d0bd89c13706a4132ccfb16f7c3b9fcb")
             };
             yield return new object[]
@@ -52,7 +53,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(GetHashCases))]
         public void ComputeHashTest(byte[] data, byte[] expected)
         {
-            using Ripemd160Sha256 hash160 = new Ripemd160Sha256();
+            using Ripemd160Sha256 hash160 = new();
             byte[] actual = hash160.ComputeHash(data);
             Assert.Equal(expected, actual);
         }
@@ -60,7 +61,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_ReuseTest()
         {
-            using Ripemd160Sha256 hash160 = new Ripemd160Sha256();
+            using Ripemd160Sha256 hash160 = new();
             byte[] data1 = Helper.HexToBytes(PubComp);
             byte[] expected1 = Helper.HexToBytes(PubComp_hash);
 

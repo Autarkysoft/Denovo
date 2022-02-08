@@ -30,7 +30,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public void Constructor_ExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => new HeadersPayload(null));
-            Assert.Throws<ArgumentNullException>(() => new HeadersPayload(new BlockHeader[0]));
+            Assert.Throws<ArgumentNullException>(() => new HeadersPayload(Array.Empty<BlockHeader>()));
             Assert.Throws<ArgumentOutOfRangeException>(() => new HeadersPayload(new BlockHeader[HeadersPayload.MaxCount + 1]));
         }
 

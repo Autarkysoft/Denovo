@@ -14,7 +14,7 @@ namespace Tests.Bitcoin.Cryptography
         [Fact]
         public void GetBytesTest()
         {
-            using SharpRandom rng = new SharpRandom();
+            using SharpRandom rng = new();
             byte[] actual1 = new byte[32];
             byte[] actual2 = new byte[32];
             Assert.Equal(actual1, actual2);
@@ -27,16 +27,16 @@ namespace Tests.Bitcoin.Cryptography
         [Fact]
         public void GetBytes_NullExceptionTest()
         {
-            SharpRandom rng = new SharpRandom();
+            SharpRandom rng = new();
 
             Assert.Throws<ArgumentNullException>(() => rng.GetBytes(null));
-            Assert.Throws<ArgumentNullException>(() => rng.GetBytes(new byte[0]));
+            Assert.Throws<ArgumentNullException>(() => rng.GetBytes(Array.Empty<byte>()));
         }
 
         [Fact]
         public void GetBytes_ObjectDisposedExceptionTest()
         {
-            SharpRandom rng = new SharpRandom();
+            SharpRandom rng = new();
             rng.Dispose();
 
             Assert.Throws<ObjectDisposedException>(() => rng.GetBytes(new byte[1]));

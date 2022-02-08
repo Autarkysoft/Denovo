@@ -16,9 +16,9 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         public static IEnumerable<object[]> GetHash32Cases()
         {
             // https://stackoverflow.com/a/31929528/10401748
-            yield return new object[] { new byte[0], 0, 0 };
-            yield return new object[] { new byte[0], 1, 0x514e28b7 };
-            yield return new object[] { new byte[0], 0xffffffff, 0x81f16f39 };
+            yield return new object[] { Array.Empty<byte>(), 0, 0 };
+            yield return new object[] { Array.Empty<byte>(), 1, 0x514e28b7 };
+            yield return new object[] { Array.Empty<byte>(), 0xffffffff, 0x81f16f39 };
             yield return new object[] { new byte[4] { 255, 255, 255, 255 }, 0, 0x76293b50 };
             yield return new object[] { new byte[4] { 0x21, 0x43, 0x65, 0x87 }, 0, 0xf55b516b };
             yield return new object[] { new byte[4] { 0x21, 0x43, 0x65, 0x87 }, 0x5082edee, 0x2362f9de };
@@ -49,7 +49,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             };
 
             // https://github.com/bitcoin/bitcoin/blob/376294cde6b1588cb17055d8fde567eaf5848c3c/src/test/hash_tests.cpp#L29-L43
-            yield return new object[] { new byte[0], 0xfba4c795, 0x6a396f08U };
+            yield return new object[] { Array.Empty<byte>(), 0xfba4c795, 0x6a396f08U };
             yield return new object[] { new byte[1], 0, 0x514e28b7U };
             yield return new object[] { new byte[1], 0xfba4c795, 0xea3f0b17U };
             yield return new object[] { new byte[] { 255 }, 0, 0xfd6cf10dU };
