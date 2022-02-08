@@ -25,14 +25,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// An advanced form of <see cref="System.Collections.Stack"/> that holds the required data 
         /// used by the <see cref="IOperation"/>s.
         /// </param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        bool Run(IOpData opData, out string error);
+        bool Run(IOpData opData, out Errors error);
 
         /// <summary>
         /// Writes byte (array) representation of this instance to the given stream.
         /// Used by <see cref="IDeserializable.Serialize(FastStream)"/> methods
-        /// (not to be confused with what <see cref="Run(IOpData, out string)"/> does).
+        /// (not to be confused with what <see cref="Run(IOpData, out Errors)"/> does).
         /// </summary>
         /// <param name="stream">Stream to use</param>
         void WriteToStream(FastStream stream);

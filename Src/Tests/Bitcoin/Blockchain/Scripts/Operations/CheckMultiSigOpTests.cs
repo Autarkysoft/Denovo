@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Run_CorrectSigsTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex,
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.PopIndex,
                                              FuncCallName.PopCount, FuncCallName.PopCount,
                                              FuncCallName.Pop, FuncCallName.PushBool)
             {
@@ -49,7 +49,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Run_WrongSigsTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex,
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.PopIndex,
                                              FuncCallName.PopCount, FuncCallName.PopCount,
                                              FuncCallName.Pop, FuncCallName.PushBool)
             {
@@ -92,7 +92,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 true,
-                null,
+                Errors.None,
                 0
             };
             yield return new object[]
@@ -106,7 +106,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 true,
-                null,
+                Errors.None,
                 0
             };
             yield return new object[]
@@ -120,7 +120,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 true,
-                null,
+                Errors.None,
                 0
             };
             yield return new object[]
@@ -134,7 +134,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 false,
-                "The extra item should be OP_0.",
+                Errors.InvalidMultiSigDummy,
                 0
             };
             yield return new object[]
@@ -149,16 +149,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     new CheckMultiSigOp(),
                 },
                 true,
-                null,
+                Errors.None,
                 1
             };
         }
         [Theory]
         [MemberData(nameof(GetSpecialCase))]
-        public void Run_SpecialCaseTest(bool isStrict, IOperation[] operations, bool expBool, string expError, int expOpCount)
+        public void Run_SpecialCaseTest(bool isStrict, IOperation[] operations, bool expBool, Errors expError, int expOpCount)
         {
             // 0of0 multisig => OP_0 [] OP_0 [] OP_0
-            OpData data = new OpData()
+            OpData data = new()
             {
                 IsBip147Enabled = isStrict
             };
@@ -166,13 +166,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             // Run all PushOps (all items in array except last)
             for (int i = 0; i < operations.Length - 1; i++)
             {
-                bool b1 = operations[i].Run(data, out string error1);
-                Assert.True(b1, error1);
-                Assert.Null(error1);
+                bool b1 = operations[i].Run(data, out Errors error1);
+                Assert.True(b1, error1.Convert());
+                Assert.Equal(Errors.None, error1);
             }
 
             // Run the OP_CheckMultiSig operation
-            bool b2 = operations[^1].Run(data, out string error2);
+            bool b2 = operations[^1].Run(data, out Errors error2);
             Assert.Equal(expBool, b2);
             Assert.Equal(expError, error2);
             Assert.Equal(expOpCount, data.OpCount);
@@ -187,7 +187,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 {
                     _itemCount = 2
                 },
-                Err.OpNotEnoughItems
+                Errors.NotEnoughStackItems
             };
             yield return new object[]
             {
@@ -197,7 +197,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     _opCountToReturn = Constants.MaxScriptOpCount - 2,
                     popData = new byte[1][] { OpTestCaseHelper.num3 }
                 },
-                "Number of OPs in this script exceeds the allowed number."
+                Errors.OpCountOverflow
             };
             yield return new object[]
             {
@@ -207,7 +207,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     _opCountToReturn = 0,
                     popData = new byte[1][] { new byte[1] { 21 } }
                 },
-                "Invalid number of public keys in multi-sig."
+                Errors.InvalidMultiSigPubkeyCount
             };
             yield return new object[]
             {
@@ -217,7 +217,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.numNeg1 }
                 },
-                "Invalid number of public keys in multi-sig."
+                Errors.InvalidMultiSigPubkeyCount
             };
             yield return new object[]
             {
@@ -227,7 +227,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     _opCountToReturn = 0,
                     popData = new byte[1][] { OpTestCaseHelper.num2 }
                 },
-                Err.OpNotEnoughItems
+                Errors.NotEnoughStackItems
             };
             yield return new object[]
             {
@@ -237,7 +237,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     _opCountToReturn = 0,
                     popData = new byte[1][] { new byte[5] { 1, 2, 3, 4, 5 } },
                 },
-                "Invalid number (n) format."
+                Errors.InvalidStackNumberFormat
             };
             yield return new object[]
             {
@@ -248,7 +248,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, new byte[5] { 1, 2, 3, 4, 5 } } },
                 },
-                "Invalid number (m) format."
+                Errors.InvalidStackNumberFormat
             };
             yield return new object[]
             {
@@ -259,7 +259,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, new byte[1] { 21 } } },
                 },
-                "Invalid number of signatures in multi-sig."
+                Errors.InvalidMultiSigSignatureCount
             };
             yield return new object[]
             {
@@ -270,7 +270,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, OpTestCaseHelper.num2 } }, // m > n
                 },
-                "Invalid number of signatures in multi-sig."
+                Errors.InvalidMultiSigSignatureCount
             };
             yield return new object[]
             {
@@ -281,7 +281,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     popData = new byte[1][] { OpTestCaseHelper.num1 },
                     popIndexData = new Dictionary<int, byte[]> { { 1, OpTestCaseHelper.numNeg1 } },
                 },
-                "Invalid number of signatures in multi-sig."
+                Errors.InvalidMultiSigSignatureCount
             };
             yield return new object[]
             {
@@ -292,7 +292,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     popData = new byte[1][] { OpTestCaseHelper.num2 },
                     popIndexData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.num2 } },
                 },
-                Err.OpNotEnoughItems
+                Errors.NotEnoughStackItems
             };
             yield return new object[]
             {
@@ -303,7 +303,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     popData = new byte[1][] { OpTestCaseHelper.num2 },
                     popIndexData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.num2 } },
                 },
-                Err.OpNotEnoughItems
+                Errors.NotEnoughStackItems
             };
             yield return new object[]
             {
@@ -331,12 +331,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                     expectedMultiSigGarbage = OpTestCaseHelper.b7,
                     garbageCheckResult = false
                 },
-                "The extra item should be OP_0."
+                Errors.InvalidMultiSigDummy
             };
         }
         [Theory]
         [MemberData(nameof(GetErrorCases))]
-        public void Run_ErrorTest(MockOpData data, string expError)
+        public void Run_ErrorTest(MockOpData data, Errors expError)
         {
             OpTestCaseHelper.RunFailTest<CheckMultiSigOp>(data, expError);
         }

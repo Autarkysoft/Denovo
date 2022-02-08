@@ -122,9 +122,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Pushes the specified data of this instance at the top of the stack.
         /// </summary>
         /// <param name="opData">Stack to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (OpValue == OP._0)
             {
@@ -143,7 +143,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (data.Length > Constants.MaxScriptItemLength)
                 {
-                    error = $"Item to be pushed to the stack can not be bigger than {Constants.MaxScriptItemLength} bytes.";
+                    error = Errors.StackPushSizeOverflow;
                     return false;
                 }
                 opData.Push(data);
@@ -161,11 +161,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <para/> Locktime -> 5 bytes max, value between 0 and(2^39-1) (0xffffffff7f)
         /// </summary>
         /// <param name="result">The converted 64-bit signed integer or zero in case of failure</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <param name="isStrict">[Default value = true] Indicates whether to use strict rules</param>
         /// <param name="maxDataLength">[Default value = 4] Maximum number of bytes allowed to exist in the data</param>
         /// <returns>True if deserialization was successful, false if otherwise</returns>
-        public bool TryGetNumber(out long result, out string error, bool isStrict = true, int maxDataLength = 4)
+        public bool TryGetNumber(out long result, out Errors error, bool isStrict = true, int maxDataLength = 4)
         {
             if (data == null)
             {
@@ -182,12 +182,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (!TryConvertToLong(data, out result, isStrict, maxDataLength))
                 {
-                    error = "Invalid number format.";
+                    error = Errors.InvalidStackNumberFormat;
                     return false;
                 }
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 
@@ -307,7 +307,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <summary>
         /// Writes this operation's data to the given stream as a witness: [CompactInt Data.length][Data].
         /// Used by <see cref="IDeserializable.Serialize(FastStream)"/> methods 
-        /// (not to be confused with what <see cref="Run(IOpData, out string)"/> does).
+        /// (not to be confused with what <see cref="Run(IOpData, out Errors)"/> does).
         /// </summary>
         /// <param name="stream">Stream to use</param>
         public void WriteToWitnessStream(FastStream stream)

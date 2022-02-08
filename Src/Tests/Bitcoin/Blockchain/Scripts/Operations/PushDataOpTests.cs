@@ -208,11 +208,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 pushData = new byte[][] { expectedData }
             };
 
-            bool b = op.Run(opData, out string error);
+            bool b = op.Run(opData, out Errors error);
 
             // The mock data is already checking the call type and the data that was pushed to be correct.
-            Assert.True(b);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
         }
 
         [Fact]
@@ -226,10 +226,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 pushData = new byte[][] { OpTestCaseHelper.b1 }
             };
 
-            bool b = op.Run(opData, out string error);
+            bool b = op.Run(opData, out Errors error);
 
             Assert.False(b);
-            Assert.Equal(Err.OpStackItemOverflow, error);
+            Assert.Equal(Errors.StackItemCountOverflow, error);
         }
 
         [Fact]
@@ -241,10 +241,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.True(b1, error.Convert());
             MockOpData opData = new();
 
-            bool b2 = op.Run(opData, out string err);
+            bool b2 = op.Run(opData, out Errors err);
 
             Assert.False(b2);
-            Assert.Equal("Item to be pushed to the stack can not be bigger than 520 bytes.", err);
+            Assert.Equal(Errors.StackPushSizeOverflow, err);
         }
 
 
@@ -255,10 +255,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             PushDataOp op = new(data);
 
-            bool b = op.TryGetNumber(out long actual, out string error);
+            bool b = op.TryGetNumber(out long actual, out Errors error);
 
-            Assert.True(b);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expected, actual);
         }
 
@@ -272,10 +272,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             PushDataOp op = new(val);
 
-            bool b = op.TryGetNumber(out long actual, out string error);
+            bool b = op.TryGetNumber(out long actual, out Errors error);
 
-            Assert.True(b);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expected, actual);
         }
 
@@ -284,10 +284,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             PushDataOp op = new(Helper.GetBytes(9));
 
-            bool b = op.TryGetNumber(out long actual, out string error);
+            bool b = op.TryGetNumber(out long actual, out Errors error);
 
             Assert.False(b);
-            Assert.Equal("Invalid number format.", error);
+            Assert.Equal(Errors.InvalidStackNumberFormat, error);
             Assert.Equal(0, actual);
         }
 
@@ -302,10 +302,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Equal(Errors.None, error);
 
             // The value is 2 but didn't use OP_2, instead it used byte[] { 2 }
-            bool b = op.TryGetNumber(out long actual, out string err, isStrict: false);
+            bool b = op.TryGetNumber(out long actual, out Errors err, isStrict: false);
 
-            Assert.True(b, err);
-            Assert.Null(err);
+            Assert.True(b, err.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(2, actual);
         }
 

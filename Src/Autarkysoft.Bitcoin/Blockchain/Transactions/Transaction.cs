@@ -886,9 +886,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                             // Only run PushData(locktime) and CheckLockTimeVerify
                             for (int i = 0; i < 2; i++)
                             {
-                                if (!rdmOps[i].Run(stack, out string e))
+                                if (!rdmOps[i].Run(stack, out error))
                                 {
-                                    throw new ArgumentException($"Invalid redeem script. Error: {e}");
+                                    throw new ArgumentException($"Invalid redeem script. Error: {error.Convert()}");
                                 }
                             }
 

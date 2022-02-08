@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System.Collections.Generic;
@@ -112,7 +113,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         public void VerifySchnorrTest(string pubHex, string msgHex, string sigHex)
         {
             byte[] hash = Helper.HexToBytes(msgHex);
-            Assert.True(Signature.TryReadSchnorr(Helper.HexToBytes(sigHex), out Signature sig, out string err), err);
+            Assert.True(Signature.TryReadSchnorr(Helper.HexToBytes(sigHex), out Signature sig, out Errors err), err.Convert());
             Assert.True(PublicKey.TryReadTaproot(Helper.HexToBytes(pubHex), out PublicKey pubKey) == PublicKey.PublicKeyType.Schnorr);
 
             Assert.Equal(Helper.HexToBytes(sigHex), sig.ToByteArraySchnorr());
@@ -180,7 +181,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [MemberData(nameof(GetSchnorrVerifyFailCases))]
         public void VerifySchnorr_FailTest(PublicKey pubKey, byte[] hash, string sigHex)
         {
-            Assert.True(Signature.TryReadSchnorr(Helper.HexToBytes(sigHex), out Signature sig, out string err), err);
+            Assert.True(Signature.TryReadSchnorr(Helper.HexToBytes(sigHex), out Signature sig, out Errors err), err.Convert());
             Assert.Equal(Helper.HexToBytes(sigHex), sig.ToByteArraySchnorr());
 
             bool b = calc.VerifySchnorr(hash, sig, pubKey);

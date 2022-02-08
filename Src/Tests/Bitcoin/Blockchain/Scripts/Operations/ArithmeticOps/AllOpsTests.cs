@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void ADD1OpTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 1,
                 popData = new byte[][] { OpTestCaseHelper.num1 },
@@ -27,15 +28,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void ADD1Op_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<ADD1Op>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<ADD1Op>(data, Errors.NotEnoughStackItems);
         }
 
 
         [Fact]
         public void SUB1OpTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 1,
                 popData = new byte[][] { OpTestCaseHelper.num1 },
@@ -47,8 +48,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void SUB1Op_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<SUB1Op>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<SUB1Op>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -62,7 +63,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetNegateCases))]
         public void NEGATEOpTest(byte[] toPop, byte[] toPush)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 1,
                 popData = new byte[][] { toPop },
@@ -74,8 +75,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void NEGATEOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<NEGATEOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<NEGATEOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -89,7 +90,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetAbsCases))]
         public void ABSOpTest(byte[] toPop, byte[] toPush)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 1,
                 popData = new byte[][] { toPop },
@@ -101,8 +102,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void ABSOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<ABSOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<ABSOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -117,7 +118,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetNotCases))]
         public void NOTOpTest(byte[] toPop, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 1,
                 pushBool = expBool,
@@ -129,8 +130,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void NOTOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<NOTOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<NOTOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -145,7 +146,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetNotEq0Cases))]
         public void NotEqual0OpTest(byte[] toPop, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 1,
                 popData = new byte[][] { toPop },
@@ -157,8 +158,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void NotEqual0Op_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<NotEqual0Op>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<NotEqual0Op>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -179,7 +180,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetAddCases))]
         public void AddOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -191,8 +192,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void AddOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<AddOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<AddOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -212,7 +213,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetSubCases))]
         public void SUBOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -224,8 +225,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void SUBOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<SUBOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<SUBOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -241,7 +242,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetBoolAndCases))]
         public void BoolAndOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -253,8 +254,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void BoolAndOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<BoolAndOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<BoolAndOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -270,7 +271,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetBoolOrCases))]
         public void BoolOrOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -282,8 +283,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void BoolOrOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<BoolOrOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<BoolOrOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -298,7 +299,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetNumEqualCases))]
         public void NumEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -310,8 +311,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void NumEqualOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<NumEqualOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<NumEqualOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -325,7 +326,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetNumEqualVerifyCases))]
         public void NumEqualVerifyOpTest(byte[] toPop1, byte[] toPop2, bool pass)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -337,14 +338,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
             }
             else
             {
-                OpTestCaseHelper.RunFailTest<NumEqualVerifyOp>(data, "Numbers are not equal.");
+                OpTestCaseHelper.RunFailTest<NumEqualVerifyOp>(data, Errors.UnequalStackNumbers);
             }
         }
         [Fact]
         public void NumEqualVerifyOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<NumEqualVerifyOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<NumEqualVerifyOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -358,7 +359,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetNumNotEqualCases))]
         public void NumNotEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -370,8 +371,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void NumNotEqualOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<NumNotEqualOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<NumNotEqualOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -385,7 +386,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetLessThanCases))]
         public void LessThanOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -397,8 +398,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void LessThanOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<LessThanOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<LessThanOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -412,7 +413,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetGreaterThanCases))]
         public void GreaterThanOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -424,8 +425,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void GreaterThanOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<GreaterThanOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<GreaterThanOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -439,7 +440,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetLessThanOrEqualCases))]
         public void LessThanOrEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -451,8 +452,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void LessThanOrEqualOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<LessThanOrEqualOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<LessThanOrEqualOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -466,7 +467,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetGreaterThanOrEqualCases))]
         public void GreaterThanOrEqualOpTest(byte[] toPop1, byte[] toPop2, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -478,8 +479,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void GreaterThanOrEqualOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<GreaterThanOrEqualOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<GreaterThanOrEqualOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -493,7 +494,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetMinCases))]
         public void MINOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -505,8 +506,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void MINOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<MINOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<MINOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -520,7 +521,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetMaxCases))]
         public void MAXOpTest(byte[] toPop1, byte[] toPop2, byte[] toPush)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop, FuncCallName.Push)
             {
                 _itemCount = 2,
                 popData = new byte[][] { toPop1, toPop2 },
@@ -532,8 +533,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void MAXOp_FailTest()
         {
-            MockOpData data = new MockOpData() { _itemCount = 0, };
-            OpTestCaseHelper.RunFailTest<MAXOp>(data, Err.OpNotEnoughItems);
+            MockOpData data = new() { _itemCount = 0, };
+            OpTestCaseHelper.RunFailTest<MAXOp>(data, Errors.NotEnoughStackItems);
         }
 
 
@@ -569,7 +570,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetWITHINCases))]
         public void WITHINOpTest(byte[] toPop1, byte[] toPop2, byte[] toPop3, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.PopCount, FuncCallName.PushBool)
             {
                 _itemCount = 3,
                 popCountData = new byte[][][] { new byte[][] { toPop1, toPop2, toPop3 } },
@@ -581,14 +582,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
         public static IEnumerable<object[]> GetWithinFailCases()
         {
-            yield return new object[] { null, 2, null, null, Err.OpNotEnoughItems };
+            yield return new object[] { null, 2, null, null, Errors.NotEnoughStackItems };
             yield return new object[]
             {
                 new FuncCallName[] { FuncCallName.PopCount },
                 3,
                 new byte[][][] { new byte[][] { null, null, new byte[5] } },
                 null,
-                "Invalid number format (max)."
+                Errors.InvalidStackNumberFormat
             };
             yield return new object[]
             {
@@ -596,7 +597,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
                 3,
                 new byte[][][] { new byte[][] { null, new byte[5], OpTestCaseHelper.num0 } },
                 null,
-                "Invalid number format (min)."
+                Errors.InvalidStackNumberFormat
             };
             yield return new object[]
             {
@@ -604,14 +605,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
                 3,
                 new byte[][][] { new byte[][] { new byte[5], OpTestCaseHelper.num0, OpTestCaseHelper.num0 } },
                 null,
-                "Invalid number format (x)."
+                Errors.InvalidStackNumberFormat
             };
         }
         [Theory]
         [MemberData(nameof(GetWithinFailCases))]
-        public void WITHINOp_FailTest(FuncCallName[] calls, int count, byte[][][] pop, byte[][] push, string expErr)
+        public void WITHINOp_FailTest(FuncCallName[] calls, int count, byte[][][] pop, byte[][] push, Errors expErr)
         {
-            MockOpData data = new MockOpData(calls)
+            MockOpData data = new(calls)
             {
                 _itemCount = count,
                 popCountData = pop,

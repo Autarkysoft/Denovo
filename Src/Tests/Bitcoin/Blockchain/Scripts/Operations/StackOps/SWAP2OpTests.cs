@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Xunit;
@@ -14,7 +15,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
         [Fact]
         public void RunTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.PushMulti)
+            MockOpData data = new(FuncCallName.PopCount, FuncCallName.PushMulti)
             {
                 _itemCount = 4,
                 popCountData = new byte[][][]
@@ -39,12 +40,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
         [Fact]
         public void RunErrorTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.PopCount)
+            MockOpData data = new(FuncCallName.PopCount)
             {
                 _itemCount = 3,
             };
 
-            OpTestCaseHelper.RunFailTest<SWAP2Op>(data, Err.OpNotEnoughItems);
+            OpTestCaseHelper.RunFailTest<SWAP2Op>(data, Errors.NotEnoughStackItems);
         }
     }
 }

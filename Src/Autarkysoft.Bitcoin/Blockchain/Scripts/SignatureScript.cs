@@ -157,14 +157,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out _, out Errors error))
                 throw new ArgumentException($"Can not evaluate redeem script: {error.Convert()}");
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
-            if (!((PushDataOp)rdmOps[0]).TryGetNumber(out long m, out string e))
-                throw new ArgumentException($"Invalid m ({e}).");
+            if (!((PushDataOp)rdmOps[0]).TryGetNumber(out long m, out error))
+                throw new ArgumentException($"Invalid m ({error.Convert()}).");
             if (m < 0)
                 throw new ArgumentOutOfRangeException(nameof(m), "M can not be negative.");
             if (m == 0)
                 throw new ArgumentOutOfRangeException(nameof(m), "M value zero is not allowed to prevent funds being stolen.");
-            if (!((PushDataOp)rdmOps[^2]).TryGetNumber(out long n, out e))
-                throw new ArgumentException($"Invalid n ({e}).");
+            if (!((PushDataOp)rdmOps[^2]).TryGetNumber(out long n, out error))
+                throw new ArgumentException($"Invalid n ({error.Convert()}).");
             if (n < 0)
                 throw new ArgumentOutOfRangeException(nameof(n), "N can not be negative.");
             if (n == 0)

@@ -3,10 +3,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -48,7 +50,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 null,
                 true,
                 false, // pre BIP-66
-                new byte[][] { new byte[0], KeyHelper.Pub1CompBytes },
+                new byte[][] { Array.Empty<byte>(), KeyHelper.Pub1CompBytes },
                 false
             };
             yield return new object[]
@@ -59,7 +61,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 null,
                 true,
                 true, // after BIP-66
-                new byte[][] { new byte[0], KeyHelper.Pub1CompBytes },
+                new byte[][] { Array.Empty<byte>(), KeyHelper.Pub1CompBytes },
                 false
             };
             yield return new object[]
@@ -70,7 +72,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 null,
                 true,
                 false,
-                new byte[][] { Helper.ShortSig1Bytes, new byte[0] },
+                new byte[][] { Helper.ShortSig1Bytes, Array.Empty<byte>() },
                 false
             };
             yield return new object[]
@@ -81,7 +83,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 null,
                 true,
                 true,
-                new byte[][] { Helper.ShortSig1Bytes, new byte[0] },
+                new byte[][] { Helper.ShortSig1Bytes, Array.Empty<byte>() },
                 false
             };
             yield return new object[]
@@ -111,7 +113,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetRunCases))]
         public void RunTest(Signature expSig, PublicKey expPub, byte[] expSigBa, bool success, bool der, byte[][] pop, bool expBool)
         {
-            MockOpData data = new MockOpData(FuncCallName.PopCount, FuncCallName.PushBool)
+            MockOpData data = new(FuncCallName.PopCount, FuncCallName.PushBool)
             {
                 _itemCount = 2,
                 expectedSig = expSig,
@@ -129,22 +131,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
         public static IEnumerable<object[]> GetErrorCases()
         {
-            yield return new object[] { null, 1, false, null, Err.OpNotEnoughItems };
-            yield return new object[] { null, 1, true, null, Err.OpNotEnoughItems };
+            yield return new object[] { null, 1, false, null, Errors.NotEnoughStackItems };
+            yield return new object[] { null, 1, true, null, Errors.NotEnoughStackItems };
             yield return new object[]
             {
                 new FuncCallName[] { FuncCallName.PopCount },
                 2,
                 true,
-                new byte[][][] { new byte[][] { new byte[] { 1, 2, 3 }, new byte[0] } },
-                "Invalid DER encoding length."
+                new byte[][][] { new byte[][] { new byte[] { 1, 2, 3 }, Array.Empty<byte>() } },
+                Errors.InvalidDerEncodingLength
             };
         }
         [Theory]
         [MemberData(nameof(GetErrorCases))]
-        public void Run_ErrorTest(FuncCallName[] expFuncCalls, int count, bool strict, byte[][][] expPopData, string expErr)
+        public void Run_ErrorTest(FuncCallName[] expFuncCalls, int count, bool strict, byte[][][] expPopData, Errors expErr)
         {
-            MockOpData data = new MockOpData(expFuncCalls)
+            MockOpData data = new(expFuncCalls)
             {
                 _itemCount = count,
                 popCountData = expPopData,

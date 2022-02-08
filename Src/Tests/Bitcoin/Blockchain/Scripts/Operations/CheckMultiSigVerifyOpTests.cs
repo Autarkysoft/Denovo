@@ -3,10 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System.Collections.Generic;
 using Xunit;
 
@@ -17,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Run_CorrectSigsTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex,
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.PopIndex,
                                              FuncCallName.PopCount, FuncCallName.PopCount,
                                              FuncCallName.Pop)
             {
@@ -48,7 +47,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Run_WrongSigsTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.PopIndex,
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.PopIndex,
                                              FuncCallName.PopCount, FuncCallName.PopCount,
                                              FuncCallName.Pop)
             {
@@ -73,18 +72,18 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
                 sigVerificationSuccess = false,
             };
 
-            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, "Signature verification failed.");
+            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, Errors.FailedSignatureVerification);
         }
 
         [Fact]
         public void Run_ErrorTest()
         {
-            MockOpData data = new MockOpData()
+            MockOpData data = new()
             {
                 _itemCount = 1,
             };
 
-            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, Err.OpNotEnoughItems);
+            OpTestCaseHelper.RunFailTest<CheckMultiSigVerifyOp>(data, Errors.NotEnoughStackItems);
         }
     }
 }

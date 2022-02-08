@@ -80,15 +80,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// </summary>
         /// <param name="derSig">Signature bytes encoded using DER encoding</param>
         /// <param name="result">Resulting signature (null in case of failure)</param>
-        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if successful, otherwise false.</returns>
-        public static bool TryReadLoose(byte[] derSig, out Signature result, out string error)
+        public static bool TryReadLoose(byte[] derSig, out Signature result, out Errors error)
         {
             result = null;
 
             if (derSig == null)
             {
-                error = "Byte array can not be null.";
+                error = Errors.NullBytes;
                 return false;
             }
 
@@ -96,7 +96,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             if (derSig.Length < 9)
             {
                 // This also handles the Length == 0 case
-                error = "Invalid DER encoding length.";
+                error = Errors.InvalidDerEncodingLength;
                 return false;
             }
 
@@ -104,62 +104,62 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
             if (!stream.TryReadByte(out byte seqTag) || seqTag != SequenceTag)
             {
-                error = "Sequence tag was not found in DER encoded signature.";
+                error = Errors.MissingDerSeqTag;
                 return false;
             }
 
             if (!stream.TryReadDerLength(out int seqLen))
             {
-                error = "Invalid sequence length.";
+                error = Errors.InvalidDerSeqLength;
                 return false;
             }
 
             if (seqLen < 6 || !stream.CheckRemaining(seqLen + 1)) // +1 is the SigHash byte (at least 1 byte)
             {
-                error = "Invalid total length according to sequence length.";
+                error = Errors.InvalidDerSeqLength;
                 return false;
             }
 
             if (!stream.TryReadByte(out byte intTag1) || intTag1 != IntegerTag)
             {
-                error = "First integer tag was not found in DER encoded signature.";
+                error = Errors.MissingDerIntTag1;
                 return false;
             }
 
             if (!stream.TryReadDerLength(out int rLen) || rLen == 0)
             {
-                error = "Invalid R length.";
+                error = Errors.InvalidDerRLength;
                 return false;
             }
 
             if (!stream.TryReadByteArray(rLen, out byte[] rBa))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
             if (!stream.TryReadByte(out byte intTag2) || intTag2 != IntegerTag)
             {
-                error = "Second integer tag was not found in DER encoded signature.";
+                error = Errors.MissingDerIntTag2;
                 return false;
             }
 
             if (!stream.TryReadDerLength(out int sLen) || sLen == 0)
             {
-                error = "Invalid S length.";
+                error = Errors.InvalidDerSLength;
                 return false;
             }
 
             if (!stream.TryReadByteArray(sLen, out byte[] sBa))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
             // Make sure _at least_ one byte remains to be read
             if (!stream.CheckRemaining(1))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -170,7 +170,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 SigHash = (SigHashType)derSig[^1]
             };
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 
@@ -181,15 +181,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// </summary>
         /// <param name="derSig">Signature bytes encoded using DER encoding</param>
         /// <param name="result">Resulting signature (null in case of failure)</param>
-        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if successful, otherwise false.</returns>
-        public static bool TryReadStrict(byte[] derSig, out Signature result, out string error)
+        public static bool TryReadStrict(byte[] derSig, out Signature result, out Errors error)
         {
             result = null;
 
             if (derSig == null)
             {
-                error = "Byte array can not be null.";
+                error = Errors.NullBytes;
                 return false;
             }
 
@@ -212,59 +212,59 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             // Max = 3046[0221(00{32})0221(00{32})]-01
             if (derSig.Length < 9 || derSig.Length > 73)
             {
-                error = "Invalid DER encoding length.";
+                error = Errors.InvalidDerEncodingLength;
                 return false;
             }
 
             if (derSig[0] != SequenceTag)
             {
-                error = "Sequence tag was not found in DER encoded signature.";
+                error = Errors.MissingDerSeqTag;
                 return false;
             }
 
             if (derSig[1] != derSig.Length - 3)
             {
-                error = "Invalid data length according to sequence length.";
+                error = Errors.InvalidDerSeqLength;
                 return false;
             }
 
             if (derSig[2] != IntegerTag)
             {
-                error = "First integer tag was not found in DER encoded signature.";
+                error = Errors.MissingDerIntTag1;
                 return false;
             }
 
             int rLen = derSig[3];
             if (rLen == 0 || (rLen == 1 && derSig[4] == 0) || rLen > 33)
             {
-                error = "Invalid r length.";
+                error = Errors.InvalidDerRLength;
                 return false;
             }
 
             // -8 is 4 bytes read so far + 1 SigHash + 3 byte at least for S
             if (derSig.Length - 8 < rLen)
             {
-                error = "Invalid data length according to first integer length.";
+                error = Errors.InvalidDerIntLength1;
                 return false;
             }
 
             if (derSig[rLen + 4] != IntegerTag)
             {
-                error = "Second integer tag was not found in DER encoded signature.";
+                error = Errors.MissingDerIntTag2;
                 return false;
             }
 
             int sLen = derSig[rLen + 5];
             if (sLen == 0 || (sLen == 1 && derSig[rLen + 6] == 0) || sLen > 33)
             {
-                error = "Invalid s length.";
+                error = Errors.InvalidDerSLength;
                 return false;
             }
 
             // +7 is 2 for seqTag+len, 2 for r_intTag+len, 2 for s_intTag+len, 1 for SigHash
             if (rLen + sLen + 7 != derSig.Length)
             {
-                error = "Invalid data length according to second integer length.";
+                error = Errors.InvalidDerIntLength2;
                 return false;
             }
 
@@ -273,7 +273,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             Buffer.BlockCopy(derSig, 4, rBa, 0, rLen);
             if ((rBa[0] & 0x80) != 0 || (rLen > 1 && (rBa[0] == 0) && (rBa[1] & 0x80) == 0))
             {
-                error = "Invalid r format.";
+                error = Errors.InvalidDerRFormat;
                 return false;
             }
 
@@ -281,7 +281,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             Buffer.BlockCopy(derSig, rLen + 6, sBa, 0, sLen);
             if ((sBa[0] & 0x80) != 0 || (sLen > 1 && (sBa[0] == 0) && (sBa[1] & 0x80) == 0))
             {
-                error = "Invalid s format.";
+                error = Errors.InvalidDerSFormat;
                 return false;
             }
 
@@ -292,7 +292,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 SigHash = (SigHashType)derSig[^1]
             };
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 
@@ -302,14 +302,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// </summary>
         /// <param name="data">Signature bytes containing the signature</param>
         /// <param name="result">Resulting signature (null in case of failure)</param>
-        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if successful, otherwise false.</returns>
-        public static bool TryReadSchnorr(ReadOnlySpan<byte> data, out Signature result, out string error)
+        public static bool TryReadSchnorr(ReadOnlySpan<byte> data, out Signature result, out Errors error)
         {
             if (data == null || data.Length == 0)
             {
                 result = null;
-                error = "Byte array can not be null or empty.";
+                error = Errors.NullOrEmptyBytes;
                 return false;
             }
 
@@ -324,20 +324,20 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 if (sigHash == SigHashType.Default)
                 {
                     result = null;
-                    error = "SigHashType byte can not be zero.";
+                    error = Errors.SigHashTypeZero;
                     return false;
                 }
                 else if (!((int)sigHash <= 0x03 || ((int)sigHash >= 0x81 && (int)sigHash <= 0x83)))
                 {
                     result = null;
-                    error = "Invalid SigHashType.";
+                    error = Errors.InvalidSigHashType;
                     return false;
                 }
             }
             else
             {
                 result = null;
-                error = "Schnorr signature length must be 64 or 65 bytes.";
+                error = Errors.InvalidSchnorrSigLength;
                 return false;
             }
 
@@ -348,7 +348,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 SigHash = sigHash
             };
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 

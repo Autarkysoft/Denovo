@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
@@ -56,7 +57,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         internal byte[][] expectedSigs;
         internal byte[][] expectedPubkeys;
 
-        public bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out string error)
+        public bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out Errors error)
         {
             if (expectedSigs is null || expectedPubkeys is null)
             {
@@ -66,11 +67,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Equal(expectedSigs, sigs);
             Assert.Equal(expectedPubkeys, pubKeys);
 
-            error = null;
+            error = Errors.None;
             return sigVerificationSuccess;
         }
 
-        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out string error)
+        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out Errors error)
         {
             throw new NotImplementedException();
         }
@@ -103,17 +104,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
         internal long expectedLocktime;
         internal bool locktimeVerificationSuccess;
-        public bool CompareLocktimes(long other, out string error)
+        public bool CompareLocktimes(long other, out Errors error)
         {
             Assert.Equal(expectedLocktime, other);
             if (locktimeVerificationSuccess)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
             else
             {
-                error = "Foo";
+                error = Errors.ForTesting;
                 return false;
             }
         }
@@ -127,17 +128,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
         internal long expectedSequence;
         internal bool SequenceVerificationSuccess;
-        public bool CompareSequences(long other, out string error)
+        public bool CompareSequences(long other, out Errors error)
         {
             Assert.Equal(expectedSequence, other);
             if (SequenceVerificationSuccess)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
             else
             {
-                error = "Foo";
+                error = Errors.ForTesting;
                 return false;
             }
         }

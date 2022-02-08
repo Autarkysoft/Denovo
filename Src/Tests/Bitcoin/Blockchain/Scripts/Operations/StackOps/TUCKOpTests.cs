@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
         [Fact]
         public void RunTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Insert)
+            MockOpData data = new(FuncCallName.Peek, FuncCallName.Insert)
             {
                 _itemCount = 2,
                 _altItemCount = 0,
@@ -29,18 +30,18 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
         [Fact]
         public void Run_ErrorTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Peek)
+            MockOpData data = new(FuncCallName.Peek)
             {
                 _itemCount = 1,
             };
 
-            OpTestCaseHelper.RunFailTest<TUCKOp>(data, Err.OpNotEnoughItems);
+            OpTestCaseHelper.RunFailTest<TUCKOp>(data, Errors.NotEnoughStackItems);
         }
 
         [Fact]
         public void Run_ItemCountOverflowTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Peek, FuncCallName.Insert)
+            MockOpData data = new(FuncCallName.Peek, FuncCallName.Insert)
             {
                 _itemCount = 1001,
                 _altItemCount = 0,
@@ -48,7 +49,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
                 insertData = new Dictionary<int, byte[]> { { 2, OpTestCaseHelper.b2 } }
             };
 
-            OpTestCaseHelper.RunFailTest<TUCKOp>(data, Err.OpStackItemOverflow);
+            OpTestCaseHelper.RunFailTest<TUCKOp>(data, Errors.StackItemCountOverflow);
         }
     }
 }

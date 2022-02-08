@@ -49,13 +49,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// the script containing this operation is going to be serialized for signing.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Always null</param>
+        /// <param name="error">Always <see cref="Errors.None"/></param>
         /// <returns>Always true</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             IsExecuted = true;
             opData.CodeSeparatorPosition = Position;
-            error = null;
+            error = Errors.None;
             return true;
         }
 

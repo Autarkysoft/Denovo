@@ -86,9 +86,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="sigs">Array of signatures</param>
         /// <param name="pubKeys">Array of public keys</param>
         /// <param name="m">Number of signatures that have to pass</param>
-        /// <param name="error">Error message (null if successful, otherwise will contain information about failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if all verifications succeed, otherwise false.</returns>
-        bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out string error);
+        bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out Errors error);
 
         /// <summary>
         /// Verifies correctness of the given signature with the given public key using
@@ -96,9 +96,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <param name="sig">Signature bytes</param>
         /// <param name="pub">Public key</param>
-        /// <param name="error">Error message (null if successful, otherwise will contain information about failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if all verifications succeed, otherwise false.</returns>
-        bool VerifySchnorr(ReadOnlySpan<byte> sig, PublicKey pub, out string error);
+        bool VerifySchnorr(ReadOnlySpan<byte> sig, PublicKey pub, out Errors error);
 
         /// <summary>
         /// Checks to see if the extra (last) item that a <see cref="OP.CheckMultiSig"/> operation pops is valid
@@ -120,17 +120,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Compares locktime for a <see cref="OP.CheckLocktimeVerify"/> operation.
         /// </summary>
         /// <param name="other">The converted locktime value from the stack</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if the locktime is past and the transaction is spendable; otherwise false.</returns>
-        bool CompareLocktimes(long other, out string error);
+        bool CompareLocktimes(long other, out Errors error);
 
         /// <summary>
         /// Compares sequences for a <see cref="OP.CheckSequenceVerify"/> operation.
         /// </summary>
         /// <param name="other">The converted sequence value from the stack</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if the transaction is spendable; otherwise false.</returns>
-        bool CompareSequences(long other, out string error);
+        bool CompareSequences(long other, out Errors error);
 
         /// <summary>
         /// Returns number of available items in the stack.

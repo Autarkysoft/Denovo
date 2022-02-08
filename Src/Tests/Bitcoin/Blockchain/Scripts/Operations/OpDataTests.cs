@@ -17,7 +17,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Constructor_DefaultTest()
         {
-            OpData opd = new OpData();
+            OpData opd = new();
             byte[][] expected = new byte[DefaultCapacity][];
 
             Helper.ComparePrivateField(opd, "holder", expected);
@@ -32,7 +32,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(11, 11)]
         public void Constructor_WithCapTest(int capToUse, int expectedLen)
         {
-            OpData opd = new OpData(capToUse);
+            OpData opd = new(capToUse);
             byte[][] expected = new byte[expectedLen][];
 
             Helper.ComparePrivateField(opd, "holder", expected);
@@ -42,7 +42,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public static IEnumerable<object[]> GetConstructorCases()
         {
             yield return new object[] { null, new byte[DefaultCapacity][], 0 };
-            yield return new object[] { new byte[0][], new byte[DefaultCapacity][], 0 };
+            yield return new object[] { Array.Empty<byte[]>(), new byte[DefaultCapacity][], 0 };
             yield return new object[] { new byte[3][], new byte[DefaultCapacity][], 3 };
             yield return new object[] { new byte[10][], new byte[DefaultCapacity + 10][], 10 };
             yield return new object[] { new byte[11][], new byte[DefaultCapacity + 11][], 11 };
@@ -66,7 +66,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetConstructorCases))]
         public void Constructor_WithDataTest(byte[][] data, byte[][] expected, int expCount)
         {
-            OpData opd = new OpData(data);
+            OpData opd = new(data);
 
             Helper.ComparePrivateField(opd, "holder", expected);
             Assert.Equal(expCount, opd.ItemCount);
@@ -88,7 +88,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [InlineData(new byte[] { 1, 2 }, true, false)]
         public void CheckConditionalOpBoolTest(byte[] data, bool standardRule, bool expected)
         {
-            var stack = new OpData()
+            OpData stack = new()
             {
                 IsStrictConditionalOpBool = standardRule
             };
@@ -137,7 +137,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void PeekTest()
         {
-            OpData opd = new OpData(testData5);
+            OpData opd = new(testData5);
             byte[] actual = opd.Peek();
             byte[] expected = testData5[^1];
 
@@ -148,7 +148,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Peek_MultipleTest()
         {
-            OpData opd = new OpData(testData5);
+            OpData opd = new(testData5);
             byte[][] actual = opd.Peek(3);
             byte[][] expected = new byte[3][]
             {
@@ -162,7 +162,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void PeekAtIndexTest()
         {
-            OpData opd = new OpData(testData5);
+            OpData opd = new(testData5);
             // Index starts from zero and counts backwards from end (index=0 is last item)
             byte[] actual1 = opd.PeekAtIndex(0);
             byte[] expected1 = testData5[^1];
@@ -178,7 +178,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void PopTest()
         {
-            OpData opd = new OpData(testData5);
+            OpData opd = new(testData5);
             byte[] actual1 = opd.Pop();
             byte[] expected1 = testData5[^1];
 
@@ -198,7 +198,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Pop_MultipleTest()
         {
-            OpData opd = new OpData(testData5);
+            OpData opd = new(testData5);
             byte[][] actual1 = opd.Pop(2);
             byte[][] expected1 = new byte[2][]
             {
@@ -260,7 +260,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetPopAtIndexCases))]
         public void PopAtIndexTest(int index, byte[] expPopped, int expCount, byte[][] expData)
         {
-            OpData opd = new OpData(testData5);
+            OpData opd = new(testData5);
             byte[] actual = opd.PopAtIndex(index);
 
             Assert.Equal(expPopped, actual);
@@ -298,7 +298,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetPushCases))]
         public void PushTest(byte[][] dataToUse, byte[] dataToPush, byte[][] expData, int expCount)
         {
-            OpData opd = new OpData(dataToUse);
+            OpData opd = new(dataToUse);
             opd.Push(dataToPush);
 
             Helper.ComparePrivateField(opd, "holder", expData);
@@ -308,7 +308,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Push_SpecialCaseTest()
         {
-            OpData opd = new OpData(testData9);
+            OpData opd = new(testData9);
 
             // First push 1 item to fill all 10 items in holder
             byte[] tempToPush = new byte[3] { 12, 13, 14 };
@@ -339,10 +339,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             yield return new object[]
             {
                 null,
-                new byte[1][] { new byte[0] },
+                new byte[1][] { Array.Empty<byte>() },
                 new byte[10][]
                 {
-                    new byte[0], null, null, null, null, null, null, null, null, null
+                    Array.Empty<byte>(), null, null, null, null, null, null, null, null, null
                 },
                 1
             };
@@ -401,7 +401,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetPushMultipleCases))]
         public void Push_MultipleTest(byte[][] dataToUse, byte[][] dataToPush, byte[][] expData, int expCount)
         {
-            OpData opd = new OpData(dataToUse);
+            OpData opd = new(dataToUse);
             opd.Push(dataToPush);
 
             Helper.ComparePrivateField(opd, "holder", expData);
@@ -465,7 +465,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetInsertCases))]
         public void InsertTest(byte[][] dataToUse, byte[] dataToInsert, int index, byte[][] expData, int expCount)
         {
-            OpData opd = new OpData(dataToUse);
+            OpData opd = new(dataToUse);
             opd.Insert(dataToInsert, index);
 
             Helper.ComparePrivateField(opd, "holder", expData);
@@ -475,7 +475,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Insert_SpecialCase_Index0Test()
         {
-            OpData opd = new OpData(testData9);
+            OpData opd = new(testData9);
 
             // First push 1 item to fill all 10 items in holder
             byte[] tempToPush = new byte[3] { 12, 13, 14 };
@@ -503,7 +503,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Insert_SpecialCase_IndexNTest()
         {
-            OpData opd = new OpData(testData9);
+            OpData opd = new(testData9);
 
             // First push 1 item to fill all 10 items in holder
             byte[] tempToPush = new byte[3] { 12, 13, 14 };
@@ -647,7 +647,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetInsertMultipleCases))]
         public void Insert_MultipleTest(byte[][] dataToUse, byte[][] dataToInsert, int index, byte[][] expData, int expCount)
         {
-            OpData opd = new OpData(dataToUse);
+            OpData opd = new(dataToUse);
             opd.Insert(dataToInsert, index);
 
             Helper.ComparePrivateField(opd, "holder", expData);
@@ -658,7 +658,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void AltPushPopTest()
         {
-            OpData opd = new OpData(null);
+            OpData opd = new(null);
 
             Assert.Equal(0, opd.AltItemCount);
 
@@ -689,7 +689,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void AltPush_OverflowTest()
         {
-            OpData opd = new OpData(null);
+            OpData opd = new(null);
             byte[] repeat = new byte[1] { 5 };
             for (int i = 0; i < DefaultCapacity; i++)
             {

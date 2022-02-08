@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Xunit;
@@ -14,7 +15,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
         [Fact]
         public void RunTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.AltPop, FuncCallName.Push)
+            MockOpData data = new(FuncCallName.AltPop, FuncCallName.Push)
             {
                 _altItemCount = 1,
                 altPopData = new byte[][] { OpTestCaseHelper.b1 },
@@ -27,13 +28,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.StackOps
         [Fact]
         public void RunErrorTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.AltPop)
+            MockOpData data = new(FuncCallName.AltPop)
             {
                 _altItemCount = 0,
             };
 
-            OpTestCaseHelper.RunFailTest<FromAltStackOp>(data, Err.OpNotEnoughItems + "(alt stack)");
+            OpTestCaseHelper.RunFailTest<FromAltStackOp>(data, Errors.NotEnoughAltStackItems);
         }
-
     }
 }

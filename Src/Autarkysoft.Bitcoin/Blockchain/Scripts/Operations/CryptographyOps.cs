@@ -19,20 +19,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top stack item with its hash digest. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             using Ripemd160 hash = new Ripemd160();
             opData.Push(hash.ComputeHash(opData.Pop()));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -50,20 +50,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top stack item with its hash digest. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             using Sha1 hash = new Sha1();
             opData.Push(hash.ComputeHash(opData.Pop()));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -81,20 +81,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top stack item with its hash digest. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             using Sha256 hash = new Sha256();
             opData.Push(hash.ComputeHash(opData.Pop()));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -112,20 +112,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top stack item with its hash digest. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             using Ripemd160Sha256 hash = new Ripemd160Sha256();
             opData.Push(hash.ComputeHash(opData.Pop()));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -143,20 +143,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top stack item with its hash digest. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             using Sha256 hash = new Sha256();
             opData.Push(hash.ComputeHashTwice(opData.Pop()));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

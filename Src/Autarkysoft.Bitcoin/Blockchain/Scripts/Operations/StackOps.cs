@@ -17,19 +17,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes top stack item and puts it in alt-stack. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             opData.AltPush(opData.Pop());
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -48,19 +48,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes top alt-stack item and puts it in stack. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.AltItemCount < 1)
             {
-                error = Err.OpNotEnoughItems + "(alt stack)";
+                error = Errors.NotEnoughAltStackItems;
                 return false;
             }
 
             opData.Push(opData.AltPop());
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -79,20 +79,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes (discards) top two stack items. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             // Throw away the 2 items
             _ = opData.Pop(2);
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -111,13 +111,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Duplicates top two stack items. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -140,13 +140,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Duplicates top three stack items. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 3)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -169,13 +169,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Copies 2 items from stack to top of the stack like this: x1 x2 x3 x4 -> x1 x2 x3 x4 x1 x2
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 4)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -201,13 +201,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Moves 2 items from stack to top of the stack like this: x1 x2 x3 x4 x5 x6 -> x3 x4 x5 x6 x1 x2
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 6)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -215,7 +215,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // (x0 x1 x2 x3 x4 x5 -> x2 x3 x4 x5 x0 x1)
             opData.Push(new byte[6][] { data[2], data[3], data[4], data[5], data[0], data[1] });
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -234,13 +234,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Swaps top two item pairs on top of the stack: x1 x2 x3 x4 -> x3 x4 x1 x2
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 4)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -248,7 +248,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // x0 x1 x2 x3 -> x2 x3 x0 x1
             opData.Push(new byte[4][] { data[2], data[3], data[0], data[1] });
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -267,13 +267,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Duplicates top stack item if its value is not 0. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -301,9 +301,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Pushes the number of stack items onto the stack. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             opData.Push(IntToByteArray(opData.ItemCount));
             return CheckItemCount(opData, out error);
@@ -324,20 +324,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes the top stack item. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             // Throw away the top stack item
             _ = opData.Pop();
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -356,13 +356,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Duplicates the top stack item. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -385,20 +385,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes the second item from top of stack. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             // Throw away the popped value
             _ = opData.PopAtIndex(1);
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -417,13 +417,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Copies the second item from top of the stack to the top. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -448,46 +448,39 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Copies the nth item from top of the stack to the top. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             // At least 2 items is needed. 1 telling us the index and the other is the item to copy
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             byte[] data = opData.Pop();
-            // Initial test to reject any huge numbers
-            if (data.Length > 4)
-            {
-                error = "'n' is too big.";
-                return false;
-            }
-
             if (!TryConvertToLong(data, out long n, true)) // TODO: set isStrict field based on BIP62
             {
-                error = "Invalid number format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 
             if (n < 0)
             {
-                error = "'n' can not be negative.";
+                error = Errors.NegativeStackInteger;
                 return false;
             }
             // 'n' is index so it can't be equal to ItemCount
             if (opData.ItemCount <= n)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             opData.Push(opData.PeekAtIndex((int)n));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -506,47 +499,39 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Moves the nth item from top of the stack to the top. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             // At least 2 items is needed. 1 telling us the index and the other is the item to move
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             byte[] data = opData.Pop();
-            // Initial test to reject any huge numbers
-            if (data.Length > 4)
-            {
-                error = "'n' is too big.";
-                return false;
-            }
-
             // TODO: set isStrict field based on BIP62
-
             if (!TryConvertToLong(data, out long n, true))
             {
-                error = "Invalid number format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
             if (n < 0)
             {
-                error = "'n' can not be negative.";
+                error = Errors.NegativeStackInteger;
                 return false;
             }
             // 'n' is index so it can't be equal to ItemCount
             if (opData.ItemCount <= n)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             opData.Push(opData.PopAtIndex((int)n));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -565,13 +550,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Rotates top 3 items on top of the stack to the left. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 3)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -579,7 +564,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // (x0 x1 x2 -> x1 x2 x0)
             opData.Push(new byte[3][] { data[1], data[2], data[0] });
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -598,20 +583,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Swaps the position of top 2 items on top of the stack. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             byte[][] data = opData.Pop(2);
             opData.Push(new byte[2][] { data[1], data[0] });
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -630,13 +615,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// The item at the top of the stack is copied and inserted before the second-to-top item. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -646,5 +631,4 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             return CheckItemCount(opData, out error);
         }
     }
-
 }

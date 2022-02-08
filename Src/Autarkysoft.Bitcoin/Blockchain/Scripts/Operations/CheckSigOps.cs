@@ -21,13 +21,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public bool ExtractAndVerify(IOpData opData, out string error)
+        public bool ExtractAndVerify(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -35,7 +35,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (values[0].Length == 0)
             {
-                error = null;
+                error = Errors.None;
                 return false;
             }
 
@@ -51,18 +51,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (!Signature.TryReadLoose(values[0], out sig, out _))
                 {
-                    error = null;
+                    error = Errors.None;
                     return false;
                 }
             }
 
             if (!PublicKey.TryRead(values[1], out PublicKey pubK))
             {
-                error = null;
+                error = Errors.None;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return opData.Verify(sig, pubK, values[0]);
         }
     }
@@ -80,12 +80,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes top two stack items (signature and public key) and verifies the transaction signature.
         /// </summary>
         /// <param name="opData">Stack to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             bool b = ExtractAndVerify(opData, out error);
-            if (error is null)
+            if (error == Errors.None)
             {
                 opData.Push(b);
                 return true;
@@ -110,10 +110,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Same as <see cref="CheckSigOp"/> but runs <see cref="VerifyOp"/> afterwards.
         /// </summary>
         /// <inheritdoc/>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             bool b = ExtractAndVerify(opData, out error);
-            if (error is null)
+            if (error == Errors.None)
             {
                 if (b)
                 {
@@ -121,7 +121,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
                 else
                 {
-                    error = "Signature verification failed.";
+                    error = Errors.FailedSignatureVerification;
                     return false;
                 }
             }
@@ -142,40 +142,40 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     {
         /// <summary>
         /// Removes all needed items from the stack as public keys and signatures and calls 
-        /// <see cref="IOpData.Verify(byte[][], byte[][], int, out string)"/>.
+        /// <see cref="IOpData.Verify(byte[][], byte[][], int, out Errors)"/>.
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public bool ExtractAndVerify(IOpData opData, out string error)
+        public bool ExtractAndVerify(IOpData opData, out Errors error)
         {
             // A multi-sig stack is (extra item, usually OP_0) + (m*sig) + (OP_m) + (n*pub) + (OP_n)
             // both m and n values are needed and the extra item is also mandatory. but since both m and n can be zero
             // the key[] and sig[] can be empty so the smallest stack item count should be 3 items [OP_0 (m=0) (n=0)]
             if (opData.ItemCount < 3)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             byte[] nBa = opData.Pop();
             if (!TryConvertToLong(nBa, out long n, opData.StrictNumberEncoding, maxDataLength: 4))
             {
-                error = "Invalid number (n) format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 
             if (n < 0 || n > Constants.MaxMultisigPubkeyCount)
             {
-                error = "Invalid number of public keys in multi-sig.";
+                error = Errors.InvalidMultiSigPubkeyCount; ;
                 return false;
             }
 
             opData.OpCount += (int)n;
             if (opData.OpCount > Constants.MaxScriptOpCount)
             {
-                error = "Number of OPs in this script exceeds the allowed number.";
+                error = Errors.OpCountOverflow;
                 return false;
             }
 
@@ -185,19 +185,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             //      n=0 : GM(N)   n=1 : GMP(N)    n=2 : GMPP(N)    n=3 : GMPPP(N)
             if (opData.ItemCount < n + 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             byte[] mBa = opData.PopAtIndex((int)n);
             if (!TryConvertToLong(mBa, out long m, opData.StrictNumberEncoding, maxDataLength: 4))
             {
-                error = "Invalid number (m) format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
             if (m < 0 || m > n)
             {
-                error = "Invalid number of signatures in multi-sig.";
+                error = Errors.InvalidMultiSigSignatureCount;
                 return false;
             }
 
@@ -205,7 +205,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             // (extra item, usually OP_0) + (m*sig) + (n*pub)
             if (opData.ItemCount < n + m + 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -213,12 +213,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (opData.CheckMultiSigGarbage(opData.Pop()))
                 {
-                    error = null;
+                    error = Errors.None;
                     return true;
                 }
                 else
                 {
-                    error = "The extra item should be OP_0.";
+                    error = Errors.InvalidMultiSigDummy;
                     return false;
                 }
             }
@@ -230,13 +230,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[] garbage = opData.Pop();
             if (!opData.CheckMultiSigGarbage(garbage))
             {
-                error = "The extra item should be OP_0.";
+                error = Errors.InvalidMultiSigDummy;
                 return false;
             }
 
             if (m == 0)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
 
@@ -258,12 +258,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// [garbage] [between 0 to m signatures] [OP_m between 0 to n] [n publickeys] [OP_n between 0 to ?]
         /// </summary>
         /// <param name="opData">Stack to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             bool b = ExtractAndVerify(opData, out error);
-            if (error is null)
+            if (error == Errors.None)
             {
                 opData.Push(b);
                 return true;
@@ -288,10 +288,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Same as <see cref="CheckMultiSigOp"/> but runs <see cref="VerifyOp"/> afterwards.
         /// </summary>
         /// <inheritdoc/>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             bool b = ExtractAndVerify(opData, out error);
-            if (error is null)
+            if (error == Errors.None)
             {
                 if (b)
                 {
@@ -299,7 +299,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
                 else
                 {
-                    error = "Signature verification failed.";
+                    error = Errors.FailedSignatureVerification;
                     return false;
                 }
             }
@@ -325,9 +325,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="sigBa">Signature bytes</param>
         /// <param name="pubBa">Public key</param>
         /// <param name="success"></param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public bool Verify(IOpData opData, ReadOnlySpan<byte> sigBa, ReadOnlySpan<byte> pubBa, out bool success, out string error)
+        public bool Verify(IOpData opData, ReadOnlySpan<byte> sigBa, ReadOnlySpan<byte> pubBa, out bool success, out Errors error)
         {
             success = sigBa.Length != 0;
             if (success)
@@ -335,7 +335,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 opData.SigOpLimitLeft -= Constants.ValidationWeightPerSigOp;
                 if (opData.SigOpLimitLeft < 0)
                 {
-                    error = "Too much signature validation relative to witness weight";
+                    error = Errors.TaprootSigOpOverflow;
                     return false;
                 }
             }
@@ -343,7 +343,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             PublicKey.PublicKeyType kt = PublicKey.TryReadTaproot(pubBa, out PublicKey pubK);
             if (kt == PublicKey.PublicKeyType.None)
             {
-                error = "Invalid public key.";
+                error = Errors.InvalidPublicKey;
                 return false;
             }
             else if (kt == PublicKey.PublicKeyType.Schnorr)
@@ -358,7 +358,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 // TODO: a standard rule can be added to IOpData to reject pubkeys here
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -389,11 +389,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="opData">Stack to use</param>
         /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -428,11 +428,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes top three stack items as signature, number and public key and performs signature verification.
         /// </summary>
         /// <inheritdoc/>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 3)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -440,7 +440,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (!TryConvertToLong(items[1], out long n, opData.StrictNumberEncoding, 4))
             {
-                error = "Invalid number format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 

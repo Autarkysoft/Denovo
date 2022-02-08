@@ -153,7 +153,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out string error)
+        public bool Verify(byte[][] sigs, byte[][] pubKeys, int m, out Errors error)
         {
             byte[] spendScr;
             if (IsSegWit)
@@ -220,12 +220,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
             }
 
-            error = null;
+            error = Errors.None;
             return m == 0;
         }
 
         /// <inheritdoc/>
-        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out string error)
+        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out Errors error)
         {
             Debug.Assert(UtxoList != null);
 
@@ -236,19 +236,19 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (sig.SigHash.ToOutputType() == SigHashType.Single && TxInIndex >= Tx.TxOutList.Length)
             {
-                error = "Index for SigHash_Single is out of range.";
+                error = Errors.OutOfRangeSigHashSingle;
                 return false;
             }
 
             byte[] sigHash = Tx.SerializeForSigningTaproot_ScriptPath(sig.SigHash, UtxoList, TxInIndex, AnnexHash, TapLeafHash, CodeSeparatorPosition);
             if (calc.VerifySchnorr(sigHash, sig, pub))
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
             else
             {
-                error = "Invalid signature.";
+                error = Errors.FailedSignatureVerification;
                 return false;
             }
         }
@@ -262,23 +262,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                                                             (data.Length == 1 && data[0] == 1);
 
         /// <inheritdoc/>
-        public bool CompareLocktimes(long other, out string error)
+        public bool CompareLocktimes(long other, out Errors error)
         {
             if (other < 0)
             {
-                error = "Extracted locktime from script can not be negative.";
+                error = Errors.NegativeLocktime;
                 return false;
             }
 
             if (!Tx.LockTime.IsSameType(other))
             {
-                error = "Extracted locktime from script should be the same type as transaction's locktime.";
+                error = Errors.UnequalLocktimeType;
                 return false;
             }
 
             if (Tx.LockTime < other)
             {
-                error = "Input is not spendable (locktime not reached).";
+                error = Errors.UnspendableLocktime;
                 return false;
             }
 
@@ -288,39 +288,39 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (tin.Sequence == uint.MaxValue)
                 {
-                    error = "Sequence should be less than maximum.";
+                    error = Errors.MaxTxSequence;
                     return false;
                 }
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 
         /// <inheritdoc/>
-        public bool CompareSequences(long other, out string error)
+        public bool CompareSequences(long other, out Errors error)
         {
             if (other < 0)
             {
-                error = "Extracted sequence from script can not be negative.";
+                error = Errors.NegativeSequence;
                 return false;
             }
 
             if ((other & 0b10000000_00000000_00000000_00000000U) != 0)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
 
             if (Tx.Version < 2)
             {
-                error = "Transaction version must be bigger than 1.";
+                error = Errors.InvalidTxVersion;
                 return false;
             }
 
             if ((Tx.TxInList[TxInIndex].Sequence & 0b10000000_00000000_00000000_00000000U) != 0)
             {
-                error = "Input's sequence's highest bit should not be set.";
+                error = Errors.InvalidSequenceHighBit;
                 return false;
             }
 
@@ -328,17 +328,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             other &= 0b00000000_01000000_11111111_11111111U;
             if (!(txSeq < 0x400000 && other < 0x400000 || txSeq >= 0x400000 && other >= 0x400000))
             {
-                error = "Extracted sequence from script should be the same type as transaction's sequence as locktime.";
+                error = Errors.UnequalSequenceType;
                 return false;
             }
 
             if (txSeq < other)
             {
-                error = "Input is not spendable (locktime not reached).";
+                error = Errors.UnspendableLocktime;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 

@@ -20,13 +20,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// onto the stack. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -35,7 +35,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             opData.Push(item1.SequenceEqual(item2));
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -54,13 +54,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes top two stack item checks their equality, only fails if not equal. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -69,12 +69,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (item1.SequenceEqual(item2))
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
             else
             {
-                error = "Top two stack items are not equal.";
+                error = Errors.UnequalStackItems;
                 return false;
             }
         }

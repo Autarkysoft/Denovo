@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void RunTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Peek)
+            MockOpData data = new(FuncCallName.Peek)
             {
                 _itemCount = 1,
                 bip112 = true,
@@ -30,7 +31,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Run_NoBip112Test()
         {
-            MockOpData data = new MockOpData()
+            MockOpData data = new()
             {
                 bip112 = false
             };
@@ -41,16 +42,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
         public static IEnumerable<object[]> GetErrorCases()
         {
-            yield return new object[] { 0, -1, null, Err.OpNotEnoughItems };
-            yield return new object[] { 1, -1, new byte[6], "Invalid number format." };
-            yield return new object[] { 1, -10, OpTestCaseHelper.numNeg1, "Locktime can not be negative." };
-            yield return new object[] { 1, 16, OpTestCaseHelper.num16, "Foo" };
+            yield return new object[] { 0, -1, null, Errors.NotEnoughStackItems };
+            yield return new object[] { 1, -1, new byte[6], Errors.InvalidStackNumberFormat };
+            yield return new object[] { 1, -10, OpTestCaseHelper.numNeg1, Errors.NegativeLocktime };
+            yield return new object[] { 1, 16, OpTestCaseHelper.num16, Errors.ForTesting };
         }
         [Theory]
         [MemberData(nameof(GetErrorCases))]
-        public void Run_FailTest(int count, long expSeq, byte[] peekData, string expErr)
+        public void Run_FailTest(int count, long expSeq, byte[] peekData, Errors expErr)
         {
-            MockOpData data = new MockOpData(FuncCallName.Peek)
+            MockOpData data = new(FuncCallName.Peek)
             {
                 _itemCount = count,
                 bip112 = true,

@@ -19,13 +19,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Converts the top stack item to locktime without removing it. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        protected bool TrySetLockTime(IOpData opData, out string error)
+        protected bool TrySetLockTime(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -35,17 +35,17 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (!TryConvertToLong(data, out lt, opData.StrictNumberEncoding, 5))
             {
-                error = "Invalid number format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 
             if (lt < 0)
             {
-                error = "Locktime can not be negative.";
+                error = Errors.NegativeLocktime;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -66,13 +66,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!opData.IsBip65Enabled)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
 
@@ -101,13 +101,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!opData.IsBip112Enabled)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
 

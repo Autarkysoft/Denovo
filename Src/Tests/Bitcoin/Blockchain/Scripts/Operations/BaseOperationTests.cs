@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
     {
         private OP _opVal;
         public override OP OpValue => _opVal;
-        public override bool Run(IOpData opData, out string error) => throw new NotImplementedException();
+        public override bool Run(IOpData opData, out Errors error) => throw new NotImplementedException();
 
         public static IEnumerable<object[]> GetItemCountCases()
         {
@@ -32,15 +32,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetItemCountCases))]
         public void CheckItemCountTest(MockOpData data, bool success)
         {
-            bool b = CheckItemCount(data, out string error);
+            bool b = CheckItemCount(data, out Errors error);
             if (success)
             {
-                Assert.True(b, error);
+                Assert.True(b, error.Convert());
             }
             else
             {
                 Assert.False(b);
-                Assert.Equal(Err.OpStackItemOverflow, error);
+                Assert.Equal(Errors.StackItemCountOverflow, error);
             }
         }
 
@@ -193,7 +193,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             byte b = 0xf0;
             _opVal = (OP)b;
-            FastStream stream = new FastStream(1);
+            FastStream stream = new(1);
             WriteToStream(stream);
             Assert.Equal(new byte[] { b }, stream.ToByteArray());
         }
@@ -203,7 +203,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             byte b = 0xf0;
             _opVal = (OP)b;
-            FastStream stream = new FastStream(1);
+            FastStream stream = new(1);
             WriteToStreamForSigning(stream, new ReadOnlySpan<byte>(new byte[] { 1, 2, 3 }));
             WriteToStreamForSigning(stream, new byte[2][]);
             Assert.Equal(new byte[] { b, b }, stream.ToByteArray());
@@ -214,7 +214,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             byte b = 0xf0;
             _opVal = (OP)b;
-            FastStream stream = new FastStream(1);
+            FastStream stream = new(1);
             WriteToStreamForSigningSegWit(stream);
             Assert.Equal(new byte[] { b }, stream.ToByteArray());
         }

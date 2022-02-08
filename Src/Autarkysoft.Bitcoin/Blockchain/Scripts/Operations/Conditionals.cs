@@ -39,13 +39,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Runs all the operations in main or else list. Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -56,7 +56,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (!opData.CheckConditionalOpBool(topItem))
             {
-                error = "True/False item popped by conditional OPs must be strict.";
+                error = Errors.InvalidConditionalBool;
                 return false;
             }
 
@@ -81,7 +81,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 

@@ -16,9 +16,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void ConstructorTest()
         {
-            var cs1 = new CodeSeparatorOp();
-            var cs2 = new CodeSeparatorOp(0);
-            var cs3 = new CodeSeparatorOp(1);
+            CodeSeparatorOp cs1 = new();
+            CodeSeparatorOp cs2 = new(0);
+            CodeSeparatorOp cs3 = new(1);
 
             Assert.Equal(0u, cs1.Position);
             Assert.Equal(0u, cs2.Position);
@@ -37,10 +37,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Equal(OP.CodeSeparator, op.OpValue);
             Assert.Equal(0U, mockStack.CodeSeparatorPosition);
 
-            bool b = op.Run(mockStack, out string error);
+            bool b = op.Run(mockStack, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.True(op.IsExecuted);
             Assert.Equal(mockPos, mockStack.CodeSeparatorPosition);
         }

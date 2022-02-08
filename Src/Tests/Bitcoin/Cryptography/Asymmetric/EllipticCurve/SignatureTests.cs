@@ -80,10 +80,10 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [MemberData(nameof(GetReadLooseCases))]
         public void TryReadLooseTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
         {
-            bool b = Signature.TryReadLoose(data, out Signature sig, out string error);
+            bool b = Signature.TryReadLoose(data, out Signature sig, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expR, sig.R);
             Assert.Equal(expS, sig.S);
             Assert.Equal(expSH, sig.SigHash);
@@ -93,10 +93,10 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         public void TryReadLoose_FromStrictCases_Test(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
         {
             // Reading with loose rules must still pass on strict cases
-            bool b = Signature.TryReadLoose(data, out Signature sig, out string error);
+            bool b = Signature.TryReadLoose(data, out Signature sig, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expR, sig.R);
             Assert.Equal(expS, sig.S);
             Assert.Equal(expSH, sig.SigHash);
@@ -108,102 +108,102 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             yield return new object[]
             {
                 null,
-                "Byte array can not be null."
+                Errors.NullBytes
             };
             yield return new object[]
             {
                 Helper.HexToBytes("30"+"02030405060708"),
-                "Invalid DER encoding length."
+                Errors.InvalidDerEncodingLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3000"+"0102030405060708"),
-                "Invalid total length according to sequence length."
+                Errors.InvalidDerSeqLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("308a"+"0102030405060708"),
-                "Invalid sequence length."
+                Errors.InvalidDerSeqLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("30ff"+"0102030405060708"),
-                "Invalid sequence length."
+                Errors.InvalidDerSeqLength
             };
             yield return new object[]
             {
                 // seq_len=8 covers the entire remaining bytes which means SigHash is missing
                 Helper.HexToBytes("3008"+"0102030405060708"),
-                "Invalid total length according to sequence length."
+                Errors.InvalidDerSeqLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"01"+"02030405060708"),
-                "First integer tag was not found in DER encoded signature."
+                Errors.MissingDerIntTag1
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"0200"+"02030405060708"),
-                "Invalid R length."
+                Errors.InvalidDerRLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"0200"+"0102030405060708"),
-                "Invalid R length."
+                Errors.InvalidDerRLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"028a"+"0102030405060708"),
-                "Invalid R length."
+                Errors.InvalidDerRLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"02ff"+"0102030405060708"),
-                "Invalid R length."
+                Errors.InvalidDerRLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"0209"+"0102030405060708"),
-                Err.EndOfStream
+                Errors.EndOfStream
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"0102030405060708"),
-                "Second integer tag was not found in DER encoded signature."
+                Errors.MissingDerIntTag2
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"0200"+"010203040506"),
-                "Invalid S length."
+                Errors.InvalidDerSLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"028a"+"010203040506"),
-                "Invalid S length."
+                Errors.InvalidDerSLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"02ff"+"010203040506"),
-                "Invalid S length."
+                Errors.InvalidDerSLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"0207"+"010203040506"),
-                Err.EndOfStream
+                Errors.EndOfStream
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"02020001"),
-                Err.EndOfStream
+                Errors.EndOfStream
             };
         }
         [Theory]
         [MemberData(nameof(GetReadLooseFailCases))]
-        public void TryReadLoose_FailTest(byte[] data, string expErr)
+        public void TryReadLoose_FailTest(byte[] data, Errors expErr)
         {
-            bool b = Signature.TryReadLoose(data, out Signature sig, out string error);
+            bool b = Signature.TryReadLoose(data, out Signature sig, out Errors error);
 
-            Assert.False(b, error);
+            Assert.False(b, error.Convert());
             Assert.Null(sig);
             Assert.Equal(expErr, error);
         }
@@ -260,10 +260,10 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [MemberData(nameof(GetReadStrictCases))]
         public void TryReadStrictTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
         {
-            bool b = Signature.TryReadStrict(data, out Signature sig, out string error);
+            bool b = Signature.TryReadStrict(data, out Signature sig, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expR, sig.R);
             Assert.Equal(expS, sig.S);
             Assert.Equal(expSH, sig.SigHash);
@@ -275,121 +275,121 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             yield return new object[]
             {
                 null,
-                "Byte array can not be null."
+                Errors.NullBytes
             };
             yield return new object[]
             {
                 Helper.HexToBytes("30"+"02030405060708"),
-                "Invalid DER encoding length."
+                Errors.InvalidDerEncodingLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("30"+Helper.GetBytesHex(73)),
-                "Invalid DER encoding length."
+                Errors.InvalidDerEncodingLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("31"+"0203040506070809"),
-                "Sequence tag was not found in DER encoded signature."
+                Errors.MissingDerSeqTag
             };
             yield return new object[]
             {
                 Helper.HexToBytes("30"+"00"+"03040506070809"),
-                "Invalid data length according to sequence length."
+                Errors.InvalidDerSeqLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("30"+"07"+"01020304050607"), // missing 1 byte (SigHash)
-                "Invalid data length according to sequence length."
+                Errors.InvalidDerSeqLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"020101"+"ff01"), // SigHash is bigger than 1 byte
-                "Invalid data length according to sequence length."
+                Errors.InvalidDerSeqLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"03"+"020304050607"),
-                "First integer tag was not found in DER encoded signature."
+                Errors.MissingDerIntTag1
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"02"+"00"+"0506070809"),
-                "Invalid r length."
+                Errors.InvalidDerRLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"02"+"0100"+"06070809"),
-                "Invalid r length."
+                Errors.InvalidDerRLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"02"+"22"+"0506070809"),
-                "Invalid r length."
+                Errors.InvalidDerRLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"0202"+"0506"+"070809"),
-                "Invalid data length according to first integer length."
+                Errors.InvalidDerIntLength1
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"03"+"070809"),
-                "Second integer tag was not found in DER encoded signature."
+                Errors.MissingDerIntTag2
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"02"+"00"+"0809"),
-                "Invalid s length."
+                Errors.InvalidDerSLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"02"+"0100"+"09"),
-                "Invalid s length."
+                Errors.InvalidDerSLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"02"+"2201"+"09"),
-                "Invalid s length."
+                Errors.InvalidDerSLength
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"02"+"0201"+"09"), // Doesn't have s itself if we consider last byte as SigHash
-                "Invalid data length according to second integer length."
+                Errors.InvalidDerIntLength2
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3007"+"020101"+"020101"+"00"+"01"), // s has extra byte not covered by its length
-                "Invalid data length according to second integer length."
+                Errors.InvalidDerIntLength2
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020180"+"020101"+"09"),
-                "Invalid r format."
+                Errors.InvalidDerRFormat
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3007"+"02020079"+"020101"+"09"),
-                "Invalid r format."
+                Errors.InvalidDerRFormat
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020101"+"020180"+"09"),
-                "Invalid s format."
+                Errors.InvalidDerSFormat
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3007"+"020101"+"02020079"+"09"),
-                "Invalid s format."
+                Errors.InvalidDerSFormat
             };
         }
         [Theory]
         [MemberData(nameof(GetReadStrictFailCases))]
-        public void TryReadStrict_FailTest(byte[] data, string expErr)
+        public void TryReadStrict_FailTest(byte[] data, Errors expErr)
         {
-            bool b = Signature.TryReadStrict(data, out Signature sig, out string error);
+            bool b = Signature.TryReadStrict(data, out Signature sig, out Errors error);
 
-            Assert.False(b, error);
+            Assert.False(b, error.Convert());
             Assert.Null(sig);
             Assert.Equal(expErr, error);
         }
@@ -462,10 +462,10 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         [MemberData(nameof(GetReadSchnorrCases))]
         public void TryReadSchnorrTest(byte[] data, BigInteger expR, BigInteger expS, SigHashType expSH)
         {
-            bool b = Signature.TryReadSchnorr(data, out Signature sig, out string error);
+            bool b = Signature.TryReadSchnorr(data, out Signature sig, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expR, sig.R);
             Assert.Equal(expS, sig.S);
             Assert.Equal(expSH, sig.SigHash);
@@ -482,55 +482,55 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 
         public static IEnumerable<object[]> GetReadSchnorrFailCases()
         {
-            yield return new object[] { null, "Byte array can not be null or empty." };
-            yield return new object[] { Array.Empty<byte>(), "Byte array can not be null or empty." };
-            yield return new object[] { new byte[1], "Schnorr signature length must be 64 or 65 bytes." };
-            yield return new object[] { new byte[63], "Schnorr signature length must be 64 or 65 bytes." };
-            yield return new object[] { new byte[66], "Schnorr signature length must be 64 or 65 bytes." };
+            yield return new object[] { null, Errors.NullOrEmptyBytes };
+            yield return new object[] { Array.Empty<byte>(), Errors.NullOrEmptyBytes };
+            yield return new object[] { new byte[1], Errors.InvalidSchnorrSigLength };
+            yield return new object[] { new byte[63], Errors.InvalidSchnorrSigLength };
+            yield return new object[] { new byte[66], Errors.InvalidSchnorrSigLength };
             yield return new object[]
             {
                 Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
                                   "0000000000000000000000000000000000000000000000000000000000000002" + "00"),
-                "SigHashType byte can not be zero."
+                Errors.SigHashTypeZero
             };
             yield return new object[]
             {
                 Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
                                   "0000000000000000000000000000000000000000000000000000000000000002" + "04"),
-                "Invalid SigHashType."
+                Errors.InvalidSigHashType
             };
             yield return new object[]
             {
                 Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
                                   "0000000000000000000000000000000000000000000000000000000000000002" + "79"),
-                "Invalid SigHashType."
+                Errors.InvalidSigHashType
             };
             yield return new object[]
             {
                 Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
                                   "0000000000000000000000000000000000000000000000000000000000000002" + "80"),
-                "Invalid SigHashType."
+                Errors.InvalidSigHashType
             };
             yield return new object[]
             {
                 Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
                                   "0000000000000000000000000000000000000000000000000000000000000002" + "84"),
-                "Invalid SigHashType."
+                Errors.InvalidSigHashType
             };
             yield return new object[]
             {
                 Helper.HexToBytes("0000000000000000000000000000000000000000000000000000000000000001" +
                                   "0000000000000000000000000000000000000000000000000000000000000002" + "ff"),
-                "Invalid SigHashType."
+                Errors.InvalidSigHashType
             };
         }
         [Theory]
         [MemberData(nameof(GetReadSchnorrFailCases))]
-        public void TryReadSchnorr_FailTest(byte[] data, string expErr)
+        public void TryReadSchnorr_FailTest(byte[] data, Errors expErr)
         {
-            bool b = Signature.TryReadSchnorr(data, out Signature sig, out string error);
+            bool b = Signature.TryReadSchnorr(data, out Signature sig, out Errors error);
 
-            Assert.False(b, error);
+            Assert.False(b, error.Convert());
             Assert.Null(sig);
             Assert.Equal(expErr, error);
         }

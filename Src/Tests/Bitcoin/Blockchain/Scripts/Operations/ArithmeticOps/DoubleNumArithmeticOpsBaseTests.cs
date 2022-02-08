@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System;
@@ -28,7 +29,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
 
 
             public override OP OpValue => throw new NotImplementedException();
-            public override bool Run(IOpData opData, out string error)
+            public override bool Run(IOpData opData, out Errors error)
             {
                 Assert.Equal(expBool, TrySetValues(opData, out error));
                 Assert.Equal(expNum1, a);
@@ -47,16 +48,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [MemberData(nameof(GetValueCases))]
         public void TrySetValueTest(int first, int second, byte[] ba1, byte[] ba2)
         {
-            MockDoubleBase op = new MockDoubleBase(first, second, true);
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop)
+            MockDoubleBase op = new(first, second, true);
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop)
             {
                 _itemCount = 2,
                 popData = new byte[][] { ba1, ba2 },
             };
 
-            bool b = op.Run(data, out string error);
-            Assert.True(b, error);
-            Assert.Null(error);
+            bool b = op.Run(data, out Errors error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
         }
 
 
@@ -64,47 +65,47 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.ArithmeticOps
         [Fact]
         public void TrySetValueTest_FailTest()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop)
+            MockOpData data = new(FuncCallName.Pop)
             {
                 _itemCount = 1,
             };
 
-            MockDoubleBase op = new MockDoubleBase(0, 0, false);
-            bool b = op.Run(data, out string error);
+            MockDoubleBase op = new(0, 0, false);
+            bool b = op.Run(data, out Errors error);
             Assert.False(b);
-            Assert.Equal(Err.OpNotEnoughItems, error);
+            Assert.Equal(Errors.NotEnoughStackItems, error);
         }
 
         [Fact]
         public void TrySetValueTest_FailTest2()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop)
+            MockOpData data = new(FuncCallName.Pop)
             {
                 _itemCount = 2,
                 StrictNumberEncoding = true,
                 popData = new byte[][] { OpTestCaseHelper.num0, new byte[] { 0, 0 } },
             };
 
-            MockDoubleBase op = new MockDoubleBase(0, 0, false);
-            bool b = op.Run(data, out string error);
+            MockDoubleBase op = new(0, 0, false);
+            bool b = op.Run(data, out Errors error);
             Assert.False(b);
-            Assert.Equal("Invalid number format.", error);
+            Assert.Equal(Errors.InvalidStackNumberFormat, error);
         }
 
         [Fact]
         public void TrySetValueTest_FailTest3()
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop, FuncCallName.Pop)
+            MockOpData data = new(FuncCallName.Pop, FuncCallName.Pop)
             {
                 _itemCount = 2,
                 StrictNumberEncoding = true,
                 popData = new byte[][] { new byte[] { 0, 0 }, OpTestCaseHelper.num0 },
             };
 
-            MockDoubleBase op = new MockDoubleBase(0, 0, false);
-            bool b = op.Run(data, out string error);
+            MockDoubleBase op = new(0, 0, false);
+            bool b = op.Run(data, out Errors error);
             Assert.False(b);
-            Assert.Equal("Invalid number format.", error);
+            Assert.Equal(Errors.InvalidStackNumberFormat, error);
         }
     }
 }

@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [Fact]
         public void ConstructorTest()
         {
-            NotIfOp op = new NotIfOp(null, null);
+            NotIfOp op = new(null, null);
 
             Assert.Equal(OP.NotIf, op.OpValue);
             Helper.ComparePrivateField(op, "runWithTrue", false);
@@ -26,56 +27,56 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         {
             yield return new object[]
             {
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                new IOperation[] { new MockOp(true, null) },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
+                new IOperation[] { new MockOp(true, Errors.ForTesting) },
                 OpTestCaseHelper.TrueBytes,
                 true, // checkRes
                 true, // runRes
-                null // error
+                Errors.None // error
             };
             yield return new object[]
             {
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                new IOperation[] { new MockOp(false, "Foo") },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
                 OpTestCaseHelper.TrueBytes,
                 true, // checkRes
                 false, // runRes
-                "Foo"
+                Errors.ForTesting
             };
             yield return new object[]
             {
-                new IOperation[] { new MockOp(true, null) },
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
+                new IOperation[] { new MockOp(true, Errors.ForTesting) },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
                 OpTestCaseHelper.FalseBytes,
                 true, // checkRes
                 true, // runRes
-                null
+                Errors.None
             };
             yield return new object[]
             {
-                new IOperation[] { new MockOp(false, "Foo") },
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
                 OpTestCaseHelper.FalseBytes,
                 true, // checkRes
                 false, // runRes
-                "Foo"
+                Errors.ForTesting
             };
             // Fail on checking the popped data
             yield return new object[]
             {
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
-                new IOperation[] { new MockOp(false, "This should not have been run!") },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
+                new IOperation[] { new MockOp(false, Errors.ForTesting) },
                 OpTestCaseHelper.b7,
                 false, // checkRes
                 false, // runRes
-                "True/False item popped by conditional OPs must be strict."
+                Errors.InvalidConditionalBool
             };
         }
         [Theory]
         [MemberData(nameof(GetRunCases))]
-        public void RunTest(IOperation[] main, IOperation[] other, byte[] popData, bool checkRes, bool runResult, string expErr)
+        public void RunTest(IOperation[] main, IOperation[] other, byte[] popData, bool checkRes, bool runResult, Errors expErr)
         {
-            MockOpData data = new MockOpData(FuncCallName.Pop)
+            MockOpData data = new(FuncCallName.Pop)
             {
                 _itemCount = 1,
                 conditionalBoolCheckResult = checkRes,
@@ -83,8 +84,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 popData = new byte[][] { popData }
             };
 
-            NotIfOp op = new NotIfOp(main, other);
-            bool b = op.Run(data, out string error);
+            NotIfOp op = new(main, other);
+            bool b = op.Run(data, out Errors error);
 
             Assert.Equal(runResult, b);
             Assert.Equal(expErr, error);
@@ -93,16 +94,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [Fact]
         public void Run_FailTest()
         {
-            NotIfOp op = new NotIfOp(null, null);
-            MockOpData data = new MockOpData()
+            NotIfOp op = new(null, null);
+            MockOpData data = new()
             {
                 _itemCount = 0
             };
 
-            bool b = op.Run(data, out string error);
+            bool b = op.Run(data, out Errors error);
 
             Assert.False(b);
-            Assert.Equal(Err.OpNotEnoughItems, error);
+            Assert.Equal(Errors.NotEnoughStackItems, error);
         }
     }
 }

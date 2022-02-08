@@ -15,7 +15,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public MockOpBase(OP opval) => OpValue = opval;
 
         public OP OpValue { get; }
-        public virtual bool Run(IOpData opData, out string error) => throw new NotImplementedException();
+        public virtual bool Run(IOpData opData, out Errors error) => throw new NotImplementedException();
         public virtual void WriteToStream(FastStream stream) => throw new NotImplementedException();
         public virtual void WriteToStreamForSigning(FastStream stream, ReadOnlySpan<byte> sig) => throw new NotImplementedException();
         public virtual void WriteToStreamForSigning(FastStream stream, byte[][] sigs) => throw new NotImplementedException();
@@ -25,20 +25,20 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 
     internal class MockOp : MockOpBase
     {
-        public MockOp(bool runSuccessful, string errorIfFail, OP opValue = (OP)255) : base(opValue)
+        public MockOp(bool runSuccessful, Errors errorIfFail, OP opValue = (OP)255) : base(opValue)
         {
             succeed = runSuccessful;
             errMsg = errorIfFail;
         }
 
-        private readonly string errMsg;
+        private readonly Errors errMsg;
         private readonly bool succeed;
 
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (succeed)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
             else

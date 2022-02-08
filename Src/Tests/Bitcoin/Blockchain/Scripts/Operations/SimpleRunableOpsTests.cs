@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System;
@@ -22,11 +23,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [Fact]
         public void Run_BaseClassTest()
         {
-            MockSimpRunOp op = new MockSimpRunOp();
-            bool b = op.Run(null, out string error);
+            MockSimpRunOp op = new();
+            bool b = op.Run(null, out Errors error);
 
             Assert.True(b);
-            Assert.Null(error);
+            Assert.Equal(Errors.None, error);
         }
 
         public static IEnumerable<object[]> GetCases()
@@ -46,10 +47,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         [MemberData(nameof(GetCases))]
         public void RunTest(IOperation op, OP expVal)
         {
-            bool b = op.Run(null, out string error);
+            bool b = op.Run(null, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expVal, op.OpValue);
         }
     }

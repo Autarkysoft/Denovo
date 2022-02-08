@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -15,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
     {
         public static IEnumerable<object[]> GetCountSigOpCases()
         {
-            yield return new object[] { new IOperation[0], null, 0 };
+            yield return new object[] { Array.Empty<IOperation>(), null, 0 };
             yield return new object[] { new IOperation[] { new DUPOp() }, null, 0 };
             yield return new object[] { new IOperation[] { new ROT2Op(), new ROLLOp(), new Hash160Op() }, null, 0 };
             yield return new object[] { new IOperation[] { new ADD1Op(), new CheckSigOp(), new Hash160Op() }, null, 1 };
@@ -23,7 +24,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             yield return new object[] { new IOperation[] { new CheckSigOp(), new CheckSigVerifyOp(), new CheckSigOp() }, null, 3 };
             yield return new object[]
             {
-                new IOperation[0], new IOperation[] { new CheckSigOp(), new CheckSigVerifyOp(), new CheckSigOp() }, 3
+                Array.Empty<IOperation>(), new IOperation[] { new CheckSigOp(), new CheckSigVerifyOp(), new CheckSigOp() }, 3
             };
             yield return new object[]
             {
@@ -42,19 +43,19 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             yield return new object[]
             {
                 // Same as above but for ElseOps
-                new IOperation[0],
+                Array.Empty<IOperation>(),
                 new IOperation[] { new CheckMultiSigOp() },
                 20
             };
             yield return new object[]
             {
-                new IOperation[0],
+                Array.Empty<IOperation>(),
                 new IOperation[] { new PushDataOp(OP._1), new DUPOp(), new CheckMultiSigOp() },
                 20
             };
             yield return new object[]
             {
-                new IOperation[0],
+                Array.Empty<IOperation>(),
                 new IOperation[] { new PushDataOp(OP._2), new CheckMultiSigOp() },
                 2
             };
@@ -74,7 +75,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             yield return new object[]
             {
                 // Same as above but for ElseOps (previous OP is OP_ELSE)
-                new IOperation[0],
+                Array.Empty<IOperation>(),
                 new IOperation[] { new CheckMultiSigOp() },
                 20
             };
@@ -105,7 +106,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 40
             };
 
-            PushDataOp badEncoding = new PushDataOp();
+            PushDataOp badEncoding = new();
             badEncoding.TryRead(new FastStreamReader(new byte[] { 1, 1 }), out _);
             yield return new object[]
             {
@@ -119,15 +120,15 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [MemberData(nameof(GetCountSigOpCases))]
         public void CountSigOpsTest(IOperation[] main, IOperation[] other, int expected)
         {
-            IFOp op = new IFOp(main, other);
+            IFOp op = new(main, other);
             int actual = op.CountSigOps();
             Assert.Equal(expected, actual);
         }
 
         public static IEnumerable<object[]> GetExecCodeSepCases()
         {
-            yield return new object[] { new IOperation[0], null, false };
-            yield return new object[] { new IOperation[0], new IOperation[0], false };
+            yield return new object[] { Array.Empty<IOperation>(), null, false };
+            yield return new object[] { Array.Empty<IOperation>(), Array.Empty<IOperation>(), false };
             yield return new object[] { new IOperation[] { new DUPOp() }, new IOperation[] { new Hash256Op() }, false };
             yield return new object[]
             {
@@ -299,7 +300,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [MemberData(nameof(GetExecCodeSepCases))]
         public void HasExecutedCodeSeparatorTest(IOperation[] main, IOperation[] other, bool expected)
         {
-            IFOp op = new IFOp(main, other);
+            IFOp op = new(main, other);
             bool actual = op.HasExecutedCodeSeparator();
             Assert.Equal(expected, actual);
         }
@@ -312,8 +313,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             byte end = (byte)OP.EndIf;
 
             yield return new object[] { null, null, new byte[] { start, end } };
-            yield return new object[] { null, new IOperation[0], new byte[] { start, middle, end } };
-            yield return new object[] { new IOperation[0], new IOperation[0], new byte[] { start, middle, end } };
+            yield return new object[] { null, Array.Empty<IOperation>(), new byte[] { start, middle, end } };
+            yield return new object[] { Array.Empty<IOperation>(), Array.Empty<IOperation>(), new byte[] { start, middle, end } };
             yield return new object[]
             {
                 new IOperation[] { new DUPOp() },
@@ -329,7 +330,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             yield return new object[]
             {
                 new IOperation[] { new DUPOp(), new DUP2Op() },
-                new IOperation[0],
+                Array.Empty<IOperation>(),
                 new byte[] { start, (byte)OP.DUP, (byte)OP.DUP2, middle, end }
             };
             yield return new object[]
@@ -344,7 +345,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[]
                 {
                     new Hash160Op(), new IFOp(new IOperation[] { new PushDataOp(new byte[] { 1, 2, 3 }), new DUP2Op() },
-                                              new IOperation[0])
+                                              Array.Empty<IOperation>())
                 },
                 new IOperation[] { new Hash160Op(), new PushDataOp(new byte[] { 5, 6 }) },
                 new byte[] { start, (byte)OP.HASH160, start, 3, 1, 2, 3, (byte)OP.DUP2, middle, end,
@@ -355,8 +356,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [MemberData(nameof(GetStreamCases))]
         public void WriteToStreamTest(IOperation[] main, IOperation[] other, byte[] expected)
         {
-            IFOp op = new IFOp(main, other);
-            FastStream stream = new FastStream();
+            IFOp op = new(main, other);
+            FastStream stream = new();
             op.WriteToStream(stream);
 
             Assert.Equal(expected, stream.ToByteArray());
@@ -370,8 +371,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             byte[] sig = new byte[] { 10, 20, 30 };
 
             yield return new object[] { null, null, sig, new byte[] { start, end } };
-            yield return new object[] { null, new IOperation[0], sig, new byte[] { start, middle, end } };
-            yield return new object[] { new IOperation[0], new IOperation[0], sig, new byte[] { start, middle, end } };
+            yield return new object[] { null, Array.Empty<IOperation>(), sig, new byte[] { start, middle, end } };
+            yield return new object[] { Array.Empty<IOperation>(), Array.Empty<IOperation>(), sig, new byte[] { start, middle, end } };
             yield return new object[]
             {
                 new IOperation[] { new DUPOp() },
@@ -389,7 +390,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             yield return new object[]
             {
                 new IOperation[] { new DUPOp(), new DUP2Op() },
-                new IOperation[0],
+                Array.Empty<IOperation>(),
                 sig,
                 new byte[] { start, (byte)OP.DUP, (byte)OP.DUP2, middle, end }
             };
@@ -413,7 +414,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[]
                 {
                     new Hash160Op(), new IFOp(new IOperation[] { new PushDataOp(new byte[] { 1, 2, 3 }), new DUP2Op() },
-                                              new IOperation[0])
+                                              Array.Empty<IOperation>())
                 },
                 new IOperation[] { new Hash160Op(), new PushDataOp(new byte[] { 5, 6 }) },
                 sig,
@@ -426,7 +427,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[]
                 {
                     new Hash160Op(), new IFOp(new IOperation[] { new PushDataOp(new byte[] { 10, 20, 30 }), new DUP2Op() },
-                                              new IOperation[0])
+                                              Array.Empty<IOperation>())
                 },
                 new IOperation[] { new Hash160Op(), new PushDataOp(new byte[] { 10, 20, 30 }) },
                 sig,
@@ -699,8 +700,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [MemberData(nameof(GetStreamSignSingleCases))]
         public void WriteToStreamForSigning_SingleTest(IOperation[] main, IOperation[] other, byte[] sig, byte[] expected)
         {
-            IFOp op = new IFOp(main, other);
-            FastStream stream = new FastStream();
+            IFOp op = new(main, other);
+            FastStream stream = new();
             op.WriteToStreamForSigning(stream, sig);
 
             Assert.Equal(expected, stream.ToByteArray());
@@ -714,8 +715,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             byte[][] sigs = new byte[][] { new byte[] { 10, 20, 30 }, new byte[] { 40, 50 } };
 
             yield return new object[] { null, null, sigs, new byte[] { start, end } };
-            yield return new object[] { null, new IOperation[0], sigs, new byte[] { start, middle, end } };
-            yield return new object[] { new IOperation[0], new IOperation[0], sigs, new byte[] { start, middle, end } };
+            yield return new object[] { null, Array.Empty<IOperation>(), sigs, new byte[] { start, middle, end } };
+            yield return new object[] { Array.Empty<IOperation>(), Array.Empty<IOperation>(), sigs, new byte[] { start, middle, end } };
             yield return new object[]
             {
                 new IOperation[] { new DUPOp() },
@@ -733,7 +734,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             yield return new object[]
             {
                 new IOperation[] { new DUPOp(), new DUP2Op() },
-                new IOperation[0],
+                Array.Empty<IOperation>(),
                 sigs,
                 new byte[] { start, (byte)OP.DUP, (byte)OP.DUP2, middle, end }
             };
@@ -757,7 +758,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[]
                 {
                     new Hash160Op(), new IFOp(new IOperation[] { new PushDataOp(new byte[] { 1, 2, 3 }), new DUP2Op() },
-                                              new IOperation[0])
+                                              Array.Empty<IOperation>())
                 },
                 new IOperation[] { new Hash160Op(), new PushDataOp(new byte[] { 5, 6 }) },
                 sigs,
@@ -770,7 +771,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[]
                 {
                     new Hash160Op(), new IFOp(new IOperation[] { new PushDataOp(new byte[] { 10, 20, 30 }), new DUP2Op() },
-                                              new IOperation[0])
+                                              Array.Empty<IOperation>())
                 },
                 new IOperation[] { new Hash160Op(), new PushDataOp(new byte[] { 10, 20, 30 }) },
                 sigs,
@@ -1047,8 +1048,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [MemberData(nameof(GetStreamSignMultiCases))]
         public void WriteToStreamForSigning_MultiTest(IOperation[] main, IOperation[] other, byte[][] sigs, byte[] expected)
         {
-            IFOp op = new IFOp(main, other);
-            FastStream stream = new FastStream();
+            IFOp op = new(main, other);
+            FastStream stream = new();
             op.WriteToStreamForSigning(stream, sigs);
 
             Assert.Equal(expected, stream.ToByteArray());
@@ -1063,8 +1064,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
             byte cs = (byte)OP.CodeSeparator;
 
             yield return new object[] { null, null, new byte[] { start, end } };
-            yield return new object[] { null, new IOperation[0], new byte[] { start, middle, end } };
-            yield return new object[] { new IOperation[0], new IOperation[0], new byte[] { start, middle, end } };
+            yield return new object[] { null, Array.Empty<IOperation>(), new byte[] { start, middle, end } };
+            yield return new object[] { Array.Empty<IOperation>(), Array.Empty<IOperation>(), new byte[] { start, middle, end } };
             yield return new object[]
             {
                 new IOperation[] { new DUPOp(), new CodeSeparatorOp(), new PushDataOp(new byte[] { 10, 20 }) },
@@ -1089,7 +1090,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
                 new IOperation[]
                 {
                     new Hash160Op(), new IFOp(new IOperation[] { new PushDataOp(new byte[] { 1, 2, 3 }), new DUP2Op() },
-                                              new IOperation[0])
+                                              Array.Empty<IOperation>())
                 },
                 new IOperation[] { new Hash160Op(), new PushDataOp(new byte[] { 5, 6 }) },
                 new byte[] { start, (byte)OP.HASH160, start, 3, 1, 2, 3, (byte)OP.DUP2, middle, end,
@@ -1399,8 +1400,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [MemberData(nameof(GetStreamSignSegWitCases))]
         public void WriteToStreamForSigningSegWitTest(IOperation[] main, IOperation[] other, byte[] expected)
         {
-            IFOp op = new IFOp(main, other);
-            FastStream stream = new FastStream();
+            IFOp op = new(main, other);
+            FastStream stream = new();
             op.WriteToStreamForSigningSegWit(stream);
 
             Assert.Equal(expected, stream.ToByteArray());
@@ -1409,17 +1410,17 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
 
         public static IEnumerable<object[]> GetEqualsCases()
         {
-            IFOp op1 = new IFOp(null, null);
-            IFOp op2 = new IFOp(null, null);
-            IFOp op3 = new IFOp(new IOperation[0], null); // mainOp is the same with null or empty array
-            IFOp op4 = new IFOp(null, new IOperation[0]); // but elseOp is not the same
-            IFOp op5 = new IFOp(new IOperation[] { new DUPOp(), new ABSOp() }, null);
-            IFOp op6 = new IFOp(new IOperation[] { new DUPOp(), new ABSOp() }, new IOperation[0]);
-            IFOp op7 = new IFOp(new IOperation[] { new DUP2Op(), new ABSOp() }, null);
-            IFOp op8 = new IFOp(null, new IOperation[] { new DUPOp(), new Sha256Op() });
-            IFOp op9 = new IFOp(null, new IOperation[] { new DUPOp(), new Sha256Op() });
-            IFOp op10 = new IFOp(null, new IOperation[] { new DUPOp(), new Sha1Op() });
-            IFOp op11 = new IFOp(null, new IOperation[] { new DUPOp() });
+            IFOp op1 = new(null, null);
+            IFOp op2 = new(null, null);
+            IFOp op3 = new(Array.Empty<IOperation>(), null); // mainOp is the same with null or empty array
+            IFOp op4 = new(null, Array.Empty<IOperation>()); // but elseOp is not the same
+            IFOp op5 = new(new IOperation[] { new DUPOp(), new ABSOp() }, null);
+            IFOp op6 = new(new IOperation[] { new DUPOp(), new ABSOp() }, Array.Empty<IOperation>());
+            IFOp op7 = new(new IOperation[] { new DUP2Op(), new ABSOp() }, null);
+            IFOp op8 = new(null, new IOperation[] { new DUPOp(), new Sha256Op() });
+            IFOp op9 = new(null, new IOperation[] { new DUPOp(), new Sha256Op() });
+            IFOp op10 = new(null, new IOperation[] { new DUPOp(), new Sha1Op() });
+            IFOp op11 = new(null, new IOperation[] { new DUPOp() });
 
             yield return new object[] { op1, "operation!", false };
             yield return new object[] { op1, op1, true };
@@ -1446,12 +1447,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations.Conditionals
         [Fact]
         public void GetHashCodeTest()
         {
-            IFOp op1 = new IFOp(null, null);
-            IFOp op2 = new IFOp(null, null);
-            IFOp op3 = new IFOp(new IOperation[0], null);
-            IFOp op4 = new IFOp(null, new IOperation[0]);
-            IFOp op5 = new IFOp(new IOperation[] { new DUP2Op() }, null);
-            IFOp op6 = new IFOp(new IOperation[] { new DUP2Op() }, new IOperation[] { new DUP2Op() });
+            IFOp op1 = new(null, null);
+            IFOp op2 = new(null, null);
+            IFOp op3 = new(Array.Empty<IOperation>(), null);
+            IFOp op4 = new(null, Array.Empty<IOperation>());
+            IFOp op5 = new(new IOperation[] { new DUP2Op() }, null);
+            IFOp op6 = new(new IOperation[] { new DUP2Op() }, new IOperation[] { new DUP2Op() });
 
             int h1 = op1.GetHashCode();
             int h2 = op2.GetHashCode();

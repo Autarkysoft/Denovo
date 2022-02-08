@@ -17,13 +17,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Removes top stack item and only passes if its value is true. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -31,11 +31,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             bool b = IsNotZero(opData.Pop());
             if (!b)
             {
-                error = "Top stack item value was 'false'.";
+                error = Errors.FalseTopStackItem;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

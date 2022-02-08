@@ -26,18 +26,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// An advanced form of <see cref="System.Collections.Stack"/> that holds the required data 
         /// used by the <see cref="IOperation"/>s.
         /// </param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public abstract bool Run(IOpData opData, out string error);
+        public abstract bool Run(IOpData opData, out Errors error);
 
 
         /// <summary>
         /// Checks if the total number of items in the stack (and alt stack) is below the allowed limit.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if total number of items in the stack is below the limit, false if otherwise</returns>
-        protected bool CheckItemCount(IOpData opData, out string error)
+        protected bool CheckItemCount(IOpData opData, out Errors error)
         {
             // Note that there is no need to perform this check after all of the operations.
             // It is only needed when the OP _only_ adds items or adds more items than it removes.
@@ -45,12 +45,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (opData.ItemCount + opData.AltItemCount <= Constants.MaxScriptStackItemCount)
             {
-                error = null;
+                error = Errors.None;
                 return true;
             }
             else
             {
-                error = Err.OpStackItemOverflow;
+                error = Errors.StackItemCountOverflow;
                 return false;
             }
         }

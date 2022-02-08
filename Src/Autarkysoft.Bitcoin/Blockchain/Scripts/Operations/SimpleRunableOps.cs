@@ -15,11 +15,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Doesn't do anything.
         /// </summary>
         /// <param name="opData">Stack object (won't be used)</param>
-        /// <param name="error">Error message (always null)</param>
+        /// <param name="error">Error message (always <see cref="Errors.None"/>)</param>
         /// <returns>True (always successful)</returns>
-        public sealed override bool Run(IOpData opData, out string error)
+        public sealed override bool Run(IOpData opData, out Errors error)
         {
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

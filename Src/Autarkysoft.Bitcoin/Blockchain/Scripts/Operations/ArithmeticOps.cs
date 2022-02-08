@@ -18,24 +18,24 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <summary>
         /// Removes the top stack item and sets the only integer value based on that for usages of child classes.
         /// </summary>
-        /// <param name="opData"><inheritdoc cref="IOperation.Run(IOpData, out string)" path="/param[@name='opData']"/></param>
-        /// <param name="error"><inheritdoc cref="IOperation.Run(IOpData, out string)" path="/param[@name='error']"/></param>
+        /// <param name="opData"><inheritdoc cref="IOperation.Run(IOpData, out Errors)" path="/param[@name='opData']"/></param>
+        /// <param name="error"><inheritdoc cref="IOperation.Run(IOpData, out Errors)" path="/param[@name='error']"/></param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        protected bool TrySetValue(IOpData opData, out string error)
+        protected bool TrySetValue(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 1)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             if (!TryConvertToLong(opData.Pop(), out a, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -55,31 +55,31 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <summary>
         /// Removes the top two stack items and sets the two integer values based on them for usages of child classes.
         /// </summary>
-        /// <param name="opData"><inheritdoc cref="IOperation.Run(IOpData, out string)" path="/param[@name='opData']"/></param>
-        /// <param name="error"><inheritdoc cref="IOperation.Run(IOpData, out string)" path="/param[@name='error']"/></param>
+        /// <param name="opData"><inheritdoc cref="IOperation.Run(IOpData, out Errors)" path="/param[@name='opData']"/></param>
+        /// <param name="error"><inheritdoc cref="IOperation.Run(IOpData, out Errors)" path="/param[@name='error']"/></param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        protected bool TrySetValues(IOpData opData, out string error)
+        protected bool TrySetValues(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 2)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
             // Stack is: a then b => pop b first
             if (!TryConvertToLong(opData.Pop(), out b, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 
             if (!TryConvertToLong(opData.Pop(), out a, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format.";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }
@@ -98,9 +98,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Adds 1 to the top stack item interpreted as a <see cref="long"/>. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValue(opData, out error))
             {
@@ -108,8 +108,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(IntToByteArray(a + 1));
-
-            error = null;
             return true;
         }
     }
@@ -127,9 +125,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Subtracts 1 from the top stack item interpreted as a <see cref="long"/>. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValue(opData, out error))
             {
@@ -137,8 +135,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(IntToByteArray(a - 1));
-
-            error = null;
             return true;
         }
     }
@@ -156,9 +152,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Flips the sign of the top stack item interpreted as a <see cref="long"/>. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValue(opData, out error))
             {
@@ -166,8 +162,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(IntToByteArray(-a));
-
-            error = null;
             return true;
         }
     }
@@ -185,9 +179,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top stack item interpreted as a <see cref="long"/> with its absolute value. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValue(opData, out error))
             {
@@ -199,8 +193,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 a = -a;
             }
             opData.Push(IntToByteArray(a));
-
-            error = null;
             return true;
         }
     }
@@ -219,9 +211,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValue(opData, out error))
             {
@@ -229,8 +221,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a == 0);
-
-            error = null;
             return true;
         }
     }
@@ -249,9 +239,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValue(opData, out error))
             {
@@ -259,8 +249,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a != 0);
-
-            error = null;
             return true;
         }
     }
@@ -278,9 +266,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top two stack items interpreted as <see cref="long"/>s with their sum. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -288,8 +276,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(IntToByteArray(a + b));
-
-            error = null;
             return true;
         }
     }
@@ -307,9 +293,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Replaces top two stack items interpreted as <see cref="long"/>s with their subtract result. Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -317,8 +303,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(IntToByteArray(a - b));
-
-            error = null;
             return true;
         }
     }
@@ -337,9 +321,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -347,8 +331,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a != 0 && b != 0);
-
-            error = null;
             return true;
         }
     }
@@ -367,9 +349,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -377,8 +359,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a != 0 || b != 0);
-
-            error = null;
             return true;
         }
     }
@@ -397,9 +377,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -407,8 +387,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a == b);
-
-            error = null;
             return true;
         }
     }
@@ -427,9 +405,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Passes if they are equal, fails otherwise.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -438,12 +416,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             if (a == b)
             {
-                error = null;
                 return true;
             }
             else
             {
-                error = "Numbers are not equal.";
+                error = Errors.UnequalStackNumbers;
                 return false;
             }
         }
@@ -463,9 +440,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -473,8 +450,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a != b);
-
-            error = null;
             return true;
         }
     }
@@ -493,9 +468,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -503,8 +478,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a < b);
-
-            error = null;
             return true;
         }
     }
@@ -523,9 +496,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -533,8 +506,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a > b);
-
-            error = null;
             return true;
         }
     }
@@ -553,9 +524,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -563,8 +534,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a <= b);
-
-            error = null;
             return true;
         }
     }
@@ -583,9 +552,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -593,8 +562,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             opData.Push(a >= b);
-
-            error = null;
             return true;
         }
     }
@@ -613,9 +580,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -624,8 +591,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             long c = (a < b) ? a : b;
             opData.Push(IntToByteArray(c));
-
-            error = null;
             return true;
         }
     }
@@ -644,9 +609,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (!TrySetValues(opData, out error))
             {
@@ -655,8 +620,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
             long c = (a > b) ? a : b;
             opData.Push(IntToByteArray(c));
-
-            error = null;
             return true;
         }
     }
@@ -676,13 +639,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Data to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise will contain information about the failure)</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if operation was successful, false if otherwise</returns>
-        public override bool Run(IOpData opData, out string error)
+        public override bool Run(IOpData opData, out Errors error)
         {
             if (opData.ItemCount < 3)
             {
-                error = Err.OpNotEnoughItems;
+                error = Errors.NotEnoughStackItems;
                 return false;
             }
 
@@ -690,23 +653,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             byte[][] numbers = opData.Pop(3);
             if (!TryConvertToLong(numbers[2], out long max, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format (max).";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
             if (!TryConvertToLong(numbers[1], out long min, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format (min).";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
             if (!TryConvertToLong(numbers[0], out long x, opData.StrictNumberEncoding))
             {
-                error = "Invalid number format (x).";
+                error = Errors.InvalidStackNumberFormat;
                 return false;
             }
 
             opData.Push(x >= min && x < max);
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

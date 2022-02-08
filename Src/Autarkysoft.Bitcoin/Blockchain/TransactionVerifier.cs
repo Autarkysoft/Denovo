@@ -196,19 +196,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
             Signature sig;
             if (consensus.IsStrictDerSig)
             {
-                if (!Signature.TryReadStrict(sigPush.data, out sig, out error))
+                if (!Signature.TryReadStrict(sigPush.data, out sig, out Errors er))
                 {
-                    error += $"{Environment.NewLine}(OP_CheckSig failed to read signature with strict rules" +
-                             $" for input at index={index}.";
+                    error = $"{er.Convert()}{Environment.NewLine}" +
+                            $"(OP_CheckSig failed to read signature with strict rules for input at index={index}.";
                     return false;
                 }
             }
             else
             {
-                if (!Signature.TryReadLoose(sigPush.data, out sig, out error))
+                if (!Signature.TryReadLoose(sigPush.data, out sig, out Errors er))
                 {
-                    error += $"{Environment.NewLine}(OP_CheckSig failed to read signature with loose rules" +
-                             $" for input at index={index}.";
+                    error = $"{er.Convert()}{Environment.NewLine}" +
+                            $"(OP_CheckSig failed to read signature with loose rules for input at index={index}.";
                     return false;
                 }
             }
@@ -256,10 +256,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            if (!Signature.TryReadStrict(sigPush, out Signature sig, out error))
+            if (!Signature.TryReadStrict(sigPush, out Signature sig, out Errors er))
             {
-                error += $"{Environment.NewLine}(OP_CheckSig failed to read signature with strict rules" +
-                         $" for input at index={index}.";
+                error = $"{er.Convert()}{Environment.NewLine}(OP_CheckSig failed to read signature with strict rules" +
+                        $" for input at index={index}.";
                 return false;
             }
 
@@ -344,11 +344,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
             foreach (var op in redeemOps)
             {
-                if (!op.Run(stack, out error))
+                if (!op.Run(stack, out Errors er))
                 {
                     error = $"Script evaluation failed on {op.OpValue} for input at index={index}." +
                             $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                            $"{Environment.NewLine}More info: {error}";
+                            $"{Environment.NewLine}More info: {er.Convert()}";
                     return false;
                 }
             }
@@ -648,11 +648,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         stack.OpCount = signatureOpCount;
                         foreach (var op in signatureOps)
                         {
-                            if (!op.Run(stack, out error))
+                            if (!op.Run(stack, out Errors er))
                             {
                                 error = $"Script evaluation failed on {op.OpValue} for input at index={i}." +
                                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
+                                        $"{Environment.NewLine}More info: {er.Convert()}";
                                 return false;
                             }
                         }
@@ -661,11 +661,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         stack.OpCount = pubOpCount;
                         foreach (var op in pubOps)
                         {
-                            if (!op.Run(stack, out error))
+                            if (!op.Run(stack, out Errors er))
                             {
                                 error = $"Script evaluation failed on {op.OpValue} for input at index={i}." +
                                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
+                                        $"{Environment.NewLine}More info: {er.Convert()}";
                                 return false;
                             }
                         }
@@ -746,12 +746,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             IOperation op = signatureOps[j];
                             // Signature script of P2SH must be push-only
-                            if (!(signatureOps[j] is PushDataOp) || !op.Run(stack, out error))
+                            Errors er = Errors.None;
+                            if (!(signatureOps[j] is PushDataOp) || !op.Run(stack, out er))
                             {
                                 error = $"Script evaluation failed on {op.OpValue} for input at index={i} ." +
-                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}";
-                                // TODO: fix the following line:
-                                        //$"{Environment.NewLine}More info: {error}";
+                                        $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
+                                        $"{Environment.NewLine}More info: {er.Convert()}";
                                 return false;
                             }
                         }
@@ -773,11 +773,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         stack.OpCount = redeemOpCount;
                         foreach (var op in redeemOps)
                         {
-                            if (!op.Run(stack, out error))
+                            if (!op.Run(stack, out Errors er))
                             {
                                 error = $"Script evaluation failed on {op.OpValue} for input at index={i} ." +
                                         $"{Environment.NewLine}TxId: {tx.GetTransactionId()}" +
-                                        $"{Environment.NewLine}More info: {error}";
+                                        $"{Environment.NewLine}More info: {er.Convert()}";
                                 return false;
                             }
                         }
@@ -958,8 +958,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         // Key path spending:
                         // The witness item is a signature
-                        if (!Signature.TryReadSchnorr(tx.WitnessList[i].Items[0], out Signature sig, out error))
+                        if (!Signature.TryReadSchnorr(tx.WitnessList[i].Items[0], out Signature sig, out Errors er))
                         {
+                            error = er.Convert();
                             return false;
                         }
                         if (sig.SigHash.ToOutputType() == SigHashType.Single && i >= tx.TxOutList.Length)
@@ -1068,16 +1069,17 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                                 Debug.Assert(stack.ItemCount <= Constants.MaxScriptStackItemCount);
 
-                                if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out _, out Errors e))
+                                if (!redeem.TryEvaluate(ScriptEvalMode.WitnessV1, out IOperation[] rdmOps, out _, out Errors er))
                                 {
-                                    error = e.Convert();
+                                    error = er.Convert();
                                     return false;
                                 }
 
                                 foreach (var op in rdmOps)
                                 {
-                                    if (!op.Run(stack, out error))
+                                    if (!op.Run(stack, out er))
                                     {
+                                        error = er.Convert();
                                         return false;
                                     }
                                 }
