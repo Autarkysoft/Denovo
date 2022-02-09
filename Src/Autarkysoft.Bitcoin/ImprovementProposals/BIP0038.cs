@@ -119,7 +119,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
             else
             {
-                throw new FormatException("Invalid (unkown) prefix.");
+                throw new FormatException("Invalid (unknown) prefix.");
             }
 
             isCompressed = IsCompressed(encryptedBytes[2]);
