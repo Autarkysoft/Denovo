@@ -6,7 +6,6 @@
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using BenchmarkDotNet.Attributes;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 
 namespace Benchmarks.Bitcoin.Cryptography.Hashing
@@ -17,27 +16,28 @@ namespace Benchmarks.Bitcoin.Cryptography.Hashing
     [Config(typeof(RatioConfig))]
     public class Sha256Bench
     {
-        private readonly SHA256 sysSha = SHA256.Create();
-        private readonly Sha256 libSha = new();
-
-        public static IEnumerable<object[]> GetData()
+        [GlobalSetup]
+        public void Setup()
         {
-            byte[] small = new byte[33];
-            byte[] big = new byte[250];
-            var rnd = new Random(42);
-            rnd.NextBytes(small);
-            rnd.NextBytes(big);
-
-            yield return new object[] { small };
-            yield return new object[] { big };
+            data = new byte[Length];
+            new Random(23).NextBytes(data);
         }
 
-        [Benchmark]
-        [ArgumentsSource(nameof(GetData))]
-        public byte[] System_Sha256(byte[] data) => sysSha.ComputeHash(data);
+        [Params(33, 65, 250)]
+        public int Length;
+
+        private readonly SHA256 sysSha = SHA256.Create();
+        private readonly Sha256 libSha = new();
+        private byte[] data;
+
 
         [Benchmark(Baseline = true)]
-        [ArgumentsSource(nameof(GetData))]
-        public byte[] Library_Sha256(byte[] data) => libSha.ComputeHash(data);
+        public byte[] Library_Sha256() => libSha.ComputeHash(data);
+
+        [Benchmark]
+        public byte[] System_Sha256() => sysSha.ComputeHash(data);
+
+        [Benchmark]
+        public byte[] Static_Sha256() => StaticSha256.ComputeHash(data);
     }
 }
