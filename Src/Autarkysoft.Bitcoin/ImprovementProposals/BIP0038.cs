@@ -3,11 +3,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -34,17 +36,21 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 IV = new byte[16], // No initialization vector is used
                 Padding = PaddingMode.None // No padding
             };
+            curveOrder = new SecP256k1().N;
         }
 
-        // TODO: add code for EC multiply types
+        // TODO: add code for EC multiply encryption mode (decryption is already implemented)
 
 
         private const int EncodedLength = 39;
         private readonly byte[] prefix = { 0x01, 0x42 };
         private readonly byte[] prefix_ECMultiplied = { 0x01, 0x43 };
+        private static readonly byte[] magicWithLot = new byte[8] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x51 };
+        private static readonly byte[] magicNoLot = new byte[8] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x53 };
         private Scrypt scrypt;
         private Aes aes;
         private Sha256 hash;
+        private readonly BigInteger curveOrder;
 
 
 
@@ -100,25 +106,27 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new FormatException("Invalid encrypted bytes length.");
             }
 
-            if (!encryptedBytes.Slice(0, 2).SequenceEqual(prefix))
+            ReadOnlySpan<byte> actualPrefix = encryptedBytes.Slice(0, 2);
+
+            bool isEcMultMode;
+            if (actualPrefix.SequenceEqual(prefix))
             {
-                throw new FormatException("Invalid prefix.");
+                isEcMultMode = false;
+            }
+            else if (actualPrefix.SequenceEqual(prefix_ECMultiplied))
+            {
+                isEcMultMode = true;
+            }
+            else
+            {
+                throw new FormatException("Invalid (unkown) prefix.");
             }
 
             isCompressed = IsCompressed(encryptedBytes[2]);
-
             ReadOnlySpan<byte> salt = encryptedBytes.Slice(3, 4);
 
-            byte[] dk = scrypt.GetBytes(password, salt, 64);
-            byte[] decryptedResult = new byte[32];
-
-            aes.Key = dk.SubArray(32, 32); // AES key is derivedhalf2
-            using ICryptoTransform decryptor = aes.CreateDecryptor();
-            decryptor.TransformBlock(encryptedBytes.ToArray(), 7, 16, decryptedResult, 0);
-            decryptor.TransformBlock(encryptedBytes.ToArray(), 23, 16, decryptedResult, 16);
-
-            // XOR method will only work on first item's length (32 byte here) so it doesn't matter of dk.Legth is 64
-            PrivateKey result = new PrivateKey(XOR(decryptedResult, dk));
+            PrivateKey result = isEcMultMode ? DecryptECMult(encryptedBytes, password, salt.ToArray()) :
+                                               DecryptNormal(encryptedBytes, password, salt.ToArray());
 
             string address = Address.GetP2pkh(result.ToPublicKey(), isCompressed, NetworkType.MainNet);
             Span<byte> computedHash = hash.ComputeHashTwice(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
@@ -130,8 +138,75 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             return result;
         }
 
+        private PrivateKey DecryptNormal(ReadOnlySpan<byte> encryptedBytes, byte[] password, byte[] salt)
+        {
+            byte[] dk = scrypt.GetBytes(password, salt, 64);
+            byte[] decryptedResult = new byte[32];
+
+            aes.Key = dk.SubArray(32, 32); // AES key is derivedhalf2
+            using ICryptoTransform decryptor = aes.CreateDecryptor();
+            decryptor.TransformBlock(encryptedBytes.ToArray(), 7, 16, decryptedResult, 0);
+            decryptor.TransformBlock(encryptedBytes.ToArray(), 23, 16, decryptedResult, 16);
+
+            // XOR method will only work on first item's length (32 byte here) so it doesn't matter of dk.Legth is 64
+            return new PrivateKey(XOR(decryptedResult, dk));
+        }
+
+        private PrivateKey DecryptECMult(ReadOnlySpan<byte> data, byte[] password, byte[] addressHash)
+        {
+            bool hasLot = HasLotsequence(data[2]);
+
+            ReadOnlySpan<byte> ownerEntropy = data.Slice(7, 8);
+            ReadOnlySpan<byte> ownerSalt = hasLot ? ownerEntropy.Slice(0, 4) : ownerEntropy;
+
+            ReadOnlySpan<byte> encryptedPart1Half = data.Slice(15, 8);
+            ReadOnlySpan<byte> encryptedPart2 = data.Slice(23, 16);
+
+            byte[] preFactor = scrypt.GetBytes(password, ownerSalt, 32);
+            byte[] passFactor = hasLot ? hash.ComputeHashTwice(preFactor.ConcatFast(ownerEntropy.ToArray())) : preFactor;
+
+            using PrivateKey tempKey = new PrivateKey(passFactor);
+            PublicKey passPoint = tempKey.ToPublicKey();
+
+            using Scrypt smallScrypt = new Scrypt(1024, 1, 1);
+            byte[] dk = smallScrypt.GetBytes(passPoint.ToByteArray(true), addressHash.ConcatFast(ownerEntropy.ToArray()), 64);
+
+            aes.Key = dk.SubArray(32, 32);
+            ICryptoTransform decryptor = aes.CreateDecryptor();
+
+            // last 8 byte encryptedpart1 | last 8 bytes of seedb
+            byte[] decryptedResult = new byte[16];
+            decryptor.TransformBlock(encryptedPart2.ToArray(), 0, 16, decryptedResult, 0);
+            for (int i = 0; i < 16; i++)
+            {
+                decryptedResult[i] ^= dk[i + 16];
+            }
+
+            byte[] encryptedPart1 = new byte[16];
+            Buffer.BlockCopy(encryptedPart1Half.ToArray(), 0, encryptedPart1, 0, 8);
+            Buffer.BlockCopy(decryptedResult, 0, encryptedPart1, 8, 8);
+
+            byte[] decryptedPart1 = new byte[16];
+            decryptor.TransformBlock(encryptedPart1, 0, 16, decryptedPart1, 0);
+            for (int i = 0; i < 16; i++)
+            {
+                decryptedPart1[i] ^= dk[i];
+            }
+
+            byte[] seedb = new byte[24];
+            Array.Copy(decryptedPart1, 0, seedb, 0, 16);
+            Array.Copy(decryptedResult, 8, seedb, 16, 8);
+
+            byte[] factorb = hash.ComputeHashTwice(seedb);
+
+            BigInteger keyValue = (new BigInteger(passFactor, true, true) * new BigInteger(factorb, true, true)) % curveOrder;
+            return new PrivateKey(keyValue);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsCompressed(byte b) => (b & 0b0010_0000) != 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasLotsequence(byte b) => (b & 0000_0100) != 0;
 
 
         /// <summary>

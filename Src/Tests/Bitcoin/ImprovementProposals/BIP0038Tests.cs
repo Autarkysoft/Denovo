@@ -13,6 +13,51 @@ namespace Tests.Bitcoin.ImprovementProposals
 {
     public class BIP0038Tests
     {
+        public static IEnumerable<object[]> GetEncrypt_ECMultCases()
+        {
+            yield return new object[]
+            {
+                "6PfQu77ygVyJLZjfvMLyhLMQbYnu5uguoJJ4kMCLqWwPEdfpwANVS76gTX",
+                "TestingOneTwoThree",
+                new PrivateKey(Helper.HexToBytes("A43A940577F4E97F5C4D39EB14FF083A98187C64EA7C99EF7CE460833959A519")),
+                false
+            };
+            yield return new object[]
+            {
+                "6PfLGnQs6VZnrNpmVKfjotbnQuaJK4KZoPFrAjx1JMJUa1Ft8gnf5WxfKd",
+                "Satoshi",
+                new PrivateKey(Helper.HexToBytes("C2C8036DF268F498099350718C4A3EF3984D2BE84618C2650F5171DCC5EB660A")),
+                false
+            };
+            yield return new object[]
+            {
+                "6PgNBNNzDkKdhkT6uJntUXwwzQV8Rr2tZcbkDcuC9DZRsS6AtHts4Ypo1j",
+                "MOLON LABE",
+                new PrivateKey(Helper.HexToBytes("44EA95AFBF138356A05EA32110DFD627232D0F2991AD221187BE356F19FA8190")),
+                false
+            };
+            yield return new object[]
+            {
+                "6PgGWtx25kUg8QWvwuJAgorN6k9FbE25rv5dMRwu5SKMnfpfVe5mar2ngH",
+                "ΜΟΛΩΝ ΛΑΒΕ",
+                new PrivateKey(Helper.HexToBytes("CA2759AA4ADB0F96C414F36ABEB8DB59342985BE9FA50FAAC228C8E7D90E3006")),
+                false
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetEncrypt_ECMultCases))]
+        public void Decrypt_ECMult_Test(string encryptedKey, string pass, PrivateKey expKey, bool expComp)
+        {
+            using BIP0038 bip = new();
+            PrivateKey actualKey = bip.Decrypt(encryptedKey, pass, out bool isComp);
+
+            Assert.Equal(expComp, isComp);
+
+            byte[] expected = expKey.ToBytes();
+            Assert.Equal(expected, actualKey.ToBytes());
+        }
+
+
         public static IEnumerable<object[]> GetEncryptCases()
         {
             yield return new object[]
@@ -81,7 +126,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Theory]
         [InlineData("$", "Input is not a valid base-58 encoded string.")]
         [InlineData("142viJrTYHA4TzryiEiuQkYk4Ay5TfpzqW", "Invalid encrypted bytes length.")]
-        [InlineData("6Mc5gZg3pNQNMsnHDmZeRfhL1QnC24yBd1VERr3HSnKap5x2wcxYaJivvW", "Invalid prefix.")] // 0x0140
+        [InlineData("6Mc5gZg3pNQNMsnHDmZeRfhL1QnC24yBd1VERr3HSnKap5x2wcxYaJivvW", "Invalid (unknown) prefix.")] // 0x0140
         [InlineData("6PRW5o9FLp4gJDDVqJQKJFTpMvdsSGJxMYHtHaQBF3ooa8mwD69bapcDQn", "Wrong password (derived address hash is not the same).")]
         public void Decrypt_FormatExceptionTest(string encrypted, string expError)
         {
