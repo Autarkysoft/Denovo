@@ -177,7 +177,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             // last 8 byte encryptedpart1 | last 8 bytes of seedb
             byte[] decryptedResult = new byte[16];
             decryptor.TransformBlock(encryptedPart2.ToArray(), 0, 16, decryptedResult, 0);
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < decryptedResult.Length; i++)
             {
                 decryptedResult[i] ^= dk[i + 16];
             }
@@ -206,7 +206,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsCompressed(byte b) => (b & 0b0010_0000) != 0;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasLotsequence(byte b) => (b & 0000_0100) != 0;
+        private bool HasLotsequence(byte b) => (b & 0b0000_0100) != 0;
 
 
         /// <summary>

@@ -43,6 +43,13 @@ namespace Tests.Bitcoin.ImprovementProposals
                 new PrivateKey(Helper.HexToBytes("CA2759AA4ADB0F96C414F36ABEB8DB59342985BE9FA50FAAC228C8E7D90E3006")),
                 false
             };
+            yield return new object[]
+            {
+                "6PnTB7C3RDmPZsp4LraT77XU8NuiS5grF9iJG6iGu9RXhS6HAB122cEz81",
+                "foobar",
+                new PrivateKey(Helper.HexToBytes("2A5C1B60181ACC588CC2ED28DA9E6864024E2A6B9A5B99F62E8E565291B3D91E")),
+                true
+            };
         }
         [Theory]
         [MemberData(nameof(GetEncrypt_ECMultCases))]
