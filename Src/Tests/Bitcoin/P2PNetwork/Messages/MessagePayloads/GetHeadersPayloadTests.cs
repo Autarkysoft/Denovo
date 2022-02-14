@@ -89,7 +89,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             {
                 // Valid CompactInt but invalid when using FastStreamReader.TryReadSmallCompactInt() (it is too big)
                 new FastStreamReader(new byte[9] { 1, 0, 0, 0, 0xfe, 0x00, 0x00, 0x01, 0x00 }),
-                Errors.ItemCountOverflow
+                Errors.InvalidCompactInt
             };
             yield return new object[]
             {
