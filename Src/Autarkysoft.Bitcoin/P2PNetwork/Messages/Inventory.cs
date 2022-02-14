@@ -75,17 +75,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         }
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.CheckRemaining(Size))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -93,7 +93,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
             InvType = (InventoryType)stream.ReadUInt32Checked();
             _hash = stream.ReadByteArray32Checked();
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

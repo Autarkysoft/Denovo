@@ -70,9 +70,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         {
             byte[] data = Base16.Decode(hex);
             var stream = new FastStreamReader(data);
-            if (!TryDeserialize(stream, out string error))
+            if (!TryDeserialize(stream, out Errors error))
             {
-                throw new ArgumentException(error);
+                throw new ArgumentException(error.Convert());
             }
         }
 
@@ -1012,11 +1012,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
@@ -1024,13 +1024,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             if (!stream.TryReadInt32(out _version))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
             if (!stream.TryPeekByte(out byte marker))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -1040,29 +1040,28 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 _ = stream.TryReadByte(out byte _);
                 if (!stream.TryReadByte(out marker))
                 {
-                    error = Err.EndOfStream;
+                    error = Errors.EndOfStream;
                     return false;
                 }
                 if (marker != 1)
                 {
-                    error = "The SegWit marker has to be 0x0001";
+                    error = Errors.WrongSegWitMarker;
                     return false;
                 }
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt tinCount, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt tinCount, out error))
             {
-                error = err.Convert();
                 return false;
             }
             if (tinCount > int.MaxValue) // TODO: set a better value to check against.
             {
-                error = "TxIn count is too big.";
+                error = Errors.TxInCountOverflow;
                 return false;
             }
             if (tinCount == 0)
             {
-                error = "TxOut count cann ot be zero.";
+                error = Errors.TxInCountZero;
                 return false;
             }
             // TODO: Add a check for when (tinCount * eachTinSize) overflows size of our data
@@ -1078,19 +1077,18 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 TxInList[i] = temp;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt toutCount, out err))
+            if (!CompactInt.TryRead(stream, out CompactInt toutCount, out error))
             {
-                error = err.Convert();
                 return false;
             }
             if (toutCount > int.MaxValue) // TODO: set a better value to check against.
             {
-                error = "TxOut count is too big.";
+                error = Errors.TxOutCountOverflow;
                 return false;
             }
             if (toutCount == 0)
             {
-                error = "TxOut count cannot be zero.";
+                error = Errors.TxOutCountZero;
                 return false;
             }
             // TODO: Add a check for when (toutCount * eachToutSize) overflows size of our data
@@ -1124,9 +1122,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 WitnessList = null;
             }
 
-            if (!LockTime.TryRead(stream, out _lockTime, out err))
+            if (!LockTime.TryRead(stream, out _lockTime, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
@@ -1134,11 +1131,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             if (end - start > MaxTxSize)
             {
-                error = "Transaction length is too big.";
+                error = Errors.TxSizeOverflow;
                 return false;
             }
 
-            error = null;
             return true;
         }
     }

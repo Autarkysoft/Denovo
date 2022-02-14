@@ -6,7 +6,7 @@
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// OP code values used in <see cref="IScript"/>s as <see cref="Scripts.Operations.IOperation"/>s.
+    /// OP code values used in <see cref="IScript"/>s as <see cref="Operations.IOperation"/>s.
     /// </summary>
     /// <remarks>
     /// https://en.bitcoin.it/wiki/Script 

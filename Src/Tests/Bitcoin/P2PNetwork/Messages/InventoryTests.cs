@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [Fact]
         public void ConstructorTest()
         {
-            var inv = new Inventory((InventoryType)10000, Helper.GetBytes(32));
+            Inventory inv = new((InventoryType)10000, Helper.GetBytes(32));
 
             Assert.Equal((InventoryType)10000, inv.InvType);
             Assert.Equal(Helper.GetBytes(32), inv.Hash);
@@ -55,8 +55,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [MemberData(nameof(GetSerCases))]
         public void SerializeTest(InventoryType t, byte[] hash, byte[] expected)
         {
-            var inv = new Inventory(t, hash);
-            var stream = new FastStream(Inventory.Size);
+            Inventory inv = new(t, hash);
+            FastStream stream = new(Inventory.Size);
             inv.Serialize(stream);
             byte[] actual = stream.ToByteArray();
             Assert.Equal(expected, actual);
@@ -66,28 +66,28 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [MemberData(nameof(GetSerCases))]
         public void TryDeserializeTest(InventoryType t, byte[] hash, byte[] data)
         {
-            var stream = new FastStreamReader(data);
-            var inv = new Inventory();
-            bool actual = inv.TryDeserialize(stream, out string error);
+            FastStreamReader stream = new(data);
+            Inventory inv = new();
+            bool actual = inv.TryDeserialize(stream, out Errors error);
 
-            Assert.True(actual, error);
-            Assert.Null(error);
+            Assert.True(actual, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(t, inv.InvType);
             Assert.Equal(hash, inv.Hash);
         }
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, "Stream can not be null." };
-            yield return new object[] { new FastStreamReader(Array.Empty<byte>()), Err.EndOfStream };
-            yield return new object[] { new FastStreamReader(new byte[Inventory.Size - 1]), Err.EndOfStream };
+            yield return new object[] { null, Errors.NullStream };
+            yield return new object[] { new FastStreamReader(Array.Empty<byte>()), Errors.EndOfStream };
+            yield return new object[] { new FastStreamReader(new byte[Inventory.Size - 1]), Errors.EndOfStream };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTest(FastStreamReader stream, string expected)
+        public void TryDeserialize_FailTest(FastStreamReader stream, Errors expected)
         {
-            var inv = new Inventory();
-            bool actual = inv.TryDeserialize(stream, out string error);
+            Inventory inv = new();
+            bool actual = inv.TryDeserialize(stream, out Errors error);
 
             Assert.False(actual);
             Assert.Equal(expected, error);

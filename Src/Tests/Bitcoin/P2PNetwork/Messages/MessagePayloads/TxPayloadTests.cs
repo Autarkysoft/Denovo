@@ -16,12 +16,12 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void SerializeTest()
         {
-            TxPayload pl = new TxPayload()
+            TxPayload pl = new()
             {
                 Tx = new MockSerializableTx(new byte[] { 1, 2, 3 })
             };
 
-            FastStream stream = new FastStream();
+            FastStream stream = new();
             pl.Serialize(stream);
             byte[] actual = pl.Serialize();
             byte[] expected = new byte[] { 1, 2, 3 };
@@ -33,39 +33,39 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void TryDeserializeTest()
         {
-            TxPayload pl = new TxPayload()
+            TxPayload pl = new()
             {
                 Tx = new MockDeserializableTx(0, 3)
             };
-            FastStreamReader stream = new FastStreamReader(new byte[3]);
-            bool b = pl.TryDeserialize(stream, out string error);
+            FastStreamReader stream = new(new byte[3]);
+            bool b = pl.TryDeserialize(stream, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             // Mock tx has its own tests.
             Assert.Equal(PayloadType.Tx, pl.PayloadType);
         }
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, null, "Stream can not be null." };
+            yield return new object[] { null, null, Errors.NullStream };
             yield return new object[]
             {
                 new FastStreamReader(new byte[1]),
-                new MockDeserializableTx(0, 1, "Foo"),
-                "Foo"
+                new MockDeserializableTx(0, 1, true),
+                Errors.ForTesting
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTest(FastStreamReader stream, MockDeserializableTx tx, string expErr)
+        public void TryDeserialize_FailTest(FastStreamReader stream, MockDeserializableTx tx, Errors expErr)
         {
-            TxPayload pl = new TxPayload()
+            TxPayload pl = new()
             {
                 Tx = tx
             };
 
-            bool b = pl.TryDeserialize(stream, out string error);
+            bool b = pl.TryDeserialize(stream, out Errors error);
             Assert.False(b);
             Assert.Equal(expErr, error);
             // Mock tx has its own tests.

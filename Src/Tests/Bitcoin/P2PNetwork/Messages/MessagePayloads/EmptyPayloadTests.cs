@@ -25,7 +25,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [MemberData(nameof(GetSerCases))]
         public void PayloadTest(IMessagePayload payload, PayloadType expPlType)
         {
-            var stream = new FastStream();
+            FastStream stream = new();
             payload.Serialize(stream);
 
             Assert.Empty(stream.ToByteArray());
@@ -41,19 +41,19 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void SerializeTest()
         {
-            var mock = new MockEmptyPayload();
+            MockEmptyPayload mock = new();
             Assert.Empty(mock.Serialize());
         }
 
         [Fact]
         public void TryDeserializeTest()
         {
-            var mock = new MockEmptyPayload();
-            var stream = new FastStreamReader(Array.Empty<byte>());
-            bool b = mock.TryDeserialize(stream, out string error);
+            MockEmptyPayload mock = new();
+            FastStreamReader stream = new(Array.Empty<byte>());
+            bool b = mock.TryDeserialize(stream, out Errors error);
 
-            Assert.True(b);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
         }
     }
 }

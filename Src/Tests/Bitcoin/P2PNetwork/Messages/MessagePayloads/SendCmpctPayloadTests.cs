@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void ConstructorTest()
         {
-            var pl = new SendCmpctPayload(true, 2);
+            SendCmpctPayload pl = new(true, 2);
 
             Assert.Equal(PayloadType.SendCmpct, pl.PayloadType);
             Assert.True(pl.Announce);
@@ -32,8 +32,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void SerializeTest()
         {
-            var pl = new SendCmpctPayload(true, 1);
-            var stream = new FastStream(9);
+            SendCmpctPayload pl = new(true, 1);
+            FastStream stream = new(9);
             pl.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -52,36 +52,36 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [MemberData(nameof(GetDeserCases))]
         public void TryDeserializeTest(byte[] data, bool ann, ulong ver)
         {
-            var pl = new SendCmpctPayload();
-            bool success = pl.TryDeserialize(new FastStreamReader(data), out string error);
+            SendCmpctPayload pl = new();
+            bool success = pl.TryDeserialize(new FastStreamReader(data), out Errors error);
 
-            Assert.True(success, error);
-            Assert.Null(error);
+            Assert.True(success, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(ann, pl.Announce);
             Assert.Equal(ver, pl.CmpctVersion);
 
             // Test Serialize here to cover undefined (future) cases for version
-            var stream = new FastStream(9);
+            FastStream stream = new(9);
             pl.Serialize(stream);
             Assert.Equal(data, stream.ToByteArray());
         }
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, "Stream can not be null." };
-            yield return new object[] { new FastStreamReader(new byte[8]), Err.EndOfStream };
+            yield return new object[] { null, Errors.NullStream };
+            yield return new object[] { new FastStreamReader(new byte[8]), Errors.EndOfStream };
             yield return new object[]
             {
                 new FastStreamReader(new byte[9] { 2, 0, 0, 0, 0, 0, 0, 0, 0 }),
-                "First byte representing announce bool should be 0 or 1."
+                Errors.MsgSendCmpctInvalidAnn
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTest(FastStreamReader stream, string expErr)
+        public void TryDeserialize_FailTest(FastStreamReader stream, Errors expErr)
         {
-            var pl = new SendCmpctPayload();
-            bool success = pl.TryDeserialize(stream, out string error);
+            SendCmpctPayload pl = new();
+            bool success = pl.TryDeserialize(stream, out Errors error);
 
             Assert.False(success);
             Assert.Equal(expErr, error);

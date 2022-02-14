@@ -41,6 +41,11 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         DataTooBig,
         /// <summary>
+        /// Could not read CompactInt from stream.
+        /// </summary>
+        InvalidCompactInt,
+
+        /// <summary>
         /// Invalid DER encoding length.
         /// </summary>
         InvalidDerEncodingLength,
@@ -317,6 +322,136 @@ namespace Autarkysoft.Bitcoin
         /// <see cref="Target"/> value overflow
         /// </summary>
         TargetOverflow,
+
+        /// <summary>
+        /// Number of items in the array is bigger than <see cref="int"/>.
+        /// </summary>
+        ItemCountOverflow,
+        /// <summary>
+        /// Number of transactions in the block is bigger than <see cref="int"/>.
+        /// </summary>
+        TxCountOverflow,
+        /// <summary>
+        /// The SegWit marker has to be 0x0001
+        /// </summary>
+        WrongSegWitMarker,
+        /// <summary>
+        /// Number of transaction inputs is bigger than <see cref="int"/>.
+        /// </summary>
+        TxInCountOverflow,
+        /// <summary>
+        /// Number of transaction inputs can not be zero.
+        /// </summary>
+        TxInCountZero,
+        /// <summary>
+        /// Amount is bigger than total bitcoin supply.
+        /// </summary>
+        TxAmountOverflow,
+        /// <summary>
+        /// Number of transaction outputs is bigger than <see cref="int"/>.
+        /// </summary>
+        TxOutCountOverflow,
+        /// <summary>
+        /// Number of transaction outputs can not be zero.
+        /// </summary>
+        TxOutCountZero,
+        /// <summary>
+        /// Number of transaction witnesses is bigger than <see cref="int"/>.
+        /// </summary>
+        WitnessCountOverflow,
+        /// <summary>
+        /// Transaction total size is bigger than <see cref="Constants.MaxBlockWeight"/>.
+        /// </summary>
+        TxSizeOverflow,
+
+        /// <summary>
+        ///  Message payload size is bigger than allowed size (<see cref="Constants.MaxPayloadSize"/>).
+        /// </summary>
+        MessagePayloadOverflow,
+        /// <summary>
+        /// The received message is from another network.
+        /// </summary>
+        InvalidMessageNetwork,
+        /// <summary>
+        /// The received message has an invalid checksum.
+        /// </summary>
+        InvalidMessageChecksum,
+        /// <summary>
+        /// AddressCount can not be bigger than <see cref="Constants.MaxAddrCount"/>."
+        /// </summary>
+        MsgAddrCountOverflow,
+        /// <summary>
+        /// Number of items in BlockTxn message is bigger than <see cref="int"/>.
+        /// </summary>
+        MsgTxCountOverflow,
+        /// <summary>
+        /// Number of short IDs in CmpctBlock message is bigger than <see cref="int"/>.
+        /// </summary>
+        MsgShortIdCountOverflow,
+        /// <summary>
+        /// Fee rate filter is too big.
+        /// </summary>
+        MsgFeeRateFilterOverflow,
+        /// <summary>
+        /// Number of elements in FilterAdd message is bigger than 
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.FilterAddPayload.MaxElementLength"/>
+        /// </summary>
+        MsgElementLenOverflow,
+        /// <summary>
+        /// Filter length in FilterLoad message is bigger than
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.FilterLoadPayload.MaxFilterLength"/>
+        /// </summary>
+        MsgFilterLenOverflow,
+        /// <summary>
+        /// Number of hashes in FilterLoad message is bigger than
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.FilterLoadPayload.MaxHashFuncs"/>
+        /// </summary>
+        MsgFilterHashOverflow,
+        /// <summary>
+        /// GetBlocks payload version is invalid
+        /// </summary>
+        InvalidBlocksPayloadVersion,
+        /// <summary>
+        /// Number of hashes in GetBlocks payload is bigger than
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.GetBlocksPayload.MaximumHashes"/>.
+        /// </summary>
+        MsgBlocksHashCountOverflow,
+        /// <summary>
+        /// Number of txns in GetBlockTxn message is bigger than <see cref="int"/>.
+        /// </summary>
+        MsgBlockTxnCountOverflow,
+        /// <summary>
+        /// Number of headers in a Headers message is bigger than
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.HeadersPayload.MaxCount"/>.
+        /// </summary>
+        MsgHeaderCountOverflow,
+        /// <summary>
+        /// Number of inventories in an Inv message is bigger than
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.InvPayload.MaxInvCount"/>.
+        /// </summary>
+        MsgInvCountOverflow,
+        /// <summary>
+        /// Number of hashes in MerkleBlock message is bigger than <see cref="int"/>.
+        /// </summary>
+        MsgMerkleBlockHashCountOverflow,
+        /// <summary>
+        /// Length of flag in MerkleBlock message is bigger than <see cref="int"/>.
+        /// </summary>
+        MsgMerkleBlockFlagLenOverflow,
+        /// <summary>
+        /// Announce bool in SendCmpct messasge should be 0 or 1.
+        /// </summary>
+        MsgSendCmpctInvalidAnn,
+        /// <summary>
+        /// Size of User-Agent in bytes is bigger than
+        /// <see cref="P2PNetwork.Messages.MessagePayloads.VersionPayload.UserAgentMaxSize"/>.
+        /// </summary>
+        MsgUserAgentOverflow,
+        /// <summary>
+        /// Relay byte in Version message can only be 0 or 1.
+        /// </summary>
+        MsgVersionInvalidRelay,
+
 
         /// <summary>
         /// This is only used for testing

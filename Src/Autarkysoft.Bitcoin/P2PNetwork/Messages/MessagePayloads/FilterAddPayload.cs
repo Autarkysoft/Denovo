@@ -36,7 +36,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
 
-        private const int MaxElementLength = 520;
+        /// <summary>
+        /// Maximum number of accepted elements
+        /// </summary>
+        public const int MaxElementLength = 520;
 
         private byte[] _element;
         /// <summary>
@@ -80,33 +83,31 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt len, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt len, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
             if (len > MaxElementLength)
             {
-                error = "Invalid element length.";
+                error = Errors.MsgElementLenOverflow;
                 return false;
             }
 
             if (!stream.TryReadByteArray((int)len, out _element))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            error = null;
             return true;
         }
     }

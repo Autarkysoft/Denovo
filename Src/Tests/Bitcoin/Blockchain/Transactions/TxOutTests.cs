@@ -17,7 +17,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         public void ConstructorTest()
         {
             // Amount can be set to zero and pubkey script to null
-            var tx = new TxOut(0, null);
+            TxOut tx = new(0, null);
             Assert.Equal(0UL, tx.Amount);
             Assert.NotNull(tx.PubScript);
 
@@ -28,8 +28,8 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void AddSerializedSize()
         {
-            var counter = new SizeCounter();
-            var tx = new TxOut(0, new MockSerializablePubScript(new byte[3], 3));
+            SizeCounter counter = new();
+            TxOut tx = new(0, new MockSerializablePubScript(new byte[3], 3));
             tx.AddSerializedSize(counter);
             Assert.Equal(8 + 1 + 3, counter.Size);
         }
@@ -37,9 +37,9 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void SerializeTest()
         {
-            var scr = new MockSerializablePubScript(Helper.GetBytes(5), 5);
-            var tx = new TxOut(12_633_113_1334_7895, scr);
-            var stream = new FastStream(8 + 5 + 1);
+            MockSerializablePubScript scr = new(Helper.GetBytes(5), 5);
+            TxOut tx = new(12_633_113_1334_7895, scr);
+            FastStream stream = new(8 + 5 + 1);
             tx.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -55,8 +55,8 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void Serialize_EmptyScrTest()
         {
-            var tx = new TxOut(0, null);
-            var stream = new FastStream(9);
+            TxOut tx = new(0, null);
+            FastStream stream = new(9);
             tx.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -70,8 +70,8 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void SerializeSigHashSingleTest()
         {
-            var stream = new FastStream(9);
-            var tx = new TxOut();
+            FastStream stream = new(9);
+            TxOut tx = new();
             tx.SerializeSigHashSingle(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -105,45 +105,45 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [MemberData(nameof(GetDeserCases))]
         public void TryDeserializeTest(byte[] data, MockDeserializablePubScript scr, ulong expAmount)
         {
-            var tx = new TxOut()
+            TxOut tx = new()
             {
                 PubScript = scr
             };
-            var stream = new FastStreamReader(data);
-            bool b = tx.TryDeserialize(stream, out string error);
+            FastStreamReader stream = new(data);
+            bool b = tx.TryDeserialize(stream, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expAmount, tx.Amount);
             // Mock script has its own tests.
         }
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, null, "Stream can not be null." };
-            yield return new object[] { new FastStreamReader(new byte[7]), null, Err.EndOfStream };
+            yield return new object[] { null, null, Errors.NullStream };
+            yield return new object[] { new FastStreamReader(new byte[7]), null, Errors.EndOfStream };
             yield return new object[]
             {
                 new FastStreamReader(new byte[8]{ 1, 64, 7, 90, 240, 117, 7, 0 }),
                 null,
-                "Amount is bigger than total bitcoin supply."
+                Errors.TxAmountOverflow
             };
             yield return new object[]
             {
                 new FastStreamReader(new byte[8]{ 1, 0, 0, 0, 0, 0, 0, 0 }),
-                new MockDeserializablePubScript(8, 0, "Foo"),
-                "Foo"
+                new MockDeserializablePubScript(8, 0, true),
+                Errors.ForTesting
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTest(FastStreamReader stream, MockDeserializablePubScript scr, string expErr)
+        public void TryDeserialize_FailTest(FastStreamReader stream, MockDeserializablePubScript scr, Errors expErr)
         {
-            var tx = new TxOut()
+            TxOut tx = new()
             {
                 PubScript = scr
             };
-            bool b = tx.TryDeserialize(stream, out string error);
+            bool b = tx.TryDeserialize(stream, out Errors error);
 
             Assert.False(b);
             Assert.Equal(expErr, error);

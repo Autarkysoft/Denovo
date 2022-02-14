@@ -141,23 +141,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.TryReadByteArray(32, out _txHash))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
             if (!stream.TryReadUInt32(out _index))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -168,11 +168,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
             if (!stream.TryReadUInt32(out _sequence))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            error = null;
             return true;
         }
     }

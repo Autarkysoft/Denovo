@@ -64,11 +64,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
@@ -80,18 +80,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
             if (!stream.TryReadUInt32(out _txCount))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt hashCount, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt hashCount, out error))
             {
-                error = err.Convert();
                 return false;
             }
             if (hashCount > int.MaxValue)
             {
-                error = "Hash count is too big.";
+                error = Errors.MsgMerkleBlockHashCountOverflow;
                 return false;
             }
 
@@ -104,24 +103,22 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 }
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt flagsLength, out err))
+            if (!CompactInt.TryRead(stream, out CompactInt flagsLength, out error))
             {
-                error = err.Convert();
                 return false;
             }
             if (flagsLength > int.MaxValue)
             {
-                error = "Flags length is too big.";
+                error = Errors.MsgMerkleBlockFlagLenOverflow;
                 return false;
             }
 
             if (!stream.TryReadByteArray((int)flagsLength, out _flags))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            error = null;
             return true;
         }
     }

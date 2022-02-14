@@ -27,7 +27,7 @@ namespace Tests.BitcoinCore
             Assert.False(flags.Contains(' '));
 
             // The flags in tx_valid.json indicate things that are NOT enabled
-            var c = new MockConsensus()
+            MockConsensus c = new()
             {
                 expHeight = mockHeight,
                 bip112 = true,
@@ -41,7 +41,7 @@ namespace Tests.BitcoinCore
             };
 
             // https://github.com/bitcoin/bitcoin/blob/48725e64fbfb85200dd2226386fbf1cfc8fe6c1f/src/test/transaction_tests.cpp#L43-L62
-            foreach (var flag in flags.Split(','))
+            foreach (string flag in flags.Split(','))
             {
                 if (flag.Equals("NONE", StringComparison.OrdinalIgnoreCase) ||
                     // STRICTENC (SCRIPT_VERIFY_STRICTENC flag): strict DER sig and pubkey encodings
@@ -111,8 +111,8 @@ namespace Tests.BitcoinCore
 
         public static PubkeyScript GetPubScr(string scr)
         {
-            var stream = new FastStream(scr.Length / 2 /*A good estimate of size*/);
-            foreach (var item in scr.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            FastStream stream = new(scr.Length / 2 /*A good estimate of size*/);
+            foreach (string item in scr.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             {
                 // Handle any hex
                 if (item.StartsWith("0x"))
@@ -147,10 +147,10 @@ namespace Tests.BitcoinCore
         {
             // https://github.com/bitcoin/bitcoin/blob/48725e64fbfb85200dd2226386fbf1cfc8fe6c1f/src/test/data/tx_valid.json
 
-            var mockMempool = new MockMempool(null);
-            foreach (var item in Helper.ReadResource<JArray>("BitcoinCore.tx_valid"))
+            MockMempool mockMempool = new(null);
+            foreach (JToken item in Helper.ReadResource<JArray>("BitcoinCore.tx_valid"))
             {
-                var mockDB = new MockUtxoDatabase();
+                MockUtxoDatabase mockDB = new();
                 if (item is JArray arr1 && arr1.Count == 3)
                 {
                     // [
@@ -171,10 +171,10 @@ namespace Tests.BitcoinCore
 
                     MockConsensus consensus = GetConsensus(arr1[2].ToString(), MockHeight);
 
-                    var tx = new Transaction();
-                    if (!tx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(arr1[1].ToString())), out string error))
+                    Transaction tx = new();
+                    if (!tx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(arr1[1].ToString())), out Errors error))
                     {
-                        Assert.True(false, error);
+                        Assert.True(false, error.Convert());
                     }
 
                     ulong totalSpent = (ulong)tx.TxOutList.Sum(x => (long)x.Amount);
@@ -182,7 +182,7 @@ namespace Tests.BitcoinCore
                     bool isCoinbase = false;
                     foreach (JArray tinArr in arr1[0])
                     {
-                        var txHash = Helper.HexToBytes(tinArr[0].ToString(), true);
+                        byte[] txHash = Helper.HexToBytes(tinArr[0].ToString(), true);
                         int index = (int)tinArr[1];
                         isCoinbase = index == -1;
                         if (isCoinbase)
@@ -203,7 +203,7 @@ namespace Tests.BitcoinCore
 
                             break;
                         }
-                        var utxo = new MockUtxo()
+                        MockUtxo utxo = new()
                         {
                             Index = (uint)index,
                             PubScript = GetPubScr(tinArr[2].ToString()),
@@ -225,7 +225,7 @@ namespace Tests.BitcoinCore
         [MemberData(nameof(GetCases))]
         public void TxTest(IUtxoDatabase utxoDb, IMemoryPool mempool, IConsensus consensus, ITransaction tx, bool isCoinbase)
         {
-            var verifier = new TransactionVerifier(false, utxoDb, mempool, consensus);
+            TransactionVerifier verifier = new(false, utxoDb, mempool, consensus);
 
             bool b = isCoinbase ?
                      verifier.VerifyCoinbasePrimary(tx, out string error) :
@@ -237,7 +237,7 @@ namespace Tests.BitcoinCore
 
         public static string BuildErrorStr(ITransaction tx, string error)
         {
-            var stream = new FastStream();
+            FastStream stream = new();
             tx.Serialize(stream);
             return $"Error message: {error}{Environment.NewLine}Tx: {stream.ToByteArray().ToBase16()}";
         }

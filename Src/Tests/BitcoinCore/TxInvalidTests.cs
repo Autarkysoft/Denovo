@@ -24,7 +24,7 @@ namespace Tests.BitcoinCore
             Assert.False(flags.Length == 0);
             Assert.False(flags.Contains(' '));
 
-            var c = new MockConsensus()
+            MockConsensus c = new()
             {
                 expHeight = mockHeight,
                 bip112 = false,
@@ -38,7 +38,7 @@ namespace Tests.BitcoinCore
             };
 
             // https://github.com/bitcoin/bitcoin/blob/48725e64fbfb85200dd2226386fbf1cfc8fe6c1f/src/test/transaction_tests.cpp#L43-L62
-            foreach (var flag in flags.Split(','))
+            foreach (string flag in flags.Split(','))
             {
                 if (flag.Equals("NONE", StringComparison.OrdinalIgnoreCase) ||
                     // STRICTENC (SCRIPT_VERIFY_STRICTENC flag): strict DER sig and pubkey encodings
@@ -113,10 +113,10 @@ namespace Tests.BitcoinCore
         {
             // https://github.com/bitcoin/bitcoin/blob/48725e64fbfb85200dd2226386fbf1cfc8fe6c1f/src/test/data/tx_invalid.json
 
-            var mockMempool = new MockMempool(null);
-            foreach (var item in Helper.ReadResource<JArray>("BitcoinCore.tx_invalid"))
+            MockMempool mockMempool = new(null);
+            foreach (JToken item in Helper.ReadResource<JArray>("BitcoinCore.tx_invalid"))
             {
-                var mockDB = new MockUtxoDatabase();
+                MockUtxoDatabase mockDB = new();
                 if (item is JArray arr1 && arr1.Count == 3)
                 {
                     // [
@@ -161,17 +161,17 @@ namespace Tests.BitcoinCore
 
                     MockConsensus consensus = GetConsensus(arr1[2].ToString(), MockHeight);
 
-                    var tx = new Transaction();
-                    if (!tx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(arr1[1].ToString())), out string error))
+                    Transaction tx = new();
+                    if (!tx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(arr1[1].ToString())), out Errors error))
                     {
-                        if (error == "TxOut count cannot be zero.")
+                        if (error == Errors.TxOutCountZero)
                         {
                             // This check takes place during deserialization of blocks/transactions not during verification.
                             // In other words there is no way to instantiate a transaction with zero inputs/outputs.
                             // When TryDeserialize fails with this error, we consider this test successful.
                             continue;
                         }
-                        if (error == "Amount is bigger than total bitcoin supply.")
+                        if (error == Errors.TxAmountOverflow)
                         {
                             // Another check that should take place during deserialization not verification.
                             continue;
@@ -186,7 +186,7 @@ namespace Tests.BitcoinCore
                     bool isCoinbase = false;
                     foreach (JArray tinArr in arr1[0])
                     {
-                        var txHash = Helper.HexToBytes(tinArr[0].ToString(), true);
+                        byte[] txHash = Helper.HexToBytes(tinArr[0].ToString(), true);
                         int index = (int)tinArr[1];
                         isCoinbase = index == -1;
                         if (isCoinbase)
@@ -206,7 +206,7 @@ namespace Tests.BitcoinCore
 
                             break;
                         }
-                        var utxo = new MockUtxo()
+                        MockUtxo utxo = new()
                         {
                             Index = (uint)index,
                             PubScript = TxValidTests.GetPubScr(tinArr[2].ToString()),
@@ -229,7 +229,7 @@ namespace Tests.BitcoinCore
         [MemberData(nameof(GetCases))]
         public void TxTest(IUtxoDatabase utxoDb, IMemoryPool mempool, IConsensus consensus, ITransaction tx, bool isCoinbase)
         {
-            var verifier = new TransactionVerifier(false, utxoDb, mempool, consensus);
+            TransactionVerifier verifier = new(false, utxoDb, mempool, consensus);
 
             bool b = isCoinbase ?
                      verifier.VerifyCoinbasePrimary(tx, out string error) :

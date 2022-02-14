@@ -43,8 +43,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         {
             byte[] hd1 = Helper.HexToBytes(Header1);
             byte[] hd2 = Helper.HexToBytes(Header2);
-            GetHeadersPayload pl = new GetHeadersPayload(Version, new byte[][] { hd1, hd2 }, new byte[32]);
-            FastStream stream = new FastStream(4 + 32 + 32 + 32);
+            GetHeadersPayload pl = new(Version, new byte[][] { hd1, hd2 }, new byte[32]);
+            FastStream stream = new(4 + 32 + 32 + 32);
             pl.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -56,15 +56,15 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void TryDeserializeTest()
         {
-            GetHeadersPayload pl = new GetHeadersPayload();
-            FastStreamReader stream = new FastStreamReader(Helper.HexToBytes(PayloadHex));
-            bool b = pl.TryDeserialize(stream, out string error);
+            GetHeadersPayload pl = new();
+            FastStreamReader stream = new(Helper.HexToBytes(PayloadHex));
+            bool b = pl.TryDeserialize(stream, out Errors error);
 
             byte[] hd1 = Helper.HexToBytes(Header1);
             byte[] hd2 = Helper.HexToBytes(Header2);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(Version, pl.Version);
             Assert.Equal(new byte[][] { hd1, hd2 }, pl.Hashes);
             Assert.Equal(new byte[32], pl.StopHash);
@@ -73,31 +73,34 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, "Stream can not be null." };
-            yield return new object[] { new FastStreamReader(new byte[1]), Err.EndOfStream };
-            yield return new object[] { new FastStreamReader(new byte[4] { 255, 255, 255, 255 }), "Invalid version" };
+            yield return new object[] { null, Errors.NullStream };
+            yield return new object[] { new FastStreamReader(new byte[1]), Errors.EndOfStream };
+            yield return new object[]
+            {
+                new FastStreamReader(new byte[4] { 255, 255, 255, 255 }), Errors.InvalidBlocksPayloadVersion
+            };
             yield return new object[]
             {
                 new FastStreamReader(new byte[5] { 1, 0, 0, 0, 253 }),
-                "Count is too big or an invalid CompactInt."
+                Errors.InvalidCompactInt
             };
 
             yield return new object[]
             {
                 // Valid CompactInt but invalid when using FastStreamReader.TryReadSmallCompactInt() (it is too big)
                 new FastStreamReader(new byte[9] { 1, 0, 0, 0, 0xfe, 0x00, 0x00, 0x01, 0x00 }),
-                "Count is too big or an invalid CompactInt."
+                Errors.ItemCountOverflow
             };
             yield return new object[]
             {
                 // Count = 102
                 new FastStreamReader(new byte[5] { 1, 0, 0, 0, 102 }),
-                "Only 101 hashes are accepted."
+                Errors.MsgBlocksHashCountOverflow
             };
             yield return new object[]
             {
                 new FastStreamReader(new byte[5] { 1, 0, 0, 0, 1 }),
-                Err.EndOfStream
+                Errors.EndOfStream
             };
             byte[] temp = new byte[38];
             temp[0] = 1;
@@ -105,16 +108,16 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             yield return new object[]
             {
                 new FastStreamReader(temp),
-                Err.EndOfStream
+                Errors.EndOfStream
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTest(FastStreamReader stream, string expErr)
+        public void TryDeserialize_FailTest(FastStreamReader stream, Errors expErr)
         {
-            GetHeadersPayload pl = new GetHeadersPayload();
+            GetHeadersPayload pl = new();
 
-            bool b = pl.TryDeserialize(stream, out string error);
+            bool b = pl.TryDeserialize(stream, out Errors error);
             Assert.False(b);
             Assert.Equal(expErr, error);
         }

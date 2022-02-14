@@ -88,9 +88,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         protected bool Deser<T>(byte[] data, out T pl) where T : IMessagePayload, new()
         {
             pl = new T();
-            if (pl.TryDeserialize(new FastStreamReader(data), out string error))
+            if (pl.TryDeserialize(new FastStreamReader(data), out Errors error))
             {
-                Debug.Assert(error is null);
+                Debug.Assert(error == Errors.None);
                 return true;
             }
             else

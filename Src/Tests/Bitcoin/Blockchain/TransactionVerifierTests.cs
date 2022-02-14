@@ -21,7 +21,7 @@ namespace Tests.Bitcoin.Blockchain
         [Fact]
         public void ConstructorTest()
         {
-            var verifier = new TransactionVerifier(true, new MockUtxoDatabase(), new MockMempool(null), new MockConsensus());
+            TransactionVerifier verifier = new(true, new MockUtxoDatabase(), new MockMempool(null), new MockConsensus());
 
             Helper.ComparePrivateField(verifier, "isMempool", true);
             Assert.False(verifier.ForceLowS);
@@ -33,9 +33,9 @@ namespace Tests.Bitcoin.Blockchain
         [Fact]
         public void Constructor_ExceptionTest()
         {
-            var ut = new MockUtxoDatabase();
-            var mem = new MockMempool(null);
-            var c = new MockConsensus();
+            MockUtxoDatabase ut = new();
+            MockMempool mem = new(null);
+            MockConsensus c = new();
 
             Assert.Throws<ArgumentNullException>(() => new TransactionVerifier(true, null, mem, c));
             Assert.Throws<ArgumentNullException>(() => new TransactionVerifier(true, ut, null, c));
@@ -45,7 +45,7 @@ namespace Tests.Bitcoin.Blockchain
 
         public static IEnumerable<object[]> GetCoinBasePrimCases()
         {
-            var c = new MockConsensus() { expHeight = MockHeight, bip34 = true };
+            MockConsensus c = new() { expHeight = MockHeight, bip34 = true };
 
             yield return new object[]
             {
@@ -96,7 +96,7 @@ namespace Tests.Bitcoin.Blockchain
                 false
             };
 
-            var mockFailSigScr = new MockCoinbaseVerifySigScript(MockHeight, false);
+            MockCoinbaseVerifySigScript mockFailSigScr = new(MockHeight, false);
             yield return new object[]
             {
                 c,
@@ -107,9 +107,9 @@ namespace Tests.Bitcoin.Blockchain
                 false
             };
 
-            var mockPassSigScr = new MockCoinbaseVerifySigScript(MockHeight, true, 100);
-            var t1 = new TxOut(50, new MockSigOpCountPubScript(20));
-            var t2 = new TxOut(60, new MockSigOpCountPubScript(3));
+            MockCoinbaseVerifySigScript mockPassSigScr = new(MockHeight, true, 100);
+            TxOut t1 = new(50, new MockSigOpCountPubScript(20));
+            TxOut t2 = new(60, new MockSigOpCountPubScript(3));
             yield return new object[]
             {
                 c,
@@ -136,7 +136,7 @@ namespace Tests.Bitcoin.Blockchain
         public void VerifyCoinbasePrimaryTest(IConsensus consensus, ITransaction tx, bool expB, string expErr, int expOpCount,
             bool expSegWit)
         {
-            var verifier = new TransactionVerifier(false, new MockUtxoDatabase(), new MockMempool(null), consensus);
+            TransactionVerifier verifier = new(false, new MockUtxoDatabase(), new MockMempool(null), consensus);
 
             bool actualB = verifier.VerifyCoinbasePrimary(tx, out string error);
 
@@ -202,7 +202,7 @@ namespace Tests.Bitcoin.Blockchain
         [MemberData(nameof(GetCoinBaseOutputCases))]
         public void VerifyCoinbaseOutputTest(IConsensus c, ITransaction tx, ulong fee, bool expB, string expErr)
         {
-            var verifier = new TransactionVerifier(false, new MockUtxoDatabase(), new MockMempool(null), c)
+            TransactionVerifier verifier = new(false, new MockUtxoDatabase(), new MockMempool(null), c)
             {
                 TotalFee = fee,
                 TotalSigOpCount = 987
@@ -219,7 +219,7 @@ namespace Tests.Bitcoin.Blockchain
 
         public static IEnumerable<object[]> GetTxVerifyCases()
         {
-            var c = new MockConsensus()
+            MockConsensus c = new()
             {
                 expHeight = MockHeight,
                 bip65 = true,
@@ -236,8 +236,8 @@ namespace Tests.Bitcoin.Blockchain
             byte[] simpTxHash3 = new byte[32];
             simpTxHash3[1] = 3;
 
-            var simpPubScr = new PubkeyScript();
-            var simpSigScr = new SignatureScript(new byte[1] { (byte)OP._1 });
+            PubkeyScript simpPubScr = new();
+            SignatureScript simpSigScr = new(new byte[1] { (byte)OP._1 });
 
             // *** Fee Tests ***
 
@@ -396,16 +396,16 @@ namespace Tests.Bitcoin.Blockchain
             };
 
             // *** Transaction Tests (from signtx cases) ***
-            foreach (var Case in Helper.ReadResource<JArray>("SignedTxTestData"))
+            foreach (JToken Case in Helper.ReadResource<JArray>("SignedTxTestData"))
             {
-                var prevTx = new Transaction();
-                prevTx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(Case["TxToSpend"].ToString())), out string _);
+                Transaction prevTx = new();
+                prevTx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(Case["TxToSpend"].ToString())), out _);
                 byte[] prevTxHash = prevTx.GetTransactionHash();
-                var utxoDb = new MockUtxoDatabase();
+                MockUtxoDatabase utxoDb = new();
 
                 for (int i = 0; i < prevTx.TxOutList.Length; i++)
                 {
-                    var utxo = new MockUtxo()
+                    MockUtxo utxo = new()
                     {
                         Amount = prevTx.TxOutList[i].Amount,
                         Index = (uint)i,
@@ -415,14 +415,14 @@ namespace Tests.Bitcoin.Blockchain
                     utxoDb.Add(prevTxHash, utxo);
                 }
 
-                foreach (var item in Case["Cases"])
+                foreach (JToken item in Case["Cases"])
                 {
-                    var tx = new Transaction();
-                    FastStreamReader stream = new FastStreamReader(Helper.HexToBytes(item["SignedTx"].ToString()));
-                    if (!tx.TryDeserialize(stream, out string err))
+                    Transaction tx = new();
+                    FastStreamReader stream = new(Helper.HexToBytes(item["SignedTx"].ToString()));
+                    if (!tx.TryDeserialize(stream, out Errors err))
                     {
                         throw new ArgumentException($"Could not deseralize the given tx case: " +
-                            $"{item["TestName"]}. Error: {err}");
+                            $"{item["TestName"]}. Error: {err.Convert()}");
                     }
 
                     int sigOpCount = (int)item["SigOpCount"];
@@ -444,7 +444,7 @@ namespace Tests.Bitcoin.Blockchain
             }
 
             // P2SH special case (tx can be found on testnet)
-            var p2shSpecial = new Transaction("02000000000101270e3210e2b0feebbf577ac4640dba3f41cf93d3845f432762047d7a15de283e00000000171600145c9ac58215220fb727ad5d4592e39eade0c2f324feffffff0229511d000000000017a914b472a266d0bd89c13706a4132ccfb16f7c3b9fcb8795bff4390200000017a9149ebf6e32dbdd43b7f6b62687049454edf902358c870247304402207b1091aef93cc0f3663225a6aa82b0f4f23bb8c930bfbd48cdba7157f1de32e8022039d236eea85f2ddf31d51ab5ebbeb9acd1385209617576f311ce9f2530c7c1ec0121028d14fce7ae0b7618a7b8a18a237c836e44e8725880ef19164c0e69157262f2e756781900");
+            Transaction p2shSpecial = new("02000000000101270e3210e2b0feebbf577ac4640dba3f41cf93d3845f432762047d7a15de283e00000000171600145c9ac58215220fb727ad5d4592e39eade0c2f324feffffff0229511d000000000017a914b472a266d0bd89c13706a4132ccfb16f7c3b9fcb8795bff4390200000017a9149ebf6e32dbdd43b7f6b62687049454edf902358c870247304402207b1091aef93cc0f3663225a6aa82b0f4f23bb8c930bfbd48cdba7157f1de32e8022039d236eea85f2ddf31d51ab5ebbeb9acd1385209617576f311ce9f2530c7c1ec0121028d14fce7ae0b7618a7b8a18a237c836e44e8725880ef19164c0e69157262f2e756781900");
             yield return new object[]
             {
                 new MockUtxoDatabase(p2shSpecial.GetTransactionHash(), 
@@ -469,7 +469,7 @@ namespace Tests.Bitcoin.Blockchain
             ulong initialFee = 10;
             int initialSigOp = 50;
 
-            var verifier = new TransactionVerifier(false, utxoDB, memPool, c)
+            TransactionVerifier verifier = new(false, utxoDB, memPool, c)
             {
                 TotalFee = initialFee,
                 TotalSigOpCount = initialSigOp

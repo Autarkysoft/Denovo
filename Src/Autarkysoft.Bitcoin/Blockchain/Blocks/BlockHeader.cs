@@ -228,11 +228,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (!stream.CheckRemaining(Size))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -241,15 +241,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             _merkle = stream.ReadByteArray32Checked();
             BlockTime = stream.ReadUInt32Checked();
 
-            if (!Target.TryRead(stream, out _nBits, out Errors err))
+            if (!Target.TryRead(stream, out _nBits, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
             Nonce = stream.ReadUInt32Checked();
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

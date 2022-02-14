@@ -476,6 +476,7 @@ namespace Autarkysoft.Bitcoin
                 Errors.NullStream => "Stream can not be null.",
                 Errors.EndOfStream => "Reached end of stream.",
                 Errors.DataTooBig => "Data size is bigger than int.MaxValue.",
+                Errors.InvalidCompactInt => $"Could not read {nameof(CompactInt)} from stream.",
 
                 Errors.InvalidDerEncodingLength => "Invalid DER encoding length.",
                 Errors.MissingDerSeqTag => "Sequence tag was not found in DER encoded signature.",
@@ -550,6 +551,45 @@ namespace Autarkysoft.Bitcoin
                 Errors.InvalidTxVersion => "Transaction version must be bigger than 1 when spending OP_CheckSequenceVerify.",
                 Errors.NegativeTarget => "Target can not be negative.",
                 Errors.TargetOverflow => "Target is defined as a 256-bit number (value overflow).",
+
+                Errors.ItemCountOverflow => "Number of items in the array is bigger than Int32.",
+                Errors.TxCountOverflow => "Number of transactions in the block is bigger than Int32.",
+                Errors.WrongSegWitMarker => "The SegWit marker has to be 0x0001.",
+                Errors.TxInCountOverflow => "Number of transaction inputs is bigger than Int32.",
+                Errors.TxInCountZero => "Number of transaction inputs can not be zero.",
+                Errors.TxAmountOverflow => "Amount is bigger than total bitcoin supply.",
+                Errors.TxOutCountOverflow => "Number of transaction outputs is bigger than Int32.",
+                Errors.TxOutCountZero => "Number of transaction outputs can not be zero.",
+                Errors.WitnessCountOverflow => "Number of transaction witnesses is bigger than Int32.",
+                Errors.TxSizeOverflow => $"Transaction total size is bigger than {Constants.MaxBlockWeight}.",
+
+                Errors.MessagePayloadOverflow => $"Message payload size is bigger than {Constants.MaxPayloadSize}.",
+                Errors.InvalidMessageNetwork => "The received message is from another network.",
+                Errors.InvalidMessageChecksum => "The received message has an invalid checksum.",
+                Errors.MsgAddrCountOverflow => $"AddressCount can not be bigger than {Constants.MaxAddrCount}.",
+                Errors.MsgTxCountOverflow => "Number of items in BlockTxn message is bigger than Int32.",
+                Errors.MsgShortIdCountOverflow => "Number of short IDs in CmpctBlock message is bigger than Int32.",
+                Errors.MsgFeeRateFilterOverflow => "Fee rate filter is too big.",
+                Errors.MsgElementLenOverflow => $"Number of elements in FilterAdd message is bigger than " +
+                                                $"{P2PNetwork.Messages.MessagePayloads.FilterAddPayload.MaxElementLength}.",
+                Errors.MsgFilterLenOverflow => $"Filter length in FilterLoad message is bigger than " +
+                                               $"{P2PNetwork.Messages.MessagePayloads.FilterLoadPayload.MaxFilterLength}.",
+                Errors.MsgFilterHashOverflow => $"Number of hashes in FilterLoad message is bigger than " +
+                                                $"{P2PNetwork.Messages.MessagePayloads.FilterLoadPayload.MaxHashFuncs}.",
+                Errors.InvalidBlocksPayloadVersion => "GetBlocks payload version is invalid",
+                Errors.MsgBlocksHashCountOverflow => $"Number of hashes in GetBlocks payload is bigger than " +
+                                                     $"{P2PNetwork.Messages.MessagePayloads.GetBlocksPayload.MaximumHashes}.",
+                Errors.MsgBlockTxnCountOverflow => "Number of txns in GetBlockTxn message is bigger than Int32.",
+                Errors.MsgHeaderCountOverflow => $"Number of headers in a Headers message is bigger than " +
+                                                 $"{P2PNetwork.Messages.MessagePayloads.HeadersPayload.MaxCount}.",
+                Errors.MsgInvCountOverflow => $"Number of inventories in an Inv message is bigger than " +
+                                              $"{P2PNetwork.Messages.MessagePayloads.InvPayload.MaxInvCount}.",
+                Errors.MsgMerkleBlockHashCountOverflow => "Number of hashes in MerkleBlock message is bigger than Int32.",
+                Errors.MsgMerkleBlockFlagLenOverflow => "Length of flag in MerkleBlock message is bigger than Int32.",
+                Errors.MsgSendCmpctInvalidAnn => "Announce bool in SendCmpct messasge should be 0 or 1.",
+                Errors.MsgUserAgentOverflow => $"Size of User-Agent in bytes is bigger than " +
+                                               $"{P2PNetwork.Messages.MessagePayloads.VersionPayload.UserAgentMaxSize}.",
+                Errors.MsgVersionInvalidRelay => "Relay byte in Version message can only be 0 or 1.",
 
                 _ => $"Error message ({err}) is not defined."
             };

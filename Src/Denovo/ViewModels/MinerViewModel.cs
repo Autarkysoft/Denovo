@@ -98,9 +98,9 @@ namespace Denovo.ViewModels
                 BlockHex = "Invalid hex.";
                 return;
             }
-            else if (!prvBlock.Header.TryDeserialize(new FastStreamReader(data), out string error))
+            else if (!prvBlock.Header.TryDeserialize(new FastStreamReader(data), out Errors error))
             {
-                BlockHex = $"Error occured while deserializing header: {error}";
+                BlockHex = $"Error occured while deserializing header: {error.Convert()}";
                 return;
             }
 

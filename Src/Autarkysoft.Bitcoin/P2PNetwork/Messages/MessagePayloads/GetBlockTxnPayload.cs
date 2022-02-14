@@ -68,28 +68,27 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.TryReadByteArray(32, out _blkHash))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt txCount, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt txCount, out error))
             {
-                error = err.Convert();
                 return false;
             }
             if (txCount > int.MaxValue)
             {
-                error = "Tx count is too big.";
+                error = Errors.MsgBlockTxnCountOverflow;
                 return false;
             }
 
@@ -104,7 +103,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 TransactionList[i] = temp;
             }
 
-            error = null;
             return true;
         }
     }

@@ -129,11 +129,11 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         public void TryDeserializeTest()
         {
             BlockHeader hd = new();
-            bool b = hd.TryDeserialize(new FastStreamReader(GetSampleBlockHeaderBytes()), out string error);
+            bool b = hd.TryDeserialize(new FastStreamReader(GetSampleBlockHeaderBytes()), out Errors error);
             BlockHeader expected = GetSampleBlockHeader();
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expected.Version, hd.Version);
             Assert.Equal(expected.PreviousBlockHeaderHash, hd.PreviousBlockHeaderHash);
             Assert.Equal(expected.MerkleRootHash, hd.MerkleRootHash);
@@ -147,22 +147,22 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             yield return new object[]
             {
                 new byte[BlockHeader.Size -1],
-                Err.EndOfStream
+                Errors.EndOfStream
             };
             yield return new object[]
             {
                 Helper.HexToBytes("00e0ff3f97e4833c21eab4dfc5153eadc3b33701c8420ea1310000000000000000000000afbdfb477c57f95a59a9e7f1d004568c505eb7e70fb73fb0d6bb1cca0fb1a7b7c6b1715e01008004696a432a"),
-                Errors.NegativeTarget.Convert()
+                Errors.NegativeTarget
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTests(byte[] data, string expErr)
+        public void TryDeserialize_FailTests(byte[] data, Errors expErr)
         {
             BlockHeader hd = new();
-            bool b = hd.TryDeserialize(new FastStreamReader(data), out string error);
+            bool b = hd.TryDeserialize(new FastStreamReader(data), out Errors error);
 
-            Assert.False(b, error);
+            Assert.False(b);
             Assert.Equal(expErr, error);
         }
     }

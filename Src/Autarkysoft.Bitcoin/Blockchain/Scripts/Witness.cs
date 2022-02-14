@@ -83,24 +83,23 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt count, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
             // A quick check to avoid data loss during cast below
             if (count > int.MaxValue)
             {
-                error = "Item count is too big.";
+                error = Errors.WitnessCountOverflow;
                 return false;
             }
             Items = new byte[(int)count][];
@@ -108,13 +107,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             {
                 if (!stream.TryReadByteArrayCompactInt(out byte[] temp))
                 {
-                    error = Err.EndOfStream;
+                    error = Errors.EndOfStream;
                     return false;
                 }
                 Items[i] = temp;
             }
 
-            error = null;
             return true;
         }
 

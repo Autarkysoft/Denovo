@@ -21,7 +21,7 @@ namespace Tests.Bitcoin.Blockchain
         public virtual bool TryEvaluate(ScriptEvalMode mode, out IOperation[] result, out int opCount, out Errors error) => throw new NotImplementedException();
         public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
+        public virtual bool TryDeserialize(FastStreamReader stream, out Errors error) => throw new NotImplementedException();
         public virtual int CountSigOps() => throw new NotImplementedException();
     }
 
@@ -181,19 +181,19 @@ namespace Tests.Bitcoin.Blockchain
         /// </summary>
         /// <param name="streamIndex">Expected current stream index</param>
         /// <param name="bytesToRead">Number of bytes to read (move stream index forward)</param>
-        /// <param name="errorToReturn">Custom error to return (null returns true, otherwise false)</param>
-        public MockDeserializableScript(int streamIndex, int bytesToRead, string errorToReturn = null)
+        /// <param name="returnError">Set to true to return the test error</param>
+        public MockDeserializableScript(int streamIndex, int bytesToRead, bool returnError = false)
         {
             expectedIndex = streamIndex;
-            retError = errorToReturn;
+            retError = returnError;
             this.bytesToRead = bytesToRead;
         }
 
         private readonly int expectedIndex;
         private readonly int bytesToRead;
-        private readonly string retError;
+        private readonly bool retError;
 
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             int actualIndex = stream.GetCurrentIndex();
             Assert.Equal(expectedIndex, actualIndex);
@@ -203,21 +203,21 @@ namespace Tests.Bitcoin.Blockchain
                 Assert.True(false, "Stream doesn't have enough bytes.");
             }
 
-            error = retError;
-            return string.IsNullOrEmpty(retError);
+            error = retError ? Errors.ForTesting : Errors.None;
+            return !retError;
         }
     }
 
 
     public class MockDeserializablePubScript : MockDeserializableScript, IPubkeyScript
     {
-        public MockDeserializablePubScript(PubkeyScriptType pubT, int streamIndex, int bytesToRead, string errorToReturn = null)
-            : base(streamIndex, bytesToRead, errorToReturn)
+        public MockDeserializablePubScript(PubkeyScriptType pubT, int streamIndex, int bytesToRead, bool returnError = false)
+            : base(streamIndex, bytesToRead, returnError)
         {
             typeToReturn = pubT;
         }
-        public MockDeserializablePubScript(int streamIndex, int bytesToRead, string errorToReturn = null)
-            : this(PubkeyScriptType.Unknown, streamIndex, bytesToRead, errorToReturn)
+        public MockDeserializablePubScript(int streamIndex, int bytesToRead, bool returnError = false)
+            : this(PubkeyScriptType.Unknown, streamIndex, bytesToRead, returnError)
         {
         }
 
@@ -232,8 +232,8 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockDeserializableSigScript : MockDeserializableScript, ISignatureScript
     {
-        public MockDeserializableSigScript(int streamIndex, int bytesToRead, string errorToReturn = null)
-            : base(streamIndex, bytesToRead, errorToReturn)
+        public MockDeserializableSigScript(int streamIndex, int bytesToRead, bool returnError = false)
+            : base(streamIndex, bytesToRead, returnError)
         {
         }
 

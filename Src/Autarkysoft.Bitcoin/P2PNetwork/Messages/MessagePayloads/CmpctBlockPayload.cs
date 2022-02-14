@@ -101,29 +101,28 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (!stream.TryReadByteArray(80, out _header))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
             if (!stream.TryReadUInt64(out _nonce))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt count, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt count, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
             if (count > int.MaxValue)
             {
-                error = "Short ID count is too big.";
+                error = Errors.MsgShortIdCountOverflow;
                 return false;
             }
 
@@ -139,15 +138,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                          | ((ulong)temp[5] << 40);
             }
 
-            if (!CompactInt.TryRead(stream, out count, out err))
+            if (!CompactInt.TryRead(stream, out count, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
             if (count > int.MaxValue)
             {
-                error = "Tx count is too big.";
+                error = Errors.MsgTxCountOverflow;
                 return false;
             }
 
@@ -162,7 +160,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 Txs[i] = temp;
             }
 
-            error = null;
             return true;
         }
     }

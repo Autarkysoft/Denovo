@@ -98,9 +98,9 @@ namespace Denovo.ViewModels
             }
 
             Transaction tx = new();
-            if (!tx.TryDeserialize(new FastStreamReader(ba), out string error))
+            if (!tx.TryDeserialize(new FastStreamReader(ba), out Errors error))
             {
-                Result = $"Could not deserialize transaction hex. Error message: {error}";
+                Result = $"Could not deserialize transaction hex. Error message: {error.Convert()}";
                 return;
             }
 

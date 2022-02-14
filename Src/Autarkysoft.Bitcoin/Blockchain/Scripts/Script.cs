@@ -45,15 +45,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         public virtual void Serialize(FastStream stream) => stream.WriteWithCompactIntLength(Data);
 
         /// <inheritdoc/>
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error)
+        public virtual bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (!stream.TryReadByteArrayCompactInt(out _scrData))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 

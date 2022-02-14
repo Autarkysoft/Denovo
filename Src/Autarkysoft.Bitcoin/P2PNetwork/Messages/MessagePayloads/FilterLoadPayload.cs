@@ -43,8 +43,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
 
-        private const int MaxFilterLength = 36000;
-        private const int MaxHashFuncs = 50;
+        /// <summary>
+        /// Maximum length of a filter
+        /// </summary>
+        public const int MaxFilterLength = 36000;
+        /// <summary>
+        /// Maximum number of hash functions
+        /// </summary>
+        public const int MaxHashFuncs = 50;
 
         private byte[] _filter;
         /// <summary>
@@ -134,60 +140,49 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt filterLen, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt filterLen, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
             // TODO: should we reject len=0?
             if (filterLen > MaxFilterLength)
             {
-                error = "Filter is longer than maximum allowed length.";
+                error = Errors.MsgFilterLenOverflow;
                 return false;
             }
 
-            if (!stream.TryReadByteArray((byte)filterLen, out _filter))
+            if (!stream.TryReadByteArray((int)filterLen, out _filter))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            if (!stream.TryReadUInt32(out _hCount))
+            if (!stream.CheckRemaining(4 + 4 + 1))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            if (!stream.TryReadUInt32(out _tweak))
+            _hCount = stream.ReadUInt32Checked();
+            if (_hCount > MaxHashFuncs)
             {
-                error = Err.EndOfStream;
+                error = Errors.MsgFilterHashOverflow;
                 return false;
             }
 
-            if (!stream.TryReadByte(out byte flg))
-            {
-                error = Err.EndOfStream;
-                return false;
-            }
+            Tweak = stream.ReadUInt32Checked();
+            Flags = (BloomFlags)stream.ReadByteChecked();
 
-            if (!Enum.IsDefined(typeof(BloomFlags), flg))
-            {
-                error = "Flag is not defined.";
-                return false;
-            }
-
-            Flags = (BloomFlags)flg;
-
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

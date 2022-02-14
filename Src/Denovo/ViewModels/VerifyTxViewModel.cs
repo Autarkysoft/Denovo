@@ -30,7 +30,7 @@ namespace Denovo.ViewModels
         private readonly TransactionVerifier verifier = new(consensus);
 
 
-        public string BlockHeightToolTip => "Block height is used to determine which consensus rules are active." +
+        public static string BlockHeightToolTip => "Block height is used to determine which consensus rules are active." +
             $"{Environment.NewLine}It is mandatory for verification of coinbase transactions.";
 
         private int _blkHeight;
@@ -58,11 +58,11 @@ namespace Denovo.ViewModels
                         IsVerifyEnable = false;
                         Result = "Invalid hexadecimal transaction.";
                     }
-                    else if (!tx.TryDeserialize(new FastStreamReader(ba), out string error))
+                    else if (!tx.TryDeserialize(new FastStreamReader(ba), out Errors error))
                     {
                         UtxoList = Array.Empty<UtxoModel>();
                         IsVerifyEnable = false;
-                        Result = $"Error deserializing transaction: {error}";
+                        Result = $"Error deserializing transaction: {error.Convert()}";
                     }
                     else
                     {

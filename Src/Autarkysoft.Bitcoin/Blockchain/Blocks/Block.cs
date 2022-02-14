@@ -336,7 +336,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             _header = new BlockHeader();
             if (!_header.TryDeserialize(stream, out error))
@@ -344,14 +344,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt txCount, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt txCount, out error))
             {
-                error = err.Convert();
                 return false;
             }
             if (txCount > int.MaxValue)
             {
-                error = "Number of transactions is too big.";
+                error = Errors.TxCountOverflow;
                 return false;
             }
 
@@ -366,7 +365,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 TransactionList[i] = temp;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

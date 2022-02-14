@@ -14,8 +14,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void ConstructorTest()
         {
-            var invs = new Inventory[2];
-            var pl = new GetDataPayload(invs);
+            Inventory[] invs = new Inventory[2];
+            GetDataPayload pl = new(invs);
 
             Assert.Equal(PayloadType.GetData, pl.PayloadType);
             Assert.Same(invs, pl.InventoryList);

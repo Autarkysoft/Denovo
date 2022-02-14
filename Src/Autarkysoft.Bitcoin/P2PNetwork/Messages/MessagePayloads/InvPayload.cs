@@ -82,23 +82,23 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             // This works because 50k is smaller than ushort.Max
             if (!stream.TryReadSmallCompactInt(out int count))
             {
-                error = "Count is too big or an invalid CompactInt.";
+                error = Errors.InvalidCompactInt;
                 return false;
             }
             if (count > MaxInvCount)
             {
-                error = "Maximum number of allowed inventory was exceeded.";
+                error = Errors.MsgInvCountOverflow;
                 return false;
             }
 
@@ -113,7 +113,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 _invList[i] = temp;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

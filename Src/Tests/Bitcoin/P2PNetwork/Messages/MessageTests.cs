@@ -17,7 +17,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [Fact]
         public void ConstructorTest()
         {
-            var msg = new Message(NetworkType.MainNet);
+            Message msg = new(NetworkType.MainNet);
             Helper.ComparePrivateField(msg, "networkMagic", Helper.HexToBytes(Constants.MainNetMagic));
 
             msg = new Message(NetworkType.TestNet);
@@ -32,8 +32,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [Fact]
         public void Constructor_WithPayloadTest()
         {
-            var pl = new MockSerializableMessagePayload(PayloadType.Addr, new byte[] { 1, 2, 3 });
-            var msg = new Message(pl, NetworkType.MainNet);
+            MockSerializableMessagePayload pl = new(PayloadType.Addr, new byte[] { 1, 2, 3 });
+            Message msg = new(pl, NetworkType.MainNet);
 
             Assert.Equal(new byte[] { 1, 2, 3 }, msg.PayloadData);
             Assert.Equal(new byte[12] { 0x61, 0x64, 0x64, 0x72, 0, 0, 0, 0, 0, 0, 0, 0 }, msg.PayloadName);
@@ -42,7 +42,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [Fact]
         public void Constructor_WithPayload_ExceptionTest()
         {
-            var pl = new MockSerializableMessagePayload(PayloadType.Addr, new byte[Constants.MaxPayloadSize + 1]);
+            MockSerializableMessagePayload pl = new(PayloadType.Addr, new byte[Constants.MaxPayloadSize + 1]);
 
             Assert.Throws<ArgumentNullException>(() => new Message(null, NetworkType.MainNet));
             Assert.Throws<ArgumentOutOfRangeException>(() => new Message(pl, NetworkType.MainNet));
@@ -54,7 +54,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         public void TryGetPayloadTypeTest(string hex, bool expSuccess, PayloadType expPlt)
         {
             Message msg = new(NetworkType.MainNet);
-            Assert.True(msg.TryDeserialize(new FastStreamReader(Helper.HexToBytes(hex)), out string error), error);
+            Assert.True(msg.TryDeserialize(new FastStreamReader(Helper.HexToBytes(hex)), out Errors error), error.Convert());
             Assert.Equal(expSuccess, msg.TryGetPayloadType(out PayloadType actualPlt));
             Assert.Equal(expPlt, actualPlt);
         }
@@ -62,9 +62,9 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [Fact]
         public void SerializeTest()
         {
-            var pl = new MockSerializableMessagePayload(PayloadType.Addr, new byte[] { 1, 2, 3 });
-            var msg = new Message(pl, NetworkType.MainNet);
-            var stream = new FastStream(Constants.MessageHeaderSize + 3);
+            MockSerializableMessagePayload pl = new(PayloadType.Addr, new byte[] { 1, 2, 3 });
+            Message msg = new(pl, NetworkType.MainNet);
+            FastStream stream = new(Constants.MessageHeaderSize + 3);
             msg.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -118,7 +118,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [MemberData(nameof(GetReadCases))]
         public void ReadTest(byte[] data, Message.ReadResult expected)
         {
-            var msg = new Message(NetworkType.MainNet);
+            Message msg = new(NetworkType.MainNet);
             Message.ReadResult actual = msg.Read(new FastStreamReader(data));
             Assert.Equal(expected, actual);
         }
@@ -127,19 +127,19 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [MemberData(nameof(GetReadCases))]
         public void TryDeserializeTest(byte[] data, Message.ReadResult readResult)
         {
-            var msg = new Message(NetworkType.MainNet);
-            bool success = msg.TryDeserialize(new FastStreamReader(data), out string error);
+            Message msg = new(NetworkType.MainNet);
+            bool success = msg.TryDeserialize(new FastStreamReader(data), out Errors error);
 
-            string expErr = readResult switch
+            Errors expErr = readResult switch
             {
-                Message.ReadResult.Success => null,
-                Message.ReadResult.NotEnoughBytes => Err.EndOfStream,
-                Message.ReadResult.PayloadOverflow => "Payload size is bigger than allowed size (4000000).",
-                Message.ReadResult.InvalidNetwork => "Invalid message magic.",
-                Message.ReadResult.InvalidChecksum => "Invalid checksum",
+                Message.ReadResult.Success => Errors.None,
+                Message.ReadResult.NotEnoughBytes => Errors.EndOfStream,
+                Message.ReadResult.PayloadOverflow => Errors.MessagePayloadOverflow,
+                Message.ReadResult.InvalidNetwork => Errors.InvalidMessageNetwork,
+                Message.ReadResult.InvalidChecksum => Errors.InvalidMessageChecksum,
                 _ => throw new ArgumentException("Undefined message result.")
             };
-            bool expSuccess = expErr is null;
+            bool expSuccess = readResult == Message.ReadResult.Success;
 
             Assert.Equal(expSuccess, success);
             Assert.Equal(expErr, error);

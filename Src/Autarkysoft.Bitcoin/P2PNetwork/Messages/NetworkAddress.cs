@@ -76,17 +76,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
 
         /// <inheritdoc/>
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error)
+        public virtual bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.CheckRemaining(Size))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -108,7 +108,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
             NodePort = stream.ReadUInt16BigEndianChecked();
 
-            error = null;
+            error = Errors.None;
             return true;
         }
 

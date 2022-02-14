@@ -82,17 +82,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.CheckRemaining(1 + 8))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -107,14 +107,14 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                     Announce = true;
                     break;
                 default:
-                    error = "First byte representing announce bool should be 0 or 1.";
+                    error = Errors.MsgSendCmpctInvalidAnn;
                     return false;
             }
 
             // This has to set the field instead of prop. for forward compatibility, also it can throw an exception
             _cVer = stream.ReadUInt64Checked();
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

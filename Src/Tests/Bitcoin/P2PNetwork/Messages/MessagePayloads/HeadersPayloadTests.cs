@@ -19,8 +19,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void ConstructorTest()
         {
-            var hds = new BlockHeader[1];
-            var pl = new HeadersPayload(hds);
+            BlockHeader[] hds = new BlockHeader[1];
+            HeadersPayload pl = new(hds);
 
             Assert.Same(hds, pl.Headers);
             Assert.Equal(PayloadType.Headers, pl.PayloadType);
@@ -37,8 +37,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void SerializeTest()
         {
-            var pl = new HeadersPayload(new BlockHeader[] { BlockHeaderTests.GetSampleBlockHeader() });
-            var stream = new FastStream(BlockHeader.Size + 2);
+            HeadersPayload pl = new(new BlockHeader[] { BlockHeaderTests.GetSampleBlockHeader() });
+            FastStream stream = new(BlockHeader.Size + 2);
             pl.Serialize(stream);
 
             byte[] hd = BlockHeaderTests.GetSampleBlockHeaderBytes();
@@ -56,9 +56,9 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             int count = 254;
             int totalSize = 3 + (BlockHeader.Size + 1) * count;
 
-            var hds = Enumerable.Repeat(BlockHeaderTests.GetSampleBlockHeader(), count);
-            var pl = new HeadersPayload(hds.ToArray());
-            var stream = new FastStream(totalSize);
+            IEnumerable<BlockHeader> hds = Enumerable.Repeat(BlockHeaderTests.GetSampleBlockHeader(), count);
+            HeadersPayload pl = new(hds.ToArray());
+            FastStream stream = new(totalSize);
             pl.Serialize(stream);
 
             byte[] hd = BlockHeaderTests.GetSampleBlockHeaderBytes();
@@ -88,12 +88,12 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             Buffer.BlockCopy(hd, 0, data, BlockHeader.Size + 2, BlockHeader.Size);
             data[(BlockHeader.Size * 2) + 2] = 0;
 
-            var pl = new HeadersPayload();
-            var stream = new FastStreamReader(data);
-            bool b = pl.TryDeserialize(stream, out string error);
+            HeadersPayload pl = new();
+            FastStreamReader stream = new(data);
+            bool b = pl.TryDeserialize(stream, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(2, pl.Headers.Length);
             Assert.Equal(hd, pl.Headers[0].Serialize());
             Assert.Equal(hd, pl.Headers[1].Serialize());
@@ -101,21 +101,21 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, "Stream can not be null." };
-            yield return new object[] { new FastStreamReader(new byte[1] { 1 }), Err.EndOfStream };
+            yield return new object[] { null, Errors.NullStream };
+            yield return new object[] { new FastStreamReader(new byte[1] { 1 }), Errors.EndOfStream };
             yield return new object[]
             {
-                new FastStreamReader(new byte[] { 0xfe, 0x00, 0x00, 0x01, 0x00 }), "Invalid CompactInt format."
+                new FastStreamReader(new byte[] { 0xfe, 0x00, 0x00, 0x01, 0x00 }), Errors.InvalidCompactInt
             };
-            yield return new object[] { new FastStreamReader(new byte[] { 0xfd, 0xd1, 0x07 }), "Header count is too big." };
+            yield return new object[] { new FastStreamReader(new byte[] { 0xfd, 0xd1, 0x07 }), Errors.MsgHeaderCountOverflow };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTest(FastStreamReader stream, string expErr)
+        public void TryDeserialize_FailTest(FastStreamReader stream, Errors expErr)
         {
-            var pl = new HeadersPayload();
+            HeadersPayload pl = new();
 
-            bool b = pl.TryDeserialize(stream, out string error);
+            bool b = pl.TryDeserialize(stream, out Errors error);
             Assert.False(b);
             Assert.Equal(expErr, error);
         }

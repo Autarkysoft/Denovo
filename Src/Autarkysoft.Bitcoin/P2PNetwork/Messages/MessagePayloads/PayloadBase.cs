@@ -49,6 +49,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public abstract void Serialize(FastStream stream);
 
         /// <inheritdoc/>
-        public abstract bool TryDeserialize(FastStreamReader stream, out string error);
+        public abstract bool TryDeserialize(FastStreamReader stream, out Errors error);
     }
 }

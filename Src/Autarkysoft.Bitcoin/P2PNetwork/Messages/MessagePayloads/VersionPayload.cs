@@ -146,8 +146,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public bool Relay { get; set; }
 
 
-        // https://github.com/bitcoin/bitcoin/blob/b3091b2be7d1e5ab86d7380a884d4f23a5e9c9b7/src/net.h#L58
-        private const int UserAgentMaxSize = 256;
+        /// <summary>
+        /// Maximum accepted user agent size in bytes.
+        /// </summary>
+        /// <remarks>
+        /// https://github.com/bitcoin/bitcoin/blob/b3091b2be7d1e5ab86d7380a884d4f23a5e9c9b7/src/net.h#L58
+        /// </remarks>
+        public const int UserAgentMaxSize = 256;
 
 
         /// <inheritdoc/>
@@ -182,17 +187,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.CheckRemaining(4 + 8 + 8))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -219,31 +224,30 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
             if (!stream.TryReadUInt64(out _nonce))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
-            if (!CompactInt.TryRead(stream, out CompactInt UASize, out Errors err))
+            if (!CompactInt.TryRead(stream, out CompactInt UASize, out error))
             {
-                error = err.Convert();
                 return false;
             }
             if (UASize > UserAgentMaxSize)
             {
-                error = "User agent size is too big.";
+                error = Errors.MsgUserAgentOverflow;
                 return false;
             }
 
             if (!stream.TryReadByteArray((int)UASize, out byte[] ua))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
             UserAgent = Encoding.UTF8.GetString(ua);
 
             if (!stream.CheckRemaining(4 + 1))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -259,11 +263,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
             else
             {
-                error = "Relay must be 0 or 1.";
+                error = Errors.MsgVersionInvalidRelay;
                 return false;
             }
 
-            error = null;
             return true;
         }
     }

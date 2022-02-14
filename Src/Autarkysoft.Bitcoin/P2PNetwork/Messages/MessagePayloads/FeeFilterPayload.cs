@@ -71,28 +71,28 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.TryReadUInt64(out _feeRate))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
             // We reject stupidly high fee rates (no need for *1000 here).
             if (_feeRate >= Constants.TotalSupply)
             {
-                error = "Fee rate filter is huge.";
+                error = Errors.MsgFeeRateFilterOverflow;
                 return false;
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

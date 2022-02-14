@@ -32,7 +32,7 @@ namespace Tests.Bitcoin.Blockchain
         public virtual string GetBlockID(bool recompute) => throw new NotImplementedException();
         public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
+        public virtual bool TryDeserialize(FastStreamReader stream, out Errors error) => throw new NotImplementedException();
     }
 
 
@@ -99,19 +99,19 @@ namespace Tests.Bitcoin.Blockchain
         /// </summary>
         /// <param name="streamIndex">Expected current stream index</param>
         /// <param name="bytesToRead">Number of bytes to read (move stream index forward)</param>
-        /// <param name="errorToReturn">Custom error to return (null returns true, otherwise false)</param>
-        public MockDeserializableBlock(int streamIndex, int bytesToRead, string errorToReturn = null)
+        /// <param name="returnError">Set to false to return the test error value</param>
+        public MockDeserializableBlock(int streamIndex, int bytesToRead, bool returnError = false)
         {
             expectedIndex = streamIndex;
-            retError = errorToReturn;
+            retError = returnError;
             this.bytesToRead = bytesToRead;
         }
 
         private readonly int expectedIndex;
         private readonly int bytesToRead;
-        private readonly string retError;
+        private readonly bool retError;
 
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             int actualIndex = stream.GetCurrentIndex();
             Assert.Equal(expectedIndex, actualIndex);
@@ -121,8 +121,8 @@ namespace Tests.Bitcoin.Blockchain
                 Assert.True(false, "Stream doesn't have enough bytes.");
             }
 
-            error = retError;
-            return string.IsNullOrEmpty(retError);
+            error = retError ? Errors.ForTesting : Errors.None;
+            return !retError;
         }
     }
 }

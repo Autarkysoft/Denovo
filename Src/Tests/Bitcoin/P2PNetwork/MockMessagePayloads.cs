@@ -15,7 +15,7 @@ namespace Tests.Bitcoin.P2PNetwork
         public virtual byte[] GetChecksum() => throw new NotImplementedException();
         public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
-        public virtual bool TryDeserialize(FastStreamReader stream, out string error) => throw new NotImplementedException();
+        public virtual bool TryDeserialize(FastStreamReader stream, out Errors error) => throw new NotImplementedException();
     }
 
 

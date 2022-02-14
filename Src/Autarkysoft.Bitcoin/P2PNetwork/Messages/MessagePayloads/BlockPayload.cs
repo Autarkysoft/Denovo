@@ -60,7 +60,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         public override void Serialize(FastStream stream) => BlockData.Serialize(stream);
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
                               => BlockData.TryDeserialize(stream, out error);
     }
 }

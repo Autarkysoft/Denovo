@@ -26,8 +26,8 @@ namespace Autarkysoft.Bitcoin
         /// Deserializes the given byte array from the given stream. Return value indicates success.
         /// </summary>
         /// <param name="stream">Stream to use</param>
-        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
+        /// <param name="error">Error message</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
-        bool TryDeserialize(FastStreamReader stream, out string error);
+        bool TryDeserialize(FastStreamReader stream, out Errors error);
     }
 }

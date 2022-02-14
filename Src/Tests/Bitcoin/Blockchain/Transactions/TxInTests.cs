@@ -16,7 +16,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void ConstructorTest()
         {
-            var tx = new TxIn(new byte[32], 1, null, 0);
+            TxIn tx = new(new byte[32], 1, null, 0);
 
             Assert.Equal(new byte[32], tx.TxHash);
             Assert.Equal(1U, tx.Index);
@@ -34,8 +34,8 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void AddSerializedSize()
         {
-            var counter = new SizeCounter();
-            var tx = new TxIn(new byte[32], 0, new MockSerializableSigScript(new byte[5], 5), 0);
+            SizeCounter counter = new();
+            TxIn tx = new(new byte[32], 0, new MockSerializableSigScript(new byte[5], 5), 0);
             tx.AddSerializedSize(counter);
             Assert.Equal(32 + 4 + 4 + 1 + 5, counter.Size);
         }
@@ -43,9 +43,9 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void SerializeTest()
         {
-            var scr = new MockSerializableSigScript(new byte[1] { 255 }, 2);
-            var tx = new TxIn(Helper.GetBytes(32), 1, scr, 953132143);
-            var stream = new FastStream(32 + 4 + 2 + 4);
+            MockSerializableSigScript scr = new(new byte[1] { 255 }, 2);
+            TxIn tx = new(Helper.GetBytes(32), 1, scr, 953132143);
+            FastStream stream = new(32 + 4 + 2 + 4);
             tx.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -104,13 +104,13 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [MemberData(nameof(GetSignSerCases))]
         public void SerializeForSigningTest(byte[] hash, uint index, uint seq, byte[] spendScr, bool changeSeq, byte[] expected)
         {
-            var tx = new TxIn()
+            TxIn tx = new()
             {
                 TxHash = hash,
                 Index = index,
                 Sequence = seq
             };
-            var stream = new FastStream(expected.Length);
+            FastStream stream = new(expected.Length);
             tx.SerializeForSigning(stream, spendScr, changeSeq);
             byte[] actual = stream.ToByteArray();
 
@@ -134,15 +134,15 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [MemberData(nameof(GetDeserCases))]
         public void TryDeserializeTest(byte[] data, MockDeserializableSigScript scr, byte[] expHash, uint expIndex, uint expSeq)
         {
-            var tx = new TxIn()
+            TxIn tx = new()
             {
                 SigScript = scr
             };
-            var stream = new FastStreamReader(data);
-            bool b = tx.TryDeserialize(stream, out string error);
+            FastStreamReader stream = new(data);
+            bool b = tx.TryDeserialize(stream, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expHash, tx.TxHash);
             Assert.Equal(expIndex, tx.Index);
             Assert.Equal(expSeq, tx.Sequence);
@@ -151,31 +151,31 @@ namespace Tests.Bitcoin.Blockchain.Transactions
 
         public static IEnumerable<object[]> GetDeserFailCases()
         {
-            yield return new object[] { null, null, "Stream can not be null." };
-            yield return new object[] { new FastStreamReader(new byte[31]), null, Err.EndOfStream };
-            yield return new object[] { new FastStreamReader(new byte[35]), null, Err.EndOfStream };
+            yield return new object[] { null, null, Errors.NullStream };
+            yield return new object[] { new FastStreamReader(new byte[31]), null, Errors.EndOfStream };
+            yield return new object[] { new FastStreamReader(new byte[35]), null, Errors.EndOfStream };
             yield return new object[]
             {
                 new FastStreamReader(new byte[37]),
-                new MockDeserializableSigScript(36, 0, "Foo"),
-                "Foo"
+                new MockDeserializableSigScript(36, 0, true),
+                Errors.ForTesting
             };
             yield return new object[]
             {
                 new FastStreamReader(new byte[40]),
                 new MockDeserializableSigScript(36, 1),
-                Err.EndOfStream
+                Errors.EndOfStream
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTest(FastStreamReader stream, MockDeserializableSigScript scr, string expErr)
+        public void TryDeserialize_FailTest(FastStreamReader stream, MockDeserializableSigScript scr, Errors expErr)
         {
-            var tx = new TxIn()
+            TxIn tx = new()
             {
                 SigScript = scr
             };
-            bool b = tx.TryDeserialize(stream, out string error);
+            bool b = tx.TryDeserialize(stream, out Errors error);
 
             Assert.False(b);
             Assert.Equal(expErr, error);

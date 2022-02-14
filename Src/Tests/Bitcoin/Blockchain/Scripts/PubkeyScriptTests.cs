@@ -112,12 +112,12 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryDeserializeTest(byte[] data, byte[] expected)
         {
             var scr = new PubkeyScript();
-            bool b = scr.TryDeserialize(new FastStreamReader(data), out string error);
+            bool b = scr.TryDeserialize(new FastStreamReader(data), out Errors error);
             var write = new FastStream(data.Length);
             scr.Serialize(write);
 
-            Assert.True(b);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expected, scr.Data);
         }
 
@@ -128,10 +128,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             byte[] expected = Helper.HexToBytes("4d1127").ConcatFast(Helper.GetBytes(10001)).AppendToEnd((byte)OP.DROP);
             byte[] veryLongData = Helper.HexToBytes("fd1527").ConcatFast(expected);
             var scr = new PubkeyScript();
-            bool b = scr.TryDeserialize(new FastStreamReader(veryLongData), out string error);
+            bool b = scr.TryDeserialize(new FastStreamReader(veryLongData), out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expected, scr.Data);
         }
 

@@ -206,17 +206,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
+            // TODO: try merging ReadResult into Errors enum
             ReadResult res = Read(stream);
             error = res switch
             {
-                ReadResult.Success => null,
-                ReadResult.NotEnoughBytes => Err.EndOfStream,
-                ReadResult.PayloadOverflow => $"Payload size is bigger than allowed size ({Constants.MaxPayloadSize}).",
-                ReadResult.InvalidNetwork => "Invalid message magic.",
-                ReadResult.InvalidChecksum => "Invalid checksum",
-                _ => "Underfined error."
+                ReadResult.Success => Errors.None,
+                ReadResult.NotEnoughBytes => Errors.EndOfStream,
+                ReadResult.PayloadOverflow => Errors.MessagePayloadOverflow,
+                ReadResult.InvalidNetwork => Errors.InvalidMessageNetwork,
+                ReadResult.InvalidChecksum => Errors.InvalidMessageChecksum,
+                _ => Errors.ForTesting
             };
 
             return res == ReadResult.Success;

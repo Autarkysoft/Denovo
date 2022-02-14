@@ -146,38 +146,39 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             if (!stream.TryReadInt32(out _ver))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
+            // TODO: should we be flexible here and accept negative version and reject it in ReplyManager?
             if (_ver < 0)
             {
-                error = "Invalid version";
+                error = Errors.InvalidBlocksPayloadVersion;
                 return false;
             }
 
             if (!stream.TryReadSmallCompactInt(out int count))
             {
-                error = "Count is too big or an invalid CompactInt.";
+                error = Errors.InvalidCompactInt;
                 return false;
             }
             if (count > MaximumHashes)
             {
-                error = $"Only {MaximumHashes} hashes are accepted.";
+                error = Errors.MsgBlocksHashCountOverflow;
                 return false;
             }
             if (!stream.CheckRemaining((count * 32) + 32))
             {
-                error = Err.EndOfStream;
+                error = Errors.EndOfStream;
                 return false;
             }
 
@@ -189,7 +190,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
             _stopHash = stream.ReadByteArray32Checked();
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

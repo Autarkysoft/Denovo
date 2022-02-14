@@ -55,10 +55,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryDeserializeTest(byte[] ba, byte[] expected)
         {
             var stream = new FastStreamReader(ba);
-            bool b = TryDeserialize(stream, out string error);
+            bool b = TryDeserialize(stream, out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expected, Data);
         }
 
@@ -66,10 +66,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void TryDeserialize_FailTest()
         {
             var stream = new FastStreamReader(new byte[] { 1 });
-            bool b = TryDeserialize(stream, out string error);
+            bool b = TryDeserialize(stream, out Errors error);
 
             Assert.False(b);
-            Assert.Equal(Err.EndOfStream, error);
+            Assert.Equal(Errors.EndOfStream, error);
         }
 
 

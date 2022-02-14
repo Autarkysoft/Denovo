@@ -88,24 +88,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         }
 
         /// <inheritdoc/>
-        public override bool TryDeserialize(FastStreamReader stream, out string error)
+        public override bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
             if (stream is null)
             {
-                error = "Stream can not be null.";
+                error = Errors.NullStream;
                 return false;
             }
 
             // The following method is correct since max is 2000
             if (!stream.TryReadSmallCompactInt(out int count))
             {
-                error = "Invalid CompactInt format.";
+                error = Errors.InvalidCompactInt;
                 return false;
             }
 
             if (count > MaxCount)
             {
-                error = "Header count is too big.";
+                error = Errors.MsgHeaderCountOverflow;
                 return false;
             }
 
@@ -121,14 +121,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 
                 // Headers messages contain a tx count that is not used anywhere specially since it is always set to 0!
                 // https://github.com/bitcoin/bitcoin/blob/3f512f3d563954547061ee743648b57a900cbe04/src/net_processing.cpp#L3455
-                if (!CompactInt.TryRead(stream, out _, out Errors err))
+                if (!CompactInt.TryRead(stream, out _, out error))
                 {
-                    error = err.Convert();
                     return false;
                 }
             }
 
-            error = null;
+            error = Errors.None;
             return true;
         }
     }

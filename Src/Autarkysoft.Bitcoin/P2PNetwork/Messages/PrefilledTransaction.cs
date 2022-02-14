@@ -28,11 +28,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         }
 
         /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out string error)
+        public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
-            if (!CompactInt.TryRead(stream, out _index, out Errors err))
+            if (!CompactInt.TryRead(stream, out _index, out error))
             {
-                error = err.Convert();
                 return false;
             }
 
@@ -41,7 +40,6 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 return false;
             }
 
-            error = null;
             return true;
         }
     }

@@ -39,9 +39,9 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             // MainNet block #557991 containing 2 txs with witness
             var blk = new Block();
             var stream = new FastStreamReader(Helper.HexToBytes("000080206689707b09f987d19036a404af1cba3e4abe93fc216931000000000000000000f789b5842f2ff0d1e3ebb4e8321fb53f14b9ee22d2e0def211e3f681e1322f7ca8d5375ca51832177894b5eb02010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff5503a783081c4d696e656420627920416e74506f6f6c31323052000102205c37d5a8fabe6d6db555462795a64abe912fd1c529d8a154aff792f7ec154c6a959c449047d1898404000000000000006019000045dc0000ffffffff021889814a000000001976a914edf10a7fac6b32e24daa5305c723f3de58db1bc888ac0000000000000000266a24aa21a9ed02a7c90fe9795d0af5206b29acea5111d03eb8219fff0a67577a5c948244186901200000000000000000000000000000000000000000000000000000000000000000000000000100000000010145140fe1397a86a940a55e5207d719593143bc23e5fa12ab84c5e61a1b9d852012000000171600140cdda6079ebeaf15d6c6ae29a04b71aeb9842c8affffffff0228e525000000000016001481cf43e0c29625336d275db4e586701c052bafcfb88c2900000000001976a914206e6b76851048928bf7d84ace3b94239ccdf53888ac02473044022056fa2da21a28b2ab9d83dc0cdb18f2d207a7a12af24c1e958056ba28dd29247d02203be11e97bbc3ff43d8907091cb3c5e665ae08947723d11e0d53392e7b0f03634012103cd354d51e44ad77599ba9fce6727c08e5925b9dcaedcea8e5be0bca25e65af9200000000"));
-            bool b = blk.TryDeserialize(stream, out string error);
+            bool b = blk.TryDeserialize(stream, out Errors error);
 
-            Assert.True(b, error);
+            Assert.True(b, error.Convert());
             Assert.Equal(582, blk.TotalSize);
             Assert.Equal(437, blk.StrippedSize);
             Assert.Equal(1893, blk.Weight);
@@ -457,10 +457,10 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         public void TryDeserializeTest(byte[] data, string[] expTxIds, int expBlockSize)
         {
             var blk = new Block();
-            bool b = blk.TryDeserialize(new FastStreamReader(data), out string error);
+            bool b = blk.TryDeserialize(new FastStreamReader(data), out Errors error);
 
-            Assert.True(b, error);
-            Assert.Null(error);
+            Assert.True(b, error.Convert());
+            Assert.Equal(Errors.None, error);
             Assert.Equal(expBlockSize, blk.TotalSize);
             // A quick check to make sure transaction is correct
             Assert.Equal(expTxIds.Length, blk.TransactionList.Length);
@@ -477,27 +477,27 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             yield return new object[]
             {
                 new byte[BlockHeader.Size -1],
-                Err.EndOfStream
+                Errors.EndOfStream
             };
             yield return new object[]
             {
                 Helper.ConcatBytes(BlockHeader.Size + 5, hdba, new byte[] { 0xfe, 0x00, 0x00, 0x00, 0x80 }),
-                "Number of transactions is too big."
+                Errors.TxCountOverflow
             };
             yield return new object[]
             {
                 Helper.ConcatBytes(BlockHeader.Size + 1, hdba, new byte[] { 1 }),
-                Err.EndOfStream
+                Errors.EndOfStream
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserFailCases))]
-        public void TryDeserialize_FailTests(byte[] data, string expErr)
+        public void TryDeserialize_FailTests(byte[] data, Errors expErr)
         {
             var blk = new Block();
-            bool b = blk.TryDeserialize(new FastStreamReader(data), out string error);
+            bool b = blk.TryDeserialize(new FastStreamReader(data), out Errors error);
 
-            Assert.False(b, error);
+            Assert.False(b);
             Assert.Equal(expErr, error);
         }
     }
