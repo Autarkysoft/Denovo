@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.Collections.Generic;
 using Tests.Bitcoin.ValueTypesTests;
@@ -15,10 +16,46 @@ namespace Tests.Bitcoin.Blockchain.Blocks
     public class BlockHeaderTests
     {
         [Fact]
+        public void ConstructorTest()
+        {
+            Span<byte> ba64 = Helper.GetBytes(64);
+            byte[] expPrvHash = ba64.Slice(0, 32).ToArray();
+            byte[] expMerkle = ba64.Slice(32, 32).ToArray();
+
+            BlockHeader header = new(5, expPrvHash, expMerkle, 123, TargetTests.Example, 456);
+
+            Assert.Equal(5, header.Version);
+            Assert.Equal(expPrvHash, header.PreviousBlockHeaderHash);
+            Assert.Equal(expMerkle, header.MerkleRootHash);
+            Assert.Equal(123U, header.BlockTime);
+            Assert.Equal(TargetTests.Example, (uint)header.NBits);
+            Assert.Equal(456U, header.Nonce);
+        }
+
+        [Fact]
+        public void Constructor_FromConsensusTest()
+        {
+            MockConsensus consensus = new() { _minVer = 7 };
+            byte[] expPrvHash = GetSampleBlockHash();
+            byte[] expMerkle = new byte[32];
+
+            BlockHeader header = new(consensus, GetSampleBlockHeader(), TargetTests.Example);
+
+            Assert.Equal(7, header.Version);
+            Assert.Equal(expPrvHash, header.PreviousBlockHeaderHash);
+            Assert.Equal(expMerkle, header.MerkleRootHash);
+            Assert.True(Math.Abs(header.BlockTime - (uint)UnixTimeStamp.GetEpochUtcNow()) < 5);
+            Assert.Equal(TargetTests.Example, (uint)header.NBits);
+            Assert.Equal(0U, header.Nonce);
+        }
+
+        [Fact]
         public void Constructor_NullExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => new BlockHeader(1, null, new byte[32], 123, TargetTests.Example, 0));
             Assert.Throws<ArgumentNullException>(() => new BlockHeader(1, new byte[32], null, 123, TargetTests.Example, 0));
+            Assert.Throws<ArgumentNullException>(() => new BlockHeader(null, GetSampleBlockHeader(), TargetTests.Example));
+            Assert.Throws<ArgumentNullException>(() => new BlockHeader(new MockConsensus(), null, TargetTests.Example));
         }
 
         public static IEnumerable<object[]> GetCtorOutOfRangeCases()

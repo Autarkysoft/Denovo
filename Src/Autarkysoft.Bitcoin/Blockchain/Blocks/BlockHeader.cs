@@ -23,6 +23,29 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="BlockHeader"/> using given parameters and sets the 
+        /// <see cref="BlockTime"/> to current UTC timestamp.
+        /// <para/><see cref="MerkleRootHash"/> has to be set using the property setter after <see cref="Block"/>
+        /// was filled with transactions.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <param name="consensus">Consensus rules</param>
+        /// <param name="tip">The last valid block in the chain</param>
+        /// <param name="nbits">Block target</param>
+        public BlockHeader(IConsensus consensus, BlockHeader tip, Target nbits)
+        {
+            if (consensus is null)
+                throw new ArgumentNullException(nameof(consensus));
+            if (tip is null)
+                throw new ArgumentNullException(nameof(tip));
+
+            Version = consensus.MinBlockVersion;
+            PreviousBlockHeaderHash = tip.GetHash();
+            BlockTime = (uint)UnixTimeStamp.GetEpochUtcNow();
+            NBits = nbits;
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="BlockHeader"/> using given parameters.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
