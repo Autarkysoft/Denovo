@@ -16,7 +16,7 @@ namespace Autarkysoft.Bitcoin
     /// the <see cref="CheckRemaining(int)"/> method can be called by the user to check remaining bytes, then instead of calling
     /// TryRead* methods (that perform the same check for each individual object) the Read* method should be called that skips
     /// the size check.
-    /// See <see cref="Blockchain.Blocks.BlockHeader.TryDeserialize(FastStreamReader, out string)"/> for example of how
+    /// See <see cref="Blockchain.Blocks.BlockHeader.TryDeserialize(FastStreamReader, out Errors)"/> for example of how
     /// this should be used.
     /// </summary>
     public class FastStreamReader
@@ -274,7 +274,7 @@ namespace Autarkysoft.Bitcoin
         /// <para/>Note: This only works for integers smaller than <see cref="ushort.MaxValue"/> (65535) which is almost all
         /// places that <see cref="CompactInt"/> is used. This method is slightly faster since it avoids multiple casts and
         /// integer arithmetic.
-        /// <para/>For general purpose use <see cref="CompactInt.TryRead(FastStreamReader, out CompactInt, out string)"/>
+        /// <para/>For general purpose use <see cref="CompactInt.TryRead(FastStreamReader, out CompactInt, out Errors)"/>
         /// </summary>
         /// <param name="result">The 32-bit signed integer (length or count)</param>
         /// <returns>True if there were enough bytes remaining to read and the format was correct; otherwise false.</returns>

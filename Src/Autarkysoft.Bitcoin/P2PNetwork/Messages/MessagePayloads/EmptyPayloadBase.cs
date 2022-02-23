@@ -9,7 +9,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
     /// <summary>
     /// Base (abstract) class for empty payloads. Overrides the <see cref="Serialize()"/>, <see cref="Serialize(FastStream)"/>
-    /// and <see cref="TryDeserialize(FastStreamReader, out string)"/> methods 
+    /// and <see cref="TryDeserialize(FastStreamReader, out Errors)"/> methods 
     /// and inherits from <see cref="PayloadBase"/>.
     /// </summary>
     public abstract class EmptyPayloadBase : PayloadBase
