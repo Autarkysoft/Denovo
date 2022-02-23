@@ -11,7 +11,8 @@ using System.Runtime.CompilerServices;
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// Base (abstract) class for all scripts. Inherits from <see cref="IScript"/>.
+    /// Base (abstract) class for all scripts. 
+    /// <para/>Implements <see cref="IScript"/>.
     /// </summary>
     public abstract class Script : IScript
     {

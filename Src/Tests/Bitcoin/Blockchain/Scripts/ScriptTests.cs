@@ -21,7 +21,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             // Making sure data is never null
             Data = null;
-            Assert.NotNull(Data);
+            Assert.Equal(Array.Empty<byte>(), Data);
         }
 
         [Fact]
@@ -39,11 +39,24 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
 
 
+        [Theory]
+        [InlineData(0, 1)]
+        [InlineData(1, 2)]
+        [InlineData(252, 253)]
+        [InlineData(253, 256)]
+        public void AddSerializedSizeTest(int dataLen, int expectedSize)
+        {
+            Data = new byte[dataLen];
+            SizeCounter counter = new();
+            AddSerializedSize(counter);
+            Assert.Equal(expectedSize, counter.Size);
+        }
+
         [Fact]
         public void SerializeTest()
         {
             Data = new byte[] { 1, 2, 3 };
-            var stream = new FastStream(3);
+            FastStream stream = new(4);
             Serialize(stream);
             Assert.Equal(new byte[] { 3, 1, 2, 3 }, stream.ToByteArray());
         }
@@ -54,7 +67,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [InlineData(new byte[] { 3, 10, 20, 30 }, new byte[] { 10, 20, 30 })]
         public void TryDeserializeTest(byte[] ba, byte[] expected)
         {
-            var stream = new FastStreamReader(ba);
+            FastStreamReader stream = new(ba);
             bool b = TryDeserialize(stream, out Errors error);
 
             Assert.True(b, error.Convert());
@@ -65,7 +78,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void TryDeserialize_FailTest()
         {
-            var stream = new FastStreamReader(new byte[] { 1 });
+            FastStreamReader stream = new(new byte[] { 1 });
             bool b = TryDeserialize(stream, out Errors error);
 
             Assert.False(b);
@@ -257,8 +270,35 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
             yield return new object[] { Array.Empty<byte>(), true, false };
             yield return new object[] { new byte[1] { 0 }, true, false };
+            yield return new object[] { new byte[2] { 0, ops1 }, true, true };
             yield return new object[] { new byte[1] { 1 }, false, false };
             yield return new object[] { new byte[2] { 1, 1 }, true, false };
+            yield return new object[] { new byte[4] { 2, 1, 2, ops1 }, true, true };
+            yield return new object[] { new byte[4] { 2, 1, ops1, 0 }, true, false }; // OP_SUCCESS is inside PushData
+            yield return new object[] { new byte[1] { (byte)OP.PushData1 }, false, false };
+            yield return new object[] { new byte[2] { (byte)OP.PushData1, 1 }, false, false };
+            yield return new object[] { new byte[2] { (byte)OP.PushData1, 0 }, true, false }; // PushData is not strict about len
+            yield return new object[] { new byte[3] { (byte)OP.PushData1, 0, ops1 }, true, true };
+            yield return new object[] { new byte[3] { (byte)OP.PushData1, 1, 1 }, true, false };
+            yield return new object[] { new byte[4] { (byte)OP.PushData1, 1, 1, ops1 }, true, true };
+            yield return new object[] { new byte[4] { (byte)OP.PushData1, 2, 1, ops1 }, true, false };
+            yield return new object[] { new byte[2] { (byte)OP.PushData2, 1 }, false, false };
+            yield return new object[] { new byte[2] { (byte)OP.PushData2, 1 }, false, false };
+            yield return new object[] { new byte[3] { (byte)OP.PushData2, 1, 0 }, false, false };
+            yield return new object[] { new byte[3] { (byte)OP.PushData2, 0, 0 }, true, false };
+            yield return new object[] { new byte[4] { (byte)OP.PushData2, 0, 0, ops1 }, true, true };
+            yield return new object[] { new byte[4] { (byte)OP.PushData2, 1, 0, 1 }, true, false };
+            yield return new object[] { new byte[4] { (byte)OP.PushData2, 1, 0, ops1 }, true, false };
+            yield return new object[] { new byte[5] { (byte)OP.PushData2, 1, 0, 1, ops1 }, true, true };
+            yield return new object[] { new byte[1] { (byte)OP.PushData4 }, false, false };
+            yield return new object[] { new byte[2] { (byte)OP.PushData4, 1 }, false, false };
+            yield return new object[] { new byte[5] { (byte)OP.PushData4, 1, 0, 0, 0 }, false, false };
+            yield return new object[] { new byte[5] { (byte)OP.PushData4, 0, 0, 0, 0 }, true, false };
+            yield return new object[] { new byte[6] { (byte)OP.PushData4, 0, 0, 0, 0, ops1 }, true, true };
+            yield return new object[] { new byte[6] { (byte)OP.PushData4, 1, 0, 0, 0, 1 }, true, false };
+            yield return new object[] { new byte[6] { (byte)OP.PushData4, 1, 0, 0, 0, ops1 }, true, false };
+            yield return new object[] { new byte[7] { (byte)OP.PushData4, 1, 0, 0, 0, ops1, ops1 }, true, true };
+            yield return new object[] { new byte[7] { (byte)OP.PushData4, 255, 255, 255, 255, ops1, ops1 }, false, false };
             yield return new object[] { new byte[2] { ops1, 1 }, true, true }; // Note how this script is broken
             yield return new object[] { new byte[2] { (byte)OP.DUP, 0 }, true, false };
             yield return new object[] { new byte[2] { (byte)OP.DUP, ops2 }, true, true };
@@ -618,6 +658,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[] { new byte[] { (byte)OP.LSHIFT }, Errors.DisabledOP };
             yield return new object[] { new byte[] { (byte)OP.RSHIFT }, Errors.DisabledOP };
             yield return new object[] { new byte[] { 255 }, Errors.UndefinedOp };
+            yield return new object[] { new byte[] { (byte)OP.CheckSigAdd }, Errors.OpCheckSigAddPreTaproot };
         }
         [Theory]
         [MemberData(nameof(GetEvalFailCases))]
@@ -657,8 +698,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             int count = Constants.MaxScriptOpCount;
             uint pos = 0;
-            var stream = new FastStreamReader(new byte[] { (byte)OP.DUP });
-            var list = new List<IOperation>();
+            FastStreamReader stream = new(new byte[] { (byte)OP.DUP });
+            List<IOperation> list = new();
 
             bool b1 = TryRead(ScriptEvalMode.Legacy, stream, list, ref count, ref pos, out Errors e1);
             bool b2 = TryRead(ScriptEvalMode.WitnessV0, stream, list, ref count, ref pos, out Errors e2);
@@ -694,8 +735,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             int count = 0;
             uint actualPos = 0;
-            var stream = new FastStreamReader(scrBa);
-            var list = new List<IOperation>();
+            FastStreamReader stream = new(scrBa);
+            List<IOperation> list = new();
 
             while (stream.GetRemainingBytesCount() > 0)
             {
