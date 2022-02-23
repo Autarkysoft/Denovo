@@ -45,12 +45,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             get
             {
                 var counter = new SizeCounter();
-                Header.AddSerializedSize(counter);
-                counter.AddCompactIntCount(TransactionList.Length);
-                foreach (var tx in TransactionList)
-                {
-                    tx.AddSerializedSize(counter);
-                }
+                AddSerializedSize(counter);
                 return counter.Size;
             }
         }
@@ -61,14 +56,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             get
             {
                 var counter = new SizeCounter();
-
-                Header.AddSerializedSize(counter);
-                counter.AddCompactIntCount(TransactionList.Length);
-                foreach (var tx in TransactionList)
-                {
-                    tx.AddSerializedSizeWithoutWitness(counter);
-                }
-
+                AddStrippedSerializedSize(counter);
                 return counter.Size;
             }
         }
@@ -79,23 +67,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             get
             {
                 var counter = new SizeCounter();
-
-                Header.AddSerializedSize(counter);
-                counter.AddCompactIntCount(TransactionList.Length);
-                foreach (var tx in TransactionList)
-                {
-                    tx.AddSerializedSizeWithoutWitness(counter);
-                }
+                AddStrippedSerializedSize(counter);
                 int baseSize = counter.Size;
 
                 counter.Reset();
-
-                Header.AddSerializedSize(counter);
-                counter.AddCompactIntCount(TransactionList.Length);
-                foreach (var tx in TransactionList)
-                {
-                    tx.AddSerializedSize(counter);
-                }
+                AddSerializedSize(counter);
 
                 return (baseSize * 3) + counter.Size;
             }
@@ -289,12 +265,34 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public void AddSerializedSize(SizeCounter counter)
         {
-            counter.Add(BlockHeader.Size);
+            Header.AddSerializedSize(counter);
             counter.AddCompactIntCount(TransactionList.Length);
             foreach (var tx in TransactionList)
             {
                 tx.AddSerializedSize(counter);
             }
+        }
+
+        /// <inheritdoc/>
+        public void AddStrippedSerializedSize(SizeCounter counter)
+        {
+            Header.AddSerializedSize(counter);
+            counter.AddCompactIntCount(TransactionList.Length);
+            foreach (ITransaction tx in TransactionList)
+            {
+                tx.AddSerializedSizeWithoutWitness(counter);
+            }
+        }
+
+        /// <summary>
+        /// Converts this instance into its byte array representation.
+        /// </summary>
+        /// <returns>An array of bytes</returns>
+        public byte[] SerializeWithoutWitness()
+        {
+            FastStream stream = new FastStream(TransactionList.Length * 250);
+            SerializeWithoutWitness(stream);
+            return stream.ToByteArray();
         }
 
         /// <inheritdoc/>
@@ -304,7 +302,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
             CompactInt txCount = new CompactInt(TransactionList.Length);
             txCount.WriteToStream(stream);
-            foreach (Transaction tx in TransactionList)
+            foreach (ITransaction tx in TransactionList)
             {
                 tx.SerializeWithoutWitness(stream);
             }
@@ -317,7 +315,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
             CompactInt txCount = new CompactInt(TransactionList.Length);
             txCount.WriteToStream(stream);
-            foreach (var tx in TransactionList)
+            foreach (ITransaction tx in TransactionList)
             {
                 tx.Serialize(stream);
             }

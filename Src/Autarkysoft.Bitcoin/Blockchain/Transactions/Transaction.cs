@@ -346,11 +346,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             return stream.ToByteArray();
         }
 
-        /// <summary>
-        /// Converts this transaction to its byte array representation skipping witness flag and any witnesses that may be
-        /// present and writes the result to the given stream.
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
+        /// <inheritdoc/>
         public void SerializeWithoutWitness(FastStream stream)
         {
             stream.Write(Version);

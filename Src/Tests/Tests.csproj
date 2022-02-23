@@ -29,6 +29,9 @@
     <None Remove="TestData\BIP0178TestData.json" />
     <None Remove="TestData\BitcoinCore\tx_invalid.json" />
     <None Remove="TestData\BitcoinCore\tx_valid.json" />
+    <None Remove="TestData\Block481759.txt" />
+    <None Remove="TestData\Block894090.txt" />
+    <None Remove="TestData\Blocks.json" />
     <None Remove="TestData\HashTestData.json" />
     <None Remove="TestData\HmacShaNistTestData.json" />
     <None Remove="TestData\HmacShaRfcTestData.json" />
@@ -46,6 +49,9 @@
     <EmbeddedResource Include="TestData\BIP0178TestData.json" />
     <EmbeddedResource Include="TestData\BitcoinCore\tx_invalid.json" />
     <EmbeddedResource Include="TestData\BitcoinCore\tx_valid.json" />
+    <EmbeddedResource Include="TestData\Block481759.txt" />
+    <EmbeddedResource Include="TestData\Blocks.json" />
+    <EmbeddedResource Include="TestData\Block894090.txt" />
     <EmbeddedResource Include="TestData\HashTestData.json" />
     <EmbeddedResource Include="TestData\HmacShaNistTestData.json" />
     <EmbeddedResource Include="TestData\HmacShaRfcTestData.json" />

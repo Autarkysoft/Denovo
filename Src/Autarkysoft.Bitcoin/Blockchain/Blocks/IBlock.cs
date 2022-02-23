@@ -8,7 +8,8 @@ using Autarkysoft.Bitcoin.Blockchain.Transactions;
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 {
     /// <summary>
-    /// Defines methods and properties that a block class implements. Inherits from <see cref="IDeserializable"/>.
+    /// Defines methods and properties that a block class implements.
+    /// <para/>Inherits from <see cref="IDeserializable"/>.
     /// </summary>
     public interface IBlock : IDeserializable
     {
@@ -41,6 +42,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// </summary>
         ITransaction[] TransactionList { get; set; }
 
+
+        /// <summary>
+        /// Adds stripped serialized size of this instance to the given counter.
+        /// </summary>
+        /// <param name="counter">Size counter to use</param>
+        void AddStrippedSerializedSize(SizeCounter counter);
 
         /// <summary>
         /// Returns hash of this block using the defined hash function.

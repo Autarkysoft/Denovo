@@ -41,6 +41,7 @@ namespace Tests.Bitcoin.Blockchain
         public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();
         public virtual void AddSerializedSizeWithoutWitness(SizeCounter counter) => throw new NotImplementedException();
         public virtual void Serialize(FastStream stream) => throw new NotImplementedException();
+        public virtual void SerializeWithoutWitness(FastStream stream) => throw new NotImplementedException();
         public virtual bool TryDeserialize(FastStreamReader stream, out Errors error) => throw new NotImplementedException();
         public virtual byte[] SerializeForSigning(byte[] spendScr, int inputIndex, SigHashType sht) => throw new NotImplementedException();
         public virtual byte[] SerializeForSigningSegWit(byte[] prevOutScript, int inputIndex, ulong amount, SigHashType sht)
@@ -133,19 +134,27 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockSerializableTx : MockTxBase
     {
-        public MockSerializableTx(byte[] serializedResult)
+        public MockSerializableTx(byte[] serializedResult, bool isWitness = false)
         {
             ba = serializedResult;
+            isWit = isWitness;
         }
 
         private readonly byte[] ba;
-
+        private readonly bool isWit;
 
         public override void AddSerializedSize(SizeCounter counter) => counter.Add(ba.Length);
         public override void AddSerializedSizeWithoutWitness(SizeCounter counter) => counter.Add(ba.Length);
 
         public override void Serialize(FastStream stream)
         {
+            Assert.False(isWit);
+            stream.Write(ba);
+        }
+
+        public override void SerializeWithoutWitness(FastStream stream)
+        {
+            Assert.True(isWit);
             stream.Write(ba);
         }
     }

@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +17,22 @@ namespace Tests.Bitcoin.Blockchain.Blocks
     public class BlockTests
     {
         [Fact]
+        public void ConstructorTest()
+        {
+            BlockHeader expHdr = BlockHeaderTests.GetSampleBlockHeader();
+            ITransaction[] expTxs = new ITransaction[2];
+
+            Block blk = new(expHdr, expTxs);
+
+            Assert.Same(expHdr, blk.Header);
+            Assert.Same(expTxs, blk.TransactionList);
+            Assert.Equal(-1, blk.Height);
+        }
+
+        [Fact]
         public void Constructor_HeightTest()
         {
-            var blk = new Block();
+            Block blk = new();
             Assert.Equal(-1, blk.Height);
             blk.Height = 10;
             Assert.Equal(10, blk.Height);
@@ -33,24 +47,42 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         }
 
         // TODO: find and add more tests for edge cases
-        [Fact]
-        public void SizeTest()
+        public static IEnumerable<object[]> GetSizeCases()
         {
-            // MainNet block #557991 containing 2 txs with witness
-            var blk = new Block();
-            var stream = new FastStreamReader(Helper.HexToBytes("000080206689707b09f987d19036a404af1cba3e4abe93fc216931000000000000000000f789b5842f2ff0d1e3ebb4e8321fb53f14b9ee22d2e0def211e3f681e1322f7ca8d5375ca51832177894b5eb02010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff5503a783081c4d696e656420627920416e74506f6f6c31323052000102205c37d5a8fabe6d6db555462795a64abe912fd1c529d8a154aff792f7ec154c6a959c449047d1898404000000000000006019000045dc0000ffffffff021889814a000000001976a914edf10a7fac6b32e24daa5305c723f3de58db1bc888ac0000000000000000266a24aa21a9ed02a7c90fe9795d0af5206b29acea5111d03eb8219fff0a67577a5c948244186901200000000000000000000000000000000000000000000000000000000000000000000000000100000000010145140fe1397a86a940a55e5207d719593143bc23e5fa12ab84c5e61a1b9d852012000000171600140cdda6079ebeaf15d6c6ae29a04b71aeb9842c8affffffff0228e525000000000016001481cf43e0c29625336d275db4e586701c052bafcfb88c2900000000001976a914206e6b76851048928bf7d84ace3b94239ccdf53888ac02473044022056fa2da21a28b2ab9d83dc0cdb18f2d207a7a12af24c1e958056ba28dd29247d02203be11e97bbc3ff43d8907091cb3c5e665ae08947723d11e0d53392e7b0f03634012103cd354d51e44ad77599ba9fce6727c08e5925b9dcaedcea8e5be0bca25e65af9200000000"));
-            bool b = blk.TryDeserialize(stream, out Errors error);
+            JArray jar = Helper.ReadResource<JArray>("Blocks");
+            foreach (JToken item in jar)
+            {
+                string testName = item["Info"].ToString();
+                Block block = new();
+                FastStreamReader stream = new(Helper.HexToBytes(item["Hex"].ToString()));
+                bool b = block.TryDeserialize(stream, out Errors error);
+                Assert.True(b, $"{testName}{error.Convert()}");
 
-            Assert.True(b, error.Convert());
-            Assert.Equal(582, blk.TotalSize);
-            Assert.Equal(437, blk.StrippedSize);
-            Assert.Equal(1893, blk.Weight);
+                yield return new object[]
+                {
+                    testName,
+                    block,
+                    (int)item["TotalSize"],
+                    (int)item["StrippedSize"],
+                    (int)item["Weight"],
+                };
+            }
         }
+        [Theory]
+        [MemberData(nameof(GetSizeCases))]
+        public void SizeTest(string testName, Block block, int totalSize, int strippedSize, int weight)
+        {
+            Assert.False(string.IsNullOrEmpty(testName));
+            Assert.Equal(totalSize, block.TotalSize);
+            Assert.Equal(strippedSize, block.StrippedSize);
+            Assert.Equal(weight, block.Weight);
+        }
+
 
         [Fact]
         public void GetBlockHashTest()
         {
-            var blk = new Block() { Header = BlockHeaderTests.GetSampleBlockHeader() };
+            Block blk = new() { Header = BlockHeaderTests.GetSampleBlockHeader() };
 
             byte[] actual = blk.GetBlockHash();
             byte[] expected = BlockHeaderTests.GetSampleBlockHash();
@@ -61,7 +93,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void GetBlockIDTest()
         {
-            var blk = new Block() { Header = BlockHeaderTests.GetSampleBlockHeader() };
+            Block blk = new() { Header = BlockHeaderTests.GetSampleBlockHeader() };
 
             string actual = blk.GetBlockID();
             string expected = BlockHeaderTests.GetSampleBlockHex();
@@ -189,7 +221,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [MemberData(nameof(GetMerkleCases))]
         public void ComputeMerkleRootTest(ITransaction[] txs, byte[] expected)
         {
-            var block = new Block()
+            Block block = new()
             {
                 TransactionList = txs
             };
@@ -386,7 +418,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [MemberData(nameof(GetWitMerkleCases))]
         public void ComputeWitnessMerkleRootTest(ITransaction[] txs, byte[] commitment, byte[] expected)
         {
-            var block = new Block()
+            Block block = new()
             {
                 TransactionList = txs
             };
@@ -399,7 +431,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void SerializeTest()
         {
-            var blk = new Block()
+            Block blk = new()
             {
                 Header = BlockHeaderTests.GetSampleBlockHeader(),
                 TransactionList = new ITransaction[]
@@ -410,7 +442,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                 }
             };
 
-            var stream = new FastStream(90);
+            FastStream stream = new(90);
             blk.Serialize(stream);
 
             byte[] expected = new byte[80 + 1 + (3 + 3 + 2)];
@@ -427,6 +459,32 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             Assert.Equal(expected, stream.ToByteArray());
             Assert.Equal(expected, blk.Serialize());
+        }
+
+        [Fact]
+        public void SerializeWithoutWitnessTest()
+        {
+            Block blk = new()
+            {
+                Header = BlockHeaderTests.GetSampleBlockHeader(),
+                TransactionList = new ITransaction[]
+                {
+                    new MockSerializableTx(new byte[] { 1, 2, 3 }, true),
+                }
+            };
+
+            FastStream stream = new(84);
+            blk.SerializeWithoutWitness(stream);
+
+            byte[] expected = new byte[80 + 1 + 3];
+            Buffer.BlockCopy(BlockHeaderTests.GetSampleBlockHeaderBytes(), 0, expected, 0, BlockHeader.Size);
+            expected[80] = 1; // Tx count
+            expected[81] = 1;
+            expected[82] = 2;
+            expected[83] = 3;
+
+            Assert.Equal(expected, stream.ToByteArray());
+            Assert.Equal(expected, blk.SerializeWithoutWitness());
         }
 
 
@@ -456,7 +514,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [MemberData(nameof(GetDeserCases))]
         public void TryDeserializeTest(byte[] data, string[] expTxIds, int expBlockSize)
         {
-            var blk = new Block();
+            Block blk = new();
             bool b = blk.TryDeserialize(new FastStreamReader(data), out Errors error);
 
             Assert.True(b, error.Convert());
@@ -481,6 +539,11 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             };
             yield return new object[]
             {
+                Helper.ConcatBytes(BlockHeader.Size + 1, hdba, new byte[] { 253 }),
+                Errors.ShortCompactInt2
+            };
+            yield return new object[]
+            {
                 Helper.ConcatBytes(BlockHeader.Size + 5, hdba, new byte[] { 0xfe, 0x00, 0x00, 0x00, 0x80 }),
                 Errors.TxCountOverflow
             };
@@ -494,11 +557,48 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [MemberData(nameof(GetDeserFailCases))]
         public void TryDeserialize_FailTests(byte[] data, Errors expErr)
         {
-            var blk = new Block();
+            Block blk = new();
             bool b = blk.TryDeserialize(new FastStreamReader(data), out Errors error);
 
             Assert.False(b);
             Assert.Equal(expErr, error);
+        }
+
+
+        [Fact]
+        public void Block481759_Test()
+        {
+            // This is one of the biggest bitcoin block before SegWit fork that has the maximum possible size of 1MB
+            string hex = Helper.ReadResource("Block481759", "txt");
+            Block block = new();
+            FastStreamReader stream = new(Helper.HexToBytes(hex));
+            bool b = block.TryDeserialize(stream, out Errors error);
+            Assert.True(b, error.Convert());
+
+            Assert.Equal(2127, block.TransactionList.Length);
+            Assert.Equal(1000000, block.TotalSize);
+            Assert.Equal(1000000, block.StrippedSize);
+            Assert.Equal(4000000, block.Weight);
+            Assert.Equal("0000000000000000006bbb7fb15eaea51703fae52457d37a612a6bce220ab607", block.GetBlockID(true));
+            Assert.Equal(block.Header.MerkleRootHash, block.ComputeMerkleRoot());
+        }
+
+        [Fact]
+        public void Block894090_Test()
+        {
+            // This is the biggest bitcoin block to this date (2022-02-23) and is on TestNet
+            string hex = Helper.ReadResource("Block894090", "txt");
+            Block block = new();
+            FastStreamReader stream = new(Helper.HexToBytes(hex));
+            bool b = block.TryDeserialize(stream, out Errors error);
+            Assert.True(b, error.Convert());
+
+            Assert.Equal(468, block.TransactionList.Length);
+            Assert.Equal(3876524, block.TotalSize);
+            Assert.Equal(38843, block.StrippedSize);
+            Assert.Equal(3993053, block.Weight);
+            Assert.Equal("00000000000016a805a7c5d27c3cc0ecb6d51372e15919dfb49d24bd56ae0a8b", block.GetBlockID(true));
+            Assert.Equal(block.Header.MerkleRootHash, block.ComputeMerkleRoot());
         }
     }
 }

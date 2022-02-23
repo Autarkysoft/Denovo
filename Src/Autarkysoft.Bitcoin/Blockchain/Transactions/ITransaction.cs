@@ -100,6 +100,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         string GetWitnessTransactionId();
 
         /// <summary>
+        /// Converts this transaction to its byte array representation skipping witness flag and any witnesses that may be
+        /// present and writes the result to the given stream.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        void SerializeWithoutWitness(FastStream stream);
+
+        /// <summary>
         /// A special serialization done with the given spending script bytes and based on the <see cref="SigHashType"/>
         /// used in signing operations. Return result is the hash result.
         /// </summary>
