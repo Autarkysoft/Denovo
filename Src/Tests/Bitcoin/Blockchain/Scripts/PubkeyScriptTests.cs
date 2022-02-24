@@ -19,7 +19,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void ConstructorTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             Assert.Empty(scr.Data);
         }
 
@@ -27,7 +27,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithNullBytesTest()
         {
             byte[] data = null;
-            var scr = new PubkeyScript(data);
+            PubkeyScript scr = new(data);
             Assert.Empty(scr.Data); // NotNull
         }
 
@@ -35,21 +35,21 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void Constructor_WithBytesTest()
         {
             byte[] data = Helper.GetBytes(10);
-            var scr = new PubkeyScript(data);
+            PubkeyScript scr = new(data);
             Assert.Equal(data, scr.Data);
         }
 
         [Fact]
         public void Constructor_OpsTest()
         {
-            var scr = new PubkeyScript(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
+            PubkeyScript scr = new(new IOperation[] { new DUPOp(), new PushDataOp(new byte[] { 10, 20, 30 }) });
             Assert.Equal(new byte[] { (byte)OP.DUP, 3, 10, 20, 30 }, scr.Data);
         }
 
         [Fact]
         public void Constructor_EmptyOpsTest()
         {
-            var scr = new PubkeyScript(Array.Empty<IOperation>());
+            PubkeyScript scr = new(Array.Empty<IOperation>());
             Assert.Equal(Array.Empty<byte>(), scr.Data);
         }
 
@@ -71,7 +71,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [InlineData("bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0", "512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", NetworkType.MainNet)]
         public void Constructor_FromAddressTest(string addr, string hex, NetworkType net)
         {
-            var scr = new PubkeyScript(addr, net);
+            PubkeyScript scr = new(addr, net);
             byte[] expected = Helper.HexToBytes(hex);
             Assert.Equal(expected, scr.Data);
         }
@@ -86,8 +86,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetSerCases))]
         public void SerializeTest(byte[] data, byte[] start)
         {
-            var scr = new PubkeyScript(data);
-            var stream = new FastStream(data.Length + start.Length);
+            PubkeyScript scr = new(data);
+            FastStream stream = new(data.Length + start.Length);
             scr.Serialize(stream);
 
             byte[] actual = stream.ToByteArray();
@@ -111,9 +111,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [InlineData(new byte[] { 3, 0xba, 0xbb, 0xbc }, new byte[] { 0xba, 0xbb, 0xbc })] // 3 invalid OP codes
         public void TryDeserializeTest(byte[] data, byte[] expected)
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             bool b = scr.TryDeserialize(new FastStreamReader(data), out Errors error);
-            var write = new FastStream(data.Length);
+            FastStream write = new(data.Length);
             scr.Serialize(write);
 
             Assert.True(b, error.Convert());
@@ -127,7 +127,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             // TestNet TxId= 88bac1e84c235aa0418345bf430fb43b336875974b6e87dc958de196f9222c35
             byte[] expected = Helper.HexToBytes("4d1127").ConcatFast(Helper.GetBytes(10001)).AppendToEnd((byte)OP.DROP);
             byte[] veryLongData = Helper.HexToBytes("fd1527").ConcatFast(expected);
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             bool b = scr.TryDeserialize(new FastStreamReader(veryLongData), out Errors error);
 
             Assert.True(b, error.Convert());
@@ -147,7 +147,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetIsUnspendableCases))]
         public void IsUnspendableTest(byte[] data, bool expected)
         {
-            var scr = new PubkeyScript(data);
+            PubkeyScript scr = new(data);
             Assert.Equal(expected, scr.IsUnspendable());
         }
 
@@ -177,7 +177,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetTypeCases))]
         public void GetPublicScriptTypeTest(byte[] data, PubkeyScriptType expected)
         {
-            var scr = new PubkeyScript(data);
+            PubkeyScript scr = new(data);
             Assert.Equal(expected, scr.GetPublicScriptType());
         }
 
@@ -201,12 +201,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 Helper.HexToBytes("00"),
                 PubkeyScriptSpecialType.None
             };
-            yield return new object[]
-            {
-                new MockConsensus() { segWit = true },
-                Helper.HexToBytes("00"), // len < 4
-                PubkeyScriptSpecialType.None
-            };
+
             yield return new object[]
             {
                 new MockConsensus(),
@@ -216,7 +211,32 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[]
             {
                 new MockConsensus() { segWit = true },
+                Helper.HexToBytes($"76a914{Helper.GetBytesHex(20)}88ad"), // 0xad = CheckSigVerify
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
                 Helper.HexToBytes($"76a913{Helper.GetBytesHex(19)}88ac"),
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes($"76a915{Helper.GetBytesHex(21)}88ac"),
+                PubkeyScriptSpecialType.None
+            };
+
+            yield return new object[]
+            {
+                new MockConsensus() { bip16 = true },
+                Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87"),
+                PubkeyScriptSpecialType.P2SH
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { bip16 = false, segWit = true },
+                Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87"),
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
@@ -227,21 +247,16 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             };
             yield return new object[]
             {
-                new MockConsensus() { bip16 = false, segWit = true },
-                Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87"),
-                PubkeyScriptSpecialType.None
-            };
-            yield return new object[]
-            {
-                new MockConsensus() { bip16 = true },
-                Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87"),
-                PubkeyScriptSpecialType.P2SH
-            };
-            yield return new object[]
-            {
                 new MockConsensus() { bip16 = true, segWit = true },
                 Helper.HexToBytes($"a915{Helper.GetBytesHex(21)}87"),
                 PubkeyScriptSpecialType.None
+            };
+
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}"),
+                PubkeyScriptSpecialType.P2WPKH
             };
             yield return new object[]
             {
@@ -251,14 +266,14 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             };
             yield return new object[]
             {
-                new MockConsensus() { segWit = true },
-                Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}"),
-                PubkeyScriptSpecialType.P2WPKH
+                new MockConsensus() { bip16 = true, segWit = true },
+                Helper.HexToBytes($"0014{Helper.GetBytesHex(21)}"), // Has 1 extra byte outside of the push => is not witness
+                PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
                 new MockConsensus() { bip16 = true, segWit = true },
-                Helper.HexToBytes($"0014{Helper.GetBytesHex(21)}"), // Has 1 extra byte outside of the push => is not witness
+                Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}87"), // Has an extra OP code at the end
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
@@ -279,12 +294,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
                 Helper.HexToBytes($"0015{Helper.GetBytesHex(21)}"), // Invalid P2WPKH/P2WSH data length but SegWit isn't enabled
                 PubkeyScriptSpecialType.None
             };
-            yield return new object[]
-            {
-                new MockConsensus() { segWit = false },
-                Helper.HexToBytes($"0020{Helper.GetBytesHex(32)}"),
-                PubkeyScriptSpecialType.None
-            };
+
             yield return new object[]
             {
                 new MockConsensus() { segWit = true },
@@ -293,15 +303,22 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             };
             yield return new object[]
             {
-                new MockConsensus() { segWit = true },
-                Helper.HexToBytes($"5101ff"), // OP_1 push(0xff) -> len < 4 -> not witness
+                new MockConsensus() { segWit = false },
+                Helper.HexToBytes($"0020{Helper.GetBytesHex(32)}"),
                 PubkeyScriptSpecialType.None
+            };
+
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true, tap = true },
+                Helper.HexToBytes($"5120{Helper.GetBytesHex(32)}"),
+                PubkeyScriptSpecialType.P2TR
             };
             yield return new object[]
             {
-                new MockConsensus() { segWit = true },
-                Helper.HexToBytes($"6029{Helper.GetBytesHex(41)}"), // OP_16 push(data40) -> len > 42 -> not witness
-                PubkeyScriptSpecialType.None
+                new MockConsensus() { segWit = true, tap = false },
+                Helper.HexToBytes($"5120{Helper.GetBytesHex(32)}"),
+                PubkeyScriptSpecialType.UnknownWitness
             };
             yield return new object[]
             {
@@ -323,20 +340,57 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             };
             yield return new object[]
             {
-                new MockConsensus() { segWit = true, tap = false },
-                Helper.HexToBytes($"5120{Helper.GetBytesHex(32)}"),
+                new MockConsensus() { segWit = true, tap = true },
+                Helper.HexToBytes($"5121{Helper.GetBytesHex(33)}"), // Witness data length != 32 are unknown (ignored)
                 PubkeyScriptSpecialType.UnknownWitness
             };
+
             yield return new object[]
             {
-                new MockConsensus() { segWit = true, tap = true },
-                Helper.HexToBytes($"5120{Helper.GetBytesHex(32)}"),
-                PubkeyScriptSpecialType.P2TR
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes("00"), // len < 4
+                PubkeyScriptSpecialType.None
             };
             yield return new object[]
             {
-                new MockConsensus() { bip16 = true, segWit = true },
-                Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}87"), // Has an extra OP code at the end
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes("000122"), // len<4 otherwise it would have been InvalidWitness
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes("007602aabb"),
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes("ff04aabbccdd"),
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes($"5101ff"), // OP_1 push(0xff) -> len < 4 -> not witness
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes("010103abcdef"), // Starts with 0x01 instead of OP_1=0x51
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes($"0029{Helper.GetBytesHex(41)}"), // len>42 otherwise it would have been InvalidWitness
+                PubkeyScriptSpecialType.None
+            };
+            yield return new object[]
+            {
+                new MockConsensus() { segWit = true },
+                Helper.HexToBytes($"6029{Helper.GetBytesHex(41)}"), // OP_16 push(data40) -> len > 42 -> not witness
                 PubkeyScriptSpecialType.None
             };
             yield return new object[]
@@ -348,27 +402,21 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[]
             {
                 new MockConsensus() { segWit = true, tap = false },
-                Helper.HexToBytes("6003020001"), // 0x60 is OP_16 but push is correct
+                Helper.HexToBytes("6003020001"), // 0x60 is OP_16 and push is correct
                 PubkeyScriptSpecialType.UnknownWitness
             };
             yield return new object[]
             {
                 new MockConsensus() { segWit = true, tap = true },
-                Helper.HexToBytes("6003020001"), // 0x60 is OP_16 but push is correct
+                Helper.HexToBytes("6003020001"), // 0x60 is OP_16 and push is correct
                 PubkeyScriptSpecialType.UnknownWitness
-            };
-            yield return new object[]
-            {
-                new MockConsensus() { segWit = true },
-                Helper.HexToBytes("010103abcdef"), // Starts with 0x01 instead of OP_1=0x51
-                PubkeyScriptSpecialType.None
             };
         }
         [Theory]
         [MemberData(nameof(GetSpecialTypeCases))]
         public void GetSpecialTypeTest(IConsensus consensus, byte[] data, PubkeyScriptSpecialType expected)
         {
-            var scr = new PubkeyScript(data);
+            PubkeyScript scr = new(data);
             Assert.Equal(expected, scr.GetSpecialType(consensus));
         }
 
@@ -391,7 +439,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetP2pkCases))]
         public void SetToP2PKTest(PublicKey pub, bool comp, byte[] expected)
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2PK(pub, comp);
             Assert.Equal(expected, scr.Data);
         }
@@ -399,7 +447,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2PK_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PK(null, true));
         }
 
@@ -407,7 +455,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2PKH_FromByteTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2PKH(Helper.GetBytes(20));
             byte[] expected = Helper.HexToBytes($"76a914{Helper.GetBytesHex(20)}88ac");
             Assert.Equal(expected, scr.Data);
@@ -430,7 +478,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetP2pkhCases))]
         public void SetToP2PKH_FromPubTest(PublicKey pub, bool comp, byte[] expected)
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2PKH(pub, comp);
             Assert.Equal(expected, scr.Data);
         }
@@ -438,7 +486,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2PKH_FromAddressTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2PKH(KeyHelper.Pub1CompAddr);
             byte[] expected = Helper.HexToBytes($"76a914{KeyHelper.Pub1CompHashHex}88ac");
             Assert.Equal(expected, scr.Data);
@@ -447,7 +495,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2PKH_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             byte[] nba = null;
             PublicKey npub = null;
             string naddr = null;
@@ -465,7 +513,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_FromBytesTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2SH(Helper.GetBytes(20));
             byte[] expected = Helper.HexToBytes($"a914{Helper.GetBytesHex(20)}87");
             Assert.Equal(expected, scr.Data);
@@ -474,7 +522,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_FromAddressTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2SH("3FuPMWfen385RLwbMsZEVhx9QsHyR6zEmv");
             byte[] expected = Helper.HexToBytes($"a9149be8a44c3ef40c1eeab2d487ecd2ef7c7cd9ce5587");
             Assert.Equal(expected, scr.Data);
@@ -483,8 +531,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_FromScriptTest()
         {
-            var scr = new PubkeyScript();
-            var redeem = new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255);
+            PubkeyScript scr = new();
+            MockSerializableRedeemScript redeem = new(new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2SH(redeem);
             byte[] expected = Helper.HexToBytes($"a9149bc4860bb936abf262d7a51f74b4304833fee3b287");
             Assert.Equal(expected, scr.Data);
@@ -493,7 +541,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             byte[] nba = null;
             RedeemScript nscr = null;
             string naddr = null;
@@ -523,7 +571,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetNestedP2wpkhCases))]
         public void SetToP2SH_P2WPKH_FromPubkeyTest(PublicKey pub, bool comp, byte[] expected)
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2SH_P2WPKH(pub, comp);
             Assert.Equal(expected, scr.Data);
         }
@@ -531,8 +579,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WPKH_FromScriptTest()
         {
-            var scr = new PubkeyScript();
-            var redeem = new MockSerializableRedeemScript(RedeemScriptType.P2SH_P2WPKH, new byte[] { 1, 2, 3 }, 255);
+            PubkeyScript scr = new();
+            MockSerializableRedeemScript redeem = new(RedeemScriptType.P2SH_P2WPKH, new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2SH_P2WPKH(redeem);
             byte[] expected = Helper.HexToBytes($"a9149bc4860bb936abf262d7a51f74b4304833fee3b287");
             Assert.Equal(expected, scr.Data);
@@ -541,7 +589,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WPKH_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null, true));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null));
@@ -553,8 +601,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WSH_Test()
         {
-            var scr = new PubkeyScript();
-            var redeem = new MockSerializableRedeemScript(RedeemScriptType.P2SH_P2WSH, new byte[] { 1, 2, 3 }, 10);
+            PubkeyScript scr = new();
+            MockSerializableRedeemScript redeem = new(RedeemScriptType.P2SH_P2WSH, new byte[] { 1, 2, 3 }, 10);
             scr.SetToP2SH_P2WSH(redeem);
             byte[] expected = Helper.HexToBytes($"a9149bc4860bb936abf262d7a51f74b4304833fee3b287");
             Assert.Equal(expected, scr.Data);
@@ -563,7 +611,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2SH_P2WSH_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WSH(null));
             Assert.Throws<ArgumentException>(()
@@ -574,7 +622,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2WPKH_FromByteTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2WPKH(Helper.GetBytes(20));
             byte[] expected = Helper.HexToBytes($"0014{Helper.GetBytesHex(20)}");
             Assert.Equal(expected, scr.Data);
@@ -595,7 +643,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [MemberData(nameof(GetP2wpkhCases))]
         public void SetToP2WPKH_FromPubTest(PublicKey pub, bool comp, byte[] expected)
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2WPKH(pub, comp);
             Assert.Equal(expected, scr.Data);
         }
@@ -603,7 +651,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2WPKH_FromAddressTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2WPKH(KeyHelper.Pub1BechAddr);
             byte[] expected = Helper.HexToBytes($"0014{KeyHelper.Pub1BechAddrHex}");
             Assert.Equal(expected, scr.Data);
@@ -612,7 +660,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2WPKH_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             byte[] nba = null;
             PublicKey npub = null;
             string naddr = null;
@@ -629,7 +677,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2WSH_FromBytesTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2WSH(Helper.GetBytes(32));
             byte[] expected = Helper.HexToBytes($"0020{Helper.GetBytesHex(32)}");
             Assert.Equal(expected, scr.Data);
@@ -638,8 +686,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2WSH_FromScriptTest()
         {
-            var scr = new PubkeyScript();
-            var mock = new MockSerializableScript(new byte[] { 1, 2, 3 }, 255);
+            PubkeyScript scr = new();
+            MockSerializableScript mock = new(new byte[] { 1, 2, 3 }, 255);
             scr.SetToP2WSH(mock);
             byte[] expected = Helper.HexToBytes("0020039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81");
             Assert.Equal(expected, scr.Data);
@@ -648,7 +696,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2WSH_FromAddressTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2WSH("bc1qr8rpjl3pgzuaqd8myzu6c7ah2wjpyv7278sa4ld8x94fnnh5zstq6q0csc");
             byte[] expected = Helper.HexToBytes("002019c6197e2140b9d034fb20b9ac7bb753a41233caf1e1dafda7316a99cef41416");
             Assert.Equal(expected, scr.Data);
@@ -657,7 +705,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2WSH_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             byte[] nba = null;
             IScript nscr = null;
             string naddr = null;
@@ -674,7 +722,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToReturn_FromBytesTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToReturn(Helper.GetBytes(12));
             byte[] expected = Helper.HexToBytes($"6a0c{Helper.GetBytesHex(12)}");
             Assert.Equal(expected, scr.Data);
@@ -683,8 +731,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToReturn_FromScriptTest()
         {
-            var scr = new PubkeyScript();
-            var mock = new MockSerializableScript(new byte[] { 1, 2, 3 }, 255);
+            PubkeyScript scr = new();
+            MockSerializableScript mock = new(new byte[] { 1, 2, 3 }, 255);
             scr.SetToReturn(mock);
             byte[] expected = Helper.HexToBytes("6a03010203");
             Assert.Equal(expected, scr.Data);
@@ -693,7 +741,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToReturn_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             byte[] nba = null;
             IScript nscr = null;
 
@@ -704,7 +752,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToWitnessCommitmentTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
 
             string hash = Helper.GetBytesHex(32);
             scr.SetToWitnessCommitment(Helper.HexToBytes(hash));
@@ -716,7 +764,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToWitnessCommitment_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToWitnessCommitment(null));
             Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToWitnessCommitment(new byte[1]));
@@ -725,7 +773,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2TRTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
             scr.SetToP2TR(Helper.GetBytes(32));
             byte[] expected = Helper.HexToBytes($"5120{Helper.GetBytesHex(32)}");
             Assert.Equal(expected, scr.Data);
@@ -734,7 +782,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void SetToP2TR_ExceptionTest()
         {
-            var scr = new PubkeyScript();
+            PubkeyScript scr = new();
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2TR(null));
             Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToP2TR(new byte[31]));

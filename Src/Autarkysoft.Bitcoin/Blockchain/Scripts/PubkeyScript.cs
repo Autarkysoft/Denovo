@@ -14,7 +14,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
     /// <summary>
     /// The script included in transaction outputs which sets the conditions that must be fulfilled for those outputs to be spent. 
     /// Also known as public key script, scriptPub or locking script.
-    /// Implements <see cref="IPubkeyScript"/> and inherits from <see cref="Script"/>.
+    /// <para/>Implements <see cref="IPubkeyScript"/> and inherits from <see cref="Script"/>.
     /// </summary>
     public class PubkeyScript : Script, IPubkeyScript
     {
