@@ -5,15 +5,22 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
-using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Scripts
 {
     public class WitnessTests
     {
+        [Fact]
+        public void ConstructorTest()
+        {
+            Witness wit = new();
+            Assert.Empty(wit.Items);
+        }
+
         [Fact]
         public void Constructor_FromBytesTest()
         {
@@ -23,15 +30,54 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
 
         [Fact]
+        public void Constructor_FromNullTest()
+        {
+            Witness wit = new(null);
+            Assert.Empty(wit.Items);
+        }
+
+        [Fact]
         public void Constructor_NullExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new Witness(null));
+            Assert.Throws<ArgumentNullException>(() => new Witness(new byte[][] { Array.Empty<byte>(), null, new byte[1] }));
+        }
+
+        public static IEnumerable<object[]> GetSerSizeCases()
+        {
+            yield return new object[] { null, 1 };
+            yield return new object[] { Array.Empty<byte[]>(), 1 };
+            yield return new object[] { new byte[][] { Array.Empty<byte>() }, 2 };
+            yield return new object[] { new byte[][] { Array.Empty<byte>(), Array.Empty<byte>() }, 3 };
+            yield return new object[]
+            {
+                new byte[][] { Helper.GetBytes(253) },
+                1 + 3 + 253 // count + 0xfdfd00 + 253
+            };
+            yield return new object[]
+            {
+                Enumerable.Repeat(Array.Empty<byte>(), 253).ToArray(),
+                3 + 253 // 0xfdfd00 + 253*1
+            };
+            yield return new object[]
+            {
+                Enumerable.Repeat(new byte[1] { 255 }, 253).ToArray(),
+                3 + (253*2) // 0xfdfd00 + (01ff)x253
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetSerSizeCases))]
+        public void AddSerializedSizeTest(byte[][] items, int expectedSize)
+        {
+            SizeCounter counter = new();
+            Witness wit = new(items);
+            wit.AddSerializedSize(counter);
+            Assert.Equal(expectedSize, counter.Size);
         }
 
         public static IEnumerable<object[]> GetSerCases()
         {
             yield return new object[] { null, new byte[1] };
-            yield return new object[] { Array.Empty<PushDataOp>(), new byte[1] };
+            yield return new object[] { Array.Empty<byte[]>(), new byte[1] };
             yield return new object[]
             {
                 new byte[][] { Array.Empty<byte>(), new byte[] { 1, 2, 3 }, new byte[] { 0x53 } },
@@ -106,6 +152,44 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
             Assert.False(b);
             Assert.Equal(expErr, error);
+        }
+
+        [Fact]
+        public void TryDeserialize_NullStreamTest()
+        {
+            Witness wit = new();
+            bool b = wit.TryDeserialize(null, out Errors error);
+
+            Assert.False(b);
+            Assert.Equal(Errors.NullStream, error);
+        }
+
+        [Fact]
+        public void SetToP2WPKH_CompressedTest()
+        {
+            Witness wit = new();
+            wit.SetToP2WPKH(Helper.ShortSig1, KeyHelper.Pub1);
+            byte[][] expected = new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1CompBytes };
+
+            Assert.Equal(expected, wit.Items);
+        }
+
+        [Fact]
+        public void SetToP2WPKH_UncompressedTest()
+        {
+            Witness wit = new();
+            wit.SetToP2WPKH(Helper.ShortSig1, KeyHelper.Pub1, false);
+            byte[][] expected = new byte[][] { Helper.ShortSig1Bytes, KeyHelper.Pub1UnCompBytes };
+
+            Assert.Equal(expected, wit.Items);
+        }
+
+        [Fact]
+        public void SetToP2WPKH_NullExceptionTest()
+        {
+            Witness wit = new();
+            Assert.Throws<ArgumentNullException>(() => wit.SetToP2WPKH(null, KeyHelper.Pub1));
+            Assert.Throws<ArgumentNullException>(() => wit.SetToP2WPKH(Helper.ShortSig1, null));
         }
     }
 }

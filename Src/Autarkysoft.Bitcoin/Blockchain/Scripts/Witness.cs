@@ -11,9 +11,8 @@ using System.Linq;
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// The script that is used in witness part of the transaction as the signature or unlocking script.
-    /// Implements <see cref="IWitness"/> and inherits from <see cref="Script"/>.
-    /// <para/> Witnesses are more like stack items rather than scripts.
+    /// Witness is an optional part of transactions that acts as stack items rather than a script.
+    /// <para/>Implements <see cref="IWitness"/>.
     /// </summary>
     public class Witness : IWitness
     {
@@ -31,7 +30,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="dataItems">An array of byte arrays to use as witness items</param>
         public Witness(byte[][] dataItems)
         {
-            if (dataItems.Any(x => x is null))
+            if (dataItems != null && dataItems.Any(x => x is null))
                 throw new ArgumentNullException(nameof(dataItems), "Data items can not be null.");
 
             Items = dataItems;
@@ -57,7 +56,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             else
             {
                 counter.AddCompactIntCount(Items.Length);
-                foreach (var item in Items)
+                foreach (byte[] item in Items)
                 {
                     counter.AddWithCompactIntLength(item.Length);
                 }
@@ -117,9 +116,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        /// <exception cref="NullReferenceException"/>
+        /// <exception cref="ArgumentNullException"/>
         public void SetToP2WPKH(Signature sig, PublicKey pubKey, bool useCompressed = true)
         {
+            if (sig is null)
+                throw new ArgumentNullException(nameof(sig));
+            if (pubKey is null)
+                throw new ArgumentNullException(nameof(pubKey));
+
             Items = new byte[2][]
             {
                 sig.ToByteArray(),

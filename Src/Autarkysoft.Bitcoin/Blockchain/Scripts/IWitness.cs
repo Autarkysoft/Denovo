@@ -9,7 +9,8 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
-    /// Defines methods that witnesses (stack items) use. Inherits from <see cref="IDeserializable"/>.
+    /// Defines methods that witnesses (stack items) use. 
+    /// <para/>Inherits from <see cref="IDeserializable"/>.
     /// </summary>
     public interface IWitness : IDeserializable
     {
