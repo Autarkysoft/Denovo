@@ -12,7 +12,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
     /// The script that is used inside <see cref="ISignatureScript"/>s when spending P2SH <see cref="IPubkeyScript"/> types.
-    /// Implements <see cref="IRedeemScript"/> and inherits from <see cref="Script"/>.
+    /// <para/>Implements <see cref="IRedeemScript"/> and inherits from <see cref="Script"/>.
     /// </summary>
     public class RedeemScript : Script, IRedeemScript
     {

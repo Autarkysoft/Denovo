@@ -102,6 +102,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[] { new byte[101], null, false };
             yield return new object[] { new byte[2], new MockConsensus() { expHeight = 123, bip34 = false }, true };
             yield return new object[] { new byte[2], new MockConsensus() { expHeight = 123, bip34 = true }, false };
+            yield return new object[] { new byte[2], new MockConsensus() { expHeight = 256, bip34 = true }, false };
             yield return new object[] { new byte[] { 1, 123 }, new MockConsensus() { expHeight = 123, bip34 = true }, true };
             yield return new object[] { new byte[] { 2, 123, 0 }, new MockConsensus() { expHeight = 123, bip34 = true }, false };
             yield return new object[] { new byte[] { 3, 123 }, new MockConsensus() { expHeight = 123, bip34 = true }, false };
