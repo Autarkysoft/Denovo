@@ -14,22 +14,21 @@
   </Design.DataContext>
 
   <!--The following 2 StackPanels can be removed when Denovo is more mature-->
-  <StackPanel Orientation="Vertical" Spacing="30" Margin="5">
-    <StackPanel Orientation="Vertical">
-      <TextBlock Text="Important notice:" FontSize="16" FontWeight="Bold" Foreground="Red"/>
-      <TextBlock Text="{Binding Risk}" TextWrapping="Wrap"/>
-    </StackPanel>
-
+  <StackPanel Orientation="Vertical">
     <Grid RowDefinitions="auto,*">
-      <Menu Grid.Row="0">
+      <Menu Background="GhostWhite" Margin="0,0,0,5" Grid.Row="0">
+        <MenuItem Header="Options">
+          <MenuItem Header="Configuration" Command="{Binding OpenConfig}"/>
+        </MenuItem>
         <MenuItem Header="Tools">
           <MenuItem Header="TestNet miner" Command="{Binding OpenMiner}"/>
           <MenuItem Header="Encrypt/Decrypt" Command="{Binding OpenEcies}"/>
           <MenuItem Header="Transaction verifier" Command="{Binding OpenVerifyTx}"/>
           <MenuItem Header="WIF helper" Command="{Binding OpenWifHelper}"/>
           <MenuItem Header="Push tx" Command="{Binding OpenPushTx}"/>
-          <Separator/>
-          <MenuItem Header="Configuration" Command="{Binding OpenConfig}"/>
+        </MenuItem>
+        <MenuItem Header="Help">
+          <MenuItem Header="About" Command="{Binding OpenAbout}"/>
         </MenuItem>
       </Menu>
       <StackPanel Margin="5" Spacing="5" Grid.Row="1">
@@ -72,5 +71,9 @@
       </StackPanel>
     </Grid>
 
+    <StackPanel Orientation="Vertical" Margin="5">
+      <TextBlock Text="Important notice:" FontSize="16" FontWeight="Bold" Foreground="Red"/>
+      <TextBlock Text="{Binding Risk}" TextWrapping="Wrap"/>
+    </StackPanel>
   </StackPanel>
 </Window>
