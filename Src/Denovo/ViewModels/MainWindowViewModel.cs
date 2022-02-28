@@ -167,6 +167,12 @@ namespace Denovo.ViewModels
             vm.Dispose();
         }
 
+        public async void OpenAbout()
+        {
+            AboutViewModel vm = new();
+            await WinMan.ShowDialog(vm);
+        }
+
         private Node _selNode;
         public Node SelectedNode
         {
