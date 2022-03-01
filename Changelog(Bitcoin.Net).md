@@ -1,5 +1,15 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.17.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.18.0.0...master)
+
+### Release 0.18.0 (2022-03-01)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.17.0.0...B0.18.0.0)
+* (From now on `Bitcoin.Net` and `Denovo` are published together)
+* New decryption mode added to `BIP0038` for EC mult mode
+* New size related methods and properties added to `(I)Block` and `(I)Transaction`
+* [BreakingChange] `(I)Blockchain` is renamed to `(I)Chain`
+* [BreakingChange] All error messages (such as those returned from `Try*()` methods) return an enum instead of string.
+The enum has an extention method called `Convert()` that can be used to easily convert it to a friendly string.
+* Improved tests and converage, improved XML doc, small code optimization and added some new benchmarks
 
 ### Release 0.17.0 (2022-01-16)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.16.0.0...B0.17.0.0)
