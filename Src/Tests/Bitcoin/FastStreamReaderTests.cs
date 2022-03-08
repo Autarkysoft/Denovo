@@ -230,6 +230,18 @@ namespace Tests.Bitcoin
         }
 
         [Fact]
+        public void TryReadByteArray_ZeroTest()
+        {
+            var stream = new FastStreamReader(Helper.GetBytes(12));
+            bool b = stream.TryReadByteArray(0, out byte[] actual);
+            byte[] expected = Array.Empty<byte>();
+
+            Assert.True(b);
+            Assert.Equal(expected, actual);
+            Assert.Equal(0, stream.GetCurrentIndex());
+        }
+
+        [Fact]
         public void TryReadByteArray_FailTest()
         {
             var stream = new FastStreamReader(new byte[9]);

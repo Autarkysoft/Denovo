@@ -187,6 +187,11 @@ namespace Autarkysoft.Bitcoin
         /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
         public bool TryReadByteArray(int len, out byte[] result)
         {
+            if (len == 0)
+            {
+                result = Array.Empty<byte>();
+                return true;
+            }
             if (CheckRemaining(len))
             {
                 result = new byte[len];
