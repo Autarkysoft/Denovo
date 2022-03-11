@@ -53,14 +53,16 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="fileMan">File manager</param>
         /// <param name="blockVerifier">Block verifier</param>
         /// <param name="consensus">Consensus rules</param>
-        public Chain(IFileManager fileMan, BlockVerifier blockVerifier, IConsensus consensus)
+        /// <param name="netType">Network type</param>
+        public Chain(IFileManager fileMan, BlockVerifier blockVerifier, IConsensus consensus, NetworkType netType)
         {
             FileMan = fileMan ?? throw new ArgumentNullException(nameof(fileMan));
             Consensus = consensus ?? throw new ArgumentNullException(nameof(consensus));
             BlockVer = blockVerifier ?? throw new ArgumentNullException(nameof(blockVerifier));
 
+            network = netType;
             // TODO: find a better initial capacity
-            headerList = new List<BlockHeader>(700_000);
+            headerList = new List<BlockHeader>(1_000_000);
             ReadHeaders();
             ReadBlockInfo();
         }
@@ -69,6 +71,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private const string HeadersFile = "Headers";
         private readonly List<BlockHeader> headerList;
         private readonly object mainLock = new object();
+        private readonly NetworkType network;
 
         /// <summary>
         /// File manager responsible for handling data

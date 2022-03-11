@@ -21,7 +21,7 @@ namespace Tests.Bitcoin.Blockchain
         private static Chain GetChain(IFileManager fman, BlockVerifier bver, IConsensus c)
         {
             // TODO: we can mock Time too
-            return new Chain(fman, bver, c) { Time = new ClientTime() };
+            return new Chain(fman, bver, c, NetworkType.MainNet) { Time = new ClientTime() };
         }
 
         private static Chain GetChain()

@@ -43,7 +43,7 @@ namespace Autarkysoft.Bitcoin.Clients
         /// <param name="memPool">Memory pool</param>
         /// <param name="maxConnection">Maximum number of connections</param>
         public FullClientSettings(bool listen, NetworkType netType, int maxConnection, NodeServiceFlags servs,
-                              NodePool nodes, IFileManager fileMan, IUtxoDatabase utxoDb, IMemoryPool memPool)
+                                  NodePool nodes, IFileManager fileMan, IUtxoDatabase utxoDb, IMemoryPool memPool)
             : base(netType, maxConnection, nodes, servs)
         {
             // TODO: add AcceptSAEAPool here based on listen
@@ -55,7 +55,7 @@ namespace Autarkysoft.Bitcoin.Clients
 
             var c = new Consensus(netType);
             var txVer = new TransactionVerifier(false, utxoDb, memPool, c);
-            Blockchain = new Chain(FileMan, new BlockVerifier(txVer, c), c)
+            Blockchain = new Chain(FileMan, new BlockVerifier(txVer, c), c, netType)
             {
                 Time = Time,
                 State = BlockchainState.None
