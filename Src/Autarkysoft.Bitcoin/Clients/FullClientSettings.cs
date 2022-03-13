@@ -246,7 +246,7 @@ namespace Autarkysoft.Bitcoin.Clients
             var ping = new Ping();
             try
             {
-                PingReply rep = ping.Send(nodeIP, TimeConstants.TenSeconds_Milliseconds);
+                PingReply rep = ping.Send(nodeIP, TimeConstants.MilliSeconds.TenSec);
                 return rep.Status == IPStatus.Success;
             }
             catch (Exception)

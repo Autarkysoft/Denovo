@@ -508,7 +508,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 if (arrIndex == headers.Length)
                 {
                     // No new headers were received
-                    ChangeState(0);
+                    if (State == BlockchainState.HeadersSync &&
+                        Time.Now - headerList[^1].BlockTime <= TimeConstants.Seconds.OneDay)
+                    {
+                        State = BlockchainState.BlocksSync;
+                    }
                     return BlockProcessResult.Success;
                 }
                 else
@@ -540,7 +544,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         {
             if (length < HeadersPayload.MaxCount &&
                 State == BlockchainState.HeadersSync &&
-                Time.Now - headerList[^1].BlockTime <= TimeSpan.FromHours(24).TotalSeconds)
+                Time.Now - headerList[^1].BlockTime <= TimeConstants.Seconds.OneDay)
             {
                 State = BlockchainState.BlocksSync;
             }

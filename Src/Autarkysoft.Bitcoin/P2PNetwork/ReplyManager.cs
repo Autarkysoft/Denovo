@@ -59,7 +59,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
             // We want the other node to respond to our initial settings quickly to check headers.
             // TODO: this may be a bad thing to enfoce on all nodes. Maybe force it based on Blockchain.State
-            nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
+            nodeStatus.StartDisconnectTimer(TimeConstants.MilliSeconds.OneMin);
 
             //result.Add(new Message(new GetAddrPayload(), settings.Network));
 
@@ -394,7 +394,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                                 {
                                     nodeStatus.StopDisconnectTimer();
                                     result = GetMissingBlockMessage();
-                                    nodeStatus.StartDisconnectTimer(TimeConstants.OneMin_Milliseconds);
+                                    nodeStatus.StartDisconnectTimer(TimeConstants.MilliSeconds.OneMin);
                                 }
                                 break;
                         }

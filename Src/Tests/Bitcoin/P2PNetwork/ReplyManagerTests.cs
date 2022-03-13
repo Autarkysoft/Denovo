@@ -674,7 +674,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _servs = NodeServiceFlags.NodeGetUtxo, // Mock service flag, the dependency fake passes
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -700,7 +700,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -726,7 +726,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -754,7 +754,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _servs = NodeServiceFlags.NodeGetUtxo, // Mock flag, dependency has to pass
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds, // BlockSync uses 1 min
+                    timerInterval = TimeConstants.MilliSeconds.OneMin, // BlockSync uses 1 min
                 },
                 new MockClientSettings()
                 {
@@ -782,7 +782,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds, // FullSync uses 2 min
+                    timerInterval = TimeConstants.MilliSeconds.OneMin, // FullSync uses 2 min
                 },
                 new MockClientSettings()
                 {
@@ -805,7 +805,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PMinProtoVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -829,7 +829,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _servs = NodeServiceFlags.NodeGetUtxo,
                     _protVer = Constants.P2PBip31ProtVer, // No ping, no feefilter, no sendheaders
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -853,7 +853,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip31ProtVer + 1, // ping, no feefilter, no sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -879,7 +879,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip130ProtVer - 1, // ping, no feefilter, no sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -905,7 +905,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip130ProtVer, // ping, no feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -931,7 +931,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip133ProtVer - 1, // ping, no feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -957,7 +957,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -982,7 +982,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -1009,7 +1009,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -1038,7 +1038,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _protVer = Constants.P2PBip133ProtVer, // ping, feefilter, sendheaders
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
@@ -1203,7 +1203,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     updateTime = true,
                     expPingNonce = RngReturnValue,
                     startTimer = true,
-                    timerInterval = TimeConstants.OneMin_Milliseconds,
+                    timerInterval = TimeConstants.MilliSeconds.OneMin,
                 },
                 new MockClientSettings()
                 {
