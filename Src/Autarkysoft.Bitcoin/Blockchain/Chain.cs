@@ -275,7 +275,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
-        private readonly object peerQLock = new object();
 
         /// <inheritdoc/>
         public void ProcessReceivedBlocks(INodeStatus nodeStatus)
@@ -285,7 +284,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private void ProcessPeerQueue(INodeStatus nodeStatus)
         {
-            lock (peerQLock)
+            lock (mainLock)
             {
                 peerBlocksQueue.Add(nodeStatus);
 
