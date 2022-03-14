@@ -237,7 +237,10 @@ namespace Denovo.Services
                 foreach (var item in txs[i].TxInList)
                 {
                     IUtxo utxo = Find(item);
-                    utxo.IsBlockSpent = false;
+                    if (utxo is not null)
+                    {
+                        utxo.IsBlockSpent = false;
+                    }
                 }
             }
         }
