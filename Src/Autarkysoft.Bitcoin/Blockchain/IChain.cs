@@ -68,8 +68,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Process given block headers and update the header database
         /// </summary>
         /// <param name="headers">An array of block headers</param>
-        /// <returns>Result of processing the given headers</returns>
-        BlockProcessResult ProcessHeaders(BlockHeader[] headers);
+        /// <param name="nodeStatus">Node status</param>
+        /// <returns>True if there is more headers to download; otherwise false.</returns>
+        bool ProcessHeaders(BlockHeader[] headers, INodeStatus nodeStatus);
 
         /// <summary>
         /// Returns an array of <see cref="BlockHeader"/>s from the tip to be used in 

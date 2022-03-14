@@ -84,8 +84,8 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         internal BlockHeader[] _expHeaders;
-        internal BlockProcessResult? _expHdrProcessResult;
-        public BlockProcessResult ProcessHeaders(BlockHeader[] headers)
+        internal bool? _expHdrProcessResult;
+        public bool ProcessHeaders(BlockHeader[] headers, INodeStatus nodeStatus)
         {
             Assert.Equal(_expHeaders.Length, headers.Length);
             Assert.True(_expHdrProcessResult.HasValue, UnexpectedCall);

@@ -474,12 +474,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
         /// <inheritdoc/>
-        public BlockProcessResult ProcessHeaders(BlockHeader[] headers)
+        public bool ProcessHeaders(BlockHeader[] headers, INodeStatus nodeStatus)
         {
             // TODO: handle forks/reorgs
             lock (mainLock)
             {
                 // Find index of the block that the first header in the array references
+                // TODO: benchmark this versus using a simple loop
                 int lstIndex = headerList.FindLastIndex(x =>
                                         ((ReadOnlySpan<byte>)headers[0].PreviousBlockHeaderHash).SequenceEqual(x.GetHash()));
 
@@ -488,7 +489,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     // The previous block was not found => headers are either invalid or from far ahead so
                     // the client has to send another locator to find the first block the 2 peers share.
-                    return BlockProcessResult.UnknownBlocks;
+                    nodeStatus.AddSmallViolation();
+                    return true;
                 }
                 else if (lstIndex < headerList.Count - 1)
                 {
@@ -500,7 +502,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         if (!((ReadOnlySpan<byte>)headerList[lstIndex].GetHash()).SequenceEqual(headers[arrIndex].GetHash()))
                         {
                             // TODO: we have to store these fork blocks somewhere to handle them later
-                            return BlockProcessResult.ForkBlocks;
+                            //       possibly in INodeStatus with a boolean indicating there are blocks on another
+                            //       chain in this node
+                            return true;
                         }
                     }
                 }
@@ -513,7 +517,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         State = BlockchainState.BlocksSync;
                     }
-                    return BlockProcessResult.Success;
+                    return false;
                 }
                 else
                 {
@@ -528,25 +532,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         else
                         {
                             AppendHeadrs(headers.AsSpan().Slice(arrIndex, count).ToArray(), count);
-                            return BlockProcessResult.InvalidBlocks;
+                            nodeStatus.AddBigViolation();
+                            return false;
                         }
                     }
 
                     AppendHeadrs(headers.AsSpan()[arrIndex..].ToArray(), count);
 
-                    return BlockProcessResult.Success;
+                    return true;
                 }
-            }
-        }
-
-        // TODO: client can get stuck during header sync if the peer sends the same old headers over and over again
-        private void ChangeState(int length)
-        {
-            if (length < HeadersPayload.MaxCount &&
-                State == BlockchainState.HeadersSync &&
-                Time.Now - headerList[^1].BlockTime <= TimeConstants.Seconds.OneDay)
-            {
-                State = BlockchainState.BlocksSync;
             }
         }
 

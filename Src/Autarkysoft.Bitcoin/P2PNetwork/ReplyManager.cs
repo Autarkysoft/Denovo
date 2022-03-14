@@ -363,40 +363,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             return null;
                         }
 
-                        BlockProcessResult processResult = fullSettings.Blockchain.ProcessHeaders(hdrs.Headers);
-                        switch (processResult)
+                        if (fullSettings.Blockchain.ProcessHeaders(hdrs.Headers, nodeStatus))
                         {
-                            case BlockProcessResult.UnknownBlocks:
-                                nodeStatus.AddSmallViolation();
-                                nodeStatus.ReStartDisconnectTimer();
-                                result = new Message[1] { GetLocatorMessage() };
-                                break;
-                            case BlockProcessResult.InvalidBlocks:
-                                nodeStatus.StopDisconnectTimer();
-                                if (fullSettings.Blockchain.State != BlockchainState.Synchronized)
-                                {
-                                    nodeStatus.SignalDisconnect();
-                                }
-                                else
-                                {
-                                    nodeStatus.AddMediumViolation();
-                                }
-                                break;
-                            case BlockProcessResult.ForkBlocks:
-                                break;
-                            case BlockProcessResult.Success:
-                                if (hdrs.Headers.Length == HeadersPayload.MaxCount)
-                                {
-                                    nodeStatus.ReStartDisconnectTimer();
-                                    result = new Message[1] { GetLocatorMessage() };
-                                }
-                                else if (fullSettings.Blockchain.State == BlockchainState.BlocksSync)
-                                {
-                                    nodeStatus.StopDisconnectTimer();
-                                    result = GetMissingBlockMessage();
-                                    nodeStatus.StartDisconnectTimer(TimeConstants.MilliSeconds.OneMin);
-                                }
-                                break;
+                            nodeStatus.ReStartDisconnectTimer();
+                            result = new Message[1] { GetLocatorMessage() };
+                        }
+                        else if (fullSettings.Blockchain.State == BlockchainState.BlocksSync)
+                        {
+                            nodeStatus.StopDisconnectTimer();
+                            result = GetMissingBlockMessage();
+                            nodeStatus.StartDisconnectTimer(TimeConstants.MilliSeconds.OneMin);
                         }
                     }
                     break;
