@@ -9,6 +9,7 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -295,8 +296,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     ReadOnlySpan<byte> prvHash = peerBlocksQueue[index].DownloadedBlocks[0].Header.PreviousBlockHeaderHash;
                     if (prvHash.SequenceEqual(tip))
                     {
-                        foreach (var block in peerBlocksQueue[index].DownloadedBlocks)
+                        INodeStatus peer = peerBlocksQueue[index];
+                        Debug.Assert(peer.InvsToGet.Count == peer.DownloadedBlocks.Count);
+                        for (int i = 0; i < peer.DownloadedBlocks.Count; i++)
                         {
+                            IBlock block = peer.DownloadedBlocks[i];
+                            Debug.Assert(peer.InvsToGet[i].Hash.SequenceEqual(block.GetBlockHash(false)));
+
                             Consensus.BlockHeight = Height + 1;
                             if (BlockVer.Verify(block, out string error))
                             {
@@ -306,15 +312,20 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             }
                             else
                             {
-                                nodeStatus.AddMediumViolation();
-                                // TODO: this could break things. We may need a seperate "RetryQueue" for these blocks
-                                missingBlockHashes.Push(block.GetBlockHash(false));
+                                for (int j = peer.DownloadedBlocks.Count - 1; j >= i; j--)
+                                {
+                                    missingBlockHashes.Push(peer.InvsToGet[j].Hash);
+                                }
+
+                                peer.InvsToGet.Clear();
+                                nodeStatus.AddBigViolation();
+                                break;
                             }
                         }
 
                         peerBlocksQueue.RemoveAt(index);
                         index = 0;
-                        max = queue.Count;
+                        max = peerBlocksQueue.Count;
                     }
                     else
                     {
