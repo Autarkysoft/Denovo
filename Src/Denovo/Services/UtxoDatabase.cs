@@ -196,9 +196,9 @@ namespace Denovo.Services
                     new List<Utxo>(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript))));
 
                 coinbaseQueue[i2++] = coinbase;
-
-                WriteCoinbaseToDisk();
             }
+
+            WriteCoinbaseToDisk();
         }
 
 
