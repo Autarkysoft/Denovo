@@ -195,6 +195,8 @@ namespace Denovo.Services
                 database.Add(pop.GetTransactionHash(),
                     new List<Utxo>(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript))));
 
+                WriteToDisk();
+
                 coinbaseQueue[i2++] = coinbase;
             }
 
@@ -211,9 +213,11 @@ namespace Denovo.Services
 
             for (uint i = 1; i < txs.Length; i++)
             {
+                // Remove spent inputs from DB
                 foreach (TxIn item in txs[i].TxInList)
                 {
                     int index = database[item.TxHash].FindIndex(x => x.Index == item.Index);
+                    Debug.Assert(index >= 0);
                     database[item.TxHash].RemoveAt(index);
                     if (database[item.TxHash].Count == 0)
                     {
@@ -221,6 +225,7 @@ namespace Denovo.Services
                     }
                 }
 
+                // Add new outputs to DB
                 database.Add(txs[i].GetTransactionHash(),
                     new List<Utxo>(txs[i].TxOutList.Select((x, j) => new Utxo((uint)j, x.Amount, x.PubScript))));
             }
