@@ -308,6 +308,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             {
                                 Height++;
                                 tip = block.GetBlockHash(false);
+                                BlockVer.UpdateDB(block);
                                 FileMan.WriteBlock(block);
                             }
                             else
@@ -448,6 +449,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 Height++;
                 tip = block.GetBlockHash(false);
+                BlockVer.UpdateDB(block);
                 FileMan.WriteBlock(block);
             }
             else

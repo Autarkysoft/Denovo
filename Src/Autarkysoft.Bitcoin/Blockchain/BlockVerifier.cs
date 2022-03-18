@@ -178,11 +178,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-
-            txVer.UtxoDb.Update(block.TransactionList);
-
             error = null;
             return true;
+        }
+
+        /// <inheritdoc/>
+        public void UpdateDB(IBlock block)
+        {
+            txVer.UtxoDb.Update(block.TransactionList);
         }
     }
 }

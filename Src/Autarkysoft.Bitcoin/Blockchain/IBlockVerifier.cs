@@ -33,5 +33,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="error">Error message (null if valid, otherwise contains information about the reason).</param>
         /// <returns>True if block was valid, otherwise false.</returns>
         bool Verify(IBlock block, out string error);
+
+        /// <summary>
+        /// Updates the UTXO database using the given (already verified) block.
+        /// </summary>
+        /// <param name="block">Block to use</param>
+        void UpdateDB(IBlock block);
     }
 }
