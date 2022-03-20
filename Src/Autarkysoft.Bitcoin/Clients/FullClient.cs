@@ -186,13 +186,14 @@ namespace Autarkysoft.Bitcoin.Clients
                 {
                     NetworkAddressWithTime toAdd = new NetworkAddressWithTime()
                     {
-                        NodeIP = ips[index],
+                        NodeIP = ips[index++],
                         NodePort = Settings.DefaultPort
                     };
 
                     if (!addrs.Contains(toAdd))
                     {
                         addrs.Add(toAdd);
+                        added++;
                     }
                 }
             }
