@@ -287,10 +287,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     {
                         nodeStatus.IsAddrSent = true;
                         int count = settings.Rng.NextInt32(10, Constants.MaxAddrCount);
-                        NetworkAddressWithTime[] availableAddrs = fullSettings.GetRandomNodeAddrs(count, true);
-                        if (!(availableAddrs is null) && availableAddrs.Length != 0)
+                        List<NetworkAddressWithTime> lst = new List<NetworkAddressWithTime>(count);
+                        int added = fullSettings.GetRandomNodeAddrs(count, true, lst);
+                        if (added != 0)
                         {
-                            result = new Message[] { new Message(new AddrPayload(availableAddrs), settings.Network) };
+                            result = new Message[] { new Message(new AddrPayload(lst.ToArray()), settings.Network) };
                         }
                     }
                     break;

@@ -153,46 +153,56 @@ namespace Autarkysoft.Bitcoin.Clients
 
         private async void ConnectToPeers(int count)
         {
+            // TODO: should we add a "connectLock" in callers? It could prevent calling this method before inQueue is updated
+
             if (count <= 0 || isDisposed)
             {
                 return;
             }
 
-            NetworkAddressWithTime[] addrs = Settings.GetRandomNodeAddrs(count, false);
-            if (!(addrs is null))
-            {
-                // inQueue has to be incremented here instead of one at a time otherwise if halfway through the list a connection
-                // fails ConnectToPeers() will be called with a wrong count and will create a connection queue in connector.
-                Interlocked.Add(ref inQueue, addrs.Length);
-                foreach (var item in addrs)
-                {
-                    await Task.Run(() => connector.StartConnect(new IPEndPoint(item.NodeIP, item.NodePort)));
-                }
-            }
+            List<NetworkAddressWithTime> addrs = new List<NetworkAddressWithTime>(count);
 
-            // Make sure we are connecting to the "count" number of nodes
-            count -= (addrs is null) ? 0 : addrs.Length;
-            if (count > 0)
+            int added = Settings.GetRandomNodeAddrs(count, false, addrs);
+            if (added < count)
             {
-                // Dig a small subset of DNS seeds at random.
                 IPAddress[] ips = await DigDnsSeeds(false);
                 if (ips is null)
                 {
                     // If random dig failed, dig all of them.
                     ips = await DigDnsSeeds(true);
-                    if (ips is null)
+                    if (ips is null && added == 0)
                     {
+                        // This could mean we can not connect to the internet
                         // TODO: we need some sort of message manager or logger to post results, errors,... to
+                        // TODO: shut down FullClient?
                         return;
                     }
                 }
 
-                int[] indices = Settings.Rng.GetDistinct(0, ips.Length, Math.Min(ips.Length, count));
-                Interlocked.Add(ref inQueue, indices.Length);
-                foreach (var index in indices)
+                // This is like shuffling the whole array without changing the array itself:
+                int[] indices = Settings.Rng.GetDistinct(0, ips.Length, ips.Length);
+                int index = 0;
+                while (added < count && index < indices.Length)
                 {
-                    await Task.Run(() => connector.StartConnect(new IPEndPoint(ips[index], Settings.DefaultPort)));
+                    NetworkAddressWithTime toAdd = new NetworkAddressWithTime()
+                    {
+                        NodeIP = ips[index],
+                        NodePort = Settings.DefaultPort
+                    };
+
+                    if (!addrs.Contains(toAdd))
+                    {
+                        addrs.Add(toAdd);
+                    }
                 }
+            }
+
+            // inQueue has to be incremented here instead of one at a time otherwise if halfway through the list a connection
+            // fails ConnectToPeers() will be called with a wrong count and will create a connection queue in connector.
+            Interlocked.Add(ref inQueue, addrs.Count);
+            foreach (var item in addrs)
+            {
+                await Task.Run(() => connector.StartConnect(new IPEndPoint(item.NodeIP, item.NodePort)));
             }
         }
 

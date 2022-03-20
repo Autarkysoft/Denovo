@@ -11,6 +11,7 @@ using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using Xunit;
@@ -249,15 +250,17 @@ namespace Tests.Bitcoin.P2PNetwork
 
 
         internal NetworkAddressWithTime[] addrsToReturn;
-        internal int countRandAddr;
+        internal int countRandAddr, returnCountRandAddr;
         internal bool? randAddrSkipCheck;
-        public NetworkAddressWithTime[] GetRandomNodeAddrs(int count, bool skipCheck)
+        public int GetRandomNodeAddrs(int count, bool skipCheck, List<NetworkAddressWithTime> result)
         {
             Assert.Equal(countRandAddr, count);
             Assert.True(randAddrSkipCheck.HasValue, UnexpectedCall);
             Assert.Equal(randAddrSkipCheck.Value, skipCheck);
 
-            return addrsToReturn;
+            result.AddRange(addrsToReturn);
+
+            return returnCountRandAddr;
         }
 
         internal IPAddress ipToRemove;

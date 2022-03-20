@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using System.Collections.Generic;
 using System.Net;
 
 namespace Autarkysoft.Bitcoin.Clients
@@ -44,8 +45,9 @@ namespace Autarkysoft.Bitcoin.Clients
         /// <param name="skipCheck">
         /// True to skip checking the returned values  (for Addr message), false to check the IP and service flags (for connection)
         /// </param>
-        /// <returns>Null or at most <paramref name="count"/> number of addresses</returns>
-        NetworkAddressWithTime[] GetRandomNodeAddrs(int count, bool skipCheck);
+        /// <param name="result">A list to add the results to</param>
+        /// <returns>Number of items that were added to the list</returns>
+        int GetRandomNodeAddrs(int count, bool skipCheck, List<NetworkAddressWithTime> result);
         /// <summary>
         /// Removes the peer from peer list that has the given IP address.
         /// </summary>

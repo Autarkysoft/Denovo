@@ -109,11 +109,11 @@ namespace Autarkysoft.Bitcoin.Clients
 
 
         /// <inheritdoc/>
-        public NetworkAddressWithTime[] GetRandomNodeAddrs(int count, bool skipCheck)
+        public int GetRandomNodeAddrs(int count, bool skipCheck, List<NetworkAddressWithTime> result)
         {
             if (count <= 0)
             {
-                return null;
+                return 0;
             }
 
             lock (addrLock)
@@ -122,7 +122,7 @@ namespace Autarkysoft.Bitcoin.Clients
                 if (data is null || data.Length == 0 || data.Length % NetworkAddressWithTime.Size != 0)
                 {
                     // File doesn't exist or is corrupted
-                    return null;
+                    return 0;
                 }
                 else
                 {
@@ -130,19 +130,20 @@ namespace Autarkysoft.Bitcoin.Clients
                     // This is like shuffling the entire array itself, but we just have the random index
                     int[] indices = Rng.GetDistinct(0, total, total);
 
-                    var result = new List<NetworkAddressWithTime>(count);
                     var stream = new FastStreamReader(data);
                     int i = 0;
+                    int temp = result.Count;
                     while (result.Count < count && i < indices.Length)
                     {
                         stream.ChangePosition(indices[i] * NetworkAddressWithTime.Size);
                         var addr = new NetworkAddressWithTime();
                         if (addr.TryDeserialize(stream, out _))
                         {
-                            if (skipCheck ||
+                            if ((skipCheck ||
                                 !AllNodes.Contains(addr.NodeIP) &&
                                 (supportsIpV6 || addr.NodeIP.AddressFamily != AddressFamily.InterNetworkV6) &&
-                                HasNeededServices(addr.NodeServices))
+                                HasNeededServices(addr.NodeServices)) &&
+                                !result.Contains(addr))
                             {
                                 result.Add(addr);
                             }
@@ -150,7 +151,7 @@ namespace Autarkysoft.Bitcoin.Clients
                         i++;
                     }
 
-                    return result.ToArray();
+                    return result.Count - temp;
                 }
             }
         }

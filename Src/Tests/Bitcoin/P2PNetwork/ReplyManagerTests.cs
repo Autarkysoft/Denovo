@@ -168,6 +168,7 @@ namespace Tests.Bitcoin.P2PNetwork
                     _netType = NetworkType.MainNet,
                     addrsToReturn = mockAddrs,
                     countRandAddr = 15,
+                    returnCountRandAddr = mockAddrs.Length,
                     _rng = new MockNonceRng(15),
                     randAddrSkipCheck = true
                 },
@@ -176,28 +177,14 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             yield return new object[]
             {
-                // GetAddr (IClientSettings returns null)
-                new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
-                new MockClientSettings()
-                {
-                    _netType = NetworkType.MainNet,
-                    addrsToReturn = null,
-                    countRandAddr = 15,
-                    _rng = new MockNonceRng(15),
-                    randAddrSkipCheck = true
-                },
-                new Message(new GetAddrPayload(), NetworkType.MainNet),
-                null
-            };
-            yield return new object[]
-            {
-                // GetAddr (IClientSettings returns empty array)
+                // GetAddr (IClientSettings doesn't add any item)
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, _addrSent = false },
                 new MockClientSettings()
                 {
                     _netType = NetworkType.MainNet,
                     addrsToReturn = Array.Empty<NetworkAddressWithTime>(),
                     countRandAddr = 15,
+                    returnCountRandAddr = 0,
                     _rng = new MockNonceRng(15),
                     randAddrSkipCheck = true
                 },
