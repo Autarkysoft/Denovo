@@ -9,7 +9,6 @@ using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Denovo.Services
@@ -77,7 +76,10 @@ namespace Denovo.Services
 
         private readonly IDenovoFileManager fileMan;
         private const string DbName = "UtxoDb";
+        private const string CoinBaseDbName = "CoinbaseDb";
         private readonly Dictionary<byte[], List<Utxo>> database;
+        private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
+        private int i1, i2;
 
 
         private void Init()
@@ -107,7 +109,7 @@ namespace Denovo.Services
                 }
             }
 
-            data = fileMan.ReadData("CoinbaseDb");
+            data = fileMan.ReadData(CoinBaseDbName);
             if (data is not null && data.Length != 0)
             {
                 var stream = new FastStreamReader(data);
@@ -123,7 +125,7 @@ namespace Denovo.Services
                     var coinbase = new Transaction();
                     if (coinbase.TryDeserialize(stream, out _))
                     {
-                        coinbaseQueue[index] = coinbase;
+                        coinbaseQueue[index++] = coinbase;
                     }
                     else
                     {
@@ -133,20 +135,6 @@ namespace Denovo.Services
             }
         }
 
-        private void WriteToDisk()
-        {
-            var stream = new FastStream(database.Count * 90);
-            foreach (var item in database)
-            {
-                foreach (var item2 in item.Value)
-                {
-                    stream.Write(item.Key);
-                    item2.Serialize(stream);
-                }
-            }
-
-            fileMan.WriteData(stream.ToByteArray(), DbName);
-        }
 
         private void WriteCoinbaseToDisk()
         {
@@ -155,31 +143,21 @@ namespace Denovo.Services
             stream.Write(i2);
             foreach (var item in coinbaseQueue)
             {
+                if (item is null)
+                {
+                    break;
+                }
+
                 item.Serialize(stream);
             }
 
-            fileMan.WriteData(stream.ToByteArray(), "CoinbaseDb");
+            fileMan.WriteData(stream.ToByteArray(), CoinBaseDbName);
         }
 
-        public IUtxo Find(TxIn tin)
-        {
-            if (database.TryGetValue(tin.TxHash, out List<Utxo> value))
-            {
-                var index = value.FindIndex(x => x.Index == tin.Index);
-                return index < 0 ? null : value[index];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-
-        private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
-        private int i1, i2;
 
         private void UpdateCoinbase(ITransaction coinbase)
         {
+            Debug.Assert(coinbase is not null);
             if (i1 < coinbaseQueue.Length)
             {
                 coinbaseQueue[i1++] = coinbase;
@@ -195,7 +173,7 @@ namespace Denovo.Services
                 database.Add(pop.GetTransactionHash(),
                     new List<Utxo>(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript))));
 
-                WriteToDisk();
+                WriteDbToDisk();
 
                 coinbaseQueue[i2++] = coinbase;
             }
@@ -203,6 +181,35 @@ namespace Denovo.Services
             WriteCoinbaseToDisk();
         }
 
+
+        private void WriteDbToDisk()
+        {
+            var stream = new FastStream(database.Count * 90);
+            foreach (var item in database)
+            {
+                foreach (var item2 in item.Value)
+                {
+                    stream.Write(item.Key);
+                    item2.Serialize(stream);
+                }
+            }
+
+            fileMan.WriteData(stream.ToByteArray(), DbName);
+        }
+
+
+        public IUtxo Find(TxIn tin)
+        {
+            if (database.TryGetValue(tin.TxHash, out List<Utxo> value))
+            {
+                var index = value.FindIndex(x => x.Index == tin.Index);
+                return index < 0 ? null : value[index];
+            }
+            else
+            {
+                return null;
+            }
+        }
 
 
         public void Update(ITransaction[] txs)
@@ -230,8 +237,9 @@ namespace Denovo.Services
                     new List<Utxo>(txs[i].TxOutList.Select((x, j) => new Utxo((uint)j, x.Amount, x.PubScript))));
             }
 
-            WriteToDisk();
+            WriteDbToDisk();
         }
+
 
         public void Undo(ITransaction[] txs, int lastIndex)
         {
