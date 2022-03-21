@@ -233,8 +233,19 @@ namespace Denovo.Services
                 }
 
                 // Add new outputs to DB
-                database.Add(txs[i].GetTransactionHash(),
-                    new List<Utxo>(txs[i].TxOutList.Select((x, j) => new Utxo((uint)j, x.Amount, x.PubScript))));
+                List<Utxo> temp = new(txs[i].TxOutList.Length);
+                for (int j = 0; j < txs[i].TxOutList.Length; j++)
+                {
+                    TxOut item = txs[i].TxOutList[j];
+                    if (!item.PubScript.IsUnspendable())
+                    {
+                        temp.Add(new Utxo((uint)j, item.Amount, item.PubScript));
+                    }
+                }
+                if (temp.Count > 0)
+                {
+                    database.Add(txs[i].GetTransactionHash(), temp);
+                }
             }
 
             WriteDbToDisk();
