@@ -70,6 +70,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         public event PropertyChangedEventHandler PropertyChanged;
         /// <inheritdoc/>
         public event EventHandler DisconnectEvent;
+        /// <inheritdoc/>
+        public event EventHandler NewInventoryEvent;
 
         private IPAddress _ip;
         /// <inheritdoc/>
@@ -268,6 +270,15 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 IsDisconnected = true;
                 RaiseDisconnectEvent();
+            }
+        }
+
+        /// <inheritdoc/>
+        public void SignalNewInv()
+        {
+            if (!IsDisconnected)
+            {
+                NewInventoryEvent?.Invoke(this, EventArgs.Empty);
             }
         }
 

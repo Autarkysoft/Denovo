@@ -125,9 +125,17 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// </summary>
         event EventHandler DisconnectEvent;
         /// <summary>
+        /// An event to be raised whenever processing the inventory list is finished.
+        /// </summary>
+        event EventHandler NewInventoryEvent;
+        /// <summary>
         /// Raises the disconnect event to signal disconnecting from this node.
         /// </summary>
         void SignalDisconnect();
+        /// <summary>
+        /// Raises the new inventory event to signal <see cref="InvsToGet"/> list has new items do download.
+        /// </summary>
+        void SignalNewInv();
 
         /// <summary>
         /// Disposes the disconnect timer (useful to free up resources).

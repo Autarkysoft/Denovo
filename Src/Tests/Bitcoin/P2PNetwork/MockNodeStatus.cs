@@ -353,12 +353,20 @@ namespace Tests.Bitcoin.P2PNetwork
         }
 
         public event EventHandler DisconnectEvent;
+        public event EventHandler NewInventoryEvent;
 
         internal bool expectDiscSignal = false;
         public void SignalDisconnect()
         {
             Assert.True(expectDiscSignal, UnexpectedCall);
             expectDiscSignal = false;
+        }
+
+        internal bool expectNewInvSignal = false;
+        public void SignalNewInv()
+        {
+            Assert.True(expectNewInvSignal, UnexpectedCall);
+            expectNewInvSignal = false;
         }
 
         internal bool disposeTimer = false;
