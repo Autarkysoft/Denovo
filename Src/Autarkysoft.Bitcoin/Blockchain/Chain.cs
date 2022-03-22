@@ -318,6 +318,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                                     missingBlockHashes.Push(peer.InvsToGet[j].Hash);
                                 }
 
+                                // TODO: put inventories back?
                                 peer.InvsToGet.Clear();
                                 nodeStatus.AddBigViolation();
                                 break;
@@ -327,6 +328,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         peerBlocksQueue.RemoveAt(index);
                         index = 0;
                         max = peerBlocksQueue.Count;
+
+                        peer.InvsToGet.Clear();
+                        peer.DownloadedBlocks.Clear();
+                        SetMissingBlockHashes(peer);
+                        peer.SignalNewInv();
                     }
                     else
                     {

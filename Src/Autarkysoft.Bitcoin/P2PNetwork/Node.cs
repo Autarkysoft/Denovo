@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -49,8 +50,18 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             pingTimer = new System.Timers.Timer(TimeSpan.FromMinutes(1.1).TotalMilliseconds);
             pingTimer.Elapsed += PingTimer_Elapsed;
             pingTimer.Start();
+
+            if (settings is IFullClientSettings)
+            {
+                NodeStatus.NewInventoryEvent += NodeStatus_NewInventoryEvent;
+            }
         }
 
+        private void NodeStatus_NewInventoryEvent(object sender, EventArgs e)
+        {
+            NodeStatus.StartDisconnectTimer(TimeConstants.MilliSeconds.OneMin);
+            Send(new Message(new GetDataPayload(NodeStatus.InvsToGet.ToArray()), settings.Network));
+        }
 
         private void PingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
