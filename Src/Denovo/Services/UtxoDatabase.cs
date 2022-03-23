@@ -164,7 +164,7 @@ namespace Denovo.Services
             }
             else
             {
-                if (i2 > coinbaseQueue.Length)
+                if (i2 >= coinbaseQueue.Length)
                 {
                     i2 = 0;
                 }
