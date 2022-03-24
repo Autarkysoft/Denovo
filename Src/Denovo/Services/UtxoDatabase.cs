@@ -49,28 +49,8 @@ namespace Denovo.Services
         public UtxoDatabase(IDenovoFileManager fileMan)
         {
             this.fileMan = fileMan;
-            database = new Dictionary<byte[], List<Utxo>>(new ByteComparer());
+            database = new Dictionary<byte[], List<Utxo>>(new ByteArrayComparer());
             Init();
-        }
-
-        public class ByteComparer : IEqualityComparer<byte[]>
-        {
-            public bool Equals(byte[] x, byte[] y)
-            {
-                return ((Span<byte>)x).SequenceEqual(y);
-            }
-
-            public int GetHashCode(byte[] key)
-            {
-                Debug.Assert(key != null);
-
-                int hash = 17;
-                foreach (byte b in key)
-                {
-                    hash = (hash * 31) + b.GetHashCode();
-                }
-                return hash;
-            }
         }
 
 

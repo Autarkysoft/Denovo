@@ -7,6 +7,8 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -81,6 +83,35 @@ namespace Autarkysoft.Bitcoin
             }
 
             return oldS.Mod(m);
+        }
+    }
+
+
+
+
+
+    /// <summary>
+    /// A comparer used in lists to compare byte arrays
+    /// </summary>
+    public class ByteArrayComparer : IEqualityComparer<byte[]>
+    {
+        /// <inheritdoc/>
+        public bool Equals(byte[] x, byte[] y)
+        {
+            return x != null && y != null && ((Span<byte>)x).SequenceEqual(y);
+        }
+
+        /// <inheritdoc/>
+        public int GetHashCode(byte[] key)
+        {
+            Debug.Assert(key != null);
+
+            int hash = 17;
+            foreach (byte b in key)
+            {
+                hash = (hash * 31) + b.GetHashCode();
+            }
+            return hash;
         }
     }
 
