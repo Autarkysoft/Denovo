@@ -10,6 +10,7 @@ using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 
@@ -69,6 +70,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             mempool = memoryPool;
             this.consensus = consensus;
 
+            localDb = new Dictionary<byte[], List<Utxo>>(new ByteArrayComparer());
             calc = new EllipticCurveCalculator();
             scrSer = new ScriptSerializer();
             hash160 = new Ripemd160Sha256();
@@ -77,6 +79,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private readonly bool isMempool;
+        private readonly Dictionary<byte[], List<Utxo>> localDb;
         private readonly EllipticCurveCalculator calc;
         private readonly ScriptSerializer scrSer;
         private readonly IMemoryPool mempool;
@@ -523,7 +526,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
             var utxos = new IUtxo[tx.TxInList.Length];
             for (int i = 0; i < utxos.Length; i++)
             {
-                utxos[i] = UtxoDb.Find(tx.TxInList[i]);
+                IUtxo temp = UtxoDb.Find(tx.TxInList[i]);
+                if (temp is null && localDb.TryGetValue(tx.TxInList[i].TxHash, out List<Utxo> value))
+                {
+                    var index = value.FindIndex(x => x.Index == tx.TxInList[i].Index);
+                    temp = index < 0 ? null : value[index];
+                }
+                utxos[i] = temp;
             }
 
             return Verify(tx, utxos, out error);
@@ -1144,6 +1153,21 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
             TotalFee += toSpend - spent;
+
+            // Update local UTXO database (n+1)st tx can spend (n)th tx's UTXOs
+            List<Utxo> temp = new List<Utxo>(tx.TxOutList.Length);
+            for (int i = 0; i < tx.TxOutList.Length; i++)
+            {
+                TxOut item = tx.TxOutList[i];
+                if (!item.PubScript.IsUnspendable())
+                {
+                    temp.Add(new Utxo((uint)i, item.Amount, item.PubScript));
+                }
+            }
+            if (temp.Count > 0)
+            {
+                localDb.Add(tx.GetTransactionHash(), temp);
+            }
 
             error = null;
             return true;
