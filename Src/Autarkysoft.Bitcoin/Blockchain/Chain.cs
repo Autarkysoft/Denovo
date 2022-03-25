@@ -234,16 +234,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private Stack<byte[]> missingBlockHashes;
+        private readonly List<byte[][]> failedBlockHashes = new List<byte[][]>();
 
         /// <inheritdoc/>
         public void PutBackMissingBlocks(List<Inventory> hashes)
         {
             lock (mainLock)
             {
-                foreach (var item in hashes)
-                {
-                    missingBlockHashes.Push(item.Hash);
-                }
+                failedBlockHashes.Add(hashes.Select(x => x.Hash).ToArray());
             }
         }
 
@@ -252,7 +250,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         {
             lock (mainLock)
             {
-                if (missingBlockHashes is null)
+                if (missingBlockHashes is null && headerList.Count - 1 != Height)
                 {
                     missingBlockHashes = new Stack<byte[]>(headerList.Count);
                     for (int i = headerList.Count - 1; i > Height; i--)
@@ -260,21 +258,51 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         missingBlockHashes.Push(headerList[i].GetHash(false));
                     }
                 }
-                if (missingBlockHashes.Count == 0)
-                {
-                    return;
-                }
 
-                int max = missingBlockHashes.Count < 16 ? missingBlockHashes.Count : 16;
-                for (int i = 0; i < max; i++)
+                if (failedBlockHashes.Count > 0)
                 {
-                    byte[] h = missingBlockHashes.Pop();
-                    nodeStatus.InvsToGet.Add(new Inventory(InventoryType.WitnessBlock, h));
+                    // Find the deepest blocks in the stack
+                    int index = 0;
+                    if (failedBlockHashes.Count > 1)
+                    {
+                        int h = int.MaxValue;
+                        for (int i = 0; i < failedBlockHashes.Count; i++)
+                        {
+                            int j = headerList.FindIndex(x => ((Span<byte>)x.GetHash()).SequenceEqual(failedBlockHashes[i][0]));
+                            Debug.Assert(j > 0);
+                            if (j < h)
+                            {
+                                h = j;
+                                index = i;
+                            }
+                        }
+                    }
+
+                    foreach (byte[] item in failedBlockHashes[index])
+                    {
+                        nodeStatus.InvsToGet.Add(new Inventory(InventoryType.WitnessBlock, item));
+                    }
+
+                    failedBlockHashes.RemoveAt(index);
+                }
+                else if (missingBlockHashes != null && missingBlockHashes.Count > 0)
+                {
+                    // TODO: change 16 to a constant?
+                    int max = missingBlockHashes.Count < 16 ? missingBlockHashes.Count : 16;
+                    for (int i = 0; i < max; i++)
+                    {
+                        byte[] h = missingBlockHashes.Pop();
+                        nodeStatus.InvsToGet.Add(new Inventory(InventoryType.WitnessBlock, h));
+                    }
                 }
             }
         }
 
 
+        // TODO: an idea for the peer queue: it could be turned into an array with MaxConnectionCount number of items
+        //       where peers are inserted in a FIFO array based on the blocks they need to download so that the process
+        //       queue method doesn't have to loop through all items each time (it will only pop the first item and does
+        //       the processing.
         private readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
 
         /// <inheritdoc/>
