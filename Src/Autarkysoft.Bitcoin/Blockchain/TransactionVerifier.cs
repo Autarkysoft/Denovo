@@ -126,6 +126,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             TotalSigOpCount = 0;
             TotalFee = 0;
             AnySegWit = false;
+            localDb.Clear();
         }
 
         /// <inheritdoc/>
