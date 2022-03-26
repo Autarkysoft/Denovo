@@ -18,30 +18,6 @@ using System.Threading.Tasks;
 namespace Autarkysoft.Bitcoin.Blockchain
 {
     /// <summary>
-    /// Result of processing a block or header
-    /// </summary>
-    public enum BlockProcessResult
-    {
-        /// <summary>
-        /// Block or header with an unknown previous hash
-        /// </summary>
-        UnknownBlocks,
-        /// <summary>
-        /// Block or header that is invalid
-        /// </summary>
-        InvalidBlocks,
-        /// <summary>
-        /// A valid block or header that is on another chain (shorter than locally stored best chain)
-        /// </summary>
-        ForkBlocks,
-        /// <summary>
-        /// A valid block or header
-        /// </summary>
-        Success
-    }
-
-
-    /// <summary>
     /// Implementation of the blockchain that handles validation and storage of blocks and block headers.
     /// <para/>Implements <see cref="IChain"/>.
     /// </summary>
