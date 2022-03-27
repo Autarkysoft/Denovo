@@ -31,7 +31,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="blockVerifier">Block verifier</param>
         /// <param name="consensus">Consensus rules</param>
         /// <param name="netType">Network type</param>
-        public Chain(IFileManager fileMan, BlockVerifier blockVerifier, IConsensus consensus, NetworkType netType)
+        public Chain(IFileManager fileMan, IBlockVerifier blockVerifier, IConsensus consensus, NetworkType netType)
         {
             FileMan = fileMan ?? throw new ArgumentNullException(nameof(fileMan));
             Consensus = consensus ?? throw new ArgumentNullException(nameof(consensus));
@@ -40,8 +40,45 @@ namespace Autarkysoft.Bitcoin.Blockchain
             network = netType;
             // TODO: find a better initial capacity
             headerList = new List<BlockHeader>(1_000_000);
-            ReadHeaders();
-            ReadBlockInfo();
+            // Read Headers:
+            byte[] hadba = FileMan.ReadData(HeadersFile);
+            if (hadba is null || hadba.Length % BlockHeader.Size != 0)
+            {
+                // File doesn't exist or is corrupted
+                ResetHeaders();
+            }
+            else
+            {
+                int count = hadba.Length / BlockHeader.Size;
+                var stream = new FastStreamReader(hadba);
+                for (int i = 0; i < count; i++)
+                {
+                    var temp = new BlockHeader();
+                    if (temp.TryDeserialize(stream, out _))
+                    {
+                        headerList.Add(temp);
+                    }
+                    else
+                    {
+                        // File is corrupted, has to be instantiated
+                        ResetHeaders();
+                        break;
+                    }
+                }
+            }
+
+            // Read BlockInfo (block hash[32] | block size[4] | file name[4]):
+            byte[] data = FileMan.ReadBlockInfo();
+            if (data is null || data.Length == 0 || data.Length % (32 + 4 + 4) != 0)
+            {
+                // File doesn't exist or data is corrupted
+                ResetBlockInfo();
+            }
+            else
+            {
+                Height = (data.Length / (32 + 4 + 4)) - 1;
+                Tip = headerList[Height].GetHash(false);
+            }
         }
 
 
@@ -66,6 +103,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Client time
         /// </summary>
         public IClientTime Time { get; set; }
+        /// <inheritdoc/>
+        public int Height { get; private set; }
 
         private BlockchainState _state = BlockchainState.None;
         /// <inheritdoc/>
@@ -90,79 +129,43 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
         /// <inheritdoc/>
+        public byte[] Tip { get; private set; }
+
+        /// <inheritdoc/>
         public event EventHandler HeaderSyncEndEvent;
         /// <inheritdoc/>
         public event EventHandler BlockSyncEndEvent;
 
+        // TODO: replace with a lighter alternative
+        // TODO: remove both of the following?
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+        private readonly List<IBlock> queue = new List<IBlock>(10);
 
-        /// <inheritdoc/>
-        public int Height { get; private set; }
+        // TODO: an idea for the peer queue: it could be turned into an array with MaxConnectionCount number of items
+        //       where peers are inserted in a FIFO array based on the blocks they need to download so that the process
+        //       queue method doesn't have to loop through all items each time (it will only pop the first item and does
+        //       the processing.
+        private readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
+        private Stack<byte[]> missingBlockHashes;
+        private readonly List<byte[][]> failedBlockHashes = new List<byte[][]>();
 
-        private void ReadHeaders()
+
+        private void ResetHeaders()
         {
-            byte[] hadba = FileMan.ReadData(HeadersFile);
-            if (hadba is null || hadba.Length % BlockHeader.Size != 0)
-            {
-                // File doesn't exist or is corrupted
-                BlockHeader genesis = Consensus.GetGenesisBlock().Header;
-                headerList.Add(genesis);
-                FileMan.WriteData(genesis.Serialize(), HeadersFile);
-            }
-            else
-            {
-                int count = hadba.Length / BlockHeader.Size;
-                var stream = new FastStreamReader(hadba);
-                for (int i = 0; i < count; i++)
-                {
-                    var temp = new BlockHeader();
-                    if (temp.TryDeserialize(stream, out _))
-                    {
-                        headerList.Add(temp);
-                    }
-                    else
-                    {
-                        // File is corrupted, has to be instantiated
-                        headerList.Clear();
-                        BlockHeader genesis = Consensus.GetGenesisBlock().Header;
-                        headerList.Add(genesis);
-                        FileMan.WriteData(genesis.Serialize(), HeadersFile);
-                        break;
-                    }
-                }
-            }
+            headerList.Clear();
+            BlockHeader genesis = Consensus.GetGenesisBlock().Header;
+            headerList.Add(genesis);
+            FileMan.WriteData(genesis.Serialize(), HeadersFile);
         }
 
-        private void ReadBlockInfo()
+        private void ResetBlockInfo()
         {
-            byte[] data = FileMan.ReadBlockInfo();
-            if (data is null || data.Length == 0 || data.Length % (32 + 4 + 4) != 0)
-            {
-                // File doesn't exist or data is corrupted
-                IBlock genesis = Consensus.GetGenesisBlock();
-                FileMan.WriteBlock(genesis);
-                Height = 0;
-                tip = genesis.GetBlockHash(false);
-
-                // TODO: if the file is corrupted the info file has to be created based on block files
-            }
-            else
-            {
-                Height = (data.Length / (32 + 4 + 4)) - 1;
-                tip = headerList[Height].GetHash(false);
-            }
-        }
-
-        /// <inheritdoc/>
-        public int FindHeight(ReadOnlySpan<byte> prevHash)
-        {
-            for (int i = 0; i < headerList.Count; i++)
-            {
-                if (prevHash.SequenceEqual(headerList[i].GetHash()))
-                {
-                    return i + 1;
-                }
-            }
-            return -1;
+            // TODO: Here we need to read each block file deserialize blocks without verifying them
+            //       and re-construct the info file.
+            IBlock genesis = Consensus.GetGenesisBlock();
+            FileMan.WriteBlock(genesis);
+            Height = 0;
+            Tip = genesis.GetBlockHash(false);
         }
 
 
@@ -208,9 +211,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
         }
 
-
-        private Stack<byte[]> missingBlockHashes;
-        private readonly List<byte[][]> failedBlockHashes = new List<byte[][]>();
 
         /// <inheritdoc/>
         public void PutBackMissingBlocks(List<Inventory> hashes)
@@ -275,11 +275,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
-        // TODO: an idea for the peer queue: it could be turned into an array with MaxConnectionCount number of items
-        //       where peers are inserted in a FIFO array based on the blocks they need to download so that the process
-        //       queue method doesn't have to loop through all items each time (it will only pop the first item and does
-        //       the processing.
-        private readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
+
 
         /// <inheritdoc/>
         public void ProcessReceivedBlocks(INodeStatus nodeStatus)
@@ -298,7 +294,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 while (index < max)
                 {
                     ReadOnlySpan<byte> prvHash = peerBlocksQueue[index].DownloadedBlocks[0].Header.PreviousBlockHeaderHash;
-                    if (prvHash.SequenceEqual(tip))
+                    if (prvHash.SequenceEqual(Tip))
                     {
                         INodeStatus peer = peerBlocksQueue[index];
                         Debug.Assert(peer.InvsToGet.Count == peer.DownloadedBlocks.Count);
@@ -311,7 +307,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             if (BlockVer.Verify(block, out string error))
                             {
                                 Height++;
-                                tip = block.GetBlockHash(false);
+                                Tip = block.GetBlockHash(false);
                                 BlockVer.UpdateDB(block);
                                 FileMan.WriteBlock(block);
                             }
@@ -422,11 +418,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
-        // TODO: replace with a lighter alternative
-        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
-        private byte[] tip;
-        private readonly List<IBlock> queue = new List<IBlock>(10);
-
         private void ProcessBlockQueue(IBlock block)
         {
             semaphore.Wait();
@@ -436,7 +427,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             int max = queue.Count;
             while (index < max)
             {
-                if (((ReadOnlySpan<byte>)block.Header.PreviousBlockHeaderHash).SequenceEqual(tip))
+                if (((ReadOnlySpan<byte>)block.Header.PreviousBlockHeaderHash).SequenceEqual(Tip))
                 {
                     ProcessAndSaveBlock(block);
                     queue.RemoveAt(index);
@@ -458,7 +449,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             if (BlockVer.Verify(block, out string error))
             {
                 Height++;
-                tip = block.GetBlockHash(false);
+                Tip = block.GetBlockHash(false);
                 BlockVer.UpdateDB(block);
                 FileMan.WriteBlock(block);
             }
@@ -470,7 +461,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
             }
         }
-
 
 
         private long GetMedianTimePast(int startIndex)

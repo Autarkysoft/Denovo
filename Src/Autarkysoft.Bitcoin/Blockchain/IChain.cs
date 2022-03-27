@@ -17,6 +17,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public interface IChain
     {
         /// <summary>
+        /// Returns the best block height (tip of the stored chain)
+        /// </summary>
+        int Height { get; }
+        /// <summary>
+        /// Hash of the last block in the chain
+        /// </summary>
+        byte[] Tip { get; }
+        /// <summary>
         /// Gets or sets the current blockchain state
         /// </summary>
         public BlockchainState State { get; set; }
@@ -30,18 +38,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// if needed, starting memory pool, etc).
         /// </summary>
         event EventHandler BlockSyncEndEvent;
-
-        /// <summary>
-        /// Returns the best block height (tip of the stored chain)
-        /// </summary>
-        int Height { get; }
-
-        /// <summary>
-        /// Returns the current block height based on its previous block hash
-        /// </summary>
-        /// <param name="prevHash">Previous block hash</param>
-        /// <returns>Block height (>=0) or -1 if previous block hash was not found in the database</returns>
-        int FindHeight(ReadOnlySpan<byte> prevHash);
 
         /// <summary>
         /// Returns the next difficulty target based on the best stored chain.

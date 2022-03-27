@@ -50,16 +50,8 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        internal byte[] expectedHash;
-        internal int heightToReturn = -1;
-        public int FindHeight(ReadOnlySpan<byte> prevHash)
-        {
-            Assert.True(expectedHash != null, UnexpectedCall);
-            Assert.True(heightToReturn != -1, UnexpectedCall);
-
-            Assert.True(prevHash.SequenceEqual(expectedHash));
-            return heightToReturn;
-        }
+        internal byte[] _tip;
+        public byte[] Tip => _tip;
 
         internal Target? targetToReturn;
         public Target GetNextTarget()
