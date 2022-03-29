@@ -10,47 +10,100 @@ using Xunit;
 
 namespace Tests.Bitcoin
 {
-#pragma warning disable CS0649 // Field is never assigned to
-    class MockFileManager : IFileManager
+    public enum FileManCallName
     {
+        AppendData_Block0,
+        AppendData_Block1,
+        AppendData_BlockInfo,
+        AppendData_Headers,
+        AppendData_Addrs,
+
+        ReadData_BlockInfo,
+        ReadData_Headers,
+        ReadData_Addrs,
+
+        WriteData_Headers,
+        WriteData_Addr,
+
+        ReadBlockInfo,
+        WriteBlock
+    }
+
+    public class MockFileManager : IFileManager
+    {
+        public MockFileManager(FileManCallName[] cn, byte[][] data)
+        {
+            Assert.True((cn is null && data is null) || cn.Length == data.Length);
+            callNames = cn;
+            expected = data;
+        }
+
         private const string UnexpectedCall = "Unexpected call was made";
+
+        private int index = 0;
+        internal FileManCallName[] callNames;
+        internal byte[][] expected;
+
+
+        private static string Convert(FileManCallName cn)
+        {
+            return cn switch
+            {
+                FileManCallName.AppendData_Block0 => "Block000000",
+                FileManCallName.AppendData_Block1 => "Block000001",
+                FileManCallName.AppendData_BlockInfo => "BlockInfo",
+                FileManCallName.AppendData_Headers => "Headers",
+                FileManCallName.AppendData_Addrs => "NodeAddrs",
+                FileManCallName.ReadData_BlockInfo => "BlockInfo",
+                FileManCallName.ReadData_Headers => "Headers",
+                FileManCallName.ReadData_Addrs => "NodeAddrs",
+                FileManCallName.WriteData_Headers => "Headers",
+                FileManCallName.WriteData_Addr => "NodeAddrs",
+                FileManCallName.ReadBlockInfo => throw new NotImplementedException(),
+                FileManCallName.WriteBlock => throw new NotImplementedException(),
+                _ => throw new NotImplementedException(),
+            };
+        }
 
 
         public void AppendData(byte[] data, string fileName)
         {
-            throw new NotImplementedException();
+            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.Equal(Convert(callNames[index]), fileName);
+            Assert.Equal(expected[index], data);
+            index++;
         }
 
-        internal string expReadFN;
-        internal byte[] returnReadData; // Can be null
         public byte[] ReadData(string fileName)
         {
-            Assert.False(string.IsNullOrEmpty(expReadFN), UnexpectedCall);
-            Assert.Equal(expReadFN, fileName);
-            return returnReadData;
+            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.Equal(Convert(callNames[index]), fileName);
+            return expected[index++];
         }
 
-        internal string expWriteFN;
-        internal byte[] expWriteData;
         public void WriteData(byte[] data, string fileName)
         {
-            Assert.False(string.IsNullOrEmpty(expWriteFN), UnexpectedCall);
-            Assert.Equal(expWriteFN, fileName);
-            Assert.Equal(expWriteData, data);
+            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.Equal(Convert(callNames[index]), fileName);
+            Assert.Equal(expected[index], data);
+            index++;
         }
 
-
-        internal byte[] blockInfo;
         public byte[] ReadBlockInfo()
         {
-            Assert.NotNull(blockInfo);
-            return blockInfo;
+            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.Equal(FileManCallName.ReadBlockInfo, callNames[index]);
+            return expected[index++];
         }
 
 
         internal IBlock expBlock;
         public void WriteBlock(IBlock block)
         {
+            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.Equal(FileManCallName.WriteBlock, callNames[index]);
+            index++;
+
             Assert.NotNull(expBlock);
             Assert.NotNull(block);
 
@@ -59,5 +112,4 @@ namespace Tests.Bitcoin
             Assert.True(eq, "Given block is not as expected.");
         }
     }
-#pragma warning restore CS0649 // Field is never assigned to
 }

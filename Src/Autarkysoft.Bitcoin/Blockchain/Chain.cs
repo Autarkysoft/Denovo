@@ -29,13 +29,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <exception cref="ArgumentNullException"/>
         /// <param name="fileMan">File manager</param>
         /// <param name="blockVerifier">Block verifier</param>
-        /// <param name="consensus">Consensus rules</param>
+        /// <param name="c">Consensus rules</param>
+        /// <param name="t">Client time</param>
         /// <param name="netType">Network type</param>
-        public Chain(IFileManager fileMan, IBlockVerifier blockVerifier, IConsensus consensus, NetworkType netType)
+        public Chain(IFileManager fileMan, IBlockVerifier blockVerifier, IConsensus c, IClientTime t, NetworkType netType)
         {
             FileMan = fileMan ?? throw new ArgumentNullException(nameof(fileMan));
-            Consensus = consensus ?? throw new ArgumentNullException(nameof(consensus));
+            Consensus = c ?? throw new ArgumentNullException(nameof(c));
             BlockVer = blockVerifier ?? throw new ArgumentNullException(nameof(blockVerifier));
+            Time = t ?? new ClientTime();
 
             network = netType;
             // TODO: find a better initial capacity
@@ -102,7 +104,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <summary>
         /// Client time
         /// </summary>
-        public IClientTime Time { get; set; }
+        public IClientTime Time { get; }
         /// <inheritdoc/>
         public int Height { get; private set; }
 

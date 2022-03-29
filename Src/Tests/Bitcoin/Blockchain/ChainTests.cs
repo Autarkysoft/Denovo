@@ -18,22 +18,20 @@ namespace Tests.Bitcoin.Blockchain
 {
     public class ChainTests
     {
-        private static Chain GetChain(IFileManager fman, BlockVerifier bver, IConsensus c)
+        private static Chain GetChain(IFileManager fman, BlockVerifier bver, IConsensus c, IClientTime t)
         {
             // TODO: we can mock Time too
-            return new Chain(fman, bver, c, NetworkType.MainNet) { Time = new ClientTime() };
+            return new Chain(fman, bver, c, t, NetworkType.MainNet);
         }
 
         private static Chain GetChain()
         {
-            var c = new Consensus();
-            var fman = new MockFileManager()
-            {
-                expReadFN = "Headers",
-                returnReadData = BlockHeaderTests.GetSampleBlockHeaderBytes(),
-                blockInfo = new byte[32 + 4 + 4]
-            };
-            return GetChain(fman, new BlockVerifier(null, c), c);
+            Consensus c = new();
+            MockFileManager fman = new(
+                new FileManCallName[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo },
+                new byte[][] { BlockHeaderTests.GetSampleBlockHeaderBytes(), new byte[32 + 4 + 4] });
+            ClientTime t = new();
+            return GetChain(fman, new BlockVerifier(null, c), c, t);
         }
 
         private static IEnumerable<BlockHeader> GetHeaders(int count)
@@ -45,6 +43,36 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
+
+
+        [Fact]
+        public void Constructor_NullExceptionTest()
+        {
+            MockFileManager fileMan = new(null, null);
+            MockBlockVerifier blockVer = new();
+            MockConsensus c = new();
+            MockClientTime t = new();
+
+            Assert.Throws<ArgumentNullException>(() => new Chain(null, blockVer, c, t, NetworkType.MainNet));
+            Assert.Throws<ArgumentNullException>(() => new Chain(fileMan, null, c, t, NetworkType.MainNet));
+            Assert.Throws<ArgumentNullException>(() => new Chain(fileMan, blockVer, null, t, NetworkType.MainNet));
+        }
+
+        [Fact]
+        public void Constructor_NullTimeTest()
+        {
+            MockFileManager fileMan = new(
+                new FileManCallName[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo },
+                new byte[][] { BlockHeaderTests.GetSampleBlockHeaderBytes(), new byte[32 + 4 + 4] });
+            MockBlockVerifier blockVer = new();
+            MockConsensus c = new();
+
+            // Null time doesn't throw:
+            Chain chain = new(fileMan, blockVer, c, null, NetworkType.MainNet);
+            Assert.NotNull(chain.Time);
+        }
+
+
         [Theory]
         // https://github.com/bitcoin/bitcoin/blob/32b191fb66e644c690c94cbfdae6ddbc754769d7/src/test/pow_tests.cpp#L14-L60
         [InlineData(1231006505, 1233061996, 0x1d00ffffU, 0x1d00ffffU)] // 0 & 2015
@@ -53,57 +81,50 @@ namespace Tests.Bitcoin.Blockchain
         [InlineData(1263163443, 1269211443, 0x1c387f6fU, 0x1d00e1fdU)] // Mocked & 46367
         public void GetNextTargetTest(uint first, uint last, uint lastNBits, uint expNBits)
         {
-            var chain = GetChain();
-            var hd1 = new BlockHeader() { BlockTime = first };
-            var hd2 = new BlockHeader() { BlockTime = last, NBits = lastNBits };
+            Chain chain = GetChain();
+            BlockHeader hd1 = new() { BlockTime = first };
+            BlockHeader hd2 = new() { BlockTime = last, NBits = lastNBits };
             Target actual = chain.GetNextTarget(hd1, hd2);
             Assert.Equal((Target)expNBits, actual);
         }
 
         public static IEnumerable<object[]> GetLocatorCases()
         {
-            var fman = new MockFileManager()
-            {
-                expReadFN = "Headers",
-                returnReadData = BlockHeaderTests.GetSampleBlockHeaderBytes(),
-                blockInfo = new byte[32 + 4 + 4]
-            };
-            var consensus = new MockConsensus();
-            var bver = new BlockVerifier(null, consensus);
+            Chain chain = GetChain();
 
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(1),
                 GetHeaders(1)
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(2),
                 GetHeaders(2).Reverse()
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(10),
                 GetHeaders(10).Reverse()
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(11),
                 GetHeaders(11).Reverse()
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(12),
                 GetHeaders(12).Reverse()
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(13),
                 new BlockHeader[12]
                 {
@@ -124,7 +145,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(14),
                 new BlockHeader[13]
                 {
@@ -146,7 +167,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(15),
                 new BlockHeader[13]
                 {
@@ -168,7 +189,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(16),
                 new BlockHeader[13]
                 {
@@ -190,7 +211,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(17),
                 new BlockHeader[13]
                 {
@@ -212,7 +233,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(18),
                 new BlockHeader[14]
                 {
@@ -235,7 +256,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 GetHeaders(19),
                 new BlockHeader[14]
                 {
@@ -258,7 +279,7 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 new BlockHeader[19]
                 {
                     new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
@@ -305,7 +326,7 @@ namespace Tests.Bitcoin.Blockchain
             uint yesterday = (uint)UnixTimeStamp.TimeToEpoch(DateTime.UtcNow.Subtract(TimeSpan.FromHours(25)));
             yield return new object[]
             {
-                GetChain(fman, bver, consensus),
+                chain,
                 new BlockHeader[19]
                 {
                     new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
@@ -351,8 +372,7 @@ namespace Tests.Bitcoin.Blockchain
 
         [Theory]
         [MemberData(nameof(GetLocatorCases))]
-        public void GetBlockHeaderLocatorTest(Autarkysoft.Bitcoin.Blockchain.Chain chain,
-                                              BlockHeader[] toSet, BlockHeader[] expected)
+        public void GetBlockHeaderLocatorTest(Chain chain, BlockHeader[] toSet, BlockHeader[] expected)
         {
             Helper.SetPrivateField(chain, "headerList", new List<BlockHeader>(toSet));
             BlockHeader[] headers = chain.GetBlockHeaderLocator();
