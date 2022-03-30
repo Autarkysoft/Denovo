@@ -85,9 +85,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private const string HeadersFile = "Headers";
-        private readonly List<BlockHeader> headerList;
         private readonly object mainLock = new object();
         private readonly NetworkType network;
+
+        /// <summary>
+        /// List of headers
+        /// </summary>
+        public readonly List<BlockHeader> headerList;
 
         /// <summary>
         /// File manager responsible for handling data

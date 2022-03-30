@@ -42,7 +42,151 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
+        private static readonly IBlock MockGenesis = new Block() { Header = BlockHeaderTests.GetSampleBlockHeader() };
+        private static readonly byte[] MockGenesisBytes = BlockHeaderTests.GetSampleBlockHeaderBytes();
+        private static readonly byte[] MockGenesisHash = BlockHeaderTests.GetSampleBlockHash();
 
+        // Blocks 620279 and 620280
+        private static BlockHeader Header1 => new()
+        {
+            Version = 536870912,
+            PreviousBlockHeaderHash = Helper.HexToBytes("0000000000000000000ff7d9a0ff8e0947a2ac2d13403bc980766b95115fc437", true),
+            MerkleRootHash = Helper.HexToBytes("d1ba9e18f76e3490815416f3a0f84b47c005d9b2b32669f5a01b6123cf8c658c", true),
+            BlockTime = 1583387996,
+            NBits = 387067068,
+            Nonce = 1310529803
+        };
+        private static readonly BlockHeader Header2 = new()
+        {
+            Version = 536870912,
+            PreviousBlockHeaderHash = Helper.HexToBytes("00000000000000000000b4269e0bf78432f91bbe7cc3a5b0ce9c476b8398d6c1", true),
+            MerkleRootHash = Helper.HexToBytes("59026994738b6a77758e78797543fa3906628a1fd5f11a15da3df75d7c5e9397", true),
+            BlockTime = 1583388040,
+            NBits = 387067068,
+            Nonce = 3358651144
+        };
+        private static readonly byte[] HeaderBytes1 = Helper.HexToBytes("0000002037c45f11956b7680c93b40132daca247098effa0d9f70f0000000000000000008c658ccf23611ba0f56926b3b2d905c0474bf8a0f316548190346ef7189ebad15c95605ebc2c12170b191d4e");
+        private static readonly byte[] HeaderBytes2 = Helper.HexToBytes("00000020c1d698836b479cceb0a5c37cbe1bf93284f70b9e26b40000000000000000000097935e7c5df73dda151af1d51f8a620639fa437579788e75776a8b73946902598895605ebc2c121708f330c8");
+        private static readonly byte[] HeaderHash1 = Helper.HexToBytes("00000000000000000000b4269e0bf78432f91bbe7cc3a5b0ce9c476b8398d6c1", true);
+        private static readonly byte[] HeaderHash2 = Helper.HexToBytes("000000000000000000053ff96dc5b3e7894fcd2f0aa2993884a6e6bedd58885c", true);
+
+
+        public static IEnumerable<object[]> GetCtorCases()
+        {
+            MockBlockVerifier blockVer = new();
+            MockConsensus c = new();
+            MockClientTime t = new();
+
+            yield return new object[]
+            {
+                // Header and block info files don't exist
+                blockVer,
+                new MockConsensus() { _genesis = MockGenesis },
+                t,
+                0,
+                MockGenesisHash,
+                new MockFileManager(
+                    new FileManCallName[4]
+                    {
+                        FileManCallName.ReadData_Headers, FileManCallName.WriteData_Headers,
+                        FileManCallName.ReadBlockInfo, FileManCallName.WriteBlock
+                    },
+                    new byte[4][] { null, MockGenesisBytes, null, null })
+                {
+                    expBlock = MockGenesis
+                },
+                new BlockHeader[] { MockGenesis.Header }
+            };
+            yield return new object[]
+            {
+                // Header and block info files are corrupted
+                blockVer,
+                new MockConsensus() { _genesis = MockGenesis },
+                t,
+                0,
+                MockGenesisHash,
+                new MockFileManager(
+                    new FileManCallName[4]
+                    {
+                        FileManCallName.ReadData_Headers, FileManCallName.WriteData_Headers,
+                        FileManCallName.ReadBlockInfo, FileManCallName.WriteBlock
+                    },
+                    new byte[4][] { new byte[3], MockGenesisBytes, new byte[3], null })
+                {
+                    expBlock = MockGenesis
+                },
+                new BlockHeader[] { MockGenesis.Header }
+            };
+            yield return new object[]
+            {
+                // Header file has a valid header but is corrupted and block info file doesn't exist
+                blockVer,
+                new MockConsensus() { _genesis = MockGenesis },
+                t,
+                0,
+                MockGenesisHash,
+                new MockFileManager(
+                    new FileManCallName[4]
+                    {
+                        FileManCallName.ReadData_Headers, FileManCallName.WriteData_Headers,
+                        FileManCallName.ReadBlockInfo, FileManCallName.WriteBlock
+                    },
+                    new byte[4][]
+                    {
+                        // Second header is not written correctly (the whole file is considered corrupted)
+                        HeaderBytes1.ConcatFast(new byte[3]),
+                        MockGenesisBytes, // Note that genesis block is written to disk not header1
+                        null,
+                        null
+                    })
+                {
+                    expBlock = MockGenesis
+                },
+                new BlockHeader[] { MockGenesis.Header }
+            };
+            yield return new object[]
+            {
+                // Header and block info file are both good
+                blockVer, c, t,
+                1, // 2 blocks
+                HeaderHash2, // Second block's hash is tip
+                new MockFileManager(
+                    new FileManCallName[2] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo },
+                    new byte[2][]
+                    {
+                        Helper.ConcatBytes(160, HeaderBytes1, HeaderBytes2),
+                        Helper.ConcatBytes(80, HeaderHash1, new byte[8], HeaderHash2, new byte[8])
+                    }),
+                new BlockHeader[] { Header1, Header2 }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetCtorCases))]
+        public void ConstructorTest(IBlockVerifier bver, IConsensus c, IClientTime time, int expHeight, byte[] expTip,
+                                    IFileManager fMan, BlockHeader[] expHeaders)
+        {
+            Chain chain = new(fMan, bver, c, time, NetworkType.MainNet);
+
+            Assert.Same(bver, chain.BlockVer);
+            Assert.Same(c, chain.Consensus);
+            Assert.Same(fMan, chain.FileMan);
+            Assert.Same(time, chain.Time);
+            Assert.Equal(expHeight, chain.Height);
+            Assert.Equal(BlockchainState.None, chain.State);
+            Assert.Equal(expTip, chain.Tip);
+            Assert.Equal(expHeaders.Length, chain.headerList.Count);
+
+            for (int i = 0; i < expHeaders.Length; i++)
+            {
+                Assert.Equal(expHeaders[i].GetHash(), chain.headerList[i].GetHash());
+            }
+
+            if (fMan is MockFileManager mockFM)
+            {
+                // Make sure all calls were made
+                mockFM.AssertIndex();
+            }
+        }
 
 
         [Fact]
@@ -374,7 +518,9 @@ namespace Tests.Bitcoin.Blockchain
         [MemberData(nameof(GetLocatorCases))]
         public void GetBlockHeaderLocatorTest(Chain chain, BlockHeader[] toSet, BlockHeader[] expected)
         {
-            Helper.SetPrivateField(chain, "headerList", new List<BlockHeader>(toSet));
+            chain.headerList.Clear();
+            chain.headerList.AddRange(toSet);
+
             BlockHeader[] headers = chain.GetBlockHeaderLocator();
 
             Assert.Equal(expected.Length, headers.Length);

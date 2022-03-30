@@ -44,6 +44,8 @@ namespace Tests.Bitcoin
         internal FileManCallName[] callNames;
         internal byte[][] expected;
 
+        internal void AssertIndex() => Assert.Equal(index, callNames.Length);
+
 
         private static string Convert(FileManCallName cn)
         {
