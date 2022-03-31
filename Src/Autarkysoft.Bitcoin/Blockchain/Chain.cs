@@ -84,6 +84,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
 
+        /// <summary>
+        /// Maximum number of missing blocks to download at the same time from the same peer
+        /// </summary>
+        public const int MaxMissingBlockToGet = 16;
         private const string HeadersFile = "Headers";
         private readonly object mainLock = new object();
         private readonly NetworkType network;
@@ -152,8 +156,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
         //       queue method doesn't have to loop through all items each time (it will only pop the first item and does
         //       the processing.
         private readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
-        private Stack<byte[]> missingBlockHashes;
-        private readonly List<byte[][]> failedBlockHashes = new List<byte[][]>();
+        /// <summary>
+        /// Hashes of blocks that are missing from database
+        /// </summary>
+        public Stack<byte[]> missingBlockHashes;
+        /// <summary>
+        /// Hashes of blocks that failed to be downloaded
+        /// </summary>
+        public readonly List<byte[][]> failedBlockHashes = new List<byte[][]>();
 
 
         private void ResetHeaders()
@@ -269,8 +279,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
                 else if (missingBlockHashes != null && missingBlockHashes.Count > 0)
                 {
-                    // TODO: change 16 to a constant?
-                    int max = missingBlockHashes.Count < 16 ? missingBlockHashes.Count : 16;
+                    int max = missingBlockHashes.Count < MaxMissingBlockToGet ? missingBlockHashes.Count : MaxMissingBlockToGet;
                     for (int i = 0; i < max; i++)
                     {
                         byte[] h = missingBlockHashes.Pop();
@@ -319,12 +328,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             }
                             else
                             {
-                                for (int j = peer.DownloadedBlocks.Count - 1; j >= i; j--)
+                                byte[][] temp = new byte[peer.InvsToGet.Count - i][];
+                                for (int j = i, k = 0; j < peer.InvsToGet.Count; j++, k++)
                                 {
-                                    missingBlockHashes.Push(peer.InvsToGet[j].Hash);
+                                    temp[k] = peer.InvsToGet[j].Hash;
                                 }
+                                failedBlockHashes.Add(temp);
 
-                                // TODO: put inventories back?
+                                // Invs list has to be cleared otherwise disconnect event will put them back
+                                // TODO: add a inv list lock to n.s.?
                                 peer.InvsToGet.Clear();
                                 nodeStatus.AddBigViolation();
                                 break;

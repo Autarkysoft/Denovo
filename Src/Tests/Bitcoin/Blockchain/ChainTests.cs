@@ -8,10 +8,12 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork;
+using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Tests.Bitcoin.Blockchain.Blocks;
+using Tests.Bitcoin.P2PNetwork;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -40,6 +42,14 @@ namespace Tests.Bitcoin.Blockchain
             {
                 yield return new BlockHeader(i, new byte[32], new byte[32], 0, 0, 0);
             }
+        }
+
+        private static byte[] GetBlockInfo(int height, BlockHeader last)
+        {
+            int len = (height + 1) * (32 + 4 + 4);
+            byte[] result = new byte[len];
+            Buffer.BlockCopy(last.GetHash(), 0, result, result.Length - 40, 32);
+            return result;
         }
 
         private static readonly IBlock MockGenesis = new Block() { Header = BlockHeaderTests.GetSampleBlockHeader() };
@@ -214,6 +224,194 @@ namespace Tests.Bitcoin.Blockchain
             // Null time doesn't throw:
             Chain chain = new(fileMan, blockVer, c, null, NetworkType.MainNet);
             Assert.NotNull(chain.Time);
+        }
+
+
+        public static IEnumerable<object[]> GetMissingBlockCases()
+        {
+            MockBlockVerifier blockVer = new();
+            MockConsensus c = new();
+            MockClientTime t = new();
+            BlockHeader[] headers = GetHeaders(40).ToArray();
+            FileManCallName[] calls = new FileManCallName[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo };
+            MockFileManager fman = new(calls, new byte[2][] { headers[0].Serialize(), GetBlockInfo(0, headers[0]) });
+
+            yield return new object[]
+            {
+                // Only have Genesis block header so there is no block to download
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, 1).ToArray(),
+                null,
+                Array.Empty<byte[][]>(),
+                null,
+                null,
+            };
+            yield return new object[]
+            {
+                // There is only one block ahead of the tip to download
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, 2).ToArray(),
+                null,
+                Array.Empty<byte[][]>(),
+                Array.Empty<byte[]>(),
+                new byte[][] { headers[1].GetHash() },
+            };
+            yield return new object[]
+            {
+                // There is less than max number of blocks ahead of tip to download.
+                // After first request the missing list will be empty.
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet).ToArray(),
+                null,
+                Array.Empty<byte[][]>(),
+                Array.Empty<byte[]>(),
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet-1).ToArray().Select(x => x.GetHash()),
+            };
+            yield return new object[]
+            {
+                // There is exactly max number of blocks ahead of tip to download.
+                // After first request the missing list will be empty.
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+1).ToArray(),
+                null,
+                Array.Empty<byte[][]>(),
+                Array.Empty<byte[]>(),
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+            };
+            yield return new object[]
+            {
+                // There is more than max number of blocks ahead of tip to download.
+                // After first request the missing list will contain more hashes to download.
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+2).ToArray(),
+                null,
+                Array.Empty<byte[][]>(),
+                new byte[][] { headers[Chain.MaxMissingBlockToGet+1].GetHash() },
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+            };
+            yield return new object[]
+            {
+                // Same as before but with more remaining block hashes
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+3).ToArray(),
+                null,
+                Array.Empty<byte[][]>(),
+                new byte[][] { headers[Chain.MaxMissingBlockToGet+1].GetHash(), headers[Chain.MaxMissingBlockToGet+2].GetHash() },
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+            };
+            yield return new object[]
+            {
+                // The block height is bigger than 0 so download has to correctly start from height+1
+                fman, blockVer, c, t,
+                2,
+                ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+5).ToArray(),
+                null,
+                Array.Empty<byte[][]>(),
+                new byte[][] { headers[Chain.MaxMissingBlockToGet+3].GetHash(), headers[Chain.MaxMissingBlockToGet+4].GetHash() },
+                ((Span<BlockHeader>)headers).Slice(3, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+            };
+
+            // In tests so far, Chain didn't have any failed block hashes to re-download. The following tests do:
+
+            yield return new object[]
+            {
+                // There is 1 item (list of hashes) in Chain's failed array so the main DL list is ignored
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet).ToArray(),
+                new byte[1][][]
+                {
+                    new byte[3][] { headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash() }
+                },
+                Array.Empty<byte[][]>(), // Failed list has to be emptied after the call
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet-1).ToArray().Select(x => x.GetHash()),
+                new byte[3][] // Inv is the same as failed list
+                {
+                    headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash()
+                }
+            };
+            yield return new object[]
+            {
+                // There are multiple items in Chain's failed array so the lowest height has to be chosen
+                fman, blockVer, c, t,
+                0,
+                ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+2).ToArray(),
+                new byte[4][][]
+                {
+                    new byte[3][] { headers[8].GetHash(), headers[9].GetHash(), headers[10].GetHash() },
+                    new byte[2][] { headers[13].GetHash(), headers[14].GetHash() },
+                    new byte[4][] { headers[3].GetHash(), headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash() },
+                    new byte[1][] { headers[15].GetHash() }
+                },
+                new byte[3][][] // The item with lowest height is removed
+                {
+                    new byte[3][] { headers[8].GetHash(), headers[9].GetHash(), headers[10].GetHash() },
+                    new byte[2][] { headers[13].GetHash(), headers[14].GetHash() },
+                    new byte[1][] { headers[15].GetHash() }
+                },
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet+1).ToArray().Select(x => x.GetHash()),
+                new byte[4][] // Inv is the item in failed list that starts with lowest height
+                {
+                    headers[3].GetHash(), headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash()
+                }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetMissingBlockCases))]
+        public void SetMissingBlockHashesTest(MockFileManager fman, IBlockVerifier bver, IConsensus c, IClientTime t, int height,
+                                              BlockHeader[] hdrs, byte[][][] failed,
+                                              byte[][][] expFailed, byte[][] expMissHash, byte[][] expInvs)
+        {
+            fman.ResetIndex();
+            Chain chain = new(fman, bver, c, t, NetworkType.MainNet);
+            Assert.Null(chain.missingBlockHashes);
+            Assert.Empty(chain.failedBlockHashes);
+            Assert.Equal(0, chain.Height);
+            Assert.Equal(hdrs[0].GetHash(), chain.Tip);
+
+            // Fake chain's properties:
+            chain.headerList.Clear();
+            chain.headerList.AddRange(hdrs);
+            Helper.SetReadonlyProperty(chain, nameof(chain.Height), height);
+            Buffer.BlockCopy(hdrs[height].GetHash(), 0, chain.Tip, 0, 32);
+            if (failed is not null)
+            {
+                chain.failedBlockHashes.AddRange(failed);
+            }
+
+            // Set missing blocks:
+            MockNodeStatus ns = new();
+            chain.SetMissingBlockHashes(ns);
+
+            Assert.Equal(expFailed, chain.failedBlockHashes);
+
+            if (expMissHash is null)
+            {
+                Assert.Null(chain.missingBlockHashes);
+                Assert.Empty(ns.InvsToGet);
+            }
+            else
+            {
+                Assert.NotNull(chain.missingBlockHashes);
+                Assert.Equal(expMissHash.Length, chain.missingBlockHashes.Count);
+                for (int i = 0; i < expMissHash.Length; i++)
+                {
+                    Assert.Equal(expMissHash[i], chain.missingBlockHashes.ElementAt(i));
+                }
+
+                Assert.Equal(expInvs.Length, ns.InvsToGet.Count);
+                for (int i = 0; i < expInvs.Length; i++)
+                {
+                    Assert.Equal(InventoryType.WitnessBlock, ns.InvsToGet[i].InvType);
+                    Assert.Equal(expInvs[i], ns.InvsToGet[i].Hash);
+                }
+            }
         }
 
 
