@@ -415,6 +415,61 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
+        public static IEnumerable<object[]> GetPutBackFailedCases()
+        {
+            byte[] rand32 = Helper.GetBytes(32);
+
+            yield return new object[]
+            {
+                new List<Inventory>(0), // Set capacity to save memory
+                null,
+                Array.Empty<byte[][]>()
+            };
+            yield return new object[]
+            {
+                new List<Inventory>(1),
+                new byte[][][] { new byte[1][] { rand32 } },
+                new byte[][][] { new byte[1][] { rand32 } }
+            };
+            yield return new object[]
+            {
+                new List<Inventory>(new Inventory[] { new(InventoryType.WitnessBlock, HeaderHash1) }),
+                null,
+                new byte[][][] { new byte[1][] { HeaderHash1 } }
+            };
+            yield return new object[]
+            {
+                new List<Inventory>(new Inventory[] { new(InventoryType.WitnessBlock, HeaderHash1) }),
+                new byte[][][] { new byte[1][] { rand32 } },
+                new byte[][][] { new byte[1][] { rand32 }, new byte[1][] { HeaderHash1 } }
+            };
+            yield return new object[]
+            {
+                new List<Inventory>(new Inventory[]
+                {
+                    new(InventoryType.WitnessBlock, HeaderHash1), new(InventoryType.WitnessBlock, HeaderHash2)
+                }),
+                new byte[][][] { new byte[1][] { rand32 } },
+                new byte[][][] { new byte[1][] { rand32 }, new byte[2][] { HeaderHash1, HeaderHash2 } }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetPutBackFailedCases))]
+        public void PutBackMissingBlocksTest(List<Inventory> hashes, byte[][][] toSet, byte[][][] expected)
+        {
+            Chain chain = GetChain();
+            Assert.Empty(chain.failedBlockHashes);
+
+            if (toSet is not null)
+            {
+                chain.failedBlockHashes.AddRange(toSet);
+            }
+
+            chain.PutBackMissingBlocks(hashes);
+            Assert.Equal(expected, chain.failedBlockHashes);
+        }
+
+
         [Theory]
         // https://github.com/bitcoin/bitcoin/blob/32b191fb66e644c690c94cbfdae6ddbc754769d7/src/test/pow_tests.cpp#L14-L60
         [InlineData(1231006505, 1233061996, 0x1d00ffffU, 0x1d00ffffU)] // 0 & 2015

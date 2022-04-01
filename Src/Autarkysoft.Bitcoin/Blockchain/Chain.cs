@@ -233,7 +233,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         {
             lock (mainLock)
             {
-                failedBlockHashes.Add(hashes.Select(x => x.Hash).ToArray());
+                if (hashes.Count > 0)
+                {
+                    failedBlockHashes.Add(hashes.Select(x => x.Hash).ToArray());
+                }
             }
         }
 
