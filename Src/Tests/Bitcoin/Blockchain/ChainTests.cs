@@ -103,7 +103,7 @@ namespace Tests.Bitcoin.Blockchain
                     },
                     new byte[4][] { null, MockGenesisBytes, null, null })
                 {
-                    expBlock = MockGenesis
+                    expBlocks = new IBlock[] { MockGenesis }
                 },
                 new BlockHeader[] { MockGenesis.Header }
             };
@@ -123,7 +123,7 @@ namespace Tests.Bitcoin.Blockchain
                     },
                     new byte[4][] { new byte[3], MockGenesisBytes, new byte[3], null })
                 {
-                    expBlock = MockGenesis
+                    expBlocks = new IBlock[] { MockGenesis }
                 },
                 new BlockHeader[] { MockGenesis.Header }
             };
@@ -150,7 +150,7 @@ namespace Tests.Bitcoin.Blockchain
                         null
                     })
                 {
-                    expBlock = MockGenesis
+                    expBlocks = new IBlock[] { MockGenesis }
                 },
                 new BlockHeader[] { MockGenesis.Header }
             };
@@ -467,6 +467,260 @@ namespace Tests.Bitcoin.Blockchain
 
             chain.PutBackMissingBlocks(hashes);
             Assert.Equal(expected, chain.failedBlockHashes);
+        }
+
+        private static Inventory[] BuildInv(params IBlock[] blocks)
+        {
+            return blocks.Select(x => new Inventory(InventoryType.WitnessBlock, x.GetBlockHash(false))).ToArray();
+        }
+
+        public static IEnumerable<object[]> GetProcessQueueCases()
+        {
+            Consensus c = new();
+            MockClientTime t = new();
+            MockBlockVerifier bver = new();
+            FileManCallName[] calls = new[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo };
+            MockFileManager fman = new(calls, new byte[][] { MockGenesis.Header.Serialize(), GetBlockInfo(0, MockGenesis.Header) });
+            Block blk1 = new() { Header = new(1, MockGenesisHash, new byte[32], 0, 0, 0) };
+            Block blk2 = new() { Header = new(2, blk1.Header.GetHash(), new byte[32], 0, 0, 0) };
+            Block blk3 = new() { Header = new(3, blk2.Header.GetHash(), new byte[32], 0, 0, 0) };
+            Block blk4 = new() { Header = new(4, blk3.Header.GetHash(), new byte[32], 0, 0, 0) };
+            Block blk5 = new() { Header = new(5, blk4.Header.GetHash(), new byte[32], 0, 0, 0) };
+
+            byte[] tip = MockGenesisHash;
+
+            MockNodeStatus ns1 = new() { InvsToGet = new(BuildInv(blk1)), DownloadedBlocks = new(new[] { blk1 }), _isDead = false };
+            MockNodeStatus ns2 = new() { InvsToGet = new(BuildInv(blk2)), DownloadedBlocks = new(new[] { blk2 }), _isDead = false };
+            MockNodeStatus ns3 = new() { InvsToGet = new(BuildInv(blk3)), DownloadedBlocks = new(new[] { blk3 }) };
+            MockNodeStatus ns12 = new() { InvsToGet = new(BuildInv(blk1, blk2)), DownloadedBlocks = new(new[] { blk1, blk2 }), _isDead = false };
+            MockNodeStatus ns34 = new() { InvsToGet = new(BuildInv(blk3, blk4)), DownloadedBlocks = new(new[] { blk3, blk4 }), _isDead = false };
+            MockNodeStatus ns45 = new() { InvsToGet = new(BuildInv(blk4, blk5)), DownloadedBlocks = new(new[] { blk4, blk5 }), _isDead = false };
+
+            yield return new object[]
+            {
+                // Peer queue is empty and the new block is not after the tip to be verified
+                c, t, 3, 3, // Height doesn't change
+                tip, tip, // Tip doesn't change
+                ns2,
+                bver,
+                fman,
+                Array.Empty<INodeStatus>(), // Start queue
+                true, // Add node status to queue
+                Array.Empty<int>(), // Index of items to remove from queue
+                null, // Mock failed block hashes
+                Array.Empty<byte[][]>(), // Failed blocks
+            };
+            yield return new object[]
+            {
+                // Peer queue has one item and the new block is not after the tip to be verified
+                c, t, 3, 3, // Height doesn't change
+                tip, tip, // Tip doesn't change
+                ns2,
+                bver,
+                fman,
+                new INodeStatus[1] { ns3 }, // Start queue
+                true, // Add node status to queue
+                Array.Empty<int>(), // Index of items to remove from queue
+                null, // Mock failed block hashes
+                Array.Empty<byte[][]>(), // Failed blocks
+            };
+            yield return new object[]
+            {
+                // Peer queue has 1 item and the new block is after the tip and is verified 
+                // but the next item is not after the new tip
+                c, t, 3, 4, // Height is increased by the number of blocks processed
+                tip, blk1.GetBlockHash(), // Tip changes to last block
+                new MockNodeStatus()
+                {
+                    InvsToGet = new(BuildInv(blk1)),
+                    DownloadedBlocks = new(new[] { blk1 }),
+                    expectNewInvSignal = true,
+                    _isDead = false
+                },
+                new MockBlockVerifier(new[] { blk1 }, new[] { blk1 }, new[] { true }),
+                new MockFileManager(
+                    new[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo, FileManCallName.WriteBlock },
+                    new byte[][] { MockGenesis.Header.Serialize(), GetBlockInfo(0, MockGenesis.Header), null })
+                {
+                    expBlocks = new[] { blk1 }
+                },
+                new INodeStatus[1] { ns3 }, // Start queue
+                false, // Add node status to queue
+                Array.Empty<int>(), // Index of items to remove from queue
+                null, // Mock failed block hashes
+                Array.Empty<byte[][]>(), // Failed blocks
+            };
+            yield return new object[]
+            {
+                // Same as before but each item in queue has more than one block
+                c, t, 3, 5, // Height is increased by the number of blocks processed
+                tip, blk2.GetBlockHash(), // Tip changes to last block
+                new MockNodeStatus()
+                {
+                    InvsToGet = new(BuildInv(blk1, blk2)),
+                    DownloadedBlocks = new(new[] { blk1, blk2 }),
+                    expectNewInvSignal = true,
+                    _isDead = false
+                },
+                new MockBlockVerifier(new[] { blk1, blk2 }, new[] { blk1, blk2 }, new[] { true, true }),
+                new MockFileManager(
+                    new[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo, FileManCallName.WriteBlock, FileManCallName.WriteBlock },
+                    new byte[][] { MockGenesis.Header.Serialize(), GetBlockInfo(0, MockGenesis.Header), null, null })
+                {
+                    expBlocks = new[] { blk1, blk2 }
+                },
+                new INodeStatus[1] { ns45 }, // Start queue
+                false, // Add node status to queue
+                Array.Empty<int>(), // Index of items to remove from queue
+                null, // Mock failed block hashes
+                Array.Empty<byte[][]>(), // Failed blocks
+            };
+            yield return new object[]
+            {
+                // The new item can be verified (is after the tip) and the item in queue is also after the new tip
+                c, t, 3, 8, // Height is increased by the number of blocks processed
+                tip, blk5.GetBlockHash(), // Tip changes to last block
+                new MockNodeStatus()
+                {
+                    InvsToGet = new(BuildInv(blk1, blk2, blk3)),
+                    DownloadedBlocks = new(new[] { blk1, blk2, blk3 }),
+                    expectNewInvSignal = true,
+                    _isDead = false
+                },
+                new MockBlockVerifier(new[] { blk1, blk2, blk3, blk4, blk5 },
+                                      new[] { blk1, blk2, blk3, blk4, blk5 },
+                                      new[] { true, true, true, true, true }),
+                new MockFileManager(
+                    new[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo,
+                            FileManCallName.WriteBlock, FileManCallName.WriteBlock, FileManCallName.WriteBlock,
+                            FileManCallName.WriteBlock, FileManCallName.WriteBlock },
+                    new byte[7][] { MockGenesis.Header.Serialize(), GetBlockInfo(0, MockGenesis.Header),null,null,null,null,null})
+                {
+                    expBlocks = new[] { blk1, blk2, blk3, blk4, blk5 }
+                },
+                new INodeStatus[1]
+                {
+                    new MockNodeStatus()
+                    {
+                        InvsToGet = new(BuildInv(blk4, blk5)),
+                        DownloadedBlocks = new(new[] { blk4, blk5 }),
+                        expectNewInvSignal = true,
+                    _isDead = false
+                    }
+                },
+                false, // Add node status to queue
+                new int[1] { 0 }, // Index of items to remove from queue
+                null, // Mock failed block hashes
+                Array.Empty<byte[][]>(), // Failed blocks
+            };
+
+            yield return new object[]
+            {
+                // The new block is verified but is invalid
+                c, t, 3, 3, // Height doesn't change
+                tip, tip, // Tip doesn't change
+                new MockNodeStatus()
+                {
+                    InvsToGet = new(BuildInv(blk1)),
+                    DownloadedBlocks = new(new[] { blk1 }),
+                    bigViolation = true,
+                    _isDead = true
+                },
+                new MockBlockVerifier(new[] { blk1 }, Array.Empty<IBlock>(), new[] { false }),
+                fman,
+                Array.Empty<INodeStatus>(), // Start queue
+                false, // Add node status to queue
+                Array.Empty<int>(), // Index of items to remove from queue
+                null, // Mock failed block hashes
+                new byte[][][] { new byte[][] { blk1.GetBlockHash(false) } }, // Failed blocks
+            };
+            yield return new object[]
+            {
+                // There are 5 new blocks, first 2 are valid and the next 3 are invalid
+                c, t, 3, 5, // Height only increases by 2
+                tip, blk2.GetBlockHash(), // Tip is second block
+                new MockNodeStatus()
+                {
+                    InvsToGet = new(BuildInv(blk1, blk2, blk3, blk4, blk5)),
+                    DownloadedBlocks = new(new[] { blk1, blk2, blk3, blk4, blk5 }),
+                    bigViolation = true,
+                    _isDead = true
+                },
+                new MockBlockVerifier(new[] { blk1, blk2, blk3 }, new[] { blk1, blk2 }, new[] { true, true, false }),
+                new MockFileManager(
+                    new[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo,
+                            FileManCallName.WriteBlock, FileManCallName.WriteBlock },
+                    new byte[4][] { MockGenesis.Header.Serialize(), GetBlockInfo(0, MockGenesis.Header),null,null})
+                {
+                    expBlocks = new[] { blk1, blk2 }
+                },
+                Array.Empty<INodeStatus>(), // Start queue
+                false, // Add node status to queue
+                Array.Empty<int>(), // Index of items to remove from queue
+                new byte[][][] { new byte[][] { Helper.GetBytes(32) } }, // Mock failed block hashes
+                new byte[][][]
+                {
+                    new byte[][] { Helper.GetBytes(32) },
+                    new byte[][] { blk3.GetBlockHash(false), blk4.GetBlockHash(false), blk5.GetBlockHash(false) }
+                }, // Failed blocks
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetProcessQueueCases))]
+        public void ProcessReceivedBlocksTest(IConsensus c, IClientTime t, int mockHeight, int expHeight,
+                                              byte[] mockTip, byte[] expTip, MockNodeStatus ns, MockBlockVerifier bver,
+                                              MockFileManager fman, INodeStatus[] mockPeerQ, bool addNsToQ, int[] qIndex,
+                                              byte[][][] mockFail, byte[][][] expFail)
+        {
+            fman.ResetIndex();
+            Chain chain = new(fman, bver, c, t, NetworkType.MainNet);
+            Assert.Empty(chain.peerBlocksQueue);
+            // Fake chain's properties:
+            if (mockPeerQ is not null)
+            {
+                chain.peerBlocksQueue.AddRange(mockPeerQ);
+            }
+            if (mockFail is not null)
+            {
+                chain.failedBlockHashes.AddRange(mockFail);
+            }
+            Helper.SetReadonlyProperty(chain, nameof(chain.Height), mockHeight);
+            Buffer.BlockCopy(mockTip, 0, chain.Tip, 0, 32);
+
+            chain.ProcessPeerQueue(ns);
+
+            bver.AssertIndex();
+            Assert.False(ns.expectNewInvSignal); // Raising event always changes bool to false
+            Assert.Equal(expHeight, chain.Height);
+            Assert.Equal(expTip, chain.Tip);
+            Assert.Equal(expFail, chain.failedBlockHashes);
+
+            int added = addNsToQ ? 1 : 0;
+            int removed = qIndex.Length;
+            if (removed > 0 || added > 0)
+            {
+                INodeStatus[] temp = new INodeStatus[mockPeerQ.Length + added - removed];
+                int j = 0;
+                for (int i = 0; i < mockPeerQ.Length; i++, j++)
+                {
+                    if (!qIndex.Contains(i))
+                    {
+                        temp[j] = mockPeerQ[i];
+                    }
+                }
+                if (added > 0)
+                {
+                    temp[j] = ns;
+                }
+
+                mockPeerQ = temp;
+            }
+
+            Assert.Equal(mockPeerQ.Length, chain.peerBlocksQueue.Count);
+            for (int i = 0; i < mockPeerQ.Length; i++)
+            {
+                Assert.Same(mockPeerQ[i], chain.peerBlocksQueue[i]);
+            }
         }
 
 

@@ -38,15 +38,22 @@ namespace Tests.Bitcoin
             expected = data;
         }
 
-        private const string UnexpectedCall = "Unexpected call was made";
 
         private int index = 0;
         internal FileManCallName[] callNames;
         internal byte[][] expected;
 
-        internal void AssertIndex() => Assert.Equal(index, callNames.Length);
-        internal void ResetIndex() => index = 0;
+        internal void AssertIndex()
+        {
+            Assert.Equal(index, callNames.Length);
+            Assert.Equal(blockIndex, expBlocks.Length);
+        }
 
+        internal void ResetIndex()
+        {
+            index = 0;
+            blockIndex = 0;
+        }
 
         private static string Convert(FileManCallName cn)
         {
@@ -71,7 +78,7 @@ namespace Tests.Bitcoin
 
         public void AppendData(byte[] data, string fileName)
         {
-            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.True(index < callNames.Length, Helper.UnexpectedCall);
             Assert.Equal(Convert(callNames[index]), fileName);
             Assert.Equal(expected[index], data);
             index++;
@@ -79,14 +86,14 @@ namespace Tests.Bitcoin
 
         public byte[] ReadData(string fileName)
         {
-            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.True(index < callNames.Length, Helper.UnexpectedCall);
             Assert.Equal(Convert(callNames[index]), fileName);
             return expected[index++];
         }
 
         public void WriteData(byte[] data, string fileName)
         {
-            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.True(index < callNames.Length, Helper.UnexpectedCall);
             Assert.Equal(Convert(callNames[index]), fileName);
             Assert.Equal(expected[index], data);
             index++;
@@ -94,25 +101,26 @@ namespace Tests.Bitcoin
 
         public byte[] ReadBlockInfo()
         {
-            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.True(index < callNames.Length, Helper.UnexpectedCall);
             Assert.Equal(FileManCallName.ReadBlockInfo, callNames[index]);
             return expected[index++];
         }
 
 
-        internal IBlock expBlock;
+        internal IBlock[] expBlocks = Array.Empty<IBlock>();
+        internal int blockIndex = 0;
         public void WriteBlock(IBlock block)
         {
-            Assert.True(index < callNames.Length, UnexpectedCall);
+            Assert.True(index < callNames.Length, Helper.UnexpectedCall);
+            Assert.True(blockIndex < expBlocks.Length, Helper.UnexpectedCall);
             Assert.Equal(FileManCallName.WriteBlock, callNames[index]);
-            index++;
 
-            Assert.NotNull(expBlock);
-            Assert.NotNull(block);
-
-            bool eq = ReferenceEquals(expBlock, block) ||
-                      ((ReadOnlySpan<byte>)expBlock.Header.GetHash()).SequenceEqual(block.Header.GetHash());
+            bool eq = ReferenceEquals(expBlocks[blockIndex], block) ||
+                      ((ReadOnlySpan<byte>)expBlocks[blockIndex].Header.GetHash()).SequenceEqual(block.Header.GetHash());
             Assert.True(eq, "Given block is not as expected.");
+
+            index++;
+            blockIndex++;
         }
     }
 }

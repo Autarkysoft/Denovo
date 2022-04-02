@@ -16,7 +16,9 @@ namespace Tests
 {
     public static class Helper
     {
-        internal static JsonSerializerSettings jSetting = new()
+        public const string UnexpectedCall = "Unexpected call was made";
+
+        public static JsonSerializerSettings jSetting = new()
         {
             Converters = { new ByteArrayHexConverter() },
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor

@@ -155,7 +155,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
         //       where peers are inserted in a FIFO array based on the blocks they need to download so that the process
         //       queue method doesn't have to loop through all items each time (it will only pop the first item and does
         //       the processing.
-        private readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
+        /// <summary>
+        /// Queue of blocks to be processed with their respective node status
+        /// </summary>
+        public readonly List<INodeStatus> peerBlocksQueue = new List<INodeStatus>(10);
         /// <summary>
         /// Hashes of blocks that are missing from database
         /// </summary>
@@ -301,7 +304,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
             Task.Run(() => ProcessPeerQueue(nodeStatus));
         }
 
-        private void ProcessPeerQueue(INodeStatus nodeStatus)
+        /// <inheritdoc/>
+        public void ProcessPeerQueue(INodeStatus nodeStatus)
         {
             lock (mainLock)
             {
@@ -341,7 +345,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                                 // Invs list has to be cleared otherwise disconnect event will put them back
                                 // TODO: add a inv list lock to n.s.?
                                 peer.InvsToGet.Clear();
-                                nodeStatus.AddBigViolation();
+                                peer.AddBigViolation();
                                 break;
                             }
                         }
@@ -350,10 +354,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         index = 0;
                         max = peerBlocksQueue.Count;
 
-                        peer.InvsToGet.Clear();
-                        peer.DownloadedBlocks.Clear();
-                        SetMissingBlockHashes(peer);
-                        peer.SignalNewInv();
+                        if (!peer.IsDisconnected)
+                        {
+                            peer.InvsToGet.Clear();
+                            peer.DownloadedBlocks.Clear();
+                            SetMissingBlockHashes(peer);
+                            peer.SignalNewInv();
+                        }
                     }
                     else
                     {
