@@ -4,7 +4,6 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
@@ -89,13 +88,6 @@ namespace Denovo.ViewModels
                 };
 
             clientSettings.Time.WrongClockEvent += Time_WrongClockEvent;
-
-            // TODO: the following 6 lines are for testing and can be removed later
-            clientSettings.Blockchain.State = BlockchainState.BlocksSync;
-            connector = new NodeConnector(clientSettings);
-            listener = new NodeListener(clientSettings);
-            listener.StartListen(new IPEndPoint(IPAddress.Any, config.ListenPort));
-            port = config.ListenPort;
 
             MyInfo = $"My node information:{Environment.NewLine}" +
                      $"Network: {config.Network}{Environment.NewLine}" +
@@ -209,17 +201,6 @@ namespace Denovo.ViewModels
             $"Violation: {((NodeStatus)SelectedNode.NodeStatus).Violation}{Environment.NewLine}";
 
 
-        private NodeConnector connector;
-        private NodeListener listener;
-        private int port;
-
-
-        private string _ip = "127.0.0.1";
-        public string IpAddress
-        {
-            get => _ip;
-            set => SetField(ref _ip, value);
-        }
 
         private string _res;
         public string Result
@@ -228,26 +209,6 @@ namespace Denovo.ViewModels
             set => SetField(ref _res, value);
         }
 
-        public void Connect()
-        {
-            try
-            {
-                Result = string.Empty;
-                if (IPAddress.TryParse(IpAddress, out IPAddress ip))
-                {
-                    Task.Run(() => connector.StartConnect(new IPEndPoint(ip, port)));
-                }
-                else
-                {
-                    Result = "Can't parse given IP address.";
-                }
-            }
-            catch (Exception ex)
-            {
-                Result = $"An exception of type {ex.GetType()} was thrown:{Environment.NewLine}{ex.Message}" +
-                    $"{Environment.NewLine}Stack trace:{Environment.NewLine}{ex.StackTrace}";
-            }
-        }
 
         public BindableCommand DisconnectCommand { get; }
         public bool CanDisconnect() => SelectedNode != null;

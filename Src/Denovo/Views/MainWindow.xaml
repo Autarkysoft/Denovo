@@ -31,12 +31,8 @@
           <MenuItem Header="About" Command="{Binding OpenAbout}"/>
         </MenuItem>
       </Menu>
+      
       <StackPanel Margin="5" Spacing="5" Grid.Row="1">
-        <StackPanel Orientation="Horizontal" Spacing="5">
-          <TextBlock Text="IP:"/>
-          <TextBox Text="{Binding IpAddress}" Width="200"/>
-          <Button Content="Connect" Command="{Binding Connect}" Width="100" HorizontalAlignment="Left"/>
-        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="5">
           <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Width="100" HorizontalAlignment="Left"/>
           <Button Content="Start Full Client" Command="{Binding StartFullClient}" Width="150" HorizontalAlignment="Left"/>
