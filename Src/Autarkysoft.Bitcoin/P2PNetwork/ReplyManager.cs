@@ -369,7 +369,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             nodeStatus.ReStartDisconnectTimer();
                             result = new Message[1] { GetLocatorMessage() };
                         }
-                        else if (fullSettings.Blockchain.State == BlockchainState.BlocksSync)
+                        else if (fullSettings.Blockchain.State == BlockchainState.BlocksSync &&
+                                 nodeStatus.InvsToGet.Count == 0)
                         {
                             nodeStatus.StopDisconnectTimer();
                             result = GetMissingBlockMessage();
