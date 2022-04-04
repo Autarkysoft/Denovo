@@ -118,7 +118,7 @@ namespace Denovo.ViewModels
         public BindableCommand VerifyCommand { get; private set; }
         private void Verify()
         {
-            var temp = new Utxo[UtxoList.Length];
+            Utxo[] temp = new Utxo[UtxoList.Length];
             for (int i = 0; i < UtxoList.Length; i++)
             {
                 if (!UtxoList[i].TryConvertToUtxo(out Utxo u, out string error))

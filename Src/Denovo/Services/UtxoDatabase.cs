@@ -67,10 +67,10 @@ namespace Denovo.Services
             byte[] data = fileMan.ReadData(DbName);
             if (data is not null && data.Length != 0)
             {
-                var stream = new FastStreamReader(data);
+                FastStreamReader stream = new(data);
                 while (true)
                 {
-                    var utxo = new Utxo();
+                    Utxo utxo = new();
                     if (stream.TryReadByteArray(32, out byte[] hash) && utxo.TryDeserialize(stream, out _))
                     {
                         if (database.ContainsKey(hash))
@@ -92,7 +92,7 @@ namespace Denovo.Services
             data = fileMan.ReadData(CoinBaseDbName);
             if (data is not null && data.Length != 0)
             {
-                var stream = new FastStreamReader(data);
+                FastStreamReader stream = new(data);
                 if (!stream.CheckRemaining(8))
                 {
                     return;
@@ -102,7 +102,7 @@ namespace Denovo.Services
                 int index = 0;
                 while (true)
                 {
-                    var coinbase = new Transaction();
+                    Transaction coinbase = new();
                     if (coinbase.TryDeserialize(stream, out _))
                     {
                         coinbaseQueue[index++] = coinbase;
@@ -118,10 +118,10 @@ namespace Denovo.Services
 
         private void WriteCoinbaseToDisk()
         {
-            var stream = new FastStream(coinbaseQueue.Length * 250);
+            FastStream stream = new(coinbaseQueue.Length * 250);
             stream.Write(i1);
             stream.Write(i2);
-            foreach (var item in coinbaseQueue)
+            foreach (ITransaction item in coinbaseQueue)
             {
                 if (item is null)
                 {
@@ -164,10 +164,10 @@ namespace Denovo.Services
 
         private void WriteDbToDisk()
         {
-            var stream = new FastStream(database.Count * 90);
-            foreach (var item in database)
+            FastStream stream = new(database.Count * 90);
+            foreach (KeyValuePair<byte[], List<Utxo>> item in database)
             {
-                foreach (var item2 in item.Value)
+                foreach (Utxo item2 in item.Value)
                 {
                     stream.Write(item.Key);
                     item2.Serialize(stream);
@@ -182,7 +182,7 @@ namespace Denovo.Services
         {
             if (database.TryGetValue(tin.TxHash, out List<Utxo> value))
             {
-                var index = value.FindIndex(x => x.Index == tin.Index);
+                int index = value.FindIndex(x => x.Index == tin.Index);
                 return index < 0 ? null : value[index];
             }
             else
@@ -238,7 +238,7 @@ namespace Denovo.Services
 
             for (int i = 1; i <= lastIndex; i++)
             {
-                foreach (var item in txs[i].TxInList)
+                foreach (TxIn item in txs[i].TxInList)
                 {
                     IUtxo utxo = Find(item);
                     if (utxo is not null)

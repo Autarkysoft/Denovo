@@ -68,8 +68,8 @@ namespace Denovo.ViewModels
             FileMan.SetBlockPath(config.BlockchainPath);
 
             AllNodes = new NodePool(config.MaxConnectionCount);
-            var utxoDb = new UtxoDatabase(FileMan);
-            var memPool = new MemoryPool();
+            UtxoDatabase utxoDb = new(FileMan);
+            MemoryPool memPool = new();
             clientSettings =
                 new FullClientSettings(
                     config.AcceptIncoming,
@@ -112,7 +112,7 @@ namespace Denovo.ViewModels
                 config = new Configuration(Network) { IsDefault = true };
             }
 
-            var vm = new ConfigurationViewModel(config);
+            ConfigurationViewModel vm = new(config);
             await WinMan.ShowDialog(vm);
 
             if (vm.IsChanged)
@@ -129,32 +129,32 @@ namespace Denovo.ViewModels
         public async void OpenMiner()
         {
             // TODO: A better way is to make the following VM disposable
-            var vm = new MinerViewModel();
+            MinerViewModel vm = new();
             await WinMan.ShowDialog(vm);
             vm.StopMining();
         }
 
         public async void OpenEcies()
         {
-            var vm = new EciesViewModel();
+            EciesViewModel vm = new();
             await WinMan.ShowDialog(vm);
         }
 
         public async void OpenVerifyTx()
         {
-            var vm = new VerifyTxViewModel();
+            VerifyTxViewModel vm = new();
             await WinMan.ShowDialog(vm);
         }
 
         public async void OpenWifHelper()
         {
-            var vm = new WifHelperViewModel();
+            WifHelperViewModel vm = new();
             await WinMan.ShowDialog(vm);
         }
 
         public async void OpenPushTx()
         {
-            var vm = new PushTxViewModel();
+            PushTxViewModel vm = new();
             await WinMan.ShowDialog(vm);
             vm.Dispose();
         }

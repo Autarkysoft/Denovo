@@ -23,7 +23,7 @@ namespace Denovo.ViewModels
         public MinerViewModel() : base(650, 650)
         {
             AllNodes = new NodePool(5);
-            var clientSettings = new MinimalClientSettings(NetworkType.TestNet, 5, AllNodes)
+            MinimalClientSettings clientSettings = new(NetworkType.TestNet, 5, AllNodes)
             {
                 DnsSeeds = Configuration.DnsTest,
                 UserAgent = "/Satoshi:0.22.0/",
@@ -92,7 +92,7 @@ namespace Denovo.ViewModels
             tokenSource?.Dispose();
             tokenSource = null;
 
-            var prvBlock = new Block();
+            Block prvBlock = new();
             if (!Base16.TryDecode(PreviousBlockHex, out byte[] data))
             {
                 BlockHex = "Invalid hex.";
@@ -111,11 +111,11 @@ namespace Denovo.ViewModels
 
             if (!(result is null))
             {
-                var stream = new FastStream();
+                FastStream stream = new();
                 result.Serialize(stream);
                 BlockHex = stream.ToByteArray().ToBase16();
 
-                var msg = new Message(new BlockPayload(result), NetworkType.TestNet);
+                Message msg = new(new BlockPayload(result), NetworkType.TestNet);
 
                 client.Send(msg);
             }

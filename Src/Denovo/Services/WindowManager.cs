@@ -21,7 +21,7 @@ namespace Denovo.Services
     {
         public Task ShowDialog(VmWithSizeBase vm)
         {
-            Window win = new Window()
+            Window win = new()
             {
                 Content = vm,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,

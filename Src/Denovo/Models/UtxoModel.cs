@@ -59,7 +59,7 @@ namespace Denovo.Models
                 return false;
             }
 
-            var scr = new PubkeyScript(scrBa);
+            PubkeyScript scr = new(scrBa);
             result = new Utxo(Index, Amount, scr);
             error = null;
             return true;

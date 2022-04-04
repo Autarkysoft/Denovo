@@ -80,7 +80,7 @@ namespace Denovo.Services
             string path = Path.Combine(dir, $"{fileName}.ddat");
             if (File.Exists(path))
             {
-                using FileStream stream = new FileStream(path, FileMode.Append);
+                using FileStream stream = new(path, FileMode.Append);
                 stream.Write(data);
             }
             else
@@ -133,7 +133,7 @@ namespace Denovo.Services
         private void WriteBlockInfo(IBlock block)
         {
             // block hash[32] | block size[4] | file name[4]
-            var stream = new FastStream(32 + 4 + 4);
+            FastStream stream = new(32 + 4 + 4);
             stream.Write(block.Header.GetHash(false));
             stream.Write(block.TotalSize);
             stream.Write(blockFileNum);
@@ -145,11 +145,11 @@ namespace Denovo.Services
         /// <inheritdoc/>
         public void WriteBlock(IBlock block)
         {
-            var temp = new FastStream(block.TotalSize);
+            FastStream temp = new(block.TotalSize);
             block.Serialize(temp);
 
             string fileName = $"Block{blockFileNum:D6}";
-            var info = new FileInfo(Path.Combine(blockDir, fileName));
+            FileInfo info = new(Path.Combine(blockDir, fileName));
             long len = info.Exists ? info.Length : 0;
             if (len + temp.GetSize() > Max)
             {

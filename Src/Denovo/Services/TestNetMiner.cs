@@ -34,11 +34,11 @@ namespace Denovo.Services
             // and IBlockchain.GetTarget() to mine at the correct difficulty.
             // For now it is a good way of mining any transaction that won't propagate in TestNet by bitcoin core clients.
 
-            var consensus = new Consensus(height, NetworkType.TestNet);
+            Consensus consensus = new(height, NetworkType.TestNet);
             string cbText = "Mined using Denovo v0.1.0";
             // A weak key used only for testing
-            using var key = new PrivateKey(new Sha256().ComputeHash(Encoding.UTF8.GetBytes(cbText)));
-            var pkScr = new PubkeyScript();
+            using PrivateKey key = new(new Sha256().ComputeHash(Encoding.UTF8.GetBytes(cbText)));
+            PubkeyScript pkScr = new();
             pkScr.SetToP2WPKH(key.ToPublicKey());
 
             byte[] commitment = null;
@@ -48,7 +48,7 @@ namespace Denovo.Services
 
             ulong fee = 0;
 
-            var coinbase = new Transaction()
+            Transaction coinbase = new()
             {
                 Version = 1,
                 TxInList = new TxIn[]
@@ -67,7 +67,7 @@ namespace Denovo.Services
             ((PubkeyScript)coinbase.TxOutList[1].PubScript).SetToReturn(Encoding.UTF8.GetBytes("Testing Mining View Model."));
 
 
-            var block = new Block()
+            Block block = new()
             {
                 Header = new BlockHeader()
                 {
@@ -86,7 +86,7 @@ namespace Denovo.Services
                     new Witness(new byte[][]{ commitment })
                 };
 
-                var temp = new TxOut[coinbase.TxOutList.Length + 1];
+                TxOut[] temp = new TxOut[coinbase.TxOutList.Length + 1];
                 Array.Copy(coinbase.TxOutList, 0, temp, 0, coinbase.TxOutList.Length);
                 temp[^1] = new TxOut();
 
