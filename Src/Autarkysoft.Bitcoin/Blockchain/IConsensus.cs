@@ -42,6 +42,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
         bool IsBip16Enabled { get; }
 
         /// <summary>
+        /// Returns if BIP-30 (prohibit duplicate transactions) is enabled
+        /// </summary>
+        /// <remarks>
+        /// https://github.com/bitcoin/bitcoin/blob/747cdf1d652d8587e9f2e3d4436c3ecdbf56d0a5/src/validation.cpp#L2056-L2141
+        /// </remarks>
+        bool IsBip30Enabled { get; }
+
+        /// <summary>
         /// Returns if BIP-34 (coinbase transactions must include block height) is enabled
         /// </summary>
         bool IsBip34Enabled { get; }

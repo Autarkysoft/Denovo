@@ -164,6 +164,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public bool IsBip16Enabled => BlockHeight != bip16;
 
         /// <inheritdoc/>
+        public bool IsBip30Enabled => (!IsBip34Enabled &&
+                                      network == NetworkType.MainNet && BlockHeight != 91842 && BlockHeight != 91880) ||
+                                      BlockHeight >= 1983702;
+
+        /// <inheritdoc/>
         public bool IsBip34Enabled => BlockHeight >= bip34;
 
         /// <inheritdoc/>
