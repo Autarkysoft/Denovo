@@ -178,6 +178,12 @@ namespace Denovo.Services
         }
 
 
+        public bool Contains(byte[] hash, uint index)
+        {
+            return database.TryGetValue(hash, out List<Utxo> value) && value.Any(u => u.Index == index);
+        }
+
+
         public IUtxo Find(TxIn tin)
         {
             if (database.TryGetValue(tin.TxHash, out List<Utxo> value))
@@ -224,6 +230,7 @@ namespace Denovo.Services
                 }
                 if (temp.Count > 0)
                 {
+                    // TODO: replace duplicate (BIP30)
                     database.Add(txs[i].GetTransactionHash(), temp);
                 }
             }

@@ -86,11 +86,18 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
+        public bool Contains(byte[] hash, uint index)
+        {
+            Assert.NotNull(database);
+            bool b = database.ContainsKey(hash);
+            return b;
+        }
+
         public IUtxo Find(TxIn tin)
         {
             Assert.NotNull(database);
             bool b = database.ContainsKey(tin.TxHash);
-            Assert.True(database.ContainsKey(tin.TxHash), "Input not found in database.");
+            Assert.True(b, "Input not found in database.");
 
             List<Utxo> ulist = database[tin.TxHash];
             Utxo utxo = ulist.Find(x => x.Index == tin.Index);

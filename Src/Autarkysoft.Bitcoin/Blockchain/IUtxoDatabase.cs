@@ -13,6 +13,13 @@ namespace Autarkysoft.Bitcoin.Blockchain
     public interface IUtxoDatabase
     {
         /// <summary>
+        /// Returns if the database contains the given output (UTXO is not spent)
+        /// </summary>
+        /// <param name="hash">Hash of the transaction</param>
+        /// <param name="index">Index of the output</param>
+        /// <returns>True if the UTXO exists; otherwise false.</returns>
+        public bool Contains(byte[] hash, uint index);
+        /// <summary>
         /// Searches inside the UTXO database for the given transaction input and returns the <see cref="IUtxo"/>
         /// if it was found, otherwise null.
         /// </summary>
