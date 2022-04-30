@@ -83,6 +83,21 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
+            if (consensus.IsBip30Enabled)
+            {
+                foreach (ITransaction tx in block.TransactionList)
+                {
+                    for (uint i = 0; i < tx.TxOutList.Length; i++)
+                    {
+                        if (txVer.UtxoDb.Contains(tx.GetTransactionHash(), i))
+                        {
+                            error = "BIP-30 violation (duplicate transaction found).";
+                            return false;
+                        }
+                    }
+                }
+            }
+
             txVer.Init();
 
             ITransaction coinbase = block.TransactionList[0];
