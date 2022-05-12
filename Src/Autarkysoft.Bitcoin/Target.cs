@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -232,6 +233,39 @@ namespace Autarkysoft.Bitcoin
             else
             {
                 return masked * BigInteger.Pow(2, 8 * (shift - 3));
+            }
+        }
+
+        /// <summary>
+        /// Converts this value to its BigInteger representation.
+        /// </summary>
+        /// <returns>BigInteger result</returns>
+        public Digest256 ToDigest256()
+        {
+            int nSize = (int)(value >> 24);
+            uint nWord = value & 0x007fffff;
+            if (nSize <= 3)
+            {
+                nWord >>= 8 * (3 - nSize);
+                return new Digest256(nWord);
+            }
+            else
+            {
+                int shift = 8 * (nSize - 3);
+                Span<uint> u8 = new uint[8];
+                Span<uint> a = new uint[8];
+                a[0] = nWord;
+
+                int k = shift / 32;
+                shift %= 32;
+                for (int i = 0; i < u8.Length; i++)
+                {
+                    if (i + k + 1 < u8.Length && shift != 0)
+                        u8[i + k + 1] |= (a[i] >> (32 - shift));
+                    if (i + k < u8.Length)
+                        u8[i + k] |= (a[i] << shift);
+                }
+                return new Digest256(u8);
             }
         }
 
