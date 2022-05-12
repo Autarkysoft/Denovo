@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Diagnostics;
 
@@ -283,6 +284,50 @@ namespace Autarkysoft.Bitcoin
         {
             CheckAndResize(stream.position);
             Write(stream.buffer, 0, stream.position);
+        }
+
+        /// <summary>
+        /// Writes the given <see cref="Digest256"/> to this stream as bytes.
+        /// </summary>
+        /// <param name="digest">256-bit message digest to use</param>
+        public void Write(in Digest256 digest)
+        {
+            CheckAndResize(Digest256.ByteSize);
+
+            buffer[position] = (byte)digest.b0;
+            buffer[position + 1] = (byte)(digest.b0 >> 8);
+            buffer[position + 2] = (byte)(digest.b0 >> 16);
+            buffer[position + 3] = (byte)(digest.b0 >> 24);
+            buffer[position + 4] = (byte)digest.b1;
+            buffer[position + 5] = (byte)(digest.b1 >> 8);
+            buffer[position + 6] = (byte)(digest.b1 >> 16);
+            buffer[position + 7] = (byte)(digest.b1 >> 24);
+            buffer[position + 8] = (byte)digest.b2;
+            buffer[position + 9] = (byte)(digest.b2 >> 8);
+            buffer[position + 10] = (byte)(digest.b2 >> 16);
+            buffer[position + 11] = (byte)(digest.b2 >> 24);
+            buffer[position + 12] = (byte)digest.b3;
+            buffer[position + 13] = (byte)(digest.b3 >> 8);
+            buffer[position + 14] = (byte)(digest.b3 >> 16);
+            buffer[position + 15] = (byte)(digest.b3 >> 24);
+            buffer[position + 16] = (byte)digest.b4;
+            buffer[position + 17] = (byte)(digest.b4 >> 8);
+            buffer[position + 18] = (byte)(digest.b4 >> 16);
+            buffer[position + 19] = (byte)(digest.b4 >> 24);
+            buffer[position + 20] = (byte)digest.b5;
+            buffer[position + 21] = (byte)(digest.b5 >> 8);
+            buffer[position + 22] = (byte)(digest.b5 >> 16);
+            buffer[position + 23] = (byte)(digest.b5 >> 24);
+            buffer[position + 24] = (byte)digest.b6;
+            buffer[position + 25] = (byte)(digest.b6 >> 8);
+            buffer[position + 26] = (byte)(digest.b6 >> 16);
+            buffer[position + 27] = (byte)(digest.b6 >> 24);
+            buffer[position + 28] = (byte)digest.b7;
+            buffer[position + 29] = (byte)(digest.b7 >> 8);
+            buffer[position + 30] = (byte)(digest.b7 >> 16);
+            buffer[position + 31] = (byte)(digest.b7 >> 24);
+
+            position += Digest256.ByteSize;
         }
 
 

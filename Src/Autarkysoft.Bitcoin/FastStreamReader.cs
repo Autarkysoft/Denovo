@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -586,6 +587,44 @@ namespace Autarkysoft.Bitcoin
             else
             {
                 len = 0;
+                return false;
+            }
+        }
+
+
+        /// <summary>
+        /// Reads and returns a <see cref="Digest256"/>.
+        /// </summary>
+        /// <returns>A 256-bit digest</returns>
+        public Digest256 ReadDigest256Checked()
+        {
+            uint u0 = (uint)(data[00] | (data[01] << 8) | (data[02] << 16) | (data[03] << 24));
+            uint u1 = (uint)(data[04] | (data[05] << 8) | (data[06] << 16) | (data[07] << 24));
+            uint u2 = (uint)(data[08] | (data[09] << 8) | (data[10] << 16) | (data[11] << 24));
+            uint u3 = (uint)(data[12] | (data[13] << 8) | (data[14] << 16) | (data[15] << 24));
+            uint u4 = (uint)(data[16] | (data[17] << 8) | (data[18] << 16) | (data[19] << 24));
+            uint u5 = (uint)(data[20] | (data[21] << 8) | (data[22] << 16) | (data[23] << 24));
+            uint u6 = (uint)(data[24] | (data[25] << 8) | (data[26] << 16) | (data[27] << 24));
+            uint u7 = (uint)(data[28] | (data[29] << 8) | (data[30] << 16) | (data[31] << 24));
+
+            return new Digest256(u0, u1, u2, u3, u4, u5, u6, u7);
+        }
+
+        /// <summary>
+        /// Reads and returns a <see cref="Digest256"/>. Return value indicates success.
+        /// </summary>
+        /// <param name="val">The 256-bit digest</param>
+        /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
+        public bool TryReadUInt64(out Digest256 val)
+        {
+            if (CheckRemaining(Digest256.ByteSize))
+            {
+                val = ReadDigest256Checked();
+                return true;
+            }
+            else
+            {
+                val = Digest256.Zero;
                 return false;
             }
         }
