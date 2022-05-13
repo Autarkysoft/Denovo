@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Encoders;
 using System;
+using System.Globalization;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
@@ -51,6 +52,31 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
             b0 = u8[0]; b1 = u8[1]; b2 = u8[2]; b3 = u8[3];
             b4 = u8[4]; b5 = u8[5]; b6 = u8[6]; b7 = u8[7];
+        }
+
+        /// <summary>
+        /// Converts the hexadecimal representation of 256-bit hash to its <see cref="Digest256"/> equivalent.
+        /// </summary>
+        /// <param name="hex256">Base16 string to use</param>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <returns>256-bit digest</returns>
+        public static Digest256 ParseHex(string hex256)
+        {
+            if (!Base16.IsValid(hex256))
+                throw new ArgumentException("Invalid Base-16", nameof(hex256));
+            if (hex256.Length != 64)
+                throw new ArgumentOutOfRangeException(nameof(hex256), "String must contain 64 characters.");
+
+            ReadOnlySpan<char> s = hex256.AsSpan();
+            return new Digest256(uint.Parse(s.Slice(56, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(48, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(40, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(32, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(24, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(16, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(8, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(0, 8), NumberStyles.HexNumber));
         }
 
         /// <summary>
