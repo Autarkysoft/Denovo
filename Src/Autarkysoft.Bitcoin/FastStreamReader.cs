@@ -17,8 +17,6 @@ namespace Autarkysoft.Bitcoin
     /// the <see cref="CheckRemaining(int)"/> method can be called by the user to check remaining bytes, then instead of calling
     /// TryRead* methods (that perform the same check for each individual object) the Read* method should be called that skips
     /// the size check.
-    /// See <see cref="Blockchain.Blocks.BlockHeader.TryDeserialize(FastStreamReader, out Errors)"/> for example of how
-    /// this should be used.
     /// </summary>
     public class FastStreamReader
     {
@@ -598,14 +596,16 @@ namespace Autarkysoft.Bitcoin
         /// <returns>A 256-bit digest</returns>
         public Digest256 ReadDigest256Checked()
         {
-            uint u0 = (uint)(data[00] | (data[01] << 8) | (data[02] << 16) | (data[03] << 24));
-            uint u1 = (uint)(data[04] | (data[05] << 8) | (data[06] << 16) | (data[07] << 24));
-            uint u2 = (uint)(data[08] | (data[09] << 8) | (data[10] << 16) | (data[11] << 24));
-            uint u3 = (uint)(data[12] | (data[13] << 8) | (data[14] << 16) | (data[15] << 24));
-            uint u4 = (uint)(data[16] | (data[17] << 8) | (data[18] << 16) | (data[19] << 24));
-            uint u5 = (uint)(data[20] | (data[21] << 8) | (data[22] << 16) | (data[23] << 24));
-            uint u6 = (uint)(data[24] | (data[25] << 8) | (data[26] << 16) | (data[27] << 24));
-            uint u7 = (uint)(data[28] | (data[29] << 8) | (data[30] << 16) | (data[31] << 24));
+            uint u0 = (uint)(data[position + 00] | (data[position + 01] << 8) | (data[position + 02] << 16) | (data[position + 03] << 24));
+            uint u1 = (uint)(data[position + 04] | (data[position + 05] << 8) | (data[position + 06] << 16) | (data[position + 07] << 24));
+            uint u2 = (uint)(data[position + 08] | (data[position + 09] << 8) | (data[position + 10] << 16) | (data[position + 11] << 24));
+            uint u3 = (uint)(data[position + 12] | (data[position + 13] << 8) | (data[position + 14] << 16) | (data[position + 15] << 24));
+            uint u4 = (uint)(data[position + 16] | (data[position + 17] << 8) | (data[position + 18] << 16) | (data[position + 19] << 24));
+            uint u5 = (uint)(data[position + 20] | (data[position + 21] << 8) | (data[position + 22] << 16) | (data[position + 23] << 24));
+            uint u6 = (uint)(data[position + 24] | (data[position + 25] << 8) | (data[position + 26] << 16) | (data[position + 27] << 24));
+            uint u7 = (uint)(data[position + 28] | (data[position + 29] << 8) | (data[position + 30] << 16) | (data[position + 31] << 24));
+
+            position += Digest256.ByteSize;
 
             return new Digest256(u0, u1, u2, u3, u4, u5, u6, u7);
         }
