@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
@@ -14,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Tests.Bitcoin.Blockchain.Blocks;
 using Tests.Bitcoin.P2PNetwork;
+using Tests.Bitcoin.ValueTypesTests;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -40,7 +42,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             for (int i = 0; i < count; i++)
             {
-                yield return new BlockHeader(i, new byte[32], new byte[32], 0, 0, 0);
+                yield return new BlockHeader(i, Digest256.Zero, Digest256.Zero, 0, 0, 0);
             }
         }
 
@@ -48,7 +50,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             int len = (height + 1) * (32 + 4 + 4);
             byte[] result = new byte[len];
-            Buffer.BlockCopy(last.GetHash(), 0, result, result.Length - 40, 32);
+            Buffer.BlockCopy(last.Hash.ToByteArray(), 0, result, result.Length - 40, 32);
             return result;
         }
 
@@ -57,24 +59,21 @@ namespace Tests.Bitcoin.Blockchain
         private static readonly byte[] MockGenesisHash = BlockHeaderTests.GetSampleBlockHash();
 
         // Blocks 620279 and 620280
-        private static BlockHeader Header1 => new()
+        private static BlockHeader Header1
         {
-            Version = 536870912,
-            PreviousBlockHeaderHash = Helper.HexToBytes("0000000000000000000ff7d9a0ff8e0947a2ac2d13403bc980766b95115fc437", true),
-            MerkleRootHash = Helper.HexToBytes("d1ba9e18f76e3490815416f3a0f84b47c005d9b2b32669f5a01b6123cf8c658c", true),
-            BlockTime = 1583387996,
-            NBits = 387067068,
-            Nonce = 1310529803
-        };
-        private static readonly BlockHeader Header2 = new()
-        {
-            Version = 536870912,
-            PreviousBlockHeaderHash = Helper.HexToBytes("00000000000000000000b4269e0bf78432f91bbe7cc3a5b0ce9c476b8398d6c1", true),
-            MerkleRootHash = Helper.HexToBytes("59026994738b6a77758e78797543fa3906628a1fd5f11a15da3df75d7c5e9397", true),
-            BlockTime = 1583388040,
-            NBits = 387067068,
-            Nonce = 3358651144
-        };
+            get
+            {
+                Digest256 prv = new(Helper.HexToBytes("0000000000000000000ff7d9a0ff8e0947a2ac2d13403bc980766b95115fc437", true));
+                Digest256 mrkl = new(Helper.HexToBytes("d1ba9e18f76e3490815416f3a0f84b47c005d9b2b32669f5a01b6123cf8c658c", true));
+                return new(536870912, prv, mrkl, 1583387996, 387067068, 1310529803);
+            }
+        }
+
+        private static readonly BlockHeader Header2 = new(536870912,
+            new(Helper.HexToBytes("00000000000000000000b4269e0bf78432f91bbe7cc3a5b0ce9c476b8398d6c1", true)),
+            new(Helper.HexToBytes("59026994738b6a77758e78797543fa3906628a1fd5f11a15da3df75d7c5e9397", true)),
+            1583388040, 387067068, 3358651144);
+
         private static readonly byte[] HeaderBytes1 = Helper.HexToBytes("0000002037c45f11956b7680c93b40132daca247098effa0d9f70f0000000000000000008c658ccf23611ba0f56926b3b2d905c0474bf8a0f316548190346ef7189ebad15c95605ebc2c12170b191d4e");
         private static readonly byte[] HeaderBytes2 = Helper.HexToBytes("00000020c1d698836b479cceb0a5c37cbe1bf93284f70b9e26b40000000000000000000097935e7c5df73dda151af1d51f8a620639fa437579788e75776a8b73946902598895605ebc2c121708f330c8");
         private static readonly byte[] HeaderHash1 = Helper.HexToBytes("00000000000000000000b4269e0bf78432f91bbe7cc3a5b0ce9c476b8398d6c1", true);
@@ -183,12 +182,12 @@ namespace Tests.Bitcoin.Blockchain
             Assert.Same(time, chain.Time);
             Assert.Equal(expHeight, chain.Height);
             Assert.Equal(BlockchainState.None, chain.State);
-            Assert.Equal(expTip, chain.Tip);
+            Assert.Equal(expTip, chain.Tip.ToByteArray());
             Assert.Equal(expHeaders.Length, chain.headerList.Count);
 
             for (int i = 0; i < expHeaders.Length; i++)
             {
-                Assert.Equal(expHeaders[i].GetHash(), chain.headerList[i].GetHash());
+                Assert.Equal(expHeaders[i].Hash, chain.headerList[i].Hash);
             }
 
             if (fMan is MockFileManager mockFM)
@@ -243,7 +242,7 @@ namespace Tests.Bitcoin.Blockchain
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, 1).ToArray(),
                 null,
-                Array.Empty<byte[][]>(),
+                Array.Empty<Digest256[]>(),
                 null,
                 null,
             };
@@ -254,9 +253,9 @@ namespace Tests.Bitcoin.Blockchain
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, 2).ToArray(),
                 null,
-                Array.Empty<byte[][]>(),
-                Array.Empty<byte[]>(),
-                new byte[][] { headers[1].GetHash() },
+                Array.Empty<Digest256[]>(),
+                Array.Empty<Digest256>(),
+                new Digest256[] { headers[1].Hash },
             };
             yield return new object[]
             {
@@ -266,9 +265,9 @@ namespace Tests.Bitcoin.Blockchain
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet).ToArray(),
                 null,
-                Array.Empty<byte[][]>(),
-                Array.Empty<byte[]>(),
-                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet-1).ToArray().Select(x => x.GetHash()),
+                Array.Empty<Digest256[]>(),
+                Array.Empty<Digest256>(),
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet-1).ToArray().Select(x => x.Hash).ToArray(),
             };
             yield return new object[]
             {
@@ -278,9 +277,9 @@ namespace Tests.Bitcoin.Blockchain
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+1).ToArray(),
                 null,
-                Array.Empty<byte[][]>(),
-                Array.Empty<byte[]>(),
-                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+                Array.Empty<Digest256[]>(),
+                Array.Empty<Digest256>(),
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.Hash).ToArray(),
             };
             yield return new object[]
             {
@@ -290,9 +289,9 @@ namespace Tests.Bitcoin.Blockchain
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+2).ToArray(),
                 null,
-                Array.Empty<byte[][]>(),
-                new byte[][] { headers[Chain.MaxMissingBlockToGet+1].GetHash() },
-                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+                Array.Empty<Digest256[]>(),
+                new Digest256[] { headers[Chain.MaxMissingBlockToGet+1].Hash },
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.Hash).ToArray(),
             };
             yield return new object[]
             {
@@ -301,9 +300,9 @@ namespace Tests.Bitcoin.Blockchain
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+3).ToArray(),
                 null,
-                Array.Empty<byte[][]>(),
-                new byte[][] { headers[Chain.MaxMissingBlockToGet+1].GetHash(), headers[Chain.MaxMissingBlockToGet+2].GetHash() },
-                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+                Array.Empty<Digest256[]>(),
+                new Digest256[] { headers[Chain.MaxMissingBlockToGet+1].Hash, headers[Chain.MaxMissingBlockToGet+2].Hash },
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.Hash).ToArray(),
             };
             yield return new object[]
             {
@@ -312,9 +311,9 @@ namespace Tests.Bitcoin.Blockchain
                 2,
                 ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+5).ToArray(),
                 null,
-                Array.Empty<byte[][]>(),
-                new byte[][] { headers[Chain.MaxMissingBlockToGet+3].GetHash(), headers[Chain.MaxMissingBlockToGet+4].GetHash() },
-                ((Span<BlockHeader>)headers).Slice(3, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.GetHash()),
+                Array.Empty<Digest256[]>(),
+                new Digest256[] { headers[Chain.MaxMissingBlockToGet+3].Hash, headers[Chain.MaxMissingBlockToGet+4].Hash },
+                ((Span<BlockHeader>)headers).Slice(3, Chain.MaxMissingBlockToGet).ToArray().Select(x => x.Hash).ToArray(),
             };
 
             // In tests so far, Chain didn't have any failed block hashes to re-download. The following tests do:
@@ -325,15 +324,15 @@ namespace Tests.Bitcoin.Blockchain
                 fman, blockVer, c, t,
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet).ToArray(),
-                new byte[1][][]
+                new Digest256[1][]
                 {
-                    new byte[3][] { headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash() }
+                    new Digest256[3] { headers[4].Hash, headers[5].Hash, headers[6].Hash }
                 },
-                Array.Empty<byte[][]>(), // Failed list has to be emptied after the call
-                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet-1).ToArray().Select(x => x.GetHash()),
-                new byte[3][] // Inv is the same as failed list
+                Array.Empty<Digest256[]>(), // Failed list has to be emptied after the call
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet-1).ToArray().Select(x => x.Hash).ToArray(),
+                new Digest256[3] // Inv is the same as failed list
                 {
-                    headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash()
+                    headers[4].Hash, headers[5].Hash, headers[6].Hash
                 }
             };
             yield return new object[]
@@ -342,44 +341,44 @@ namespace Tests.Bitcoin.Blockchain
                 fman, blockVer, c, t,
                 0,
                 ((Span<BlockHeader>)headers).Slice(0, Chain.MaxMissingBlockToGet+2).ToArray(),
-                new byte[4][][]
+                new Digest256[4][]
                 {
-                    new byte[3][] { headers[8].GetHash(), headers[9].GetHash(), headers[10].GetHash() },
-                    new byte[2][] { headers[13].GetHash(), headers[14].GetHash() },
-                    new byte[4][] { headers[3].GetHash(), headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash() },
-                    new byte[1][] { headers[15].GetHash() }
+                    new Digest256[3] { headers[8].Hash, headers[9].Hash, headers[10].Hash },
+                    new Digest256[2] { headers[13].Hash, headers[14].Hash },
+                    new Digest256[4] { headers[3].Hash, headers[4].Hash, headers[5].Hash, headers[6].Hash },
+                    new Digest256[1] { headers[15].Hash }
                 },
-                new byte[3][][] // The item with lowest height is removed
+                new Digest256[3][] // The item with lowest height is removed
                 {
-                    new byte[3][] { headers[8].GetHash(), headers[9].GetHash(), headers[10].GetHash() },
-                    new byte[2][] { headers[13].GetHash(), headers[14].GetHash() },
-                    new byte[1][] { headers[15].GetHash() }
+                    new Digest256[3] { headers[8].Hash, headers[9].Hash, headers[10].Hash },
+                    new Digest256[2] { headers[13].Hash, headers[14].Hash },
+                    new Digest256[1] { headers[15].Hash }
                 },
-                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet+1).ToArray().Select(x => x.GetHash()),
-                new byte[4][] // Inv is the item in failed list that starts with lowest height
+                ((Span<BlockHeader>)headers).Slice(1, Chain.MaxMissingBlockToGet+1).ToArray().Select(x => x.Hash).ToArray(),
+                new Digest256[4] // Inv is the item in failed list that starts with lowest height
                 {
-                    headers[3].GetHash(), headers[4].GetHash(), headers[5].GetHash(), headers[6].GetHash()
+                    headers[3].Hash, headers[4].Hash, headers[5].Hash, headers[6].Hash
                 }
             };
         }
         [Theory]
         [MemberData(nameof(GetMissingBlockCases))]
         public void SetMissingBlockHashesTest(MockFileManager fman, IBlockVerifier bver, IConsensus c, IClientTime t, int height,
-                                              BlockHeader[] hdrs, byte[][][] failed,
-                                              byte[][][] expFailed, byte[][] expMissHash, byte[][] expInvs)
+                                              BlockHeader[] hdrs, Digest256[][] failed,
+                                              Digest256[][] expFailed, Digest256[] expMissHash, Digest256[] expInvs)
         {
             fman.ResetIndex();
             Chain chain = new(fman, bver, c, t, NetworkType.MainNet);
             Assert.Null(chain.missingBlockHashes);
             Assert.Empty(chain.failedBlockHashes);
             Assert.Equal(0, chain.Height);
-            Assert.Equal(hdrs[0].GetHash(), chain.Tip);
+            Assert.Equal(hdrs[0].Hash, chain.Tip);
 
             // Fake chain's properties:
             chain.headerList.Clear();
             chain.headerList.AddRange(hdrs);
             Helper.SetReadonlyProperty(chain, nameof(chain.Height), height);
-            Buffer.BlockCopy(hdrs[height].GetHash(), 0, chain.Tip, 0, 32);
+            Helper.SetReadonlyProperty(chain, "Tip", hdrs[height].Hash);
             if (failed is not null)
             {
                 chain.failedBlockHashes.AddRange(failed);
@@ -417,45 +416,47 @@ namespace Tests.Bitcoin.Blockchain
 
         public static IEnumerable<object[]> GetPutBackFailedCases()
         {
-            byte[] rand32 = Helper.GetBytes(32);
+            Digest256 rand32 = new(Helper.GetBytes(32));
+            Digest256 h1 = new(HeaderHash1);
+            Digest256 h2 = new(HeaderHash2);
 
             yield return new object[]
             {
                 new List<Inventory>(0), // Set capacity to save memory
                 null,
-                Array.Empty<byte[][]>()
+                Array.Empty<Digest256[]>()
             };
             yield return new object[]
             {
                 new List<Inventory>(1),
-                new byte[][][] { new byte[1][] { rand32 } },
-                new byte[][][] { new byte[1][] { rand32 } }
+                new Digest256[][] { new Digest256[1] { rand32 } },
+                new Digest256[][] { new Digest256[1] { rand32 } }
             };
             yield return new object[]
             {
-                new List<Inventory>(new Inventory[] { new(InventoryType.WitnessBlock, HeaderHash1) }),
+                new List<Inventory>(new Inventory[] { new(InventoryType.WitnessBlock, h1) }),
                 null,
-                new byte[][][] { new byte[1][] { HeaderHash1 } }
+                new Digest256[][] { new Digest256[1] { h1 } }
             };
             yield return new object[]
             {
-                new List<Inventory>(new Inventory[] { new(InventoryType.WitnessBlock, HeaderHash1) }),
-                new byte[][][] { new byte[1][] { rand32 } },
-                new byte[][][] { new byte[1][] { rand32 }, new byte[1][] { HeaderHash1 } }
+                new List<Inventory>(new Inventory[] { new(InventoryType.WitnessBlock, h1) }),
+                new Digest256[][] { new Digest256[1] { rand32 } },
+                new Digest256[][] { new Digest256[1] { rand32 }, new Digest256[1] { h1 } }
             };
             yield return new object[]
             {
                 new List<Inventory>(new Inventory[]
                 {
-                    new(InventoryType.WitnessBlock, HeaderHash1), new(InventoryType.WitnessBlock, HeaderHash2)
+                    new(InventoryType.WitnessBlock, h1), new(InventoryType.WitnessBlock, h2)
                 }),
-                new byte[][][] { new byte[1][] { rand32 } },
-                new byte[][][] { new byte[1][] { rand32 }, new byte[2][] { HeaderHash1, HeaderHash2 } }
+                new Digest256[][] { new Digest256[1] { rand32 } },
+                new Digest256[][] { new Digest256[1] { rand32 }, new Digest256[2] { h1, h2 } }
             };
         }
         [Theory]
         [MemberData(nameof(GetPutBackFailedCases))]
-        public void PutBackMissingBlocksTest(List<Inventory> hashes, byte[][][] toSet, byte[][][] expected)
+        public void PutBackMissingBlocksTest(List<Inventory> hashes, Digest256[][] toSet, Digest256[][] expected)
         {
             Chain chain = GetChain();
             Assert.Empty(chain.failedBlockHashes);
@@ -471,7 +472,7 @@ namespace Tests.Bitcoin.Blockchain
 
         private static Inventory[] BuildInv(params IBlock[] blocks)
         {
-            return blocks.Select(x => new Inventory(InventoryType.WitnessBlock, x.GetBlockHash(false))).ToArray();
+            return blocks.Select(x => new Inventory(InventoryType.WitnessBlock, x.Header.Hash)).ToArray();
         }
 
         public static IEnumerable<object[]> GetProcessQueueCases()
@@ -481,13 +482,13 @@ namespace Tests.Bitcoin.Blockchain
             MockBlockVerifier bver = new();
             FileManCallName[] calls = new[] { FileManCallName.ReadData_Headers, FileManCallName.ReadBlockInfo };
             MockFileManager fman = new(calls, new byte[][] { MockGenesis.Header.Serialize(), GetBlockInfo(0, MockGenesis.Header) });
-            Block blk1 = new() { Header = new(1, MockGenesisHash, new byte[32], 0, 0, 0) };
-            Block blk2 = new() { Header = new(2, blk1.Header.GetHash(), new byte[32], 0, 0, 0) };
-            Block blk3 = new() { Header = new(3, blk2.Header.GetHash(), new byte[32], 0, 0, 0) };
-            Block blk4 = new() { Header = new(4, blk3.Header.GetHash(), new byte[32], 0, 0, 0) };
-            Block blk5 = new() { Header = new(5, blk4.Header.GetHash(), new byte[32], 0, 0, 0) };
+            Block blk1 = new() { Header = new(1, new(MockGenesisHash), Digest256.Zero, 0, 0, 0) };
+            Block blk2 = new() { Header = new(2, blk1.Header.Hash, Digest256.Zero, 0, 0, 0) };
+            Block blk3 = new() { Header = new(3, blk2.Header.Hash, Digest256.Zero, 0, 0, 0) };
+            Block blk4 = new() { Header = new(4, blk3.Header.Hash, Digest256.Zero, 0, 0, 0) };
+            Block blk5 = new() { Header = new(5, blk4.Header.Hash, Digest256.Zero, 0, 0, 0) };
 
-            byte[] tip = MockGenesisHash;
+            Digest256 tip = new(MockGenesisHash);
 
             MockNodeStatus ns1 = new() { InvsToGet = new(BuildInv(blk1)), DownloadedBlocks = new(new[] { blk1 }), _isDead = false };
             MockNodeStatus ns2 = new() { InvsToGet = new(BuildInv(blk2)), DownloadedBlocks = new(new[] { blk2 }), _isDead = false };
@@ -508,7 +509,7 @@ namespace Tests.Bitcoin.Blockchain
                 true, // Add node status to queue
                 Array.Empty<int>(), // Index of items to remove from queue
                 null, // Mock failed block hashes
-                Array.Empty<byte[][]>(), // Failed blocks
+                Array.Empty<Digest256[]>(), // Failed blocks
             };
             yield return new object[]
             {
@@ -522,14 +523,14 @@ namespace Tests.Bitcoin.Blockchain
                 true, // Add node status to queue
                 Array.Empty<int>(), // Index of items to remove from queue
                 null, // Mock failed block hashes
-                Array.Empty<byte[][]>(), // Failed blocks
+                Array.Empty<Digest256[]>(), // Failed blocks
             };
             yield return new object[]
             {
                 // Peer queue has 1 item and the new block is after the tip and is verified 
                 // but the next item is not after the new tip
                 c, t, 3, 4, // Height is increased by the number of blocks processed
-                tip, blk1.GetBlockHash(), // Tip changes to last block
+                tip, blk1.Header.Hash, // Tip changes to last block
                 new MockNodeStatus()
                 {
                     InvsToGet = new(BuildInv(blk1)),
@@ -548,13 +549,13 @@ namespace Tests.Bitcoin.Blockchain
                 false, // Add node status to queue
                 Array.Empty<int>(), // Index of items to remove from queue
                 null, // Mock failed block hashes
-                Array.Empty<byte[][]>(), // Failed blocks
+                Array.Empty<Digest256[]>(), // Failed blocks
             };
             yield return new object[]
             {
                 // Same as before but each item in queue has more than one block
                 c, t, 3, 5, // Height is increased by the number of blocks processed
-                tip, blk2.GetBlockHash(), // Tip changes to last block
+                tip, blk2.Header.Hash, // Tip changes to last block
                 new MockNodeStatus()
                 {
                     InvsToGet = new(BuildInv(blk1, blk2)),
@@ -573,13 +574,13 @@ namespace Tests.Bitcoin.Blockchain
                 false, // Add node status to queue
                 Array.Empty<int>(), // Index of items to remove from queue
                 null, // Mock failed block hashes
-                Array.Empty<byte[][]>(), // Failed blocks
+                Array.Empty<Digest256[]>(), // Failed blocks
             };
             yield return new object[]
             {
                 // The new item can be verified (is after the tip) and the item in queue is also after the new tip
                 c, t, 3, 8, // Height is increased by the number of blocks processed
-                tip, blk5.GetBlockHash(), // Tip changes to last block
+                tip, blk5.Header.Hash, // Tip changes to last block
                 new MockNodeStatus()
                 {
                     InvsToGet = new(BuildInv(blk1, blk2, blk3)),
@@ -611,7 +612,7 @@ namespace Tests.Bitcoin.Blockchain
                 false, // Add node status to queue
                 new int[1] { 0 }, // Index of items to remove from queue
                 null, // Mock failed block hashes
-                Array.Empty<byte[][]>(), // Failed blocks
+                Array.Empty<Digest256[]>(), // Failed blocks
             };
 
             yield return new object[]
@@ -632,13 +633,13 @@ namespace Tests.Bitcoin.Blockchain
                 false, // Add node status to queue
                 Array.Empty<int>(), // Index of items to remove from queue
                 null, // Mock failed block hashes
-                new byte[][][] { new byte[][] { blk1.GetBlockHash(false) } }, // Failed blocks
+                new Digest256[][] { new Digest256[] { blk1.Header.Hash } }, // Failed blocks
             };
             yield return new object[]
             {
                 // There are 5 new blocks, first 2 are valid and the next 3 are invalid
                 c, t, 3, 5, // Height only increases by 2
-                tip, blk2.GetBlockHash(), // Tip is second block
+                tip, blk2.Header.Hash, // Tip is second block
                 new MockNodeStatus()
                 {
                     InvsToGet = new(BuildInv(blk1, blk2, blk3, blk4, blk5)),
@@ -657,20 +658,20 @@ namespace Tests.Bitcoin.Blockchain
                 Array.Empty<INodeStatus>(), // Start queue
                 false, // Add node status to queue
                 Array.Empty<int>(), // Index of items to remove from queue
-                new byte[][][] { new byte[][] { Helper.GetBytes(32) } }, // Mock failed block hashes
-                new byte[][][]
+                new Digest256[][] { new Digest256[] { new(Helper.GetBytes(32)) } }, // Mock failed block hashes
+                new Digest256[][]
                 {
-                    new byte[][] { Helper.GetBytes(32) },
-                    new byte[][] { blk3.GetBlockHash(false), blk4.GetBlockHash(false), blk5.GetBlockHash(false) }
+                    new Digest256[] { new(Helper.GetBytes(32)) },
+                    new Digest256[] { blk3.Header.Hash, blk4.Header.Hash, blk5.Header.Hash }
                 }, // Failed blocks
             };
         }
         [Theory]
         [MemberData(nameof(GetProcessQueueCases))]
         public void ProcessReceivedBlocksTest(IConsensus c, IClientTime t, int mockHeight, int expHeight,
-                                              byte[] mockTip, byte[] expTip, MockNodeStatus ns, MockBlockVerifier bver,
+                                              Digest256 mockTip, Digest256 expTip, MockNodeStatus ns, MockBlockVerifier bver,
                                               MockFileManager fman, INodeStatus[] mockPeerQ, bool addNsToQ, int[] qIndex,
-                                              byte[][][] mockFail, byte[][][] expFail)
+                                              Digest256[][] mockFail, Digest256[][] expFail)
         {
             fman.ResetIndex();
             Chain chain = new(fman, bver, c, t, NetworkType.MainNet);
@@ -685,7 +686,7 @@ namespace Tests.Bitcoin.Blockchain
                 chain.failedBlockHashes.AddRange(mockFail);
             }
             Helper.SetReadonlyProperty(chain, nameof(chain.Height), mockHeight);
-            Buffer.BlockCopy(mockTip, 0, chain.Tip, 0, 32);
+            Helper.SetReadonlyProperty(chain, nameof(chain.Tip), mockTip);
 
             chain.ProcessPeerQueue(ns);
 
@@ -733,8 +734,9 @@ namespace Tests.Bitcoin.Blockchain
         public void GetNextTargetTest(uint first, uint last, uint lastNBits, uint expNBits)
         {
             Chain chain = GetChain();
-            BlockHeader hd1 = new() { BlockTime = first };
-            BlockHeader hd2 = new() { BlockTime = last, NBits = lastNBits };
+            BlockHeader hd1 = new(0, Digest256.Zero, Digest256.Zero, first, TargetTests.Example, 0);
+            BlockHeader hd2 = new(0, Digest256.Zero, Digest256.Zero, last, lastNBits, 0);
+
             Target actual = chain.GetNextTarget(hd1, hd2);
             Assert.Equal((Target)expNBits, actual);
         }
@@ -746,186 +748,186 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 chain,
-                GetHeaders(1),
-                GetHeaders(1)
+                GetHeaders(1).ToArray(),
+                GetHeaders(1).ToArray()
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(2),
-                GetHeaders(2).Reverse()
+                GetHeaders(2).ToArray(),
+                GetHeaders(2).Reverse().ToArray()
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(10),
-                GetHeaders(10).Reverse()
+                GetHeaders(10).ToArray(),
+                GetHeaders(10).Reverse().ToArray()
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(11),
-                GetHeaders(11).Reverse()
+                GetHeaders(11).ToArray(),
+                GetHeaders(11).Reverse().ToArray()
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(12),
-                GetHeaders(12).Reverse()
+                GetHeaders(12).ToArray(),
+                GetHeaders(12).Reverse().ToArray()
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(13),
+                GetHeaders(13).ToArray(),
                 new BlockHeader[12]
                 {
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(4, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(3, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(2, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(4, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(3, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(2, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(14),
+                GetHeaders(14).ToArray(),
                 new BlockHeader[13]
                 {
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(4, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(3, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(4, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(3, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(1, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(1, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(15),
+                GetHeaders(15).ToArray(),
                 new BlockHeader[13]
                 {
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(4, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(4, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(2, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(2, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(16),
+                GetHeaders(16).ToArray(),
                 new BlockHeader[13]
                 {
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(3, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(3, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(17),
+                GetHeaders(17).ToArray(),
                 new BlockHeader[13]
                 {
-                    new BlockHeader(16, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(16, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(4, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(4, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(18),
+                GetHeaders(18).ToArray(),
                 new BlockHeader[14]
                 {
-                    new BlockHeader(17, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(16, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(17, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(16, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(1, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(1, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
             yield return new object[]
             {
                 chain,
-                GetHeaders(19),
+                GetHeaders(19).ToArray(),
                 new BlockHeader[14]
                 {
-                    new BlockHeader(18, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(17, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(16, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(18, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(17, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(16, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(2, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(2, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
             yield return new object[]
@@ -933,44 +935,44 @@ namespace Tests.Bitcoin.Blockchain
                 chain,
                 new BlockHeader[19]
                 {
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(1, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(2, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(3, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(4, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(16, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(17, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(18, new byte[32], new byte[32], (uint)UnixTimeStamp.TimeToEpoch(DateTime.Now.Subtract(TimeSpan.FromHours(1))), 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(1, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(2, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(3, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(4, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(16, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(17, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(18, Digest256.Zero, Digest256.Zero, (uint)UnixTimeStamp.TimeToEpoch(DateTime.Now.Subtract(TimeSpan.FromHours(1))), 0, 0),
                 },
                 new BlockHeader[14]
                 {
                     // Last block (18) is not included
-                    new BlockHeader(17, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(16, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(17, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(16, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(1, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(1, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
 
@@ -980,43 +982,43 @@ namespace Tests.Bitcoin.Blockchain
                 chain,
                 new BlockHeader[19]
                 {
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(1, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(2, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(3, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(4, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(5, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(7, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(16, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(17, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(18, new byte[32], new byte[32], yesterday, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(1, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(2, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(3, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(4, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(5, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(7, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(16, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(17, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(18, Digest256.Zero, Digest256.Zero, yesterday, 0, 0),
                 },
                 new BlockHeader[14]
                 {
-                    new BlockHeader(18, new byte[32], new byte[32], yesterday, 0, 0),
-                    new BlockHeader(17, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(16, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(15, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(14, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(13, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(12, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(11, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(10, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(9, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(8, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(18, Digest256.Zero, Digest256.Zero, yesterday, 0, 0),
+                    new BlockHeader(17, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(16, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(15, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(14, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(13, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(12, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(11, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(10, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(9, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(8, Digest256.Zero, Digest256.Zero, 0, 0, 0),
 
-                    new BlockHeader(6, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(2, new byte[32], new byte[32], 0, 0, 0),
-                    new BlockHeader(0, new byte[32], new byte[32], 0, 0, 0),
+                    new BlockHeader(6, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(2, Digest256.Zero, Digest256.Zero, 0, 0, 0),
+                    new BlockHeader(0, Digest256.Zero, Digest256.Zero, 0, 0, 0),
                 }
             };
         }

@@ -112,8 +112,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             _hds = new BlockHeader[count];
             for (int i = 0; i < _hds.Length; i++)
             {
-                var temp = new BlockHeader();
-                if (!temp.TryDeserialize(stream, out error))
+                if (!BlockHeader.TryDeserialize(stream, out BlockHeader temp, out error))
                 {
                     return false;
                 }

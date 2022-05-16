@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
@@ -20,8 +21,8 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         {
             Inventory[] invs = new Inventory[]
             {
-                new Inventory(InventoryType.Block, new byte[32]),
-                new Inventory(InventoryType.CompactBlock, Helper.GetBytes(32))
+                new Inventory(InventoryType.Block, Digest256.Zero),
+                new Inventory(InventoryType.CompactBlock, new Digest256(Helper.GetBytes(32)))
             };
             InvPayload pl = new(invs);
 
@@ -50,7 +51,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             {
                 new Inventory[]
                 {
-                    new Inventory(InventoryType.WTx, Helper.GetBytes(32))
+                    new Inventory(InventoryType.WTx, new Digest256(Helper.GetBytes(32)))
                 },
                 Helper.HexToBytes("01"+"05000000"+Helper.GetBytesHex(32))
             };
@@ -58,15 +59,15 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             {
                 new Inventory[]
                 {
-                    new Inventory(InventoryType.WTx, Helper.GetBytes(32)),
-                    new Inventory(InventoryType.FilteredBlock, new byte[32])
+                    new Inventory(InventoryType.WTx, new Digest256(Helper.GetBytes(32))),
+                    new Inventory(InventoryType.FilteredBlock, Digest256.Zero)
                 },
                 Helper.HexToBytes("02"+"05000000"+Helper.GetBytesHex(32)
                                       +"03000000"+"0000000000000000000000000000000000000000000000000000000000000000")
             };
             yield return new object[]
             {
-                Enumerable.Repeat(new Inventory(InventoryType.Block, new byte[32]), 253).ToArray(),
+                Enumerable.Repeat(new Inventory(InventoryType.Block, Digest256.Zero), 253).ToArray(),
                 Helper.HexToBytes("fdfd00"+
                   string.Concat(
                     Enumerable.Repeat("02000000"+"0000000000000000000000000000000000000000000000000000000000000000", 253))),

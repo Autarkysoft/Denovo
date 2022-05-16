@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using Xunit;
 
@@ -157,8 +158,8 @@ namespace Tests.Bitcoin.Blockchain
             Consensus cs = new(123, net);
             IBlock genesis = cs.GetGenesisBlock();
 
-            string actualID = genesis.GetBlockID(false);
-            byte[] expectedMerkle = Helper.HexToBytes("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b", true);
+            string actualID = genesis.GetBlockID();
+            Digest256 expectedMerkle = new(Helper.HexToBytes("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b", true));
 
             Assert.Equal(expectedID, actualID);
             Assert.Equal(expectedMerkle, genesis.Header.MerkleRootHash);

@@ -176,18 +176,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                     {
                         if (nodeStatus.InvsToGet.Count > 0)
                         {
-                            ReadOnlySpan<byte> hash = blk.BlockData.Header.GetHash();
                             int i = nodeStatus.DownloadedBlocks.Count;
                             Debug.Assert(i < nodeStatus.InvsToGet.Count);
 
-                            if (hash.SequenceEqual(nodeStatus.InvsToGet[i].Hash))
+                            if (blk.BlockData.Header.Hash.Equals(nodeStatus.InvsToGet[i].Hash))
                             {
                                 nodeStatus.DownloadedBlocks.Add(blk.BlockData);
                             }
                             else
                             {
-                                byte[] blockHash = hash.ToArray();
-                                int index = nodeStatus.InvsToGet.FindIndex(x => ((ReadOnlySpan<byte>)blockHash).SequenceEqual(x.Hash));
+                                int index = nodeStatus.InvsToGet.FindIndex(x => blk.BlockData.Header.Hash.Equals(x.Hash));
                                 if (index < 0)
                                 {
                                     if (fullSettings.Blockchain.State == BlockchainState.Synchronized)

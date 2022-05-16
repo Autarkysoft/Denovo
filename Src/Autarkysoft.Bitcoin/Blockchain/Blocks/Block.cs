@@ -77,20 +77,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             }
         }
 
-        private BlockHeader _header = new BlockHeader();
         /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException"/>
-        public BlockHeader Header
-        {
-            get => _header;
-            set
-            {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(Header));
-
-                _header = value;
-            }
-        }
+        public BlockHeader Header { get; set; }
 
         private ITransaction[] _txs = new ITransaction[0];
         /// <inheritdoc/>
@@ -110,10 +98,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
-        public byte[] GetBlockHash(bool recompute = false) => Header.GetHash(recompute);
+        public byte[] GetBlockHash() => Header.Hash.ToByteArray();
 
         /// <inheritdoc/>
-        public string GetBlockID(bool recompute = false) => Header.GetID(recompute);
+        public string GetBlockID() => Header.GetID();
 
 
         /// <inheritdoc/>
@@ -336,11 +324,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public bool TryDeserialize(FastStreamReader stream, out Errors error)
         {
-            _header = new BlockHeader();
-            if (!_header.TryDeserialize(stream, out error))
+            if (!BlockHeader.TryDeserialize(stream, out BlockHeader hdr, out error))
             {
                 return false;
             }
+            Header = hdr;
 
             if (!CompactInt.TryRead(stream, out CompactInt txCount, out error))
             {

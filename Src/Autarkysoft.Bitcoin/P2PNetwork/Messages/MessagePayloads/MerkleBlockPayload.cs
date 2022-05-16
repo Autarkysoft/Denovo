@@ -73,10 +73,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
 
 
-            if (!Header.TryDeserialize(stream, out error))
+            if (!BlockHeader.TryDeserialize(stream, out BlockHeader hdr, out error))
             {
                 return false;
             }
+            Header = hdr;
 
             if (!stream.TryReadUInt32(out _txCount))
             {

@@ -69,13 +69,6 @@ namespace Denovo.Services
 
             Block block = new()
             {
-                Header = new BlockHeader()
-                {
-                    Version = prev.Header.Version,
-                    BlockTime = (uint)UnixTimeStamp.TimeToEpoch(DateTime.UtcNow.AddMinutes(22)),
-                    NBits = 0x1d00ffffU,
-                    PreviousBlockHeaderHash = prev.GetBlockHash(false),
-                },
                 TransactionList = new Transaction[] { coinbase }
             };
 
@@ -94,9 +87,8 @@ namespace Denovo.Services
                 byte[] root = block.ComputeWitnessMerkleRoot(commitment);
                 coinbase.TxOutList[^1].PubScript.SetToWitnessCommitment(root);
             }
-
-            block.Header.MerkleRootHash = block.ComputeMerkleRoot();
-
+            uint t = (uint)UnixTimeStamp.TimeToEpoch(DateTime.UtcNow.AddMinutes(22));
+            block.Header = new(prev.Header.Version, prev.Header.Hash, new(block.ComputeMerkleRoot()), t, 0x1d00ffffU, 0);
 
             bool success = await miner.Mine(block, token, 3);
 

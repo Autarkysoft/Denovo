@@ -7,10 +7,9 @@ using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
-using System.Globalization;
-using System.Numerics;
 using System.Text;
 
 namespace Autarkysoft.Bitcoin.Blockchain
@@ -52,7 +51,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             switch (netType)
             {
                 case NetworkType.MainNet:
-                    powLimit = BigInteger.Parse("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
+                    PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 170060;
@@ -64,7 +63,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     tap = 709632;
                     break;
                 case NetworkType.TestNet:
-                    powLimit = BigInteger.Parse("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
+                    PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 1718436;
@@ -76,7 +75,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     tap = 2064268;
                     break;
                 case NetworkType.RegTest:
-                    powLimit = BigInteger.Parse("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", NumberStyles.HexNumber);
+                    PowLimit = Digest256.ParseHex("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     MaxSigOpCount = 80000;
                     HalvingInterval = 150;
                     bip16 = 0;
@@ -98,7 +97,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private readonly int bip16, bip34, bip65, bip66, bip112, seg, tap;
         private int minBlkVer;
-        private readonly BigInteger powLimit;
         private readonly NetworkType network;
         private int _height;
 
@@ -193,7 +191,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public int MinBlockVersion => minBlkVer;
 
         /// <inheritdoc/>
-        public BigInteger PowLimit => powLimit;
+        public Digest256 PowLimit { get; }
 
         /// <inheritdoc/>
         public IBlock GetGenesisBlock()
@@ -230,15 +228,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public Block CreateGenesisBlock(int blkVer, uint time, Target nbits, uint nonce, int txVer,
                                         ISignatureScript sigScr, ulong reward, IPubkeyScript pubScr)
         {
-            var header = new BlockHeader()
-            {
-                Version = blkVer,
-                PreviousBlockHeaderHash = new byte[32],
-                BlockTime = time,
-                NBits = nbits,
-                Nonce = nonce
-            };
-
             var coinbase = new Transaction()
             {
                 Version = txVer,
@@ -259,15 +248,10 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 LockTime = 0
             };
 
-            return CreateGenesisBlock(header, coinbase);
-        }
+            Digest256 merkle = new Digest256(coinbase.GetTransactionHash());
+            var header = new BlockHeader(blkVer, Digest256.Zero, merkle, time, nbits, nonce);
 
-        /// <inheritdoc/>
-        public Block CreateGenesisBlock(BlockHeader header, ITransaction coinbase)
-        {
-            var result = new Block(header, new ITransaction[] { coinbase });
-            result.Header.MerkleRootHash = result.ComputeMerkleRoot();
-            return result;
+            return new Block(header, new ITransaction[] { coinbase });
         }
     }
 }

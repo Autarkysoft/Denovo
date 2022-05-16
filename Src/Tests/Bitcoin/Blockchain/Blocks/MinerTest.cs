@@ -13,12 +13,11 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 {
     public class MinerTest
     {
-        private IBlock GetBlock()
+        private static IBlock GetBlock()
         {
-            Block blk = new Block();
             // TestNet block #1,670,926
-            blk.Header.TryDeserialize(new FastStreamReader(Helper.HexToBytes("00e0ff3ff79fa236e509c35d006c58546db4f27c4874e6dfa4dd5b30b01b1b000000000034310adae6b8d3cca58e56a42eb55ab3c17599cc696b133afe0e4c2c49ecfa2cb5b1795eb334011aabf54a10")), out _);
-            return blk;
+            BlockHeader.TryDeserialize(new FastStreamReader(Helper.HexToBytes("00e0ff3ff79fa236e509c35d006c58546db4f27c4874e6dfa4dd5b30b01b1b000000000034310adae6b8d3cca58e56a42eb55ab3c17599cc696b133afe0e4c2c49ecfa2cb5b1795eb334011aabf54a10")), out BlockHeader hdr, out _);
+            return new Block() { Header = hdr };
         }
 
         [Theory]
@@ -31,7 +30,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             uint expected = 424342955;
             Assert.NotEqual(expected, blk.Header.Nonce);
 
-            Miner miner = new Miner();
+            Miner miner = new();
 
             // Cancel mining after 5 seconds to prevent the test from going on too long in case the code has any bugs
             // This should be more than enough time finish the job that takes a micro second to complete.
@@ -42,7 +41,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             Assert.True(success);
             Assert.Equal(expected, blk.Header.Nonce);
-            Assert.Equal("000000000000005befb0b49dec35738f6ad493f9c7a6e777d69836323f1cf5f2", blk.GetBlockID(false));
+            Assert.Equal("000000000000005befb0b49dec35738f6ad493f9c7a6e777d69836323f1cf5f2", blk.GetBlockID());
         }
 
         [Fact]
@@ -51,9 +50,9 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             IBlock blk = GetBlock();
             uint initialNonce = blk.Header.Nonce;
             uint initialTime = blk.Header.BlockTime;
-            blk.Header.Version++; // Change version so that miner can not find any result within reasonable time
-
-            Miner miner = new Miner();
+            // Change version so that miner can not find any result within reasonable time
+            blk.Header = new(blk.Header.Version + 1, blk.Header.PreviousBlockHeaderHash, blk.Header.MerkleRootHash, blk.Header.BlockTime, blk.Header.NBits, blk.Header.Nonce);
+            Miner miner = new();
 
             // Cancel mining after 2 seconds to exit all threads and return false
             var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));

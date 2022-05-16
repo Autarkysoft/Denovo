@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Linq;
 
@@ -30,7 +31,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <param name="ver">Protocol version</param>
         /// <param name="headerHashes">List of header hashes</param>
         /// <param name="stopHash">Stop hash</param>
-        public GetBlocksPayload(int ver, byte[][] headerHashes, byte[] stopHash)
+        public GetBlocksPayload(int ver, Digest256[] headerHashes, Digest256 stopHash)
         {
             Version = ver;
             Hashes = headerHashes;
@@ -46,8 +47,8 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <param name="ver">Protocol version</param>
         /// <param name="headers">List of headers (hash of each header will be used)</param>
         /// <param name="stopHash">Stop hash (can be null)</param>
-        public GetBlocksPayload(int ver, BlockHeader[] headers, BlockHeader stopHash)
-            : this(ver, headers.Select(hd => hd.GetHash()).ToArray(), stopHash is null ? new byte[32] : stopHash.GetHash())
+        public GetBlocksPayload(int ver, BlockHeader[] headers, BlockHeader? stopHash)
+            : this(ver, headers.Select(hd => hd.Hash).ToArray(), stopHash.HasValue ? stopHash.Value.Hash : Digest256.Zero)
         {
         }
 
@@ -77,13 +78,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
         }
 
-        private byte[][] _hashes;
+        private Digest256[] _hashes;
         /// <summary>
         /// One or more block header hashes (with heighest height first)
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[][] Hashes
+        public Digest256[] Hashes
         {
             get => _hashes;
             set
@@ -97,25 +98,12 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
             }
         }
 
-        private byte[] _stopHash;
         /// <summary>
         /// The header hash of the last header hash being requested
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] StopHash
-        {
-            get => _stopHash;
-            set
-            {
-                if (value == null)
-                    throw new ArgumentNullException(nameof(StopHash), "Stop hash can not be null.");
-                if (value.Length != 32)
-                    throw new ArgumentOutOfRangeException(nameof(StopHash), "Stop hash length must be 32 bytes.");
-
-                _stopHash = value;
-            }
-        }
+        public Digest256 StopHash { get; set; }
 
 
         /// <inheritdoc/>
@@ -182,13 +170,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
                 return false;
             }
 
-            _hashes = new byte[count][];
+            _hashes = new Digest256[count];
             for (int i = 0; i < _hashes.Length; i++)
             {
-                _hashes[i] = stream.ReadByteArray32Checked();
+                _hashes[i] = stream.ReadDigest256Checked();
             }
 
-            _stopHash = stream.ReadByteArray32Checked();
+            StopHash = stream.ReadDigest256Checked();
 
             error = Errors.None;
             return true;

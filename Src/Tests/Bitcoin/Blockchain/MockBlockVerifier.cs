@@ -77,7 +77,7 @@ namespace Tests.Bitcoin.Blockchain
         public bool VerifyHeader(BlockHeader header, Target expectedTarget)
         {
             Assert.True(hdrIndex < expHeaders.Length, Helper.UnexpectedCall);
-            Assert.Equal(expHeaders[hdrIndex].GetHash(), header.GetHash());
+            Assert.Equal(expHeaders[hdrIndex].Hash, header.Hash);
             Assert.Equal(expTargets[hdrIndex], expectedTarget);
             return verifyHeaderResults[hdrIndex++];
         }

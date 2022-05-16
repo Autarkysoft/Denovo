@@ -134,7 +134,7 @@ namespace Denovo.Services
         {
             // block hash[32] | block size[4] | file name[4]
             FastStream stream = new(32 + 4 + 4);
-            stream.Write(block.Header.GetHash(false));
+            stream.Write(block.Header.Hash);
             stream.Write(block.TotalSize);
             stream.Write(blockFileNum);
 

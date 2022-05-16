@@ -3,7 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using System;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 {
@@ -22,11 +22,9 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// <summary>
         /// Initializes a new instance of <see cref="Inventory"/> using the given parameters.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="invType"></param>
         /// <param name="hash">32 byte hash</param>
-        public Inventory(InventoryType invType, byte[] hash)
+        public Inventory(InventoryType invType, Digest256 hash)
         {
             InvType = invType;
             Hash = hash;
@@ -43,25 +41,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// </summary>
         public InventoryType InvType { get; set; }
 
-        private byte[] _hash;
         /// <summary>
         /// A hash, can be block or transaction hash depending on the type
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] Hash
-        {
-            get => _hash;
-            set
-            {
-                if (value == null)
-                    throw new ArgumentNullException(nameof(Hash), "Hash can not be null.");
-                if (value.Length != 32)
-                    throw new ArgumentOutOfRangeException(nameof(Hash), "Hash must be 32 bytes.");
-
-                _hash = value;
-            }
-        }
+        public Digest256 Hash { get; set; }
 
 
         /// <inheritdoc/>
@@ -91,7 +74,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
 
             // Don't be strict about inv. type being valid here, the caller (eg. MessageManager) can decide to reject it.
             InvType = (InventoryType)stream.ReadUInt32Checked();
-            _hash = stream.ReadByteArray32Checked();
+            Hash = stream.ReadDigest256Checked();
 
             error = Errors.None;
             return true;

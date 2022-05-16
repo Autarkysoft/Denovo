@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
@@ -16,18 +17,10 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
         [Fact]
         public void ConstructorTest()
         {
-            Inventory inv = new((InventoryType)10000, Helper.GetBytes(32));
+            Inventory inv = new((InventoryType)10000, Digest256.Zero);
 
             Assert.Equal((InventoryType)10000, inv.InvType);
-            Assert.Equal(Helper.GetBytes(32), inv.Hash);
-        }
-
-        [Fact]
-        public void Constructor_ExceptionTest()
-        {
-            Assert.Throws<ArgumentNullException>(() => new Inventory(InventoryType.Block, null));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Inventory(InventoryType.Block, new byte[31]));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Inventory(InventoryType.Block, new byte[33]));
+            Assert.Equal(Digest256.Zero, inv.Hash);
         }
 
         public static IEnumerable<object[]> GetSerCases()
@@ -35,25 +28,25 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
             yield return new object[]
             {
                 InventoryType.FilteredBlock,
-                Helper.GetBytes(32),
+                new Digest256(Helper.GetBytes(32)),
                 Helper.HexToBytes($"03000000{Helper.GetBytesHex(32)}")
             };
             yield return new object[]
             {
                 InventoryType.Unknown,
-                new byte[32],
+                Digest256.Zero,
                 Helper.HexToBytes($"000000000000000000000000000000000000000000000000000000000000000000000000")
             };
             yield return new object[]
             {
                 (InventoryType)1241455512, // Always pass on undefined type
-                Helper.GetBytes(32),
+                new Digest256(Helper.GetBytes(32)),
                 Helper.HexToBytes($"981bff49{Helper.GetBytesHex(32)}")
             };
         }
         [Theory]
         [MemberData(nameof(GetSerCases))]
-        public void SerializeTest(InventoryType t, byte[] hash, byte[] expected)
+        public void SerializeTest(InventoryType t, Digest256 hash, byte[] expected)
         {
             Inventory inv = new(t, hash);
             FastStream stream = new(Inventory.Size);
@@ -64,7 +57,7 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
 
         [Theory]
         [MemberData(nameof(GetSerCases))]
-        public void TryDeserializeTest(InventoryType t, byte[] hash, byte[] data)
+        public void TryDeserializeTest(InventoryType t, Digest256 hash, byte[] data)
         {
             FastStreamReader stream = new(data);
             Inventory inv = new();

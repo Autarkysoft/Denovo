@@ -10,53 +10,34 @@ using System;
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 {
     /// <summary>
-    /// Block header is the 80-byte structure that each block starts with. It is hashed in proof of work.
-    /// <para/>Implements <see cref="IDeserializable"/>
+    /// Immutable objects that contain the 80-byte block header structure and the block hash.
     /// </summary>
-    public class BlockHeader : IDeserializable
+    public readonly struct BlockHeader
     {
-        /// <summary>
-        /// Initializes a new empty instance of <see cref="BlockHeader"/>.
-        /// </summary>
-        public BlockHeader()
-        {
-        }
-
         /// <summary>
         /// Initializes a new instance of <see cref="BlockHeader"/> using given parameters and sets the 
         /// <see cref="BlockTime"/> to current UTC timestamp.
-        /// <para/><see cref="MerkleRootHash"/> has to be set using the property setter after <see cref="Block"/>
-        /// was filled with transactions.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="NullReferenceException"/>
         /// <param name="consensus">Consensus rules</param>
         /// <param name="tip">The last valid block in the chain</param>
+        /// <param name="merkle">Merkle root hash</param>
         /// <param name="nbits">Block target</param>
-        public BlockHeader(IConsensus consensus, BlockHeader tip, Target nbits)
+        public BlockHeader(IConsensus consensus, BlockHeader tip, Digest256 merkle, Target nbits)
+            : this(consensus.MinBlockVersion, tip.Hash, merkle, (uint)UnixTimeStamp.GetEpochUtcNow(), nbits, 0)
         {
-            if (consensus is null)
-                throw new ArgumentNullException(nameof(consensus));
-            if (tip is null)
-                throw new ArgumentNullException(nameof(tip));
-
-            Version = consensus.MinBlockVersion;
-            PreviousBlockHeaderHash = tip.GetHash();
-            BlockTime = (uint)UnixTimeStamp.GetEpochUtcNow();
-            NBits = nbits;
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="BlockHeader"/> using given parameters.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="ver">Block version</param>
         /// <param name="prevHd">Hash of previous block header</param>
         /// <param name="merkle">Merkle root hash</param>
         /// <param name="blockTime">Block time</param>
         /// <param name="nbits">Block target</param>
         /// <param name="nonce">Block nonce</param>
-        public BlockHeader(int ver, byte[] prevHd, byte[] merkle, uint blockTime, Target nbits, uint nonce)
+        public BlockHeader(int ver, Digest256 prevHd, Digest256 merkle, uint blockTime, Target nbits, uint nonce)
         {
             Version = ver;
             PreviousBlockHeaderHash = prevHd;
@@ -64,128 +45,36 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             BlockTime = blockTime;
             NBits = nbits;
             Nonce = nonce;
-        }
 
-
-
-        /// <summary>
-        /// Block header size in bytes when serialized
-        /// </summary>
-        public const int Size = 80;
-
-        /// <summary>
-        /// Block version
-        /// </summary>
-        public int Version { get; set; }
-
-        private byte[] _prvBlkHash = new byte[32];
-        /// <summary>
-        /// Hash of the previous block header
-        /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] PreviousBlockHeaderHash
-        {
-            get => _prvBlkHash;
-            set
-            {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(PreviousBlockHeaderHash), "Previous block Header hash can not be null.");
-                if (value.Length != 32)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(PreviousBlockHeaderHash),
-                        "Previous block Header hash length is invalid.");
-                }
-
-                _prvBlkHash = value;
-            }
-        }
-
-        private byte[] _merkle = new byte[32];
-        /// <summary>
-        /// The merkle root hash
-        /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] MerkleRootHash
-        {
-            get => _merkle;
-            set
-            {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(MerkleRootHash), "Merkle root hash can not be null.");
-                if (value.Length != 32)
-                    throw new ArgumentOutOfRangeException(nameof(MerkleRootHash), "Merkle root hash length is invalid.");
-
-                _merkle = value;
-            }
-        }
-
-        /// <summary>
-        /// Block time
-        /// </summary>
-        public uint BlockTime { get; set; }
-
-        private Target _nBits;
-        /// <summary>
-        /// Target of this block, used for defining difficulty
-        /// </summary>
-        public Target NBits
-        {
-            get => _nBits;
-            set => _nBits = value;
-        }
-
-        /// <summary>
-        /// Nonce (a random 32-bit integer used in mining)
-        /// </summary>
-        public uint Nonce { get; set; }
-
-
-        private byte[] hash;
-
-        /// <summary>
-        /// Returns hash of this header (double SHA256).
-        /// <para/>Note that after the first call to this function, the hash result will be stored to avoid future repeated
-        /// computation. If any of the properties change, this function has to be called with <paramref name="recompute"/> = true
-        /// to force re-computation of the hash.
-        /// </summary>
-        /// <param name="recompute">
-        /// [Default value = false] Indicates whether the hash should be recomputed or the cached value is still valid
-        /// </param>
-        /// <returns>32 byte block header hash</returns>
-        public unsafe byte[] GetHash(bool recompute = false)
-        {
-            if (recompute || hash is null)
+            unsafe
             {
                 using Sha256 hashFunc = new Sha256();
-                fixed (byte* prvBlkH = &PreviousBlockHeaderHash[0], mrkl = &MerkleRootHash[0])
                 fixed (uint* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
                 {
                     hashFunc.Init(hPt);
                     // 4 byte version
                     wPt[0] = (uint)((Version >> 24) | (Version << 24) | ((Version >> 8) & 0xff00) | ((Version << 8) & 0xff0000));
                     // 32 byte previous block header hash
-                    wPt[1] = (uint)(prvBlkH[0] << 24 | prvBlkH[1] << 16 | prvBlkH[2] << 8 | prvBlkH[3]);
-                    wPt[2] = (uint)(prvBlkH[4] << 24 | prvBlkH[5] << 16 | prvBlkH[6] << 8 | prvBlkH[7]);
-                    wPt[3] = (uint)(prvBlkH[8] << 24 | prvBlkH[9] << 16 | prvBlkH[10] << 8 | prvBlkH[11]);
-                    wPt[4] = (uint)(prvBlkH[12] << 24 | prvBlkH[13] << 16 | prvBlkH[14] << 8 | prvBlkH[15]);
-                    wPt[5] = (uint)(prvBlkH[16] << 24 | prvBlkH[17] << 16 | prvBlkH[18] << 8 | prvBlkH[19]);
-                    wPt[6] = (uint)(prvBlkH[20] << 24 | prvBlkH[21] << 16 | prvBlkH[22] << 8 | prvBlkH[23]);
-                    wPt[7] = (uint)(prvBlkH[24] << 24 | prvBlkH[25] << 16 | prvBlkH[26] << 8 | prvBlkH[27]);
-                    wPt[8] = (uint)(prvBlkH[28] << 24 | prvBlkH[29] << 16 | prvBlkH[30] << 8 | prvBlkH[31]);
+                    wPt[1] = PreviousBlockHeaderHash.b0.SwapEndian();
+                    wPt[2] = PreviousBlockHeaderHash.b1.SwapEndian();
+                    wPt[3] = PreviousBlockHeaderHash.b2.SwapEndian();
+                    wPt[4] = PreviousBlockHeaderHash.b3.SwapEndian();
+                    wPt[5] = PreviousBlockHeaderHash.b4.SwapEndian();
+                    wPt[6] = PreviousBlockHeaderHash.b5.SwapEndian();
+                    wPt[7] = PreviousBlockHeaderHash.b6.SwapEndian();
+                    wPt[8] = PreviousBlockHeaderHash.b7.SwapEndian();
                     // 28 (of 32) byte MerkleRoot hash
-                    wPt[9] = (uint)(mrkl[0] << 24 | mrkl[1] << 16 | mrkl[2] << 8 | mrkl[3]);
-                    wPt[10] = (uint)(mrkl[4] << 24 | mrkl[5] << 16 | mrkl[6] << 8 | mrkl[7]);
-                    wPt[11] = (uint)(mrkl[8] << 24 | mrkl[9] << 16 | mrkl[10] << 8 | mrkl[11]);
-                    wPt[12] = (uint)(mrkl[12] << 24 | mrkl[13] << 16 | mrkl[14] << 8 | mrkl[15]);
-                    wPt[13] = (uint)(mrkl[16] << 24 | mrkl[17] << 16 | mrkl[18] << 8 | mrkl[19]);
-                    wPt[14] = (uint)(mrkl[20] << 24 | mrkl[21] << 16 | mrkl[22] << 8 | mrkl[23]);
-                    wPt[15] = (uint)(mrkl[24] << 24 | mrkl[25] << 16 | mrkl[26] << 8 | mrkl[27]);
+                    wPt[9] = MerkleRootHash.b0.SwapEndian();
+                    wPt[10] = MerkleRootHash.b1.SwapEndian();
+                    wPt[11] = MerkleRootHash.b2.SwapEndian();
+                    wPt[12] = MerkleRootHash.b3.SwapEndian();
+                    wPt[13] = MerkleRootHash.b4.SwapEndian();
+                    wPt[14] = MerkleRootHash.b5.SwapEndian();
+                    wPt[15] = MerkleRootHash.b6.SwapEndian();
                     hashFunc.CompressBlock(hPt, wPt);
 
                     // 4 (of 32) byte MerkleRoot hash
-                    wPt[0] = (uint)(mrkl[28] << 24 | mrkl[29] << 16 | mrkl[30] << 8 | mrkl[31]);
+                    wPt[0] = MerkleRootHash.b7.SwapEndian();
                     wPt[1] = (BlockTime >> 24) | (BlockTime << 24) | ((BlockTime >> 8) & 0xff00) | ((BlockTime << 8) & 0xff0000);
                     wPt[2] = ((uint)NBits).SwapEndian();
                     wPt[3] = (Nonce >> 24) | (Nonce << 24) | ((Nonce >> 8) & 0xff00) | ((Nonce << 8) & 0xff0000);
@@ -204,26 +93,55 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                     hashFunc.CompressBlock(hPt, wPt);
 
                     hashFunc.ComputeSecondHash(hPt, wPt);
-                    hash = hashFunc.GetBytes(hPt);
+                    Hash = new Digest256(hPt);
                 }
             }
-
-            return hash;
         }
+
+
+
+        private static readonly BlockHeader NULL = new BlockHeader();
+
+        /// <summary>
+        /// Block header size in bytes when serialized
+        /// </summary>
+        public const int Size = 80;
+
+        /// <summary>
+        /// Block version
+        /// </summary>
+        public readonly int Version;
+        /// <summary>
+        /// Hash of the previous block header
+        /// </summary>
+        public readonly Digest256 PreviousBlockHeaderHash;
+        /// <summary>
+        /// The merkle root hash
+        /// </summary>
+        public readonly Digest256 MerkleRootHash;
+        /// <summary>
+        /// Block time
+        /// </summary>
+        public readonly uint BlockTime;
+        /// <summary>
+        /// Target of this block, used for defining difficulty
+        /// </summary>
+        public readonly Target NBits;
+        /// <summary>
+        /// Nonce (a random 32-bit integer used in mining)
+        /// </summary>
+        public readonly uint Nonce;
+        /// <summary>
+        /// Block header hash
+        /// </summary>
+        public readonly Digest256 Hash;
+
 
         /// <summary>
         /// Returns hash of this block as a base-16 encoded string.
         /// </summary>
-        /// <param name="recompute">
-        /// [Default value = false] Indicates whether the hash should be recomputed or the cached value is still valid
-        /// </param>
         /// <returns>Base-16 encoded block hash</returns>
-        public string GetID(bool recompute = false)
-        {
-            byte[] hashRes = GetHash(recompute);
-            return Base16.EncodeReverse(hashRes);
-        }
-
+        public string GetID() => Base16.EncodeReverse(Hash.ToByteArray());
 
         /// <inheritdoc/>
         public void AddSerializedSize(SizeCounter counter) => counter.Add(Size);
@@ -240,7 +158,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
         /// <summary>
-        /// Converts this block's header into its byte array representation.
+        /// Converts this block header into its byte array representation.
         /// </summary>
         /// <returns>An array of bytes</returns>
         public byte[] Serialize()
@@ -250,27 +168,36 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             return stream.ToByteArray();
         }
 
-        /// <inheritdoc/>
-        public bool TryDeserialize(FastStreamReader stream, out Errors error)
+        /// <summary>
+        /// Deserializes the given byte array from the given stream. Return value indicates success.
+        /// </summary>
+        /// <param name="stream">Stream to use</param>
+        /// <param name="result">Block header result</param>
+        /// <param name="error">Error message</param>
+        /// <returns>True if deserialization was successful; otherwise false.</returns>
+        public static bool TryDeserialize(FastStreamReader stream, out BlockHeader result, out Errors error)
         {
             if (!stream.CheckRemaining(Size))
             {
                 error = Errors.EndOfStream;
+                result = NULL;
                 return false;
             }
 
-            Version = stream.ReadInt32Checked();
-            _prvBlkHash = stream.ReadByteArray32Checked();
-            _merkle = stream.ReadByteArray32Checked();
-            BlockTime = stream.ReadUInt32Checked();
+            int v = stream.ReadInt32Checked();
+            Digest256 prvH = stream.ReadDigest256Checked();
+            Digest256 mrkl = stream.ReadDigest256Checked();
+            uint t = stream.ReadUInt32Checked();
 
-            if (!Target.TryRead(stream, out _nBits, out error))
+            if (!Target.TryRead(stream, out Target nb, out error))
             {
+                result = NULL;
                 return false;
             }
 
-            Nonce = stream.ReadUInt32Checked();
+            uint nonce = stream.ReadUInt32Checked();
 
+            result = new BlockHeader(v, prvH, mrkl, t, nb, nonce);
             error = Errors.None;
             return true;
         }

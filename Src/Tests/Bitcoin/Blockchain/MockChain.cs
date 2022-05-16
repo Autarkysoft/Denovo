@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
@@ -50,8 +51,8 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        internal byte[] _tip;
-        public byte[] Tip => _tip;
+        internal Digest256 _tip;
+        public Digest256 Tip => _tip;
 
         internal Target? targetToReturn;
         public Target GetNextTarget()
@@ -65,7 +66,7 @@ namespace Tests.Bitcoin.Blockchain
         public bool ProcessBlock(IBlock block, INodeStatus nodeStatus)
         {
             Assert.NotNull(nodeStatus);
-            Assert.Equal(expProcessBlk, block.GetBlockID(false));
+            Assert.Equal(expProcessBlk, block.GetBlockID());
             return blkProcessSuccess;
         }
 
@@ -97,15 +98,13 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         internal BlockHeader[] missingHeadersToReturn;
-        internal byte[][] expCompareHashes;
-        internal byte[] expStopHash;
-        public BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash)
+        internal Digest256[] expCompareHashes;
+        internal Digest256 expStopHash;
+        public BlockHeader[] GetMissingHeaders(Digest256[] hashesToCompare, Digest256 stopHash)
         {
             Assert.False(expCompareHashes is null, UnexpectedCall);
-            Assert.False(expStopHash is null, UnexpectedCall);
             Assert.False(missingHeadersToReturn is null, UnexpectedCall);
             Assert.False(hashesToCompare is null, UnexpectedCall);
-            Assert.False(stopHash is null, UnexpectedCall);
 
             Assert.Equal(expCompareHashes.Length, hashesToCompare.Length);
             for (int i = 0; i < expCompareHashes.Length; i++)

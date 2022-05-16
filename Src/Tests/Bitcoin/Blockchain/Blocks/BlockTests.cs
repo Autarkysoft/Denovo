@@ -24,7 +24,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             Block blk = new(expHdr, expTxs);
 
-            Assert.Same(expHdr, blk.Header);
+            Assert.Equal(expHdr, blk.Header);
             Assert.Same(expTxs, blk.TransactionList);
             Assert.Equal(-1, blk.Height);
         }
@@ -41,7 +41,6 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void Constructor_NullExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new Block(null, new Transaction[1]));
             Assert.Throws<ArgumentNullException>(() => new Block(new BlockHeader(), null));
             Assert.Throws<ArgumentNullException>(() => new Block(new BlockHeader(), Array.Empty<Transaction>()));
         }
@@ -579,8 +578,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             Assert.Equal(1000000, block.TotalSize);
             Assert.Equal(1000000, block.StrippedSize);
             Assert.Equal(4000000, block.Weight);
-            Assert.Equal("0000000000000000006bbb7fb15eaea51703fae52457d37a612a6bce220ab607", block.GetBlockID(true));
-            Assert.Equal(block.Header.MerkleRootHash, block.ComputeMerkleRoot());
+            Assert.Equal("0000000000000000006bbb7fb15eaea51703fae52457d37a612a6bce220ab607", block.GetBlockID());
+            Assert.Equal(block.Header.MerkleRootHash.ToByteArray(), block.ComputeMerkleRoot());
         }
 
         [Fact]
@@ -597,8 +596,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             Assert.Equal(3876524, block.TotalSize);
             Assert.Equal(38843, block.StrippedSize);
             Assert.Equal(3993053, block.Weight);
-            Assert.Equal("00000000000016a805a7c5d27c3cc0ecb6d51372e15919dfb49d24bd56ae0a8b", block.GetBlockID(true));
-            Assert.Equal(block.Header.MerkleRootHash, block.ComputeMerkleRoot());
+            Assert.Equal("00000000000016a805a7c5d27c3cc0ecb6d51372e15919dfb49d24bd56ae0a8b", block.GetBlockID());
+            Assert.Equal(block.Header.MerkleRootHash.ToByteArray(), block.ComputeMerkleRoot());
         }
     }
 }

@@ -98,11 +98,16 @@ namespace Denovo.ViewModels
                 BlockHex = "Invalid hex.";
                 return;
             }
-            else if (!prvBlock.Header.TryDeserialize(new FastStreamReader(data), out Errors error))
+            else if (!BlockHeader.TryDeserialize(new FastStreamReader(data), out BlockHeader hdr, out Errors error))
             {
                 BlockHex = $"Error occured while deserializing header: {error.Convert()}";
                 return;
             }
+            else
+            {
+                prvBlock.Header = hdr;
+            }
+
 
             TestNetMiner miner = new();
             tokenSource = new CancellationTokenSource();

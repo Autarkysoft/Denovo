@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
@@ -23,7 +24,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <summary>
         /// Hash of the last block in the chain
         /// </summary>
-        byte[] Tip { get; }
+        Digest256 Tip { get; }
         /// <summary>
         /// Gets or sets the current blockchain state
         /// </summary>
@@ -80,7 +81,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="hashesToCompare">Header hashes to compare with local headers</param>
         /// <param name="stopHash">Hash of the header to stop at</param>
         /// <returns>An array of missing block headers</returns>
-        BlockHeader[] GetMissingHeaders(byte[][] hashesToCompare, byte[] stopHash);
+        BlockHeader[] GetMissingHeaders(Digest256[] hashesToCompare, Digest256 stopHash);
         /// <summary>
         /// Puts the remaining heights that the peer failed to provide back in the stack of missing heights.
         /// </summary>

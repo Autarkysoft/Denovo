@@ -5,7 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
-using System.Numerics;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -155,8 +155,8 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        internal BigInteger? _powLimit;
-        public BigInteger PowLimit
+        internal Digest256? _powLimit;
+        public Digest256 PowLimit
         {
             get
             {

@@ -50,7 +50,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             {
                 // The for loop is using different time offsets in seconds to be added to the block time on each thread.
                 // Each thread is compting uint.max (or ~4.3 billion) hashes and could take minutes to complete.
-                await Task.Run(() => Parallel.For(0, 120, options, (i, state) => Mine(block.Header, i, state, options)));
+                await Task.Run(() => Parallel.For(0, 120, options, (i, state) => Mine(block, i, state, options)));
             }
             catch (OperationCanceledException)
             {
@@ -60,10 +60,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             return true;
         }
 
-        private unsafe bool Mine(BlockHeader block, int timeOffset, ParallelLoopState state, ParallelOptions options)
+        private unsafe bool Mine(IBlock block, int timeOffset, ParallelLoopState state, ParallelOptions options)
         {
             /*** Target ***/
-            uint[] targetArr = block.NBits.ToUInt32Array();
+            uint[] targetArr = block.Header.NBits.ToUInt32Array();
 
             // Compute SHA256(SHA256(80_byte_header))
             // Convert to integer in little endian order
@@ -85,31 +85,29 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
             uint* hPt3 = hPt1 + 8;
 
             fixed (uint* tarPt = &targetArr[0])
-            fixed (byte* prvBlkH = &block.PreviousBlockHeaderHash[0], mrkl = &block.MerkleRootHash[0])
             {
                 /*** First block (64 bytes) ***/
                 // 4 byte block version
-                blkPt1[0] = ((uint)block.Version).SwapEndian();
+                blkPt1[0] = ((uint)block.Header.Version).SwapEndian();
 
                 // 32 byte previous block hash
-                blkPt1[1] = (uint)(prvBlkH[0] << 24 | prvBlkH[1] << 16 | prvBlkH[2] << 8 | prvBlkH[3]);
-                blkPt1[2] = (uint)(prvBlkH[4] << 24 | prvBlkH[5] << 16 | prvBlkH[6] << 8 | prvBlkH[7]);
-                blkPt1[3] = (uint)(prvBlkH[8] << 24 | prvBlkH[9] << 16 | prvBlkH[10] << 8 | prvBlkH[11]);
-                blkPt1[4] = (uint)(prvBlkH[12] << 24 | prvBlkH[13] << 16 | prvBlkH[14] << 8 | prvBlkH[15]);
-                blkPt1[5] = (uint)(prvBlkH[16] << 24 | prvBlkH[17] << 16 | prvBlkH[18] << 8 | prvBlkH[19]);
-                blkPt1[6] = (uint)(prvBlkH[20] << 24 | prvBlkH[21] << 16 | prvBlkH[22] << 8 | prvBlkH[23]);
-                blkPt1[7] = (uint)(prvBlkH[24] << 24 | prvBlkH[25] << 16 | prvBlkH[26] << 8 | prvBlkH[27]);
-                blkPt1[8] = (uint)(prvBlkH[28] << 24 | prvBlkH[29] << 16 | prvBlkH[30] << 8 | prvBlkH[31]);
+                blkPt1[1] = block.Header.PreviousBlockHeaderHash.b0.SwapEndian();
+                blkPt1[2] = block.Header.PreviousBlockHeaderHash.b1.SwapEndian();
+                blkPt1[3] = block.Header.PreviousBlockHeaderHash.b2.SwapEndian();
+                blkPt1[4] = block.Header.PreviousBlockHeaderHash.b3.SwapEndian();
+                blkPt1[5] = block.Header.PreviousBlockHeaderHash.b4.SwapEndian();
+                blkPt1[6] = block.Header.PreviousBlockHeaderHash.b5.SwapEndian();
+                blkPt1[7] = block.Header.PreviousBlockHeaderHash.b6.SwapEndian();
+                blkPt1[8] = block.Header.PreviousBlockHeaderHash.b7.SwapEndian();
 
                 // 28/32 byte MerkleRoot
-                blkPt1[9] = (uint)(mrkl[0] << 24 | mrkl[1] << 16 | mrkl[2] << 8 | mrkl[3]);
-                blkPt1[10] = (uint)(mrkl[4] << 24 | mrkl[5] << 16 | mrkl[6] << 8 | mrkl[7]);
-                blkPt1[11] = (uint)(mrkl[8] << 24 | mrkl[9] << 16 | mrkl[10] << 8 | mrkl[11]);
-                blkPt1[12] = (uint)(mrkl[12] << 24 | mrkl[13] << 16 | mrkl[14] << 8 | mrkl[15]);
-                blkPt1[13] = (uint)(mrkl[16] << 24 | mrkl[17] << 16 | mrkl[18] << 8 | mrkl[19]);
-                blkPt1[14] = (uint)(mrkl[20] << 24 | mrkl[21] << 16 | mrkl[22] << 8 | mrkl[23]);
-                blkPt1[15] = (uint)(mrkl[24] << 24 | mrkl[25] << 16 | mrkl[26] << 8 | mrkl[27]);
-
+                blkPt1[9] = block.Header.MerkleRootHash.b0.SwapEndian();
+                blkPt1[10] = block.Header.MerkleRootHash.b1.SwapEndian();
+                blkPt1[11] = block.Header.MerkleRootHash.b2.SwapEndian();
+                blkPt1[12] = block.Header.MerkleRootHash.b3.SwapEndian();
+                blkPt1[13] = block.Header.MerkleRootHash.b4.SwapEndian();
+                blkPt1[14] = block.Header.MerkleRootHash.b5.SwapEndian();
+                blkPt1[15] = block.Header.MerkleRootHash.b6.SwapEndian();
 
                 // Compress first block (the result should be reused for all nonces)
                 sha.Init(hPt1);
@@ -121,16 +119,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
                 /*** Second block (16 bytes) ***/
                 // (final 4 bytes) 32/32 byte MerkleRoot
-                blkPt2[0] = (uint)(mrkl[28] << 24 | mrkl[29] << 16 | mrkl[30] << 8 | mrkl[31]);
+                blkPt2[0] = block.Header.MerkleRootHash.b7.SwapEndian();
 
 
                 // 4 byte BlockTime (index at 1)
                 // will be incremented inside the block time loop
                 // BlockTime property should not change here since the same instance is being accessed from different threads
-                blkPt2[1] = (block.BlockTime + (uint)timeOffset).SwapEndian();
+                blkPt2[1] = (block.Header.BlockTime + (uint)timeOffset).SwapEndian();
 
                 // 4 byte NBits
-                blkPt2[2] = ((uint)block.NBits).SwapEndian();
+                blkPt2[2] = ((uint)block.Header.NBits).SwapEndian();
 
                 // 4 byte Nonce (index at 3)
                 // will be set and incremented inside the nonce loop
@@ -149,7 +147,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 blkPt3[15] = 256; // 32*8=256
 
                 // Nonce loop
-                for (ulong nonce = block.Nonce.SwapEndian(); nonce <= uint.MaxValue; nonce++)
+                for (ulong nonce = block.Header.Nonce.SwapEndian(); nonce <= uint.MaxValue; nonce++)
                 {
                     if (state.IsStopped || options.CancellationToken.IsCancellationRequested)
                     {
@@ -272,9 +270,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                     // Check to see if the hash result is smaller than target
                     if (CompareTarget(hPt3, tarPt))
                     {
-                        block.Nonce = ((uint)nonce).SwapEndian();
                         // Block time should also be set here since it is different for each thread
-                        block.BlockTime += (uint)timeOffset;
+                        block.Header = new BlockHeader(block.Header.Version,
+                                                       block.Header.PreviousBlockHeaderHash,
+                                                       block.Header.MerkleRootHash,
+                                                       block.Header.BlockTime + (uint)timeOffset,
+                                                       block.Header.NBits,
+                                                       ((uint)nonce).SwapEndian());
+
                         state.Stop();
                         return true;
                     }

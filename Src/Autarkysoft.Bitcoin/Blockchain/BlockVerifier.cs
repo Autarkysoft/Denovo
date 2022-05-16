@@ -5,9 +5,9 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Linq;
-using System.Numerics;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -45,12 +45,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         public bool VerifyHeader(BlockHeader header, Target expectedTarget)
         {
-            BigInteger tar = header.NBits.ToBigInt();
+            Digest256 tar = header.NBits.ToDigest256();
             return header.Version >= consensus.MinBlockVersion &&
                    header.NBits != 0 && // TODO: possible pointless check
                    tar <= consensus.PowLimit && // TODO: possible pointless check (next line should be enough)
                    header.NBits == expectedTarget &&
-                   new BigInteger(header.GetHash(), isUnsigned: true, isBigEndian: false) <= tar;
+                   header.Hash <= tar;
         }
 
 
@@ -120,7 +120,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
             }
 
-            if (!((ReadOnlySpan<byte>)block.Header.MerkleRootHash).SequenceEqual(block.ComputeMerkleRoot()))
+            Digest256 actual = new Digest256(block.ComputeMerkleRoot());
+            if (!block.Header.MerkleRootHash.Equals(actual))
             {
                 UndoAllUtxos(block);
                 error = "Block has invalid merkle root hash.";

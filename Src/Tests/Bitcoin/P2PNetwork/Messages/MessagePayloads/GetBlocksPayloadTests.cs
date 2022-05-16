@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
@@ -18,20 +19,14 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void Constructor_OutOfRangeExceptionTest()
         {
-            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(-1, new byte[1][], new byte[32]));
+            Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(-1, new Digest256[1], Digest256.Zero));
             Assert.Contains("Version can not be negative.", ex.Message);
 
-            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(1, new byte[MaxCount + 1][], new byte[32]));
+            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(1, new Digest256[MaxCount + 1], Digest256.Zero));
             Assert.Contains($"Only a maximum of {MaxCount} hashes are allowed.", ex.Message);
 
-            ex = Assert.Throws<ArgumentOutOfRangeException>(() => new GetBlocksPayload(1, new byte[1][], new byte[33]));
-            Assert.Contains("Stop hash length must be 32 bytes.", ex.Message);
-
-            ex = Assert.Throws<ArgumentNullException>(() => new GetBlocksPayload(1, null, new byte[32]));
+            ex = Assert.Throws<ArgumentNullException>(() => new GetBlocksPayload(1, null, Digest256.Zero));
             Assert.Contains("Hash list can not be null.", ex.Message);
-
-            ex = Assert.Throws<ArgumentNullException>(() => new GetBlocksPayload(1, new byte[1][], null));
-            Assert.Contains("Stop hash can not be null.", ex.Message);
         }
 
         private const int Version = 70001;
@@ -43,9 +38,9 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
         [Fact]
         public void SerializeTest()
         {
-            byte[] hd1 = Helper.HexToBytes(Header1);
-            byte[] hd2 = Helper.HexToBytes(Header2);
-            GetBlocksPayload pl = new(Version, new byte[][] { hd1, hd2 }, new byte[32]);
+            Digest256 hd1 = new(Helper.HexToBytes(Header1));
+            Digest256 hd2 = new(Helper.HexToBytes(Header2));
+            GetBlocksPayload pl = new(Version, new Digest256[] { hd1, hd2 }, Digest256.Zero);
             FastStream stream = new(4 + 32 + 32 + 32);
             pl.Serialize(stream);
 
@@ -62,14 +57,14 @@ namespace Tests.Bitcoin.P2PNetwork.Messages.MessagePayloads
             FastStreamReader stream = new(Helper.HexToBytes(PayloadHex));
             bool b = pl.TryDeserialize(stream, out Errors error);
 
-            byte[] hd1 = Helper.HexToBytes(Header1);
-            byte[] hd2 = Helper.HexToBytes(Header2);
+            Digest256 hd1 = new(Helper.HexToBytes(Header1));
+            Digest256 hd2 = new(Helper.HexToBytes(Header2));
 
             Assert.True(b, error.Convert());
             Assert.Equal(Errors.None, error);
             Assert.Equal(Version, pl.Version);
-            Assert.Equal(new byte[][] { hd1, hd2 }, pl.Hashes);
-            Assert.Equal(new byte[32], pl.StopHash);
+            Assert.Equal(new Digest256[] { hd1, hd2 }, pl.Hashes);
+            Assert.Equal(Digest256.Zero, pl.StopHash);
             Assert.Equal(PayloadType.GetBlocks, pl.PayloadType);
         }
 

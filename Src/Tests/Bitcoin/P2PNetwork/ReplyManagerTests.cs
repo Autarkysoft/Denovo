@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Clients;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
@@ -208,7 +209,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 // Inv
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true },
                 new MockClientSettings() { _relay = true, _netType = NetworkType.MainNet },
-                new Message(new InvPayload(new Inventory[] { new Inventory(InventoryType.Tx, new byte[32]) }), NetworkType.MainNet),
+                new Message(new InvPayload(new Inventory[] { new Inventory(InventoryType.Tx, Digest256.Zero) }), NetworkType.MainNet),
                 null
             };
             yield return new object[]
@@ -216,7 +217,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 // Inv (no relay + tx type inv is a violation)
                 new MockNodeStatus() { _handShakeToReturn = HandShakeState.Finished, updateTime = true, bigViolation = true },
                 new MockClientSettings() { _relay = false, _netType = NetworkType.MainNet },
-                new Message(new InvPayload(new Inventory[] { new Inventory(InventoryType.Tx, new byte[32]) }), NetworkType.MainNet),
+                new Message(new InvPayload(new Inventory[] { new Inventory(InventoryType.Tx, Digest256.Zero) }), NetworkType.MainNet),
                 null
             };
             yield return new object[]
@@ -350,9 +351,9 @@ namespace Tests.Bitcoin.P2PNetwork
         public static IEnumerable<object[]> GetReplyBlockMsgCases()
         {
             var mockBlock = new MockSerializableBlock(Helper.HexToBytes("01000000161126f0d39ec082e51bbd29a1dfb40b416b445ac8e493f88ce993860000000030e2a3e32abf1663a854efbef1b233c67c8cdcef5656fe3b4f28e52112469e9bae306849ffff001d16d1b42d0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0116ffffffff0100f2052a01000000434104f5efde0c2d30ab28e3dbe804c1a4aaf13066f9b198a4159c76f8f79b3b20caf99f7c979ed6c71481061277a6fc8666977c249da99960c97c8d8714fda9f0e883ac00000000"));
-            var mobkBlockHash = Helper.HexToBytes("6f187fddd5e28aa1b4065daa5d9eae0c487094fb20cf97ca02b81c8400000000");
-            var mockInv1 = new Inventory(InventoryType.Block, new byte[32]);
-            var mockInv2 = new Inventory(InventoryType.Block, Helper.GetBytes(32));
+            Digest256 mobkBlockHash = new(Helper.HexToBytes("6f187fddd5e28aa1b4065daa5d9eae0c487094fb20cf97ca02b81c8400000000"));
+            var mockInv1 = new Inventory(InventoryType.Block, Digest256.Zero);
+            var mockInv2 = new Inventory(InventoryType.Block, new Digest256(Helper.GetBytes(32)));
             var mockBlockInv = new Inventory(InventoryType.Block, mobkBlockHash);
             var mockInvs = new Inventory[] { mockInv1, mockInv2 };
 

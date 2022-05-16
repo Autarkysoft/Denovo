@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 
 namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
 {
@@ -24,7 +25,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// Initializes a new instance of <see cref="GetHeadersPayload"/> using the given parameters.
         /// </summary>
         /// <inheritdoc/>
-        public GetHeadersPayload(int ver, byte[][] headerHashes, byte[] stopHash) : base(ver, headerHashes, stopHash)
+        public GetHeadersPayload(int ver, Digest256[] headerHashes, Digest256 stopHash) : base(ver, headerHashes, stopHash)
         {
         }
 
@@ -32,7 +33,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// Initializes a new instance of <see cref="GetHeadersPayload"/> using the given parameters.
         /// </summary>
         /// <inheritdoc/>
-        public GetHeadersPayload(int ver, BlockHeader[] headers, BlockHeader stopHash) : base(ver, headers, stopHash)
+        public GetHeadersPayload(int ver, BlockHeader[] headers, BlockHeader? stopHash) : base(ver, headers, stopHash)
         {
         }
 
