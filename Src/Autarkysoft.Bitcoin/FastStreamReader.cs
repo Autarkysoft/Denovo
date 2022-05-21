@@ -615,7 +615,7 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         /// <param name="val">The 256-bit digest</param>
         /// <returns>True if there were enough bytes remaining to read; otherwise false.</returns>
-        public bool TryReadUInt64(out Digest256 val)
+        public bool TryReadDigest256(out Digest256 val)
         {
             if (CheckRemaining(Digest256.ByteSize))
             {
