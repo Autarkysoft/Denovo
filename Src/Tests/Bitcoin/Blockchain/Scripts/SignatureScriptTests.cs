@@ -10,6 +10,7 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -296,7 +297,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public static IEnumerable<object[]> GetMultiSigNullExCases()
         {
             MockSerializableRedeemScript rdm = new(RedeemScriptType.MultiSig, new byte[1], 0);
-            MockTxIdTx tx = new("") { TxInList = new TxIn[1] };
+            MockTxIdTx tx = new(Digest256.One) { TxInList = new TxIn[1] };
 
             yield return new object[] { null, rdm, tx, 0, "Signature can not be null." };
             yield return new object[] { Helper.ShortSig1, null, tx, 0, "Redeem script can not be null." };
@@ -314,7 +315,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public static IEnumerable<object[]> GetMultiSigOutOfRangeExCases()
         {
             MockSerializableRedeemScript rdm = new(RedeemScriptType.MultiSig, new byte[1], 0);
-            MockTxIdTx tx = new("") { TxInList = new TxIn[1] };
+            MockTxIdTx tx = new(Digest256.One) { TxInList = new TxIn[1] };
             PushDataOp zero = new(OP._0);
             PushDataOp one = new(OP._1);
             PushDataOp two = new(OP._2);
@@ -371,7 +372,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
 
         public static IEnumerable<object[]> GetMultiSigArgExCases()
         {
-            MockTxIdTx tx = new("") { TxInList = new TxIn[1] };
+            MockTxIdTx tx = new(Digest256.One) { TxInList = new TxIn[1] };
             PushDataOp badNum = new();
             badNum.TryRead(new FastStreamReader(new byte[] { 1, 0 }), out _);
             PushDataOp two = new(OP._2);

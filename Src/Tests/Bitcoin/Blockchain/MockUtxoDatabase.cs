@@ -5,9 +5,9 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -18,16 +18,16 @@ namespace Tests.Bitcoin.Blockchain
         {
         }
 
-        public MockUtxoDatabase(string hashHex, IUtxo output) : this(Helper.HexToBytes(hashHex), output)
+        public MockUtxoDatabase(string hashHex, IUtxo output) : this(Digest256.ParseHex(hashHex), output)
         {
         }
 
-        public MockUtxoDatabase(byte[] hash, IUtxo output)
+        public MockUtxoDatabase(Digest256 hash, IUtxo output)
         {
             Add(hash, output);
         }
 
-        public MockUtxoDatabase(byte[][] hashes, IUtxo[] toReturn)
+        public MockUtxoDatabase(Digest256[] hashes, IUtxo[] toReturn)
         {
             if (hashes is null || toReturn is null || hashes.Length != toReturn.Length)
             {
@@ -41,37 +41,14 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
-        private Dictionary<byte[], List<Utxo>> database;
-
-        private class ByteArrayComparer : IEqualityComparer<byte[]>
-        {
-            public bool Equals(byte[] left, byte[] right)
-            {
-                return ((ReadOnlySpan<byte>)left).SequenceEqual(right);
-            }
-
-            public int GetHashCode(byte[] key)
-            {
-                if (key == null)
-                {
-                    return 0;
-                }
-
-                int hash = 17;
-                foreach (byte b in key)
-                {
-                    hash = (hash * 31) + b.GetHashCode();
-                }
-                return hash;
-            }
-        }
+        private Dictionary<Digest256, List<Utxo>> database;
 
 
-        internal void Add(byte[] hash, IUtxo output)
+        internal void Add(Digest256 hash, IUtxo output)
         {
             if (database is null)
             {
-                database = new Dictionary<byte[], List<Utxo>>(new ByteArrayComparer());
+                database = new Dictionary<Digest256, List<Utxo>>();
             }
 
 
@@ -86,7 +63,7 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
-        public bool Contains(byte[] hash, uint index)
+        public bool Contains(Digest256 hash, uint index)
         {
             Assert.NotNull(database);
             bool b = database.ContainsKey(hash);

@@ -104,8 +104,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         public string GetBlockID() => Header.GetID();
 
 
+        // TODO: change SHA256 and the following 2 methods to return Digest256 directly
+
         /// <inheritdoc/>
-        public unsafe byte[] ComputeMerkleRoot()
+        public unsafe Digest256 ComputeMerkleRoot()
         {
             if (TransactionList.Length == 1)
             {
@@ -125,12 +127,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 int offset = 0;
                 foreach (var tx in TransactionList)
                 {
-                    Buffer.BlockCopy(tx.GetTransactionHash(), 0, buffer, offset, 32);
+                    Buffer.BlockCopy(tx.GetTransactionHash().ToByteArray(), 0, buffer, offset, 32);
                     offset += 32;
                 }
                 if (needDup)
                 {
-                    Buffer.BlockCopy(TransactionList[^1].GetTransactionHash(), 0, buffer, offset, 32);
+                    Buffer.BlockCopy(TransactionList[^1].GetTransactionHash().ToByteArray(), 0, buffer, offset, 32);
                 }
 
                 fixed (uint* hPt = &sha.hashState[0], wPt = &sha.w[0])
@@ -164,12 +166,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
                 byte[] result = new byte[32];
                 Buffer.BlockCopy(buffer, 0, result, 0, 32);
-                return result;
+                return new Digest256(result);
             }
         }
 
         /// <inheritdoc/>
-        public unsafe byte[] ComputeWitnessMerkleRoot(byte[] commitment)
+        public unsafe Digest256 ComputeWitnessMerkleRoot(byte[] commitment)
         {
             // This is the same as MerkleRoot but the first hash (of coinbase tx) is all zeros and
             // witness hashes are used and
@@ -187,7 +189,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 fixed (byte* bufPt = &toHash[0], rs = &result[0])
                 {
                     sha.Compress64Double(bufPt, rs, hPt, wPt);
-                    return result;
+                    return new Digest256(result);
                 }
             }
             else
@@ -201,12 +203,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
                 {
                     ITransaction tx = TransactionList[i];
                     // Use witness transaction hash instead of transaction has here
-                    Buffer.BlockCopy(tx.GetWitnessTransactionHash(), 0, buffer, offset, 32);
+                    Buffer.BlockCopy(tx.GetWitnessTransactionHash().ToByteArray(), 0, buffer, offset, 32);
                     offset += 32;
                 }
                 if (needDup)
                 {
-                    Buffer.BlockCopy(TransactionList[^1].GetWitnessTransactionHash(), 0, buffer, offset, 32);
+                    Buffer.BlockCopy(TransactionList[^1].GetWitnessTransactionHash().ToByteArray(), 0, buffer, offset, 32);
                 }
 
                 fixed (uint* hPt = &sha.hashState[0], wPt = &sha.w[0])
@@ -245,7 +247,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
                 byte[] result = new byte[32];
                 Buffer.BlockCopy(buffer, 0, result, 0, 32);
-                return result;
+                return new Digest256(result);
             }
         }
 

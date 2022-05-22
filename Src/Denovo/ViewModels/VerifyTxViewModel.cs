@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using Denovo.Models;
 using Denovo.MVVM;
@@ -23,7 +24,6 @@ namespace Denovo.ViewModels
 
 
 
-        private static readonly byte[] Empty32 = new byte[32];
         private readonly Transaction tx = new();
         // TODO: add block height and network type
         private static readonly Consensus consensus = new(NetworkType.MainNet);
@@ -70,7 +70,7 @@ namespace Denovo.ViewModels
                         tx.ComputeTransactionHashes();
 
                         Result = string.Empty;
-                        if (tx.TxInList.Length == 1 && ((ReadOnlySpan<byte>)tx.TxInList[0].TxHash).SequenceEqual(Empty32))
+                        if (tx.TxInList.Length == 1 && tx.TxInList[0].TxHash.Equals(Digest256.Zero))
                         {
                             // Minimal check to guess coinbase transaction
                             UtxoList = Array.Empty<UtxoModel>();

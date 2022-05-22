@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -101,12 +102,12 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         {
             string actualTxId = tx.GetTransactionId();
             string actualWTxId = tx.GetWitnessTransactionId();
-            byte[] actualTxHash = tx.GetTransactionHash();
+            Digest256 actualTxHash = tx.GetTransactionHash();
             byte[] expTxHash = Helper.HexToBytes(expTxId, true);
 
             Assert.Equal(expTxId, actualTxId);
             Assert.Equal(expWTxId, actualWTxId);
-            Assert.Equal(expTxHash, actualTxHash);
+            Assert.Equal(expTxHash, actualTxHash.ToByteArray());
         }
 
 
@@ -153,7 +154,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void SizeChangeTest()
         {
-            var tin = new TxIn(new byte[32], 0, new MockSerializableSigScript(new byte[4], 1), 0);
+            var tin = new TxIn(Digest256.Zero, 0, new MockSerializableSigScript(new byte[4], 1), 0);
             var tout = new TxOut(0, new MockSerializablePubScript(new byte[2], 1));
             var wit = new Witness(new byte[][] { new byte[6] });
             var tx = new Transaction()

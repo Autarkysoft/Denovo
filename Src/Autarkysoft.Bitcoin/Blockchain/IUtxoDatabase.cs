@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 
 namespace Autarkysoft.Bitcoin.Blockchain
 {
@@ -18,7 +19,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="hash">Hash of the transaction</param>
         /// <param name="index">Index of the output</param>
         /// <returns>True if the UTXO exists; otherwise false.</returns>
-        public bool Contains(byte[] hash, uint index);
+        public bool Contains(Digest256 hash, uint index);
         /// <summary>
         /// Searches inside the UTXO database for the given transaction input and returns the <see cref="IUtxo"/>
         /// if it was found, otherwise null.

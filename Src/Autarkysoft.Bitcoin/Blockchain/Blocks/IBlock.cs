@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 {
@@ -65,13 +66,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// Returns merkle root of this block using the list of transactions.
         /// </summary>
         /// <returns>Merkle root</returns>
-        byte[] ComputeMerkleRoot();
+        Digest256 ComputeMerkleRoot();
 
         /// <summary>
         /// Returns merkle root hash of witnesses in this block using the list of transactions.
         /// </summary>
         /// <param name="commitment">32 byte witness commitment</param>
         /// <returns>Merkle root</returns>
-        byte[] ComputeWitnessMerkleRoot(byte[] commitment);
+        Digest256 ComputeWitnessMerkleRoot(byte[] commitment);
     }
 }

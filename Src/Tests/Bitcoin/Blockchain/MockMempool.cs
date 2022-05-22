@@ -5,18 +5,23 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
     public class MockMempool : IMemoryPool
     {
-        public MockMempool(byte[] expectedTxHash)
+        public MockMempool() : this(Digest256.Zero)
+        {
+        }
+
+        public MockMempool(Digest256 expectedTxHash)
         {
             hash = expectedTxHash;
         }
 
-        private readonly byte[] hash;
+        private readonly Digest256 hash;
 
         public bool Add(ITransaction tx)
         {
@@ -26,7 +31,7 @@ namespace Tests.Bitcoin.Blockchain
 
         public bool Contains(ITransaction tx)
         {
-            if (hash == null)
+            if (hash == Digest256.Zero)
             {
                 return false;
             }

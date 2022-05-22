@@ -70,7 +70,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             mempool = memoryPool;
             this.consensus = consensus;
 
-            localDb = new Dictionary<byte[], List<Utxo>>(new ByteArrayComparer());
+            localDb = new Dictionary<Digest256, List<Utxo>>();
             calc = new EllipticCurveCalculator();
             scrSer = new ScriptSerializer();
             hash160 = new Ripemd160Sha256();
@@ -79,7 +79,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private readonly bool isMempool;
-        private readonly Dictionary<byte[], List<Utxo>> localDb;
+        private readonly Dictionary<Digest256, List<Utxo>> localDb;
         private readonly EllipticCurveCalculator calc;
         private readonly ScriptSerializer scrSer;
         private readonly IMemoryPool mempool;
@@ -143,8 +143,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            if (!((ReadOnlySpan<byte>)coinbase.TxInList[0].TxHash).SequenceEqual(ZeroBytes.B32) ||
-                coinbase.TxInList[0].Index != uint.MaxValue)
+            if (!coinbase.TxInList[0].TxHash.Equals(Digest256.Zero) || coinbase.TxInList[0].Index != uint.MaxValue)
             {
                 error = "Invalid coinbase outpoint.";
                 return false;
@@ -572,7 +571,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 if (prevOutput is null)
                 {
                     // TODO: add a ToString() method to TxIn?
-                    error = $"Input {currentInput.TxHash.ToBase16()}:{currentInput.Index} was not found.";
+                    error = $"Input {currentInput.TxHash}:{currentInput.Index} was not found.";
                     return false;
                 }
 

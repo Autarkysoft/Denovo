@@ -53,7 +53,7 @@ namespace Denovo.Services
                 Version = 1,
                 TxInList = new TxIn[]
                 {
-                    new TxIn(new byte[32], uint.MaxValue, new SignatureScript(height, Encoding.UTF8.GetBytes($"{cbText} by Coding Enthusiast")), uint.MaxValue)
+                    new TxIn(Digest256.Zero, uint.MaxValue, new SignatureScript(height, Encoding.UTF8.GetBytes($"{cbText} by Coding Enthusiast")), uint.MaxValue)
                 },
                 TxOutList = new TxOut[]
                 {
@@ -84,11 +84,11 @@ namespace Denovo.Services
                 temp[^1] = new TxOut();
 
                 // This has to be down here after tx1, tx2,... are set and merkle root is computable
-                byte[] root = block.ComputeWitnessMerkleRoot(commitment);
-                coinbase.TxOutList[^1].PubScript.SetToWitnessCommitment(root);
+                Digest256 root = block.ComputeWitnessMerkleRoot(commitment);
+                coinbase.TxOutList[^1].PubScript.SetToWitnessCommitment(root.ToByteArray());
             }
             uint t = (uint)UnixTimeStamp.TimeToEpoch(DateTime.UtcNow.AddMinutes(22));
-            block.Header = new(prev.Header.Version, prev.Header.Hash, new(block.ComputeMerkleRoot()), t, 0x1d00ffffU, 0);
+            block.Header = new(prev.Header.Version, prev.Header.Hash, block.ComputeMerkleRoot(), t, 0x1d00ffffU, 0);
 
             bool success = await miner.Mine(block, token, 3);
 

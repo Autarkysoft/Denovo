@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
@@ -79,7 +80,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// This is the value used in Outpoint's TxHash.
         /// </remarks>
         /// <returns>Hash digest</returns>
-        byte[] GetTransactionHash();
+        Digest256 GetTransactionHash();
 
         /// <summary>
         /// Returns transaction ID of this instance encoded using base-16 encoding.
@@ -91,7 +92,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// Returns witness hash of this instance using the defined hash function.
         /// </summary>
         /// <returns>Hash digest</returns>
-        byte[] GetWitnessTransactionHash();
+        Digest256 GetWitnessTransactionHash();
 
         /// <summary>
         /// Returns witness transaction ID of this instance encoded using base-16 encoding.

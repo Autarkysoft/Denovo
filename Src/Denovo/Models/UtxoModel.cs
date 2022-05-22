@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using Denovo.MVVM;
 
@@ -14,9 +15,9 @@ namespace Denovo.Models
     {
         public UtxoModel() { }
 
-        public UtxoModel(byte[] txHash, uint index)
+        public UtxoModel(Digest256 txHash, uint index)
         {
-            TxId = Base16.EncodeReverse(txHash);
+            TxId = Base16.EncodeReverse(txHash.ToByteArray());
             Index = index;
         }
 

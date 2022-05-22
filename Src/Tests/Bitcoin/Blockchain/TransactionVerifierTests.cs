@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Tests.Bitcoin.Blockchain
         [Fact]
         public void ConstructorTest()
         {
-            TransactionVerifier verifier = new(true, new MockUtxoDatabase(), new MockMempool(null), new MockConsensus());
+            TransactionVerifier verifier = new(true, new MockUtxoDatabase(), new MockMempool(), new MockConsensus());
 
             Helper.ComparePrivateField(verifier, "isMempool", true);
             Assert.False(verifier.ForceLowS);
@@ -34,7 +35,7 @@ namespace Tests.Bitcoin.Blockchain
         public void Constructor_ExceptionTest()
         {
             MockUtxoDatabase ut = new();
-            MockMempool mem = new(null);
+            MockMempool mem = new();
             MockConsensus c = new();
 
             Assert.Throws<ArgumentNullException>(() => new TransactionVerifier(true, null, mem, c));
@@ -74,13 +75,10 @@ namespace Tests.Bitcoin.Blockchain
                 0,
                 false
             };
-
-            byte[] badHash = new byte[32];
-            badHash[0] = 1;
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[1] { new TxIn(badHash, uint.MaxValue, null, 1234) }, new TxOut[1]),
+                new MockTxPropInOut(new TxIn[1] { new TxIn(Digest256.One, uint.MaxValue, null, 1234) }, new TxOut[1]),
                 false,
                 "Invalid coinbase outpoint.",
                 0,
@@ -89,7 +87,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], 0, null, 1234) }, new TxOut[1]),
+                new MockTxPropInOut(new TxIn[1] { new TxIn(Digest256.Zero, 0, null, 1234) }, new TxOut[1]),
                 false,
                 "Invalid coinbase outpoint.",
                 0,
@@ -100,7 +98,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], uint.MaxValue, mockFailSigScr, 1234) }, new TxOut[1]),
+                new MockTxPropInOut(new TxIn[1] { new TxIn(Digest256.Zero, uint.MaxValue, mockFailSigScr, 1234) }, new TxOut[1]),
                 false,
                 "Invalid coinbase signature script.",
                 0,
@@ -113,7 +111,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], uint.MaxValue, mockPassSigScr, 1234) }, 
+                new MockTxPropInOut(new TxIn[1] { new TxIn(Digest256.Zero, uint.MaxValue, mockPassSigScr, 1234) },
                                     new TxOut[2]{ t1, t2 }, Array.Empty<IWitness>()),
                 true,
                 null,
@@ -123,7 +121,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 c,
-                new MockTxPropInOut(new TxIn[1] { new TxIn(new byte[32], uint.MaxValue, mockPassSigScr, 1234) },
+                new MockTxPropInOut(new TxIn[1] { new TxIn(Digest256.Zero, uint.MaxValue, mockPassSigScr, 1234) },
                                     new TxOut[2]{ t1, t2 }, new Witness[1] ),
                 true,
                 null,
@@ -136,7 +134,7 @@ namespace Tests.Bitcoin.Blockchain
         public void VerifyCoinbasePrimaryTest(IConsensus consensus, ITransaction tx, bool expB, string expErr, int expOpCount,
             bool expSegWit)
         {
-            TransactionVerifier verifier = new(false, new MockUtxoDatabase(), new MockMempool(null), consensus);
+            TransactionVerifier verifier = new(false, new MockUtxoDatabase(), new MockMempool(), consensus);
 
             bool actualB = verifier.VerifyCoinbasePrimary(tx, out string error);
 
@@ -202,7 +200,7 @@ namespace Tests.Bitcoin.Blockchain
         [MemberData(nameof(GetCoinBaseOutputCases))]
         public void VerifyCoinbaseOutputTest(IConsensus c, ITransaction tx, ulong fee, bool expB, string expErr)
         {
-            TransactionVerifier verifier = new(false, new MockUtxoDatabase(), new MockMempool(null), c)
+            TransactionVerifier verifier = new(false, new MockUtxoDatabase(), new MockMempool(), c)
             {
                 TotalFee = fee,
                 TotalSigOpCount = 987
@@ -229,12 +227,9 @@ namespace Tests.Bitcoin.Blockchain
                 bip16 = true,
                 segWit = true,
             };
-            byte[] simpTxHash1 = new byte[32];
-            simpTxHash1[1] = 1;
-            byte[] simpTxHash2 = new byte[32];
-            simpTxHash2[1] = 2;
-            byte[] simpTxHash3 = new byte[32];
-            simpTxHash3[1] = 3;
+            Digest256 simpTxHash1 = Digest256.One;
+            Digest256 simpTxHash2 = new(2);
+            Digest256 simpTxHash3 = new(3);
 
             PubkeyScript simpPubScr = new();
             SignatureScript simpSigScr = new(new byte[1] { (byte)OP._1 });
@@ -244,7 +239,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = 0, Index = 0, PubScript = simpPubScr }),
-                new MockMempool(null),
+                new MockMempool(),
                 c,
                 new Transaction()
                 {
@@ -266,7 +261,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = 0, Index = 0, PubScript = simpPubScr }),
-                new MockMempool(null),
+                new MockMempool(),
                 c,
                 new Transaction()
                 {
@@ -288,7 +283,7 @@ namespace Tests.Bitcoin.Blockchain
             yield return new object[]
             {
                 new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = 123, Index = 0, PubScript = simpPubScr }),
-                new MockMempool(null),
+                new MockMempool(),
                 c,
                 new Transaction()
                 {
@@ -311,7 +306,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 // Make sure ulong is being used for calculation of fee
                 new MockUtxoDatabase(simpTxHash1, new MockUtxo() { Amount = Constants.TotalSupply, Index = 0, PubScript = simpPubScr }),
-                new MockMempool(null),
+                new MockMempool(),
                 c,
                 new Transaction()
                 {
@@ -332,14 +327,14 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 },
+                new MockUtxoDatabase(new Digest256[] { simpTxHash1, simpTxHash2, simpTxHash3 },
                 new IUtxo[]
                     {
                         new MockUtxo() { Amount = 13, Index = 3, PubScript = simpPubScr },
                         new MockUtxo() { Amount = 57, Index = 7, PubScript = simpPubScr },
                         new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr },
                     }),
-                new MockMempool(null),
+                new MockMempool(),
                 c,
                 new Transaction()
                 {
@@ -364,14 +359,14 @@ namespace Tests.Bitcoin.Blockchain
             };
             yield return new object[]
             {
-                new MockUtxoDatabase(new byte[][] { simpTxHash1, simpTxHash2, simpTxHash3 },
+                new MockUtxoDatabase(new Digest256[] { simpTxHash1, simpTxHash2, simpTxHash3 },
                 new IUtxo[]
                     {
                         new MockUtxo() { Amount = 13, Index = 3, PubScript = simpPubScr },
                         new MockUtxo() { Amount = 57, Index = 7, PubScript = simpPubScr },
                         new MockUtxo() { Amount = 73, Index = 5, PubScript = simpPubScr },
                     }),
-                new MockMempool(null),
+                new MockMempool(),
                 c,
                 new Transaction()
                 {
@@ -400,7 +395,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 Transaction prevTx = new();
                 prevTx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(Case["TxToSpend"].ToString())), out _);
-                byte[] prevTxHash = prevTx.GetTransactionHash();
+                Digest256 prevTxHash = prevTx.GetTransactionHash();
                 MockUtxoDatabase utxoDb = new();
 
                 for (int i = 0; i < prevTx.TxOutList.Length; i++)
@@ -431,7 +426,7 @@ namespace Tests.Bitcoin.Blockchain
                     yield return new object[]
                     {
                         utxoDb,
-                        new MockMempool(null),
+                        new MockMempool(),
                         c,
                         tx,
                         true, // Verification success
@@ -447,9 +442,9 @@ namespace Tests.Bitcoin.Blockchain
             Transaction p2shSpecial = new("02000000000101270e3210e2b0feebbf577ac4640dba3f41cf93d3845f432762047d7a15de283e00000000171600145c9ac58215220fb727ad5d4592e39eade0c2f324feffffff0229511d000000000017a914b472a266d0bd89c13706a4132ccfb16f7c3b9fcb8795bff4390200000017a9149ebf6e32dbdd43b7f6b62687049454edf902358c870247304402207b1091aef93cc0f3663225a6aa82b0f4f23bb8c930bfbd48cdba7157f1de32e8022039d236eea85f2ddf31d51ab5ebbeb9acd1385209617576f311ce9f2530c7c1ec0121028d14fce7ae0b7618a7b8a18a237c836e44e8725880ef19164c0e69157262f2e756781900");
             yield return new object[]
             {
-                new MockUtxoDatabase(p2shSpecial.GetTransactionHash(), 
+                new MockUtxoDatabase(p2shSpecial.GetTransactionHash(),
                                      new Utxo(0, p2shSpecial.TxOutList[0].Amount,p2shSpecial.TxOutList[0].PubScript)),
-                new MockMempool(null),
+                new MockMempool(),
                 c,
                 new Transaction("010000000163bd811526dc34ece567872b7c9e2bee5580bfbde647ba6f18f879a32f98964c00000000025100ffffffff01414d1d000000000017a914a89aec4cd53e6d74215332459b7fea3ec4aca9758700000000"),
                 true, // Verification success

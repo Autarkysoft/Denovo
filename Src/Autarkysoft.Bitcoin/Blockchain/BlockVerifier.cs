@@ -120,7 +120,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
             }
 
-            Digest256 actual = new Digest256(block.ComputeMerkleRoot());
+            Digest256 actual = block.ComputeMerkleRoot();
             if (!block.Header.MerkleRootHash.Equals(actual))
             {
                 UndoAllUtxos(block);
@@ -164,7 +164,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
                     // An output expected in coinbase with its PubkeyScript.Data.Length of _at least_ 38 bytes
                     // starting with 0x6a24aa21a9ed and followed by 32 byte commitment hash
-                    byte[] root = block.ComputeWitnessMerkleRoot(commitment);
+                    Digest256 root = block.ComputeWitnessMerkleRoot(commitment);
                     byte[] witPubScr = new byte[38];
                     witPubScr[0] = 0x6a;
                     witPubScr[1] = 0x24;
@@ -172,7 +172,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     witPubScr[3] = 0x21;
                     witPubScr[4] = 0xa9;
                     witPubScr[5] = 0xed;
-                    Buffer.BlockCopy(root, 0, witPubScr, 6, 32);
+                    Buffer.BlockCopy(root.ToByteArray(), 0, witPubScr, 6, 32);
 
                     // Script data size is already checked when commitPos was found and is bigger than min length.
                     if (!((ReadOnlySpan<byte>)coinbase.TxOutList[commitPos].PubScript.Data)

@@ -5,7 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using System;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 {
@@ -25,13 +25,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <summary>
         /// Initializes a new and empty instance of <see cref="TxIn"/> using the given parameters.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="hash">The outpoint's transaction hash</param>
         /// <param name="index">The outpoint's index</param>
         /// <param name="sigScript">Signature script</param>
         /// <param name="sequence">Sequence</param>
-        public TxIn(byte[] hash, uint index, ISignatureScript sigScript, uint sequence)
+        public TxIn(Digest256 hash, uint index, ISignatureScript sigScript, uint sequence)
         {
             TxHash = hash;
             Index = index;
@@ -41,35 +39,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
 
 
 
-        private byte[] _txHash;
         /// <summary>
         /// The transaction hash of the input used in this instance (Outpoint.Hash).
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        public byte[] TxHash
-        {
-            get => _txHash;
-            set
-            {
-                if (value is null)
-                    throw new ArgumentNullException(nameof(TxHash), "Transaction hash can not be null.");
-                if (value.Length != 32)
-                    throw new ArgumentOutOfRangeException(nameof(TxHash), "Transaction hash has to be 32 bytes long.");
+        public Digest256 TxHash { get; set; }
 
-                _txHash = value;
-            }
-        }
-
-        private uint _index;
         /// <summary>
         /// The output index of the input used in this instance (Outpoint.Index).
         /// </summary>
-        public uint Index
-        {
-            get => _index;
-            set => _index = value;
-        }
+        public uint Index { get; set; }
 
         private ISignatureScript _sigScr = new SignatureScript();
         /// <summary>
@@ -149,17 +127,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 return false;
             }
 
-            if (!stream.TryReadByteArray(32, out _txHash))
+            if (!stream.CheckRemaining(32 + 4))
             {
                 error = Errors.EndOfStream;
                 return false;
             }
 
-            if (!stream.TryReadUInt32(out _index))
-            {
-                error = Errors.EndOfStream;
-                return false;
-            }
+            TxHash = stream.ReadDigest256Checked();
+            Index = stream.ReadUInt32Checked();
 
             if (!SigScript.TryDeserialize(stream, out error))
             {

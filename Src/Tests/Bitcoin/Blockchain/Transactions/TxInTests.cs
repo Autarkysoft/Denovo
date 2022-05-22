@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -16,26 +17,19 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [Fact]
         public void ConstructorTest()
         {
-            TxIn tx = new(new byte[32], 1, null, 0);
+            TxIn tx = new(Digest256.Zero, 1, null, 0);
 
-            Assert.Equal(new byte[32], tx.TxHash);
+            Assert.Equal(Digest256.Zero, tx.TxHash);
             Assert.Equal(1U, tx.Index);
             Assert.Equal(0U, tx.Sequence);
             Assert.NotNull(tx.SigScript);
         }
 
         [Fact]
-        public void Constructor_ExceptionTest()
-        {
-            Assert.Throws<ArgumentNullException>(() => new TxIn(null, 1, null, 0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new TxIn(new byte[31], 1, null, 0));
-        }
-
-        [Fact]
         public void AddSerializedSize()
         {
             SizeCounter counter = new();
-            TxIn tx = new(new byte[32], 0, new MockSerializableSigScript(new byte[5], 5), 0);
+            TxIn tx = new(Digest256.Zero, 0, new MockSerializableSigScript(new byte[5], 5), 0);
             tx.AddSerializedSize(counter);
             Assert.Equal(32 + 4 + 4 + 1 + 5, counter.Size);
         }
@@ -44,7 +38,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         public void SerializeTest()
         {
             MockSerializableSigScript scr = new(new byte[1] { 255 }, 2);
-            TxIn tx = new(Helper.GetBytes(32), 1, scr, 953132143);
+            TxIn tx = new(new Digest256(Helper.GetBytes(32)), 1, scr, 953132143);
             FastStream stream = new(32 + 4 + 2 + 4);
             tx.Serialize(stream);
 
@@ -67,6 +61,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         public static IEnumerable<object[]> GetSignSerCases()
         {
             byte[] txHash = Helper.GetBytes(32);
+            Digest256 digest = new(txHash);
             byte[] indexBa = new byte[] { 0x78, 0x56, 0x34, 0x12 };
             byte[] seqBa = new byte[] { 0x98, 0xba, 0xdc, 0xfe };
             uint index = 0x12345678;
@@ -74,7 +69,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
 
             yield return new object[]
             {
-                txHash,
+                digest,
                 0,
                 0,
                 new byte[] { 10, 20, 30 },
@@ -83,7 +78,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
             };
             yield return new object[]
             {
-                txHash,
+                digest,
                 index,
                 seq,
                 new byte[] { 255 },
@@ -92,7 +87,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
             };
             yield return new object[]
             {
-                txHash,
+                digest,
                 index,
                 seq,
                 Helper.GetBytes(253),
@@ -102,7 +97,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         }
         [Theory]
         [MemberData(nameof(GetSignSerCases))]
-        public void SerializeForSigningTest(byte[] hash, uint index, uint seq, byte[] spendScr, bool changeSeq, byte[] expected)
+        public void SerializeForSigningTest(Digest256 hash, uint index, uint seq, byte[] spendScr, bool changeSeq, byte[] expected)
         {
             TxIn tx = new()
             {
@@ -120,19 +115,19 @@ namespace Tests.Bitcoin.Blockchain.Transactions
 
         public static IEnumerable<object[]> GetDeserCases()
         {
-            yield return new object[] { new byte[41], new MockDeserializableSigScript(36, 1), new byte[32], 0, 0 };
+            yield return new object[] { new byte[41], new MockDeserializableSigScript(36, 1), Digest256.Zero, 0, 0 };
             yield return new object[]
             {
                 Helper.HexToBytes("a5c63f45d7f03633aec127b2821c181ea326044e9ab20d2abaf20bafffe79c4e"+"7b000000"+"ff"+"e73403b3"),
                 new MockDeserializableSigScript(36, 1),
-                Helper.HexToBytes("a5c63f45d7f03633aec127b2821c181ea326044e9ab20d2abaf20bafffe79c4e"),
+                new Digest256(Helper.HexToBytes("a5c63f45d7f03633aec127b2821c181ea326044e9ab20d2abaf20bafffe79c4e")),
                 123,
                 3003331815
             };
         }
         [Theory]
         [MemberData(nameof(GetDeserCases))]
-        public void TryDeserializeTest(byte[] data, MockDeserializableSigScript scr, byte[] expHash, uint expIndex, uint expSeq)
+        public void TryDeserializeTest(byte[] data, MockDeserializableSigScript scr, Digest256 expHash, uint expIndex, uint expSeq)
         {
             TxIn tx = new()
             {

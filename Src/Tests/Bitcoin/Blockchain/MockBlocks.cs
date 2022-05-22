@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Linq;
 using Xunit;
@@ -26,8 +27,8 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         public virtual void AddStrippedSerializedSize(SizeCounter counter) => throw new NotImplementedException();
-        public virtual byte[] ComputeMerkleRoot() => throw new NotImplementedException();
-        public virtual byte[] ComputeWitnessMerkleRoot(byte[] commitment) => throw new NotImplementedException();
+        public virtual Digest256 ComputeMerkleRoot() => throw new NotImplementedException();
+        public virtual Digest256 ComputeWitnessMerkleRoot(byte[] commitment) => throw new NotImplementedException();
         public virtual byte[] GetBlockHash() => throw new NotImplementedException();
         public virtual string GetBlockID() => throw new NotImplementedException();
         public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();

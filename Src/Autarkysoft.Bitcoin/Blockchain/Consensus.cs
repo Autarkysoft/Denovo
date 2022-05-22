@@ -235,7 +235,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     new TxIn()
                     {
-                        TxHash = new byte[32],
+                        TxHash = Digest256.Zero,
                         Index = uint.MaxValue,
                         Sequence = uint.MaxValue,
                         SigScript = sigScr
@@ -248,7 +248,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 LockTime = 0
             };
 
-            Digest256 merkle = new Digest256(coinbase.GetTransactionHash());
+            Digest256 merkle = coinbase.GetTransactionHash();
             var header = new BlockHeader(blkVer, Digest256.Zero, merkle, time, nbits, nonce);
 
             return new Block(header, new ITransaction[] { coinbase });

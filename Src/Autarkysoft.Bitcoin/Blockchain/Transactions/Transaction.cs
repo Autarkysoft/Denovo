@@ -204,48 +204,48 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             using Sha256 sha = new Sha256();
             // Tx hash is always stripping witness
             byte[] bytesToHash = ToByteArrayWithoutWitness();
-            _txHash = sha.ComputeHashTwice(bytesToHash);
+            _txHash = new Digest256(sha.ComputeHashTwice(bytesToHash));
 
             bytesToHash = ToByteArray();
-            _txWitHash = sha.ComputeHashTwice(bytesToHash);
+            _txWitHash = new Digest256(sha.ComputeHashTwice(bytesToHash));
         }
 
-        private byte[] _txHash, _txWitHash;
+        private Digest256? _txHash, _txWitHash;
         /// <inheritdoc/>
-        public byte[] GetTransactionHash()
+        public Digest256 GetTransactionHash()
         {
-            if (_txHash is null)
+            if (!_txHash.HasValue)
             {
-                Debug.Assert(_txWitHash is null);
+                Debug.Assert(!_txWitHash.HasValue);
                 ComputeTransactionHashes();
             }
 
-            Debug.Assert(_txHash != null);
-            Debug.Assert(_txWitHash != null);
+            Debug.Assert(_txHash.HasValue);
+            Debug.Assert(_txWitHash.HasValue);
 
-            return _txHash;
+            return _txHash.Value;
         }
 
         /// <inheritdoc/>
-        public string GetTransactionId() => Base16.EncodeReverse(GetTransactionHash());
+        public string GetTransactionId() => Base16.EncodeReverse(GetTransactionHash().ToByteArray());
 
         /// <inheritdoc/>
-        public byte[] GetWitnessTransactionHash()
+        public Digest256 GetWitnessTransactionHash()
         {
-            if (_txWitHash is null)
+            if (!_txWitHash.HasValue)
             {
-                Debug.Assert(_txHash is null);
+                Debug.Assert(!_txHash.HasValue);
                 ComputeTransactionHashes();
             }
 
-            Debug.Assert(_txHash != null);
-            Debug.Assert(_txWitHash != null);
+            Debug.Assert(_txHash.HasValue);
+            Debug.Assert(_txWitHash.HasValue);
 
-            return _txWitHash;
+            return _txWitHash.Value;
         }
 
         /// <inheritdoc/>
-        public string GetWitnessTransactionId() => Base16.EncodeReverse(GetWitnessTransactionHash());
+        public string GetWitnessTransactionId() => Base16.EncodeReverse(GetWitnessTransactionHash().ToByteArray());
 
 
         /// <inheritdoc/>
@@ -692,7 +692,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 throw new ArgumentNullException(nameof(prvTx), "Previous transaction (to spend) can not be null.");
             if (inputIndex < 0 || inputIndex >= TxInList.Length)
                 throw new ArgumentException("Invalid input index.", nameof(inputIndex));
-            if (!((ReadOnlySpan<byte>)TxInList[inputIndex].TxHash).SequenceEqual(prvTx.GetTransactionHash()))
+            if (!TxInList[inputIndex].TxHash.Equals(prvTx.GetTransactionHash()))
                 throw new ArgumentException("Wrong previous transaction or index.");
             var prvScr = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript;
             if (!prvScr.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] prevPubOps, out int opCount, out Errors error))

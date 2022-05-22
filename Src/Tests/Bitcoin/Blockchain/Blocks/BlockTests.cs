@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -225,8 +226,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                 TransactionList = txs
             };
 
-            byte[] actual = block.ComputeMerkleRoot();
-            Assert.Equal(expected, actual);
+            Digest256 actual = block.ComputeMerkleRoot();
+            Assert.Equal(expected, actual.ToByteArray());
         }
 
 
@@ -237,7 +238,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             byte[] Commit255 = Enumerable.Repeat((byte)255, 32).ToArray();
             // SHA256("Witness Commitment Test")
             byte[] CommitRand = Helper.HexToBytes("1d505f2e8168d4fb2c8b163a6c54f80fa52c5e1de6361bba53a2af0b6a45ad25");
-            byte[] nBa = null;
+            Digest256 nBa = Digest256.Zero;
             yield return new object[]
             {
                  new ITransaction[1] // block #481828
@@ -422,8 +423,8 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                 TransactionList = txs
             };
 
-            byte[] actual = block.ComputeWitnessMerkleRoot(commitment);
-            Assert.Equal(expected, actual);
+            Digest256 actual = block.ComputeWitnessMerkleRoot(commitment);
+            Assert.Equal(expected, actual.ToByteArray());
         }
 
 
@@ -579,7 +580,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             Assert.Equal(1000000, block.StrippedSize);
             Assert.Equal(4000000, block.Weight);
             Assert.Equal("0000000000000000006bbb7fb15eaea51703fae52457d37a612a6bce220ab607", block.GetBlockID());
-            Assert.Equal(block.Header.MerkleRootHash.ToByteArray(), block.ComputeMerkleRoot());
+            Assert.Equal(block.Header.MerkleRootHash, block.ComputeMerkleRoot());
         }
 
         [Fact]
@@ -597,7 +598,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
             Assert.Equal(38843, block.StrippedSize);
             Assert.Equal(3993053, block.Weight);
             Assert.Equal("00000000000016a805a7c5d27c3cc0ecb6d51372e15919dfb49d24bd56ae0a8b", block.GetBlockID());
-            Assert.Equal(block.Header.MerkleRootHash.ToByteArray(), block.ComputeMerkleRoot());
+            Assert.Equal(block.Header.MerkleRootHash, block.ComputeMerkleRoot());
         }
     }
 }

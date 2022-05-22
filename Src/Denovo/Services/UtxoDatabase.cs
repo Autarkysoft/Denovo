@@ -6,7 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using System;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -49,7 +49,7 @@ namespace Denovo.Services
         public UtxoDatabase(IDenovoFileManager fileMan)
         {
             this.fileMan = fileMan;
-            database = new Dictionary<byte[], List<Utxo>>(new ByteArrayComparer());
+            database = new Dictionary<Digest256, List<Utxo>>();
             Init();
         }
 
@@ -57,7 +57,7 @@ namespace Denovo.Services
         private readonly IDenovoFileManager fileMan;
         private const string DbName = "UtxoDb";
         private const string CoinBaseDbName = "CoinbaseDb";
-        private readonly Dictionary<byte[], List<Utxo>> database;
+        private readonly Dictionary<Digest256, List<Utxo>> database;
         private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
         private int i1, i2;
 
@@ -71,7 +71,7 @@ namespace Denovo.Services
                 while (true)
                 {
                     Utxo utxo = new();
-                    if (stream.TryReadByteArray(32, out byte[] hash) && utxo.TryDeserialize(stream, out _))
+                    if (stream.TryReadDigest256(out Digest256 hash) && utxo.TryDeserialize(stream, out _))
                     {
                         if (database.ContainsKey(hash))
                         {
@@ -165,7 +165,7 @@ namespace Denovo.Services
         private void WriteDbToDisk()
         {
             FastStream stream = new(database.Count * 90);
-            foreach (KeyValuePair<byte[], List<Utxo>> item in database)
+            foreach (KeyValuePair<Digest256, List<Utxo>> item in database)
             {
                 foreach (Utxo item2 in item.Value)
                 {
@@ -178,7 +178,7 @@ namespace Denovo.Services
         }
 
 
-        public bool Contains(byte[] hash, uint index)
+        public bool Contains(Digest256 hash, uint index)
         {
             return database.TryGetValue(hash, out List<Utxo> value) && value.Any(u => u.Index == index);
         }

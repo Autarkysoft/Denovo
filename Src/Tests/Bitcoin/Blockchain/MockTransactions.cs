@@ -9,8 +9,8 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
-using System.Linq;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
@@ -34,9 +34,9 @@ namespace Tests.Bitcoin.Blockchain
         public virtual int Weight => throw new NotImplementedException();
         public virtual int VirtualSize => throw new NotImplementedException();
 
-        public virtual byte[] GetTransactionHash() => throw new NotImplementedException();
+        public virtual Digest256 GetTransactionHash() => throw new NotImplementedException();
         public virtual string GetTransactionId() => throw new NotImplementedException();
-        public virtual byte[] GetWitnessTransactionHash() => throw new NotImplementedException();
+        public virtual Digest256 GetWitnessTransactionHash() => throw new NotImplementedException();
         public virtual string GetWitnessTransactionId() => throw new NotImplementedException();
         public virtual void AddSerializedSize(SizeCounter counter) => throw new NotImplementedException();
         public virtual void AddSerializedSizeWithoutWitness(SizeCounter counter) => throw new NotImplementedException();
@@ -62,26 +62,26 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockTxIdTx : MockTxBase
     {
-        public MockTxIdTx(byte[] txHashToReturn)
+        public MockTxIdTx(Digest256 txHashToReturn)
         {
             TxHash = txHashToReturn;
         }
 
-        public MockTxIdTx(string txIdToReturn) : this(Helper.HexToBytes(txIdToReturn, true))
+        public MockTxIdTx(string txIdToReturn) : this(new Digest256(Helper.HexToBytes(txIdToReturn, true)))
         {
         }
 
 
-        private readonly byte[] TxHash;
+        private readonly Digest256? TxHash;
 
 
-        public override byte[] GetTransactionHash()
+        public override Digest256 GetTransactionHash()
         {
-            if (TxHash == null)
+            if (!TxHash.HasValue)
             {
                 Assert.True(false, "Mock transaction doesn't have any tx hash set.");
             }
-            return TxHash;
+            return TxHash.Value;
         }
 
         public override string GetTransactionId()
@@ -90,7 +90,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 Assert.True(false, "Mock transaction doesn't have any tx hash set.");
             }
-            return Helper.BytesToHex(TxHash.Reverse().ToArray());
+            return TxHash.ToString()[2..];
         }
     }
 
@@ -98,26 +98,26 @@ namespace Tests.Bitcoin.Blockchain
 
     public class MockWTxIdTx : MockTxBase
     {
-        public MockWTxIdTx(byte[] wtxHashToReturn)
+        public MockWTxIdTx(Digest256 wtxHashToReturn)
         {
             WTxHash = wtxHashToReturn;
         }
 
-        public MockWTxIdTx(string txIdToReturn) : this(Helper.HexToBytes(txIdToReturn, true))
+        public MockWTxIdTx(string txIdToReturn) : this(new Digest256(Helper.HexToBytes(txIdToReturn, true)))
         {
         }
 
 
-        private readonly byte[] WTxHash;
+        private readonly Digest256? WTxHash;
 
 
-        public override byte[] GetWitnessTransactionHash()
+        public override Digest256 GetWitnessTransactionHash()
         {
-            if (WTxHash == null)
+            if (!WTxHash.HasValue)
             {
                 Assert.True(false, "Mock transaction doesn't have any wtx hash set.");
             }
-            return WTxHash;
+            return WTxHash.Value;
         }
 
         public override string GetWitnessTransactionId()
@@ -126,7 +126,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 Assert.True(false, "Mock transaction doesn't have any wtx hash set.");
             }
-            return Helper.BytesToHex(WTxHash.Reverse().ToArray());
+            return WTxHash.ToString()[2..];
         }
     }
 

@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -113,7 +114,7 @@ namespace Tests.BitcoinCore
         {
             // https://github.com/bitcoin/bitcoin/blob/48725e64fbfb85200dd2226386fbf1cfc8fe6c1f/src/test/data/tx_invalid.json
 
-            MockMempool mockMempool = new(null);
+            MockMempool mockMempool = new();
             foreach (JToken item in Helper.ReadResource<JArray>("BitcoinCore.tx_invalid"))
             {
                 MockUtxoDatabase mockDB = new();
@@ -186,7 +187,7 @@ namespace Tests.BitcoinCore
                     bool isCoinbase = false;
                     foreach (JArray tinArr in arr1[0])
                     {
-                        byte[] txHash = Helper.HexToBytes(tinArr[0].ToString(), true);
+                        Digest256 txHash = new(Helper.HexToBytes(tinArr[0].ToString(), true));
                         int index = (int)tinArr[1];
                         isCoinbase = index == -1;
                         if (isCoinbase)
