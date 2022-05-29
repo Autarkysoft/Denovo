@@ -49,7 +49,7 @@ namespace Denovo.Services
         public UtxoDatabase(IDenovoFileManager fileMan)
         {
             this.fileMan = fileMan;
-            database = new Dictionary<Digest256, List<Utxo>>();
+            database = new Dictionary<Digest256, List<Utxo>>(2000);
             Init();
         }
 
@@ -60,6 +60,9 @@ namespace Denovo.Services
         private readonly Dictionary<Digest256, List<Utxo>> database;
         private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
         private int i1, i2;
+        private int writeQueueCount;
+
+        private const int MaxWriteQueue = 500;
 
 
         private void Init()
@@ -115,6 +118,27 @@ namespace Denovo.Services
             }
         }
 
+        private void WriteToDisk()
+        {
+            writeQueueCount = 0;
+            WriteCoinbaseToDisk();
+            WriteDbToDisk();
+        }
+
+        private void WriteDbToDisk()
+        {
+            FastStream stream = new(database.Count * 90);
+            foreach (KeyValuePair<Digest256, List<Utxo>> item in database)
+            {
+                foreach (Utxo item2 in item.Value)
+                {
+                    stream.Write(item.Key);
+                    item2.Serialize(stream);
+                }
+            }
+
+            fileMan.WriteData(stream.ToByteArray(), DbName);
+        }
 
         private void WriteCoinbaseToDisk()
         {
@@ -153,28 +177,10 @@ namespace Denovo.Services
                 database.Add(pop.GetTransactionHash(),
                     new List<Utxo>(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript))));
 
-                WriteDbToDisk();
-
                 coinbaseQueue[i2++] = coinbase;
             }
 
-            WriteCoinbaseToDisk();
-        }
-
-
-        private void WriteDbToDisk()
-        {
-            FastStream stream = new(database.Count * 90);
-            foreach (KeyValuePair<Digest256, List<Utxo>> item in database)
-            {
-                foreach (Utxo item2 in item.Value)
-                {
-                    stream.Write(item.Key);
-                    item2.Serialize(stream);
-                }
-            }
-
-            fileMan.WriteData(stream.ToByteArray(), DbName);
+            writeQueueCount++;
         }
 
 
@@ -235,7 +241,10 @@ namespace Denovo.Services
                 }
             }
 
-            WriteDbToDisk();
+            if (++writeQueueCount > MaxWriteQueue)
+            {
+                WriteToDisk();
+            }
         }
 
 
