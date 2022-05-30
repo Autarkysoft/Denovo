@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
-using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.P2PNetwork;
@@ -211,6 +210,7 @@ namespace Tests.Bitcoin.P2PNetwork
 
         public SocketAsyncEventArgsPool SendReceivePool => throw new NotImplementedException();
 
+        public IUtxoDatabase Database { get; set; }
 
         internal NodeServiceFlags? expHasNeededServicesFlags;
         internal bool _hasNeededServices;
