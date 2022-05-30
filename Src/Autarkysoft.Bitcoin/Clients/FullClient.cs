@@ -231,6 +231,7 @@ namespace Autarkysoft.Bitcoin.Clients
             {
                 isDisposed = true;
 
+                Settings.Database.WriteToDisk();
                 Settings.AllNodes.Dispose();
                 listener?.Dispose();
                 connector?.Dispose();

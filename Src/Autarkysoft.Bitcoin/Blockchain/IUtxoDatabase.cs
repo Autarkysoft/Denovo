@@ -39,5 +39,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="txs">Array of transactions in the block</param>
         /// <param name="lastIndex">Last index of the transaction that was checked</param>
         void Undo(ITransaction[] txs, int lastIndex);
+        /// <summary>
+        /// Writes database to disk.
+        /// </summary>
+        void WriteToDisk();
     }
 }

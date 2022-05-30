@@ -49,6 +49,7 @@ namespace Autarkysoft.Bitcoin.Clients
             // TODO: add AcceptSAEAPool here based on listen
             AcceptIncomingConnections = listen;
             FileMan = fileMan ?? throw new ArgumentNullException();
+            Database = utxoDb ?? throw new ArgumentNullException();
 
             // TODO: find a better way for this
             supportsIpV6 = NetworkInterface.GetAllNetworkInterfaces().All(x => x.Supports(NetworkInterfaceComponent.IPv6));
@@ -67,6 +68,8 @@ namespace Autarkysoft.Bitcoin.Clients
         public IChain Blockchain { get; }
         /// <inheritdoc/>
         public IMemoryPool MemPool { get; set; }
+        /// <inheritdoc/>
+        public IUtxoDatabase Database { get; set; }
         /// <inheritdoc/>
         public ulong MinTxRelayFee { get; set; }
         /// <inheritdoc/>

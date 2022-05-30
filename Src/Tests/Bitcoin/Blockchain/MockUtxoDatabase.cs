@@ -95,5 +95,10 @@ namespace Tests.Bitcoin.Blockchain
         {
             throw new NotImplementedException();
         }
+
+        public void WriteToDisk()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

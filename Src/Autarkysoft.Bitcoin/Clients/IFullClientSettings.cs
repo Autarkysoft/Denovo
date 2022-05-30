@@ -28,6 +28,11 @@ namespace Autarkysoft.Bitcoin.Clients
         IMemoryPool MemPool { get; set; }
 
         /// <summary>
+        /// Gets or sets the UTXO database
+        /// </summary>
+        IUtxoDatabase Database { get; set; }
+
+        /// <summary>
         /// Gets or sets the minimum fee rate (in satoshi per byte) of transactions that are accepted in <see cref="IMemoryPool"/>
         /// </summary>
         ulong MinTxRelayFee { get; set; }

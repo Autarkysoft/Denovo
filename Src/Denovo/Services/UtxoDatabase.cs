@@ -118,7 +118,8 @@ namespace Denovo.Services
             }
         }
 
-        private void WriteToDisk()
+        /// <inheritdoc/>
+        public void WriteToDisk()
         {
             writeQueueCount = 0;
             WriteCoinbaseToDisk();
