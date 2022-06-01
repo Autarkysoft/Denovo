@@ -223,7 +223,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void NodeStatus_DisconnectEvent(object sender, EventArgs e)
         {
-            if (sender is INodeStatus status)
+            if (!isDisposed && sender is INodeStatus status)
             {
                 int index = -1;
                 Node removedVal = null;
@@ -402,9 +402,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        private bool isDisposed;
         /// <inheritdoc/>
         public void Dispose()
         {
+            isDisposed = true;
             lock (lockObj)
             {
                 if (!(items is null))
