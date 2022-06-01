@@ -57,6 +57,7 @@ namespace Denovo.Services
         private readonly IDenovoFileManager fileMan;
         private const string DbName = "UtxoDb";
         private const string CoinBaseDbName = "CoinbaseDb";
+        // TODO: using dictionary is a flaw due to its hash collision
         private readonly Dictionary<Digest256, List<Utxo>> database;
         private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
         private int i1, i2;
@@ -128,7 +129,17 @@ namespace Denovo.Services
 
         private void WriteDbToDisk()
         {
-            FastStream stream = new(database.Count * 90);
+            SizeCounter counter = new();
+            foreach (var item in database)
+            {
+                foreach (var item2 in item.Value)
+                {
+                    counter.AddHash256();
+                    item2.AddSerializedSize(counter);
+                }
+            }
+
+            FastStream stream = new(counter.Size);
             foreach (KeyValuePair<Digest256, List<Utxo>> item in database)
             {
                 foreach (Utxo item2 in item.Value)
