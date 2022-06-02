@@ -64,6 +64,7 @@ are in separate classes. Currently:
   * Mandatory: [11](https://github.com/bitcoin/bips/blob/master/bip-0011.mediawiki "M-of-N Standard Transactions"), 
   [13](https://github.com/bitcoin/bips/blob/master/bip-0013.mediawiki "Address Format for pay-to-script-hash"), 
   [16](https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki "Pay to Script Hash"), 
+  [30](https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki "Duplicate transactions"), 
   [31](https://github.com/bitcoin/bips/blob/master/bip-0031.mediawiki "Pong message"), 
   [34](https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki "Block v2, Height in Coinbase"), 
   [35](https://github.com/bitcoin/bips/blob/master/bip-0035.mediawiki "Mempool message"), 

@@ -1,6 +1,19 @@
 ### Next release
 [Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.18.0.0...master)
 
+### Release 0.20.0 (2022-06-02)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.19.0.0...B0.20.0.0)
+* Add BIP-30
+* Introduce `Digest256` an immutable struct to store 256-bit hashes
+* Breaking change: `BlockHeader` is now an immutable struct
+* `Digest256` is used anywhere there is a hash
+
+### Release 0.19.0 (2022-04-05)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.18.0.0...B0.19.0.0)
+* Some breaking changes in `(I)Chain`, `(I)BlockVerifier`, `(I)NodeStatus` and `(I)FullClientSettings`
+* Fixed many issues during initial block sync
+* Various tests, bug fixes and code improvements
+
 ### Release 0.18.0 (2022-03-01)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.17.0.0...B0.18.0.0)
 * (From now on `Bitcoin.Net` and `Denovo` are published together)
