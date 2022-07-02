@@ -70,7 +70,6 @@ namespace Autarkysoft.Bitcoin.Blockchain
             mempool = memoryPool;
             this.consensus = consensus;
 
-            localDb = new Dictionary<Digest256, List<Utxo>>();
             calc = new EllipticCurveCalculator();
             scrSer = new ScriptSerializer();
             hash160 = new Ripemd160Sha256();
@@ -79,7 +78,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private readonly bool isMempool;
-        private readonly Dictionary<Digest256, List<Utxo>> localDb;
+        private readonly Dictionary<Digest256, List<Utxo>> localDb = new Dictionary<Digest256, List<Utxo>>();
         private readonly EllipticCurveCalculator calc;
         private readonly ScriptSerializer scrSer;
         private readonly IMemoryPool mempool;
