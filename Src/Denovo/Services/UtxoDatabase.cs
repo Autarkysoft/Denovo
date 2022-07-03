@@ -191,8 +191,6 @@ namespace Denovo.Services
 
                 coinbaseQueue[i2++] = coinbase;
             }
-
-            writeQueueCount++;
         }
 
 
