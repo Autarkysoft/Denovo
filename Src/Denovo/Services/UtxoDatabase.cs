@@ -186,17 +186,28 @@ namespace Denovo.Services
                 }
 
                 ITransaction pop = coinbaseQueue[i2];
-                database.Add(pop.GetTransactionHash(),
-                    new List<Utxo>(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript))));
+                List<Utxo> lst = new(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript)));
+                AddToDb(pop.GetTransactionHash(), lst);
 
                 coinbaseQueue[i2++] = coinbase;
             }
         }
 
 
-        public bool Contains(Digest256 hash, uint index)
+        public bool Contains(Digest256 hash, uint index, bool checkCoinbases)
         {
-            return database.TryGetValue(hash, out List<Utxo> value) && value.Any(u => u.Index == index);
+            if (database.TryGetValue(hash, out List<Utxo> value) && value.Any(u => u.Index == index))
+            {
+                return true;
+            }
+            else if (checkCoinbases)
+            {
+                return coinbaseQueue.Any(x => x is not null && x.GetTransactionHash().Equals(hash));
+            }
+            else
+            {
+                return false;
+            }
         }
 
 
@@ -213,6 +224,11 @@ namespace Denovo.Services
             }
         }
 
+        private void AddToDb(Digest256 hash, List<Utxo> utxos)
+        {
+            bool b = database.Remove(hash);
+            database.Add(hash, utxos);
+        }
 
         public void Update(ITransaction[] txs)
         {
@@ -246,8 +262,7 @@ namespace Denovo.Services
                 }
                 if (temp.Count > 0)
                 {
-                    // TODO: replace duplicate (BIP30)
-                    database.Add(txs[i].GetTransactionHash(), temp);
+                    AddToDb(txs[i].GetTransactionHash(), temp);
                 }
             }
 

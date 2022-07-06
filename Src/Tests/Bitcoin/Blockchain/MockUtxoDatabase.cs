@@ -63,7 +63,7 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
-        public bool Contains(Digest256 hash, uint index)
+        public bool Contains(Digest256 hash, uint index, bool checkCoinbases)
         {
             Assert.NotNull(database);
             bool b = database.ContainsKey(hash);

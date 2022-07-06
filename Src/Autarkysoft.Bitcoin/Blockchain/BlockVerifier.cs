@@ -89,7 +89,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     for (uint i = 0; i < tx.TxOutList.Length; i++)
                     {
-                        if (txVer.UtxoDb.Contains(tx.GetTransactionHash(), i))
+                        if (txVer.UtxoDb.Contains(tx.GetTransactionHash(), i, true))
                         {
                             error = "BIP-30 violation (duplicate transaction found).";
                             return false;
