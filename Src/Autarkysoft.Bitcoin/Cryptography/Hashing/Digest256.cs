@@ -141,6 +141,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
         /// <summary>
+        /// Returns if this digest is equal to zero.
+        /// </summary>
+        public bool IsZero => (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+
+        /// <summary>
         /// Converts this instance to its byte array representation with a fixed length of 32.
         /// </summary>
         /// <returns>An array of bytes</returns>
@@ -233,6 +238,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         /// <inheritdoc/>
-        public override string ToString() => $"0x{Base16.Encode(ToByteArray())}";
+        public override string ToString() => $"0x{Base16.EncodeReverse(ToByteArray())}";
     }
 }
