@@ -15,6 +15,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     public readonly struct Digest256 : IComparable, IComparable<Digest256>, IEquatable<Digest256>
     {
         /// <summary>
+        /// Initializes a new instance of <see cref="Digest256"/> using the given 32-bit unsigned integer.
+        /// </summary>
+        /// <param name="u">Value to use</param>
+        public Digest256(uint u)
+        {
+            b0 = u;
+            b1 = b2 = b3 = b4 = b5 = b6 = b7 = 0;
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="Digest256"/> using the given byte array.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
@@ -38,48 +48,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         /// <summary>
-        /// Initializes a new instance of <see cref="Digest256"/> using the given UInt32 array.
-        /// </summary>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <param name="u8">UInt32 array</param>
-        public Digest256(Span<uint> u8)
-        {
-            if (u8 == null)
-                throw new ArgumentNullException(nameof(u8));
-            if (u8.Length != 8)
-                throw new ArgumentOutOfRangeException(nameof(u8), "Array length must be 8.");
-
-            b0 = u8[0]; b1 = u8[1]; b2 = u8[2]; b3 = u8[3];
-            b4 = u8[4]; b5 = u8[5]; b6 = u8[6]; b7 = u8[7];
-        }
-
-        /// <summary>
-        /// Converts the hexadecimal representation of 256-bit hash to its <see cref="Digest256"/> equivalent.
-        /// </summary>
-        /// <param name="hex256">Base16 string to use</param>
-        /// <exception cref="ArgumentException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <returns>256-bit digest</returns>
-        public static Digest256 ParseHex(string hex256)
-        {
-            if (!Base16.IsValid(hex256))
-                throw new ArgumentException("Invalid Base-16", nameof(hex256));
-            if (hex256.Length != 64)
-                throw new ArgumentOutOfRangeException(nameof(hex256), "String must contain 64 characters.");
-
-            ReadOnlySpan<char> s = hex256.AsSpan();
-            return new Digest256(uint.Parse(s.Slice(56, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(48, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(40, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(32, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(24, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(16, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(8, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(0, 8), NumberStyles.HexNumber));
-        }
-
-        /// <summary>
         /// Initializes a new instance of <see cref="Digest256"/> using the given <see cref="Sha256.hashState"/>
         /// pointer.
         /// </summary>
@@ -97,22 +65,29 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="Digest256"/> using the given UInt32 array.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="u8">UInt32 array</param>
+        public Digest256(Span<uint> u8)
+        {
+            if (u8 == null)
+                throw new ArgumentNullException(nameof(u8));
+            if (u8.Length != 8)
+                throw new ArgumentOutOfRangeException(nameof(u8), "Array length must be 8.");
+
+            b0 = u8[0]; b1 = u8[1]; b2 = u8[2]; b3 = u8[3];
+            b4 = u8[4]; b5 = u8[5]; b6 = u8[6]; b7 = u8[7];
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="Digest256"/> using the given 32-bit unsigned integers.
         /// </summary>
         public Digest256(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7)
         {
             b0 = u0; b1 = u1; b2 = u2; b3 = u3;
             b4 = u4; b5 = u5; b6 = u6; b7 = u7;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of <see cref="Digest256"/> using the given 32-bit unsigned integer.
-        /// </summary>
-        /// <param name="u">Value to use</param>
-        public Digest256(uint u)
-        {
-            b0 = u;
-            b1 = b2 = b3 = b4 = b5 = b6 = b7 = 0;
         }
 
 
@@ -146,6 +121,31 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         public bool IsZero => (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
 
         /// <summary>
+        /// Converts the hexadecimal representation of 256-bit hash to its <see cref="Digest256"/> equivalent.
+        /// </summary>
+        /// <param name="hex256">Base16 string to use</param>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <returns>256-bit digest</returns>
+        public static Digest256 ParseHex(string hex256)
+        {
+            if (!Base16.IsValid(hex256))
+                throw new ArgumentException("Invalid Base-16", nameof(hex256));
+            if (hex256.Length != 64)
+                throw new ArgumentOutOfRangeException(nameof(hex256), "String must contain 64 characters.");
+
+            ReadOnlySpan<char> s = hex256.AsSpan();
+            return new Digest256(uint.Parse(s.Slice(56, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(48, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(40, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(32, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(24, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(16, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(8, 8), NumberStyles.HexNumber),
+                                 uint.Parse(s.Slice(0, 8), NumberStyles.HexNumber));
+        }
+
+        /// <summary>
         /// Converts this instance to its byte array representation with a fixed length of 32.
         /// </summary>
         /// <returns>An array of bytes</returns>
@@ -172,13 +172,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         public static bool operator <=(Digest256 left, Digest256 right) => left.CompareTo(right) <= 0;
 
 
-        public static bool operator ==(Digest256 left, Digest256 right)
+        public static bool operator ==(in Digest256 left, in Digest256 right)
         {
             return left.b0 == right.b0 && left.b1 == right.b1 && left.b2 == right.b2 && left.b3 == right.b3 &&
                    left.b4 == right.b4 && left.b5 == right.b5 && left.b6 == right.b6 && left.b7 == right.b7;
         }
 
-        public static bool operator !=(Digest256 left, Digest256 right)
+        public static bool operator !=(in Digest256 left, in Digest256 right)
         {
             return left.b0 != right.b0 || left.b1 != right.b1 || left.b2 != right.b2 || left.b3 != right.b3 ||
                    left.b4 != right.b4 || left.b5 != right.b5 || left.b6 != right.b6 || left.b7 != right.b7;
