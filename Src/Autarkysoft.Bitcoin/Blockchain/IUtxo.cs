@@ -9,8 +9,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
 {
     /// <summary>
     /// Defines methods and properties needed for an Unspent Transaction Output
+    /// <para/>Inherits from <see cref="IDeserializable"/>
     /// </summary>
-    public interface IUtxo
+    public interface IUtxo : IDeserializable
     {
         /// <summary>
         /// Gets or sets whether this output is spent in mempool (not yet included in a block)

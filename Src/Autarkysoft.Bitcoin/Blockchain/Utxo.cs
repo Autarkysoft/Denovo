@@ -10,7 +10,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
     /// <summary>
     /// Implements <see cref="IUtxo"/> and <see cref="IDeserializable"/>.
     /// </summary>
-    public class Utxo : IUtxo, IDeserializable
+    public class Utxo : IUtxo
     {
         /// <summary>
         /// Initializes a new empty instance of <see cref="Utxo"/>.
