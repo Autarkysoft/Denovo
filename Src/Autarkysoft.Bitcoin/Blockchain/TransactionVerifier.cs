@@ -78,7 +78,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         private readonly bool isMempool;
-        private readonly Dictionary<Digest256, List<Utxo>> localDb = new Dictionary<Digest256, List<Utxo>>();
+        private readonly LightDatabase localDb = new LightDatabase();
         private readonly EllipticCurveCalculator calc;
         private readonly ScriptSerializer scrSer;
         private readonly IMemoryPool mempool;
@@ -526,10 +526,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
             for (int i = 0; i < utxos.Length; i++)
             {
                 IUtxo temp = UtxoDb.Find(tx.TxInList[i]);
-                if (temp is null && localDb.TryGetValue(tx.TxInList[i].TxHash, out List<Utxo> value))
+                if (temp is null)
                 {
-                    var index = value.FindIndex(x => x.Index == tx.TxInList[i].Index);
-                    temp = index < 0 ? null : value[index];
+                    temp = localDb.Find(tx.TxInList[i]);
                 }
                 utxos[i] = temp;
             }
@@ -1154,7 +1153,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             TotalFee += toSpend - spent;
 
             // Update local UTXO database (n+1)st tx can spend (n)th tx's UTXOs
-            List<Utxo> temp = new List<Utxo>(tx.TxOutList.Length);
+            List<IUtxo> temp = new List<IUtxo>(tx.TxOutList.Length);
             for (int i = 0; i < tx.TxOutList.Length; i++)
             {
                 TxOut item = tx.TxOutList[i];
