@@ -143,6 +143,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Initializes a new instance of <see cref="Scalar8x32"/> using the given big-endian array
         /// and reduces the result modulo curve order (n).
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="data">Array to use</param>
         /// <param name="overflow">Returns true if value was bigger than or equal to curve order; otherwise false</param>
         public Scalar8x32(ReadOnlySpan<byte> data, out bool overflow)
