@@ -13,10 +13,6 @@ using System.Linq;
 
 namespace Denovo.Services
 {
-    // TODO: Add a temp DB that is not stored to disk but updated on each call by TxVerifier to add outputs so that they
-    //       can be spent in txs in the same block
-
-
     // TODO: Idea for coinbase transactions:
     //       Each coinbase tx must mature before it can be spent, which takes 100 blocks.
     //       The idea is to use a "queue" in our UTXO DB to hold the coinbase txs and only add them to the actual DB when
@@ -46,19 +42,18 @@ namespace Denovo.Services
     //       we complete other parts and decide which database to use and how.
     public class UtxoDatabase : IUtxoDatabase
     {
-        public UtxoDatabase(IDenovoFileManager fileMan)
+        public UtxoDatabase(IFileManager fileMan)
         {
             this.fileMan = fileMan;
-            database = new Dictionary<Digest256, List<Utxo>>(2000);
+            database = new();
             Init();
         }
 
 
-        private readonly IDenovoFileManager fileMan;
+        private readonly IFileManager fileMan;
         private const string DbName = "UtxoDb";
         private const string CoinBaseDbName = "CoinbaseDb";
-        // TODO: using dictionary is a flaw due to its hash collision
-        private readonly Dictionary<Digest256, List<Utxo>> database;
+        private readonly LightDatabase database;
         private readonly ITransaction[] coinbaseQueue = new ITransaction[99];
         private int i1, i2;
         private int writeQueueCount;
@@ -72,19 +67,26 @@ namespace Denovo.Services
             if (data is not null && data.Length != 0)
             {
                 FastStreamReader stream = new(data);
+                Digest256 prev = Digest256.Zero;
+                List<IUtxo> temp = new();
                 while (true)
                 {
                     Utxo utxo = new();
                     if (stream.TryReadDigest256(out Digest256 hash) && utxo.TryDeserialize(stream, out _))
                     {
-                        if (database.ContainsKey(hash))
+                        if (prev.IsZero)
                         {
-                            database[hash].Add(utxo);
+                            prev = hash;
                         }
-                        else
+
+                        if (prev != hash)
                         {
-                            database.Add(hash, new List<Utxo>() { utxo });
+                            database.Add(prev, temp);
+                            prev = hash;
+                            temp = new();
                         }
+
+                        temp.Add(utxo);
                     }
                     else
                     {
@@ -130,22 +132,22 @@ namespace Denovo.Services
         private void WriteDbToDisk()
         {
             SizeCounter counter = new();
-            foreach (var item in database)
+            for (int i = 0; i < database.hashes.Count; i++)
             {
-                foreach (var item2 in item.Value)
+                foreach (var item in database.coins[i])
                 {
                     counter.AddHash256();
-                    item2.AddSerializedSize(counter);
+                    item.AddSerializedSize(counter);
                 }
             }
 
             FastStream stream = new(counter.Size);
-            foreach (KeyValuePair<Digest256, List<Utxo>> item in database)
+            for (int i = 0; i < database.hashes.Count; i++)
             {
-                foreach (Utxo item2 in item.Value)
+                foreach (var item in database.coins[i])
                 {
-                    stream.Write(item.Key);
-                    item2.Serialize(stream);
+                    stream.Write(database.hashes[i]);
+                    item.Serialize(stream);
                 }
             }
 
@@ -186,8 +188,8 @@ namespace Denovo.Services
                 }
 
                 ITransaction pop = coinbaseQueue[i2];
-                List<Utxo> lst = new(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript)));
-                AddToDb(pop.GetTransactionHash(), lst);
+                List<IUtxo> lst = new(pop.TxOutList.Select((x, i) => new Utxo((uint)i, x.Amount, x.PubScript)));
+                database.Add(pop.GetTransactionHash(), lst);
 
                 coinbaseQueue[i2++] = coinbase;
             }
@@ -196,7 +198,7 @@ namespace Denovo.Services
 
         public bool Contains(Digest256 hash, uint index, bool checkCoinbases)
         {
-            if (database.TryGetValue(hash, out List<Utxo> value) && value.Any(u => u.Index == index))
+            if (database.Contains(hash, index))
             {
                 return true;
             }
@@ -213,21 +215,7 @@ namespace Denovo.Services
 
         public IUtxo Find(TxIn tin)
         {
-            if (database.TryGetValue(tin.TxHash, out List<Utxo> value))
-            {
-                int index = value.FindIndex(x => x.Index == tin.Index);
-                return index < 0 ? null : value[index];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private void AddToDb(Digest256 hash, List<Utxo> utxos)
-        {
-            bool b = database.Remove(hash);
-            database.Add(hash, utxos);
+            return database.Find(tin);
         }
 
         public void Update(ITransaction[] txs)
@@ -239,19 +227,10 @@ namespace Denovo.Services
             for (uint i = 1; i < txs.Length; i++)
             {
                 // Remove spent inputs from DB
-                foreach (TxIn item in txs[i].TxInList)
-                {
-                    int index = database[item.TxHash].FindIndex(x => x.Index == item.Index);
-                    Debug.Assert(index >= 0);
-                    database[item.TxHash].RemoveAt(index);
-                    if (database[item.TxHash].Count == 0)
-                    {
-                        database.Remove(item.TxHash);
-                    }
-                }
+                database.Remove(txs[i]);
 
                 // Add new outputs to DB
-                List<Utxo> temp = new(txs[i].TxOutList.Length);
+                List<IUtxo> temp = new(txs[i].TxOutList.Length);
                 for (int j = 0; j < txs[i].TxOutList.Length; j++)
                 {
                     TxOut item = txs[i].TxOutList[j];
@@ -262,7 +241,7 @@ namespace Denovo.Services
                 }
                 if (temp.Count > 0)
                 {
-                    AddToDb(txs[i].GetTransactionHash(), temp);
+                    database.Add(txs[i].GetTransactionHash(), temp);
                 }
             }
 
