@@ -282,7 +282,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             yield return new object[] { new byte[3] { (byte)OP.PushData1, 1, 1 }, true, false };
             yield return new object[] { new byte[4] { (byte)OP.PushData1, 1, 1, ops1 }, true, true };
             yield return new object[] { new byte[4] { (byte)OP.PushData1, 2, 1, ops1 }, true, false };
-            yield return new object[] { new byte[2] { (byte)OP.PushData2, 1 }, false, false };
+            yield return new object[] { new byte[2] { (byte)OP.PushData2, 0 }, false, false };
             yield return new object[] { new byte[2] { (byte)OP.PushData2, 1 }, false, false };
             yield return new object[] { new byte[3] { (byte)OP.PushData2, 1, 0 }, false, false };
             yield return new object[] { new byte[3] { (byte)OP.PushData2, 0, 0 }, true, false };
