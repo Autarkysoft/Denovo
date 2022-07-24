@@ -9,9 +9,9 @@ using System.Diagnostics;
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
     /// <summary>
-    /// 256-bit scalar using 8 32-bit limbs
+    /// 256-bit scalar using 8 32-bit limbs using little-endian order
     /// </summary>
-    public readonly struct Scalar8x32
+    public readonly struct Scalar8x32 : IEquatable<Scalar8x32>
     {
         /// <summary>
         /// Initializes a new instance of <see cref="Scalar8x32"/> using the given unsigned 32-bit integer.
@@ -247,5 +247,35 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             yes |= (b0 >= N0 ? 1U : 0U) & ~no;
             return yes;
         }
+
+        /// <summary>
+        /// Returns if the given scalar is equal to this instance
+        /// </summary>
+        /// <param name="other">Scalar to compare to</param>
+        /// <returns>True if the two scalars are equal; otherwise false.</returns>
+        public bool Equals(Scalar8x32 other) => this == other;
+        /// <inheritdoc/>
+        public override bool Equals(object obj) => obj is Scalar8x32 other && this == other;
+
+        /// <summary>
+        /// Returns if the two scalars are equal to each other
+        /// </summary>
+        /// <param name="left">First scalar</param>
+        /// <param name="right">Second scalar</param>
+        /// <returns>True if the two scalars are equal; otherwise false.</returns>
+        public static bool operator ==(in Scalar8x32 left, in Scalar8x32 right) =>
+            ((left.b0 ^ right.b0) | (left.b1 ^ right.b1) | (left.b2 ^ right.b2) | (left.b3 ^ right.b3) |
+             (left.b4 ^ right.b4) | (left.b5 ^ right.b5) | (left.b6 ^ right.b6) | (left.b7 ^ right.b7)) == 0;
+
+        /// <summary>
+        /// Returns if the two scalars are not equal to each other
+        /// </summary>
+        /// <param name="left">First scalar</param>
+        /// <param name="right">Second scalar</param>
+        /// <returns>True if the two scalars are not equal; otherwise false.</returns>
+        public static bool operator !=(in Scalar8x32 left, in Scalar8x32 right) => !(left == right);
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => HashCode.Combine(b0, b1, b2, b3, b4, b5, b6, b7);
     }
 }

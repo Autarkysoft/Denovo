@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -304,6 +305,40 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         {
             Scalar8x32 scalar = new(u0, u1, u2, u3, u4, u5, u6, u7);
             Assert.Equal(expected, scalar.IsZero);
+        }
+
+        public static IEnumerable<object[]> EqualCases()
+        {
+            Random rng = new();
+            Span<byte> buffer = new byte[64];
+            rng.NextBytes(buffer);
+            byte[] ba1 = buffer.Slice(0, 32).ToArray();
+            byte[] ba2 = buffer.Slice(32, 32).ToArray();
+
+            yield return new object[] { new Scalar8x32(0, 0, 0, 0, 0, 0, 0, 0), new Scalar8x32(0, 0, 0, 0, 0, 0, 0, 0), true };
+            yield return new object[] { new Scalar8x32(0, 0, 0, 0, 0, 0, 0, 0), new Scalar8x32(0, 0, 0, 0, 0, 0, 0, 1), false };
+            yield return new object[] { new Scalar8x32(ba1, out _), new Scalar8x32(ba2, out _), false };
+        }
+        [Theory]
+        [MemberData(nameof(EqualCases))]
+        public void EqualityTest(in Scalar8x32 first, in Scalar8x32 second, bool expected)
+        {
+            Assert.Equal(expected, first == second);
+            Assert.Equal(expected, second == first);
+            Assert.Equal(!expected, first != second);
+            Assert.Equal(!expected, second != first);
+            Assert.Equal(expected, first.Equals(second));
+            Assert.Equal(expected, second.Equals(first));
+            Assert.Equal(expected, first.Equals((object)second));
+            Assert.Equal(expected, second.Equals((object)first));
+        }
+
+        [Fact]
+        public void GetHashCodeTest()
+        {
+            int h1 = new Scalar8x32(1).GetHashCode();
+            int h2 = new Scalar8x32(2).GetHashCode();
+            Assert.NotEqual(h1, h2);
         }
     }
 }
