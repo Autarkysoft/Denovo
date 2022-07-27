@@ -43,14 +43,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given parameters.
         /// </summary>
-        /// <param name="u0">1st 32 bits</param>
+        /// <param name="u0">1st 32 bits (least significant)</param>
         /// <param name="u1">2nd 32 bits</param>
         /// <param name="u2">3rd 32 bits</param>
         /// <param name="u3">4th 32 bits</param>
         /// <param name="u4">5th 32 bits</param>
         /// <param name="u5">6th 32 bits</param>
         /// <param name="u6">7th 32 bits</param>
-        /// <param name="u7">8th 32 bits</param>
+        /// <param name="u7">8th 32 bits (most significant)</param>
         public UInt256_10x26(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7)
         {
             // 26 bits uint_0 -> remaining=6 (=32-26)
@@ -83,7 +83,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given parameters.
         /// </summary>
-        /// <param name="u0">1st 26 bits</param>
+        /// <param name="u0">1st 26 bits (least significant)</param>
         /// <param name="u1">2nd 26 bits</param>
         /// <param name="u2">3rd 26 bits</param>
         /// <param name="u3">4th 26 bits</param>
@@ -92,7 +92,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="u6">7th 26 bits</param>
         /// <param name="u7">8th 26 bits</param>
         /// <param name="u8">9th 26 bits</param>
-        /// <param name="u9">10th 22 bits</param>
+        /// <param name="u9">10th 22 bits (most significant)</param>
         /// <param name="magnitude">Magnitude</param>
         /// <param name="normalized">Is normalized</param>
         public UInt256_10x26(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7, uint u8, uint u9
@@ -168,7 +168,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             magnitude = 1;
             isNormalized = isValid;
-            Debug.Assert(Verify());
+            if (isValid)
+            {
+                Debug.Assert(Verify());
+            }
 #endif
         }
 
@@ -388,7 +391,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint t8 = b8 + (t7 >> 26); t7 &= 0x03FFFFFFU; m &= t7;
             t9 += (t8 >> 26); t8 &= 0x03FFFFFFU; m &= t8;
 
-            // ... except for a possible carry at bit 22 of t[9] (i.e. bit 256 of the field element)
+            // ... except for a possible carry at bit 22 of t9 (i.e. bit 256 of the field element)
             Debug.Assert(t9 >> 23 == 0);
 
             // At most a single final reduction is needed; check if the value is >= the field characteristic
@@ -526,21 +529,32 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </remarks>
         /// <param name="other">The value to add</param>
         /// <returns>Result of the addition</returns>
-        public readonly UInt256_10x26 Add(in UInt256_10x26 other)
+        public readonly UInt256_10x26 Add(in UInt256_10x26 other) => this + other;
+
+        /// <summary>
+        /// Adds two <see cref="UInt256_10x26"/> values
+        /// </summary>
+        /// <remarks>
+        /// Result's magnitude is the sum of the two magnitudes
+        /// </remarks>
+        /// <param name="a">First value</param>
+        /// <param name="b">Second value</param>
+        /// <returns>Result of the addition</returns>
+        public static UInt256_10x26 operator +(in UInt256_10x26 a, in UInt256_10x26 b)
         {
             return new UInt256_10x26(
-                b0 + other.b0,
-                b1 + other.b1,
-                b2 + other.b2,
-                b3 + other.b3,
-                b4 + other.b4,
-                b5 + other.b5,
-                b6 + other.b6,
-                b7 + other.b7,
-                b8 + other.b8,
-                b9 + other.b9
+                a.b0 + b.b0,
+                a.b1 + b.b1,
+                a.b2 + b.b2,
+                a.b3 + b.b3,
+                a.b4 + b.b4,
+                a.b5 + b.b5,
+                a.b6 + b.b6,
+                a.b7 + b.b7,
+                a.b8 + b.b8,
+                a.b9 + b.b9
 #if DEBUG
-                , magnitude + other.magnitude,
+                , a.magnitude + b.magnitude,
                 false
 #endif
                 );
@@ -573,6 +587,407 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #endif
                 );
         }
+
+
+        /// <summary>
+        /// Multiplies this instance with the given unsigned 32-bit integer.
+        /// </summary>
+        /// <remarks>
+        /// Result's magnitude is multiplied by <paramref name="a"/>.
+        /// </remarks>
+        /// <param name="a">Multiplier</param>
+        /// <returns>Result</returns>
+        public UInt256_10x26 Multiply(uint a) => this * a;
+
+        /// <summary>
+        /// Multiplies the <see cref="UInt256_10x26"/> with the given unsigned 32-bit integer.
+        /// </summary>
+        /// <remarks>
+        /// Result's magnitude is <see cref="UInt256_10x26"/>'s magnitude multiplied by <paramref name="b"/>.
+        /// </remarks>
+        /// <param name="a">Multiplicand</param>
+        /// <param name="b">Multiplier</param>
+        /// <returns>Result</returns>
+        public static UInt256_10x26 operator *(in UInt256_10x26 a, uint b)
+        {
+            return new UInt256_10x26(
+                a.b0 * b,
+                a.b1 * b,
+                a.b2 * b,
+                a.b3 * b,
+                a.b4 * b,
+                a.b5 * b,
+                a.b6 * b,
+                a.b7 * b,
+                a.b8 * b,
+                a.b9 * b
+#if DEBUG
+                , a.magnitude * (int)b, false
+#endif
+                );
+        }
+
+
+        /// <summary>
+        /// Multiplies this instance with the other <see cref="UInt256_10x26"/> value.
+        /// </summary>
+        /// <remarks>
+        /// Result's magnitude is 1 but is not normalized.
+        /// </remarks>
+        /// <param name="other">Other value</param>
+        /// <returns>Multiplication result</returns>
+        public UInt256_10x26 Multiply(in UInt256_10x26 other) => this * other;
+
+        /// <summary>
+        /// Multiplies the two <see cref="UInt256_10x26"/> values.
+        /// </summary>
+        /// <remarks>
+        /// Magnitude of each value must be below 8.
+        /// Result's magnitude is 1 but is not normalized.
+        /// </remarks>
+        /// <param name="a">First</param>
+        /// <param name="b">Second</param>
+        /// <returns>Multiplication result</returns>
+        public static UInt256_10x26 operator *(in UInt256_10x26 a, in UInt256_10x26 b)
+        {
+#if DEBUG
+            Debug.Assert(a.magnitude <= 8);
+            Debug.Assert(b.magnitude <= 8);
+            Debug.Assert(a.Verify());
+            Debug.Assert(b.Verify());
+#endif
+            Debug.Assert(a.b0 >> 30 == 0);
+            Debug.Assert(a.b1 >> 30 == 0);
+            Debug.Assert(a.b2 >> 30 == 0);
+            Debug.Assert(a.b3 >> 30 == 0);
+            Debug.Assert(a.b4 >> 30 == 0);
+            Debug.Assert(a.b5 >> 30 == 0);
+            Debug.Assert(a.b6 >> 30 == 0);
+            Debug.Assert(a.b7 >> 30 == 0);
+            Debug.Assert(a.b8 >> 30 == 0);
+            Debug.Assert(a.b9 >> 26 == 0);
+
+            Debug.Assert(b.b0 >> 30 == 0);
+            Debug.Assert(b.b1 >> 30 == 0);
+            Debug.Assert(b.b2 >> 30 == 0);
+            Debug.Assert(b.b3 >> 30 == 0);
+            Debug.Assert(b.b4 >> 30 == 0);
+            Debug.Assert(b.b5 >> 30 == 0);
+            Debug.Assert(b.b6 >> 30 == 0);
+            Debug.Assert(b.b7 >> 30 == 0);
+            Debug.Assert(b.b8 >> 30 == 0);
+            Debug.Assert(b.b9 >> 26 == 0);
+
+            ulong u0, u1, u2, u3, u4, u5, u6, u7, u8;
+            uint t9, t1, t0, t2, t3, t4, t5, t6, t7;
+            const uint M = 0x03FFFFFFU, R0 = 0x03D10U, R1 = 0x0400U;
+
+            // [... a b c] is a shorthand for ... + a<<52 + b<<26 + c<<0 mod n.
+            // for 0 <= x <= 9, px is a shorthand for sum(a[i]*b[x-i], i=0..x).
+            // for 9 <= x <= 18, px is a shorthand for sum(a[i]*b[x-i], i=(x-9)..9)
+            // Note that [x 0 0 0 0 0 0 0 0 0 0] = [x*R1 x*R0].
+
+            ulong d = (ulong)a.b0 * b.b9
+                    + (ulong)a.b1 * b.b8
+                    + (ulong)a.b2 * b.b7
+                    + (ulong)a.b3 * b.b6
+                    + (ulong)a.b4 * b.b5
+                    + (ulong)a.b5 * b.b4
+                    + (ulong)a.b6 * b.b3
+                    + (ulong)a.b7 * b.b2
+                    + (ulong)a.b8 * b.b1
+                    + (ulong)a.b9 * b.b0;
+            // [d 0 0 0 0 0 0 0 0 0] = [p9 0 0 0 0 0 0 0 0 0] 
+            t9 = (uint)(d & M); d >>= 26;
+            Debug.Assert(t9 >> 26 == 0);
+            Debug.Assert(d >> 38 == 0);
+            // [d t9 0 0 0 0 0 0 0 0 0] = [p9 0 0 0 0 0 0 0 0 0] 
+
+            ulong c = (ulong)a.b0 * b.b0;
+            Debug.Assert(c >> 60 == 0);
+            // [d t9 0 0 0 0 0 0 0 0 c] = [p9 0 0 0 0 0 0 0 0 p0] 
+            d += (ulong)a.b1 * b.b9
+               + (ulong)a.b2 * b.b8
+               + (ulong)a.b3 * b.b7
+               + (ulong)a.b4 * b.b6
+               + (ulong)a.b5 * b.b5
+               + (ulong)a.b6 * b.b4
+               + (ulong)a.b7 * b.b3
+               + (ulong)a.b8 * b.b2
+               + (ulong)a.b9 * b.b1;
+            Debug.Assert(d >> 63 == 0);
+            // [d t9 0 0 0 0 0 0 0 0 c] = [p10 p9 0 0 0 0 0 0 0 0 p0] 
+            u0 = (uint)(d & M); d >>= 26; c += u0 * R0;
+            Debug.Assert(u0 >> 26 == 0);
+            Debug.Assert(d >> 37 == 0);
+            Debug.Assert(c >> 61 == 0);
+            // [d u0 t9 0 0 0 0 0 0 0 0 c-u0*R0] = [p10 p9 0 0 0 0 0 0 0 0 p0] 
+            t0 = (uint)(c & M); c >>= 26; c += u0 * R1;
+            Debug.Assert(t0 >> 26 == 0);
+            Debug.Assert(c >> 37 == 0);
+            // [d u0 t9 0 0 0 0 0 0 0 c-u0*R1 t0-u0*R0] = [p10 p9 0 0 0 0 0 0 0 0 p0] 
+            // [d 0 t9 0 0 0 0 0 0 0 c t0] = [p10 p9 0 0 0 0 0 0 0 0 p0] 
+
+            c += (ulong)a.b0 * b.b1
+               + (ulong)a.b1 * b.b0;
+            Debug.Assert(c >> 62 == 0);
+            // [d 0 t9 0 0 0 0 0 0 0 c t0] = [p10 p9 0 0 0 0 0 0 0 p1 p0] 
+            d += (ulong)a.b2 * b.b9
+               + (ulong)a.b3 * b.b8
+               + (ulong)a.b4 * b.b7
+               + (ulong)a.b5 * b.b6
+               + (ulong)a.b6 * b.b5
+               + (ulong)a.b7 * b.b4
+               + (ulong)a.b8 * b.b3
+               + (ulong)a.b9 * b.b2;
+            Debug.Assert(d >> 63 == 0);
+            // [d 0 t9 0 0 0 0 0 0 0 c t0] = [p11 p10 p9 0 0 0 0 0 0 0 p1 p0] 
+            u1 = (uint)(d & M); d >>= 26; c += u1 * R0;
+            Debug.Assert(u1 >> 26 == 0);
+            Debug.Assert(d >> 37 == 0);
+            Debug.Assert(c >> 63 == 0);
+            // [d u1 0 t9 0 0 0 0 0 0 0 c-u1*R0 t0] = [p11 p10 p9 0 0 0 0 0 0 0 p1 p0] 
+            t1 = (uint)(c & M); c >>= 26; c += u1 * R1;
+            Debug.Assert(t1 >> 26 == 0);
+            Debug.Assert(c >> 38 == 0);
+            // [d u1 0 t9 0 0 0 0 0 0 c-u1*R1 t1-u1*R0 t0] = [p11 p10 p9 0 0 0 0 0 0 0 p1 p0] 
+            // [d 0 0 t9 0 0 0 0 0 0 c t1 t0] = [p11 p10 p9 0 0 0 0 0 0 0 p1 p0] 
+
+            c += (ulong)a.b0 * b.b2
+               + (ulong)a.b1 * b.b1
+               + (ulong)a.b2 * b.b0;
+            Debug.Assert(c >> 62 == 0);
+            // [d 0 0 t9 0 0 0 0 0 0 c t1 t0] = [p11 p10 p9 0 0 0 0 0 0 p2 p1 p0] 
+            d += (ulong)a.b3 * b.b9
+               + (ulong)a.b4 * b.b8
+               + (ulong)a.b5 * b.b7
+               + (ulong)a.b6 * b.b6
+               + (ulong)a.b7 * b.b5
+               + (ulong)a.b8 * b.b4
+               + (ulong)a.b9 * b.b3;
+            Debug.Assert(d >> 63 == 0);
+            // [d 0 0 t9 0 0 0 0 0 0 c t1 t0] = [p12 p11 p10 p9 0 0 0 0 0 0 p2 p1 p0] 
+            u2 = (uint)(d & M); d >>= 26; c += u2 * R0;
+            Debug.Assert(u2 >> 26 == 0);
+            Debug.Assert(d >> 37 == 0);
+            Debug.Assert(c >> 63 == 0);
+            // [d u2 0 0 t9 0 0 0 0 0 0 c-u2*R0 t1 t0] = [p12 p11 p10 p9 0 0 0 0 0 0 p2 p1 p0] 
+            t2 = (uint)(c & M); c >>= 26; c += u2 * R1;
+            Debug.Assert(t2 >> 26 == 0);
+            Debug.Assert(c >> 38 == 0);
+            // [d u2 0 0 t9 0 0 0 0 0 c-u2*R1 t2-u2*R0 t1 t0] = [p12 p11 p10 p9 0 0 0 0 0 0 p2 p1 p0] 
+            // [d 0 0 0 t9 0 0 0 0 0 c t2 t1 t0] = [p12 p11 p10 p9 0 0 0 0 0 0 p2 p1 p0] 
+
+            c += (ulong)a.b0 * b.b3
+               + (ulong)a.b1 * b.b2
+               + (ulong)a.b2 * b.b1
+               + (ulong)a.b3 * b.b0;
+            Debug.Assert(c >> 63 == 0);
+            // [d 0 0 0 t9 0 0 0 0 0 c t2 t1 t0] = [p12 p11 p10 p9 0 0 0 0 0 p3 p2 p1 p0] 
+            d += (ulong)a.b4 * b.b9
+               + (ulong)a.b5 * b.b8
+               + (ulong)a.b6 * b.b7
+               + (ulong)a.b7 * b.b6
+               + (ulong)a.b8 * b.b5
+               + (ulong)a.b9 * b.b4;
+            Debug.Assert(d >> 63 == 0);
+            // [d 0 0 0 t9 0 0 0 0 0 c t2 t1 t0] = [p13 p12 p11 p10 p9 0 0 0 0 0 p3 p2 p1 p0] 
+            u3 = (uint)(d & M); d >>= 26; c += u3 * R0;
+            Debug.Assert(u3 >> 26 == 0);
+            Debug.Assert(d >> 37 == 0);
+            // Debug.Assert(c>> 64); 
+            // [d u3 0 0 0 t9 0 0 0 0 0 c-u3*R0 t2 t1 t0] = [p13 p12 p11 p10 p9 0 0 0 0 0 p3 p2 p1 p0] 
+            t3 = (uint)(c & M); c >>= 26; c += u3 * R1;
+            Debug.Assert(t3 >> 26 == 0);
+            Debug.Assert(c >> 39 == 0);
+            // [d u3 0 0 0 t9 0 0 0 0 c-u3*R1 t3-u3*R0 t2 t1 t0] = [p13 p12 p11 p10 p9 0 0 0 0 0 p3 p2 p1 p0] 
+            // [d 0 0 0 0 t9 0 0 0 0 c t3 t2 t1 t0] = [p13 p12 p11 p10 p9 0 0 0 0 0 p3 p2 p1 p0] 
+
+            c += (ulong)a.b0 * b.b4
+               + (ulong)a.b1 * b.b3
+               + (ulong)a.b2 * b.b2
+               + (ulong)a.b3 * b.b1
+               + (ulong)a.b4 * b.b0;
+            Debug.Assert(c >> 63 == 0);
+            // [d 0 0 0 0 t9 0 0 0 0 c t3 t2 t1 t0] = [p13 p12 p11 p10 p9 0 0 0 0 p4 p3 p2 p1 p0] 
+            d += (ulong)a.b5 * b.b9
+               + (ulong)a.b6 * b.b8
+               + (ulong)a.b7 * b.b7
+               + (ulong)a.b8 * b.b6
+               + (ulong)a.b9 * b.b5;
+            Debug.Assert(d >> 62 == 0);
+            // [d 0 0 0 0 t9 0 0 0 0 c t3 t2 t1 t0] = [p14 p13 p12 p11 p10 p9 0 0 0 0 p4 p3 p2 p1 p0] 
+            u4 = (uint)(d & M); d >>= 26; c += u4 * R0;
+            Debug.Assert(u4 >> 26 == 0);
+            Debug.Assert(d >> 36 == 0);
+            // Debug.Assert(c>> 64); 
+            // [d u4 0 0 0 0 t9 0 0 0 0 c-u4*R0 t3 t2 t1 t0] = [p14 p13 p12 p11 p10 p9 0 0 0 0 p4 p3 p2 p1 p0] 
+            t4 = (uint)(c & M); c >>= 26; c += u4 * R1;
+            Debug.Assert(t4 >> 26 == 0);
+            Debug.Assert(c >> 39 == 0);
+            // [d u4 0 0 0 0 t9 0 0 0 c-u4*R1 t4-u4*R0 t3 t2 t1 t0] = [p14 p13 p12 p11 p10 p9 0 0 0 0 p4 p3 p2 p1 p0] 
+            // [d 0 0 0 0 0 t9 0 0 0 c t4 t3 t2 t1 t0] = [p14 p13 p12 p11 p10 p9 0 0 0 0 p4 p3 p2 p1 p0] 
+
+            c += (ulong)a.b0 * b.b5
+               + (ulong)a.b1 * b.b4
+               + (ulong)a.b2 * b.b3
+               + (ulong)a.b3 * b.b2
+               + (ulong)a.b4 * b.b1
+               + (ulong)a.b5 * b.b0;
+            Debug.Assert(c >> 63 == 0);
+            // [d 0 0 0 0 0 t9 0 0 0 c t4 t3 t2 t1 t0] = [p14 p13 p12 p11 p10 p9 0 0 0 p5 p4 p3 p2 p1 p0] 
+            d += (ulong)a.b6 * b.b9
+               + (ulong)a.b7 * b.b8
+               + (ulong)a.b8 * b.b7
+               + (ulong)a.b9 * b.b6;
+            Debug.Assert(d >> 62 == 0);
+            // [d 0 0 0 0 0 t9 0 0 0 c t4 t3 t2 t1 t0] = [p15 p14 p13 p12 p11 p10 p9 0 0 0 p5 p4 p3 p2 p1 p0] 
+            u5 = (uint)(d & M); d >>= 26; c += u5 * R0;
+            Debug.Assert(u5 >> 26 == 0);
+            Debug.Assert(d >> 36 == 0);
+            //Debug.Assert(c >> 64 == 0);
+            // [d u5 0 0 0 0 0 t9 0 0 0 c-u5*R0 t4 t3 t2 t1 t0] = [p15 p14 p13 p12 p11 p10 p9 0 0 0 p5 p4 p3 p2 p1 p0] 
+            t5 = (uint)(c & M); c >>= 26; c += u5 * R1;
+            Debug.Assert(t5 >> 26 == 0);
+            Debug.Assert(c >> 39 == 0);
+            // [d u5 0 0 0 0 0 t9 0 0 c-u5*R1 t5-u5*R0 t4 t3 t2 t1 t0] = [p15 p14 p13 p12 p11 p10 p9 0 0 0 p5 p4 p3 p2 p1 p0] 
+            // [d 0 0 0 0 0 0 t9 0 0 c t5 t4 t3 t2 t1 t0] = [p15 p14 p13 p12 p11 p10 p9 0 0 0 p5 p4 p3 p2 p1 p0] 
+
+            c += (ulong)a.b0 * b.b6
+               + (ulong)a.b1 * b.b5
+               + (ulong)a.b2 * b.b4
+               + (ulong)a.b3 * b.b3
+               + (ulong)a.b4 * b.b2
+               + (ulong)a.b5 * b.b1
+               + (ulong)a.b6 * b.b0;
+            Debug.Assert(c >> 63 == 0);
+            // [d 0 0 0 0 0 0 t9 0 0 c t5 t4 t3 t2 t1 t0] = [p15 p14 p13 p12 p11 p10 p9 0 0 p6 p5 p4 p3 p2 p1 p0] 
+            d += (ulong)a.b7 * b.b9
+               + (ulong)a.b8 * b.b8
+               + (ulong)a.b9 * b.b7;
+            Debug.Assert(d >> 61 == 0);
+            // [d 0 0 0 0 0 0 t9 0 0 c t5 t4 t3 t2 t1 t0] = [p16 p15 p14 p13 p12 p11 p10 p9 0 0 p6 p5 p4 p3 p2 p1 p0] 
+            u6 = (uint)(d & M); d >>= 26; c += u6 * R0;
+            Debug.Assert(u6 >> 26 == 0);
+            Debug.Assert(d >> 35 == 0);
+            // Debug.Assert(c>> 64); 
+            // [d u6 0 0 0 0 0 0 t9 0 0 c-u6*R0 t5 t4 t3 t2 t1 t0] = [p16 p15 p14 p13 p12 p11 p10 p9 0 0 p6 p5 p4 p3 p2 p1 p0] 
+            t6 = (uint)(c & M); c >>= 26; c += u6 * R1;
+            Debug.Assert(t6 >> 26 == 0);
+            Debug.Assert(c >> 39 == 0);
+            // [d u6 0 0 0 0 0 0 t9 0 c-u6*R1 t6-u6*R0 t5 t4 t3 t2 t1 t0] = [p16 p15 p14 p13 p12 p11 p10 p9 0 0 p6 p5 p4 p3 p2 p1 p0] 
+            // [d 0 0 0 0 0 0 0 t9 0 c t6 t5 t4 t3 t2 t1 t0] = [p16 p15 p14 p13 p12 p11 p10 p9 0 0 p6 p5 p4 p3 p2 p1 p0] 
+
+            c += (ulong)a.b0 * b.b7
+               + (ulong)a.b1 * b.b6
+               + (ulong)a.b2 * b.b5
+               + (ulong)a.b3 * b.b4
+               + (ulong)a.b4 * b.b3
+               + (ulong)a.b5 * b.b2
+               + (ulong)a.b6 * b.b1
+               + (ulong)a.b7 * b.b0;
+            // Debug.Assert(c>> 64); 
+            Debug.Assert(c <= 0x8000007C00000007UL);
+            // [d 0 0 0 0 0 0 0 t9 0 c t6 t5 t4 t3 t2 t1 t0] = [p16 p15 p14 p13 p12 p11 p10 p9 0 p7 p6 p5 p4 p3 p2 p1 p0] 
+            d += (ulong)a.b8 * b.b9
+               + (ulong)a.b9 * b.b8;
+            Debug.Assert(d >> 58 == 0);
+            // [d 0 0 0 0 0 0 0 t9 0 c t6 t5 t4 t3 t2 t1 t0] = [p17 p16 p15 p14 p13 p12 p11 p10 p9 0 p7 p6 p5 p4 p3 p2 p1 p0] 
+            u7 = (uint)(d & M); d >>= 26; c += u7 * R0;
+            Debug.Assert(u7 >> 26 == 0);
+            Debug.Assert(d >> 32 == 0);
+            // Debug.Assert(c>> 64); 
+            Debug.Assert(c <= 0x800001703FFFC2F7UL);
+            // [d u7 0 0 0 0 0 0 0 t9 0 c-u7*R0 t6 t5 t4 t3 t2 t1 t0] = [p17 p16 p15 p14 p13 p12 p11 p10 p9 0 p7 p6 p5 p4 p3 p2 p1 p0] 
+            t7 = (uint)(c & M); c >>= 26; c += u7 * R1;
+            Debug.Assert(t7 >> 26 == 0);
+            Debug.Assert(c >> 38 == 0);
+            // [d u7 0 0 0 0 0 0 0 t9 c-u7*R1 t7-u7*R0 t6 t5 t4 t3 t2 t1 t0] = [p17 p16 p15 p14 p13 p12 p11 p10 p9 0 p7 p6 p5 p4 p3 p2 p1 p0] 
+            // [d 0 0 0 0 0 0 0 0 t9 c t7 t6 t5 t4 t3 t2 t1 t0] = [p17 p16 p15 p14 p13 p12 p11 p10 p9 0 p7 p6 p5 p4 p3 p2 p1 p0] 
+
+            c += (ulong)a.b0 * b.b8
+               + (ulong)a.b1 * b.b7
+               + (ulong)a.b2 * b.b6
+               + (ulong)a.b3 * b.b5
+               + (ulong)a.b4 * b.b4
+               + (ulong)a.b5 * b.b3
+               + (ulong)a.b6 * b.b2
+               + (ulong)a.b7 * b.b1
+               + (ulong)a.b8 * b.b0;
+            // Debug.Assert(c>> 64); 
+            Debug.Assert(c <= 0x9000007B80000008UL);
+            // [d 0 0 0 0 0 0 0 0 t9 c t7 t6 t5 t4 t3 t2 t1 t0] = [p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            d += (ulong)a.b9 * b.b9;
+            Debug.Assert(d >> 57 == 0);
+            // [d 0 0 0 0 0 0 0 0 t9 c t7 t6 t5 t4 t3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            u8 = (uint)(d & M); d >>= 26; c += u8 * R0;
+            Debug.Assert(u8 >> 26 == 0);
+            Debug.Assert(d >> 31 == 0);
+            // Debug.Assert(c>> 64); 
+            Debug.Assert(c <= 0x9000016FBFFFC2F8UL);
+            // [d u8 0 0 0 0 0 0 0 0 t9 c-u8*R0 t7 t6 t5 t4 t3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+
+            uint r3 = t3;
+            Debug.Assert(r3 >> 26 == 0);
+            // [d u8 0 0 0 0 0 0 0 0 t9 c-u8*R0 t7 t6 t5 t4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r4 = t4;
+            Debug.Assert(r4 >> 26 == 0);
+            // [d u8 0 0 0 0 0 0 0 0 t9 c-u8*R0 t7 t6 t5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r5 = t5;
+            Debug.Assert(r5 >> 26 == 0);
+            // [d u8 0 0 0 0 0 0 0 0 t9 c-u8*R0 t7 t6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r6 = t6;
+            Debug.Assert(r6 >> 26 == 0);
+            // [d u8 0 0 0 0 0 0 0 0 t9 c-u8*R0 t7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r7 = t7;
+            Debug.Assert(r7 >> 26 == 0);
+            // [d u8 0 0 0 0 0 0 0 0 t9 c-u8*R0 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+
+            uint r8 = (uint)(c & M); c >>= 26; c += u8 * R1;
+            Debug.Assert(r8 >> 26 == 0);
+            Debug.Assert(c >> 39 == 0);
+            // [d u8 0 0 0 0 0 0 0 0 t9+c-u8*R1 r8-u8*R0 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            // [d 0 0 0 0 0 0 0 0 0 t9+c r8 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            c += d * R0 + t9;
+            Debug.Assert(c >> 45 == 0);
+            // [d 0 0 0 0 0 0 0 0 0 c-d*R0 r8 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r9 = (uint)(c & (M >> 4)); c >>= 22; c += d * (R1 << 4);
+            Debug.Assert(r9 >> 22 == 0);
+            Debug.Assert(c >> 46 == 0);
+            // [d 0 0 0 0 0 0 0 0 r9+((c-d*R1<<4)<<22)-d*R0 r8 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            // [d 0 0 0 0 0 0 0 -d*R1 r9+(c<<22)-d*R0 r8 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            // [r9+(c<<22) r8 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+
+            d = c * (R0 >> 4) + t0;
+            Debug.Assert(d >> 56 == 0);
+            // [r9+(c<<22) r8 r7 r6 r5 r4 r3 t2 t1 d-c*R0>>4] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r0 = (uint)(d & M); d >>= 26;
+            Debug.Assert(r0 >> 26 == 0);
+            Debug.Assert(d >> 30 == 0);
+            // [r9+(c<<22) r8 r7 r6 r5 r4 r3 t2 t1+d r0-c*R0>>4] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            d += c * (R1 >> 4) + t1;
+            Debug.Assert(d >> 53 == 0);
+            Debug.Assert(d <= 0x10000003FFFFBFUL);
+            // [r9+(c<<22) r8 r7 r6 r5 r4 r3 t2 d-c*R1>>4 r0-c*R0>>4] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            // [r9 r8 r7 r6 r5 r4 r3 t2 d r0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r1 = (uint)(d & M); d >>= 26;
+            Debug.Assert(r1 >> 26 == 0);
+            Debug.Assert(d >> 27 == 0);
+            Debug.Assert(d <= 0x4000000UL);
+            // [r9 r8 r7 r6 r5 r4 r3 t2+d r1 r0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            d += t2;
+            Debug.Assert(d >> 27 == 0);
+            // [r9 r8 r7 r6 r5 r4 r3 d r1 r0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            uint r2 = (uint)d;
+            Debug.Assert(r2 >> 27 == 0);
+            // [r9 r8 r7 r6 r5 r4 r3 r2 r1 r0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
+            return new UInt256_10x26(r0, r1, r2, r3, r4, r5, r6, r7, r8, r9
+#if DEBUG
+                , 1, false
+#endif
+                );
+        }
+
 
 
         /// <summary>
