@@ -11,6 +11,21 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class UInt256_10x26Tests
     {
+        private static void CheckEquality(in UInt256_10x26 actual, uint[] expected)
+        {
+            Assert.Equal(expected[0], actual.b0);
+            Assert.Equal(expected[1], actual.b1);
+            Assert.Equal(expected[2], actual.b2);
+            Assert.Equal(expected[3], actual.b3);
+            Assert.Equal(expected[4], actual.b4);
+            Assert.Equal(expected[5], actual.b5);
+            Assert.Equal(expected[6], actual.b6);
+            Assert.Equal(expected[7], actual.b7);
+            Assert.Equal(expected[8], actual.b8);
+            Assert.Equal(expected[9], actual.b9);
+        }
+
+
         [Theory]
         [InlineData(0, 0)]
         [InlineData(1, 1)]
@@ -276,6 +291,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         [InlineData(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, false)]
         [InlineData(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, false)]
         [InlineData(0, 0, 0, 0, 0, 0, 0, 0, 1, 1, false)]
+        [InlineData(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, false)]
         public void IsZeroTest(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7, uint u8, uint u9,
                                bool expected)
         {
@@ -285,6 +301,228 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 #endif
                 );
             Assert.Equal(expected, value.IsZero);
+        }
+
+
+        public static IEnumerable<object[]> GetAddCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("620e158dd19a50a134f39b7a581b500de7ea1bde54ce47bb4a78027fd5418339"),
+                Helper.HexToBytes("0889fce902fc06f9bc8d8e870b971354a4708c06c643e694c65a435997d1cbf3"),
+                new uint[10]
+                {
+                    0x05134f2c, 0x0491765a, 0x02e5010c, 0x03946c48, 0x028c5aa7,
+                    0x04ec98d8, 0x0412a015, 0x015e6bc5, 0x0276d496, 0x001aa604
+                },
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetAddCases))]
+        public void AddTest(byte[] ba1, byte[] ba2, uint[] expected)
+        {
+            UInt256_10x26 a = new(ba1, out bool b1);
+            UInt256_10x26 b = new(ba2, out bool b2);
+            Assert.True(b1);
+            Assert.True(b2);
+
+            UInt256_10x26 actual1 = a + b;
+            UInt256_10x26 actual2 = b + a;
+            UInt256_10x26 actual3 = a.Add(b);
+            UInt256_10x26 actual4 = b.Add(a);
+
+            CheckEquality(actual1, expected);
+            CheckEquality(actual2, expected);
+            CheckEquality(actual3, expected);
+            CheckEquality(actual4, expected);
+        }
+
+
+        public static IEnumerable<object[]> GetNegateCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("8eda443fe7035fe6b7b6fa39ce984a8bda44797c9663d74f140ea4a44f117646"),
+                1,
+                new uint[10]
+                {
+                    0x0cee7a76, 0x0c56d5e9, 0x0e8b0ebc, 0x0e0da66d, 0x0c25bb83,
+                    0x0c59ed5a, 0x0c905c60, 0x0e80651e, 0x0fc018f9, 0x00dc496b
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("3fb4d76b95f7aa05b863cd0f602082a20dd70f35cc73b8baa6d850eba9b2b5f3"),
+                2,
+                new uint[10]
+                {
+                    0x164d3327, 0x15ebc390, 0x1474558d, 0x1728ce2c, 0x15f228eb,
+                    0x17f7df52, 0x15c32f04, 0x1557e919, 0x14946a03, 0x017012c5
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("aeda1f04a7690878a072c68d288ee1f80e6d7820e72e488e83ac1d7dd07af5af"),
+                3,
+                new uint[10]
+                {
+                    0x1f84ebc9, 0x1cf89e84, 0x1f7717be, 0x1f7c633f, 0x1ff19280,
+                    0x1ddc477a, 0x1cd39726, 0x1fde1d77, 0x1cfb588f, 0x01d44971
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("7d16aae412e26a49326ea0934710f33709b04103cbbb68a725fc6dfd433fbef5"),
+                4,
+                new uint[10]
+                {
+                    0x24c01ae1, 0x24e47e26, 0x25758d97, 0x27f0d109, 0x24f64fb5,
+                    0x263bc329, 0x2515f6c2, 0x2656db2d, 0x251bed14, 0x0260ba4c
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("b0aae887566e964b55e9a166b48f0c9bc3ed60f94e22ac0764f8d79e0044e3f5"),
+                5,
+                new uint[10]
+                {
+                    0x2fbaee3f, 0x2dca1574, 0x2d3f89a5, 0x2c1ac76a, 0x2c3c1294,
+                    0x2edc3cce, 0x2d65e989, 0x2da6d29d, 0x2f78a986, 0x02d3d53a
+                }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetNegateCases))]
+        public void NegateTest(byte[] ba, int m, uint[] expected)
+        {
+            UInt256_10x26 a = new(ba, out bool success);
+            Assert.True(success);
+
+            UInt256_10x26 actual = a.Negate(m);
+
+            CheckEquality(actual, expected);
+        }
+
+
+        public static IEnumerable<object[]> GetMultUintCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("9020615f3b25c39f62e4db9c8f06462033a8f87aba8a1d6ce978c4901ddb7ba3"),
+                1,
+                new uint[10]
+                {
+                    0x01db7ba3, 0x02312407, 0x01d6ce97, 0x01eaea28, 0x0033a8f8,
+                    0x03c19188, 0x024db9c8, 0x030e7d8b, 0x015f3b25, 0x00240818
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("4a08ef2a9fd3f4933c932b076cb193a52fe121a30b2acc7c24b64043081c6aec"),
+                2,
+                new uint[10]
+                {
+                    0x0038d5d8, 0x03202184, 0x018f8496, 0x05185956, 0x025fc242,
+                    0x0658c9d2, 0x026560ec, 0x07a499e4, 0x06553fa6, 0x00250476
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("01ae1168ab0ac63922e09d6e1a0ac1f46c99516c46d14f84671bfac29d180f9b"),
+                3,
+                new uint[10]
+                {
+                    0x03482ed1, 0x08fc11f5, 0x02e8d353, 0x051351cf, 0x0145cbf3,
+                    0x07881177, 0x061d84a3, 0x094aada1, 0x043a011e, 0x0001428c
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("6852522efc533667c3db7b60db7ecb28016214560d1b311638bd281dbbdaa889"),
+                4,
+                new uint[10]
+                {
+                    0x0f6aa224, 0x0d281db8, 0x0c458e2c, 0x0560d1b0, 0x00058850,
+                    0x0b7ecb28, 0x06ded834, 0x03667c3c, 0x08bbf14c, 0x00685250
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("d101bd8b5bc7abb12ab461315e8757563e3435443767fb6bd97f9abcb9de8c07"),
+                5,
+                new uint[10]
+                {
+                    0x0958bc23, 0x13816be6, 0x1291b3f3, 0x0554541b, 0x0b370509,
+                    0x12292d29, 0x105e5f69, 0x0d69d752, 0x07b8cae3, 0x0105422b
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("7869f62c52526ac5ad2f7debe384d1d734aa51dbce57d2690552b2dc2ceef84b"),
+                6,
+                new uint[10]
+                {
+                    0x0599d1c2, 0x040c4a42, 0x06e761fe, 0x149b583a, 0x133bfde6,
+                    0x05473abe, 0x11cf3874, 0x0a028838, 0x0d09edec, 0x00b49eee
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("7f87b4c7d9f68615976695db5a464c162ef8928964a6b1ad6b7c956693c869bd"),
+                7,
+                new uint[10]
+                {
+                    0x1a7ae42b, 0x1605737c, 0x15bbdf01, 0x0f070236, 0x0f48cbfe,
+                    0x11fb0523, 0x10e18ff3, 0x0eaa5c8b, 0x0576f5ba, 0x00df2d7b
+                }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetMultUintCases))]
+        public void Multiply_ByUintTest(byte[] ba, uint b, uint[] expected)
+        {
+            UInt256_10x26 a = new(ba, out bool success);
+            Assert.True(success);
+
+            UInt256_10x26 actual1 = a * b;
+            UInt256_10x26 actual2 = a.Multiply(b);
+
+            CheckEquality(actual1, expected);
+            CheckEquality(actual2, expected);
+        }
+
+
+        public static IEnumerable<object[]> GetMultCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("2b2b87691c5dce535fdf173d97c9db98d87f14249fd496f9d46d8e2c7ff98425"),
+                Helper.HexToBytes("f6b9de150a988670307ec2aaf1582cc9de3b8c3b8d257a56958e94aecfa2d366"),
+                new uint[10]
+                {
+                    0x023e7de5, 0x013b930c, 0x03348800, 0x0085a39e, 0x0303ce76,
+                    0x006deeec, 0x03a51882, 0x0004838c, 0x01722db1, 0x002042b2
+                },
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetMultCases))]
+        public void MultiplyTest(byte[] ba1, byte[] ba2, uint[] expected)
+        {
+            UInt256_10x26 a = new(ba1, out bool b1);
+            UInt256_10x26 b = new(ba2, out bool b2);
+            Assert.True(b1);
+            Assert.True(b2);
+
+            UInt256_10x26 actual1 = a * b;
+            UInt256_10x26 actual2 = b * a;
+            UInt256_10x26 actual3 = a.Multiply(b);
+            UInt256_10x26 actual4 = b.Multiply(a);
+
+            CheckEquality(actual1, expected);
+            CheckEquality(actual2, expected);
+            CheckEquality(actual3, expected);
+            CheckEquality(actual4, expected);
         }
     }
 }
