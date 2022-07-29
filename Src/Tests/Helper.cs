@@ -141,6 +141,19 @@ namespace Tests
         }
 
 
+        /// <summary>
+        /// Returns random bytes using <see cref="Random"/>
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        internal static byte[] CreateRandomBytes(int length)
+        {
+            byte[] result = new byte[length];
+            new Random().NextBytes(result);
+            return result;
+        }
+
+
         public static readonly Signature ShortSig1 = new(1, 2) { SigHash = SigHashType.All };
         public static readonly string ShortSig1Hex = "300602010102010201";
         public static readonly byte[] ShortSig1Bytes = HexToBytes(ShortSig1Hex);
