@@ -527,6 +527,45 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <remarks>
         /// Result's magnitude is the sum of the two magnitudes
         /// </remarks>
+        /// <param name="u">The value to add</param>
+        /// <returns>Result of the addition</returns>
+        public readonly UInt256_10x26 Add(in uint u) => this + u;
+
+        /// <summary>
+        /// Adds two <see cref="UInt256_10x26"/> values
+        /// </summary>
+        /// <remarks>
+        /// Result's magnitude is the sum of the two magnitudes
+        /// </remarks>
+        /// <param name="a">First value</param>
+        /// <param name="b">Second value</param>
+        /// <returns>Result of the addition</returns>
+        public static UInt256_10x26 operator +(in UInt256_10x26 a, uint b)
+        {
+            return new UInt256_10x26(
+                a.b0 + b,
+                a.b1,
+                a.b2,
+                a.b3,
+                a.b4,
+                a.b5,
+                a.b6,
+                a.b7,
+                a.b8,
+                a.b9
+#if DEBUG
+                , a.magnitude + 1,
+                false
+#endif
+                );
+        }
+
+        /// <summary>
+        /// Adds the given value to this instance
+        /// </summary>
+        /// <remarks>
+        /// Result's magnitude is the sum of the two magnitudes
+        /// </remarks>
         /// <param name="other">The value to add</param>
         /// <returns>Result of the addition</returns>
         public readonly UInt256_10x26 Add(in UInt256_10x26 other) => this + other;
@@ -1311,7 +1350,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             //  { 2, 22, 223 }. Use an addition chain to calculate 2^n - 1 for each block:
             //  1, [2], 3, 6, 9, 11, [22], 44, 88, 176, 220, [223]
 
-
             x2 = Sqr();
             x2 *= this;
 
@@ -1346,7 +1384,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             x223 *= x3;
 
             // The final result is then assembled using a sliding window over the blocks. 
-
             t1 = x223.Sqr(23);
             t1 *= x22;
             t1 = t1.Sqr(6);
@@ -1355,12 +1392,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             result = t1.Sqr();
 
             // Check that a square root was actually calculated 
-
             t1 = result.Sqr();
             return t1.Equals(this);
         }
 
 
+        public UInt256_8x32 ToUInt256_8x32()
+        {
+#if DEBUG
+            Debug.Assert(isNormalized);
+#endif
+            return new UInt256_8x32(this);
+        }
 
 
         /// <summary>
@@ -1441,7 +1484,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         /// <remarks>
         /// This method is not constant time.
-        /// Magnitude should be 1.
+        /// Magnitude should be 1
         /// </remarks>
         /// <param name="b">Other <see cref="UInt256_10x26"/> to compare to</param>
         /// <returns>True if the two instances are equal; otherwise false.</returns>

@@ -26,7 +26,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             throw new Exception("Something is wrong.");
         }
 
-        private static void CheckEquality(in UInt256_10x26 actual, uint[] expected)
+        internal static void AssertEquality(in UInt256_10x26 actual, uint[] expected)
         {
             Assert.Equal(expected[0], actual.b0);
             Assert.Equal(expected[1], actual.b1);
@@ -40,7 +40,19 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(expected[9], actual.b9);
         }
 
-        private static void CheckEquality(in UInt256_10x26 expected, in UInt256_10x26 actual)
+        internal static void AssertEquality(in UInt256_8x32 actual, uint[] expected)
+        {
+            Assert.Equal(expected[0], actual.b0);
+            Assert.Equal(expected[1], actual.b1);
+            Assert.Equal(expected[2], actual.b2);
+            Assert.Equal(expected[3], actual.b3);
+            Assert.Equal(expected[4], actual.b4);
+            Assert.Equal(expected[5], actual.b5);
+            Assert.Equal(expected[6], actual.b6);
+            Assert.Equal(expected[7], actual.b7);
+        }
+
+        internal static void AssertEquality(in UInt256_10x26 expected, in UInt256_10x26 actual)
         {
             Assert.Equal(expected.b0, actual.b0);
             Assert.Equal(expected.b1, actual.b1);
@@ -361,10 +373,40 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 actual3 = a.Add(b);
             UInt256_10x26 actual4 = b.Add(a);
 
-            CheckEquality(actual1, expected);
-            CheckEquality(actual2, expected);
-            CheckEquality(actual3, expected);
-            CheckEquality(actual4, expected);
+            AssertEquality(actual1, expected);
+            AssertEquality(actual2, expected);
+            AssertEquality(actual3, expected);
+            AssertEquality(actual4, expected);
+        }
+
+        public static IEnumerable<object[]> GetAddUintCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("d5bd44891becfd769c518abe73a10abc42786612c00db7b8ab6603083357072e"),
+                7,
+                new uint[10]
+                {
+                    0x03570735, 0x0180c20c, 0x037b8ab6, 0x004b0036, 0x00427866,
+                    0x00e842af, 0x0118abe7, 0x03f5da71, 0x00891bec, 0x00356f51
+                },
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetAddUintCases))]
+        public void Add_UintTest(byte[] ba1, uint u, uint[] expected)
+        {
+            UInt256_10x26 a = new(ba1, out bool success);
+            Assert.True(success);
+
+            UInt256_10x26 actual1 = a + u;
+            UInt256_10x26 actual2 = a.Add(u);
+
+            AssertEquality(actual1, expected);
+            AssertEquality(actual2, expected);
+#if DEBUG
+            Assert.Equal(2, actual1.magnitude);
+#endif
         }
 
 
@@ -430,7 +472,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             UInt256_10x26 actual = a.Negate(m);
 
-            CheckEquality(actual, expected);
+            AssertEquality(actual, expected);
         }
 
 
@@ -517,8 +559,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 actual1 = a * b;
             UInt256_10x26 actual2 = a.Multiply(b);
 
-            CheckEquality(actual1, expected);
-            CheckEquality(actual2, expected);
+            AssertEquality(actual1, expected);
+            AssertEquality(actual2, expected);
         }
 
 
@@ -549,10 +591,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 actual3 = a.Multiply(b);
             UInt256_10x26 actual4 = b.Multiply(a);
 
-            CheckEquality(actual1, expected);
-            CheckEquality(actual2, expected);
-            CheckEquality(actual3, expected);
-            CheckEquality(actual4, expected);
+            AssertEquality(actual1, expected);
+            AssertEquality(actual2, expected);
+            AssertEquality(actual3, expected);
+            AssertEquality(actual4, expected);
         }
 
 
@@ -618,7 +660,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             UInt256_10x26 actual = a.Sqr(times);
 
-            CheckEquality(actual, expected);
+            AssertEquality(actual, expected);
         }
 
         [Fact]
@@ -628,15 +670,15 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             UInt256_10x26 a_mult2 = a * a;
             UInt256_10x26 a_sqr1 = a.Sqr(1);
-            CheckEquality(a_mult2, a_sqr1);
+            AssertEquality(a_mult2, a_sqr1);
 
             UInt256_10x26 a_mult4 = a * a * a * a;
             UInt256_10x26 a_sqr2 = a.Sqr(2);
-            CheckEquality(a_mult4, a_sqr2);
+            AssertEquality(a_mult4, a_sqr2);
 
             UInt256_10x26 a_mult8 = a * a * a * a * a * a * a * a;
             UInt256_10x26 a_sqr3 = a.Sqr(3);
-            CheckEquality(a_mult8, a_sqr3);
+            AssertEquality(a_mult8, a_sqr3);
         }
 
 
@@ -694,8 +736,31 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(expSuccess, success);
             if (expSuccess)
             {
-                CheckEquality(actual, expected);
+                AssertEquality(actual, expected);
             }
+        }
+
+
+        public static IEnumerable<object[]> GetToUInt256_8x32Cases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("d18aef65ef13976dcb566544d95b46fccf62cdd6b7b9c2ff91802332119c14cf"),
+                new uint[8]
+                {
+                    0x119c14cf, 0x91802332, 0xb7b9c2ff, 0xcf62cdd6, 0xd95b46fc, 0xcb566544, 0xef13976d, 0xd18aef65,
+                },
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetToUInt256_8x32Cases))]
+        public void ToUInt256_8x32Test(byte[] ba, uint[] expected)
+        {
+            UInt256_10x26 a = new(ba, out bool isValid);
+            Assert.True(isValid);
+
+            UInt256_8x32 actual = a.ToUInt256_8x32();
+            AssertEquality(actual, expected);
         }
     }
 }

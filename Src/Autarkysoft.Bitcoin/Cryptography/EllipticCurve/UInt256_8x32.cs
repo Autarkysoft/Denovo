@@ -29,6 +29,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             b4 = u4; b5 = u5; b6 = u6; b7 = u7;
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="UInt256_8x32"/> using the given parameters (9x 26 bits + 22 bits).
+        /// </summary>
+        /// <param name="u26">UInt256 in radix-2^26</param>
+        public UInt256_8x32(in UInt256_10x26 u26)
+        {
+            b0 = u26.b0 | u26.b1 << 26;
+            b1 = u26.b1 >> 6 | u26.b2 << 20;
+            b2 = u26.b2 >> 12 | u26.b3 << 14;
+            b3 = u26.b3 >> 18 | u26.b4 << 8;
+            b4 = u26.b4 >> 24 | u26.b5 << 2 | u26.b6 << 28;
+            b5 = u26.b6 >> 4 | u26.b7 << 22;
+            b6 = u26.b7 >> 10 | u26.b8 << 16;
+            b7 = u26.b8 >> 16 | u26.b9 << 10;
+        }
+
 
         /// <summary>
         /// Bit chunks
