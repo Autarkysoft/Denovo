@@ -291,7 +291,6 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         {
             yield return new object[] { UInt256_10x26.Zero, 0 };
             yield return new object[] { UInt256_10x26.One, 1 };
-            yield return new object[] { UInt256_10x26.Seven, 7 };
         }
         [Theory]
         [MemberData(nameof(GetStaticCases))]

@@ -232,12 +232,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             );
         private static readonly UInt256_10x26 _one = new UInt256_10x26(1, 0, 0, 0, 0, 0, 0, 0, 0, 0
 #if DEBUG
-            , 0, true
-#endif
-            );
-        private static readonly UInt256_10x26 _seven = new UInt256_10x26(7, 0, 0, 0, 0, 0, 0, 0, 0, 0
-#if DEBUG
-            , 0, true
+            , 1, true
 #endif
             );
         /// <summary>
@@ -248,15 +243,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// One
         /// </summary>
         public static ref readonly UInt256_10x26 One => ref _one;
-        /// <summary>
-        /// Seven (secp256k1 b value)
-        /// </summary>
-        public static ref readonly UInt256_10x26 Seven => ref _seven;
 
         /// <summary>
         /// Returns if this instance is odd (needs to be normalized)
         /// </summary>
-        public readonly bool IsOdd
+        public bool IsOdd
         {
             get
             {
@@ -529,7 +520,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </remarks>
         /// <param name="u">The value to add</param>
         /// <returns>Result of the addition</returns>
-        public readonly UInt256_10x26 Add(in uint u) => this + u;
+        public UInt256_10x26 Add(in uint u) => this + u;
 
         /// <summary>
         /// Adds two <see cref="UInt256_10x26"/> values
@@ -568,7 +559,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </remarks>
         /// <param name="other">The value to add</param>
         /// <returns>Result of the addition</returns>
-        public readonly UInt256_10x26 Add(in UInt256_10x26 other) => this + other;
+        public UInt256_10x26 Add(in UInt256_10x26 other) => this + other;
 
         /// <summary>
         /// Adds two <see cref="UInt256_10x26"/> values
@@ -1397,6 +1388,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        /// <summary>
+        /// Converts this instance to <see cref="UInt256_8x32"/>.
+        /// Assumes the instance is normalized.
+        /// </summary>
+        /// <returns>Result</returns>
         public UInt256_8x32 ToUInt256_8x32()
         {
 #if DEBUG

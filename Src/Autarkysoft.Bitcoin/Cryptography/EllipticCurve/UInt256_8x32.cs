@@ -56,6 +56,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Converts this instance to <see cref="UInt256_10x26"/>
         /// </summary>
         /// <returns>Result</returns>
-        public readonly UInt256_10x26 ToUInt256_10x26() => new UInt256_10x26(b0, b1, b2, b3, b4, b5, b6, b7);
+        public UInt256_10x26 ToUInt256_10x26() => new UInt256_10x26(b0, b1, b2, b3, b4, b5, b6, b7);
     }
 }
