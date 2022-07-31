@@ -592,6 +592,85 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public UInt256_10x26 Half()
+        {
+#if DEBUG
+            Debug.Assert(Verify());
+            Debug.Assert(magnitude < 32);
+#endif
+            uint one = 1U;
+            uint mask = (uint)-(b0 & one) >> 6;
+
+            /* Bounds analysis (over the rationals).
+             *
+             * Let m = r->magnitude
+             *     C = 0x3FFFFFFUL * 2
+             *     D = 0x03FFFFFUL * 2
+             *
+             * Initial bounds: t0..t8 <= C * m
+             *                     t9 <= D * m
+             */
+
+            uint t0 = b0 + 0x3FFFC2FU & mask;
+            uint t1 = b1 + 0x3FFFFBFU & mask;
+            uint t2 = b2 + mask;
+            uint t3 = b3 + mask;
+            uint t4 = b4 + mask;
+            uint t5 = b5 + mask;
+            uint t6 = b6 + mask;
+            uint t7 = b7 + mask;
+            uint t8 = b8 + mask;
+            uint t9 = b9 + mask >> 4;
+
+            Debug.Assert((t0 & one) == 0);
+
+            /* t0..t8: added <= C/2
+             *     t9: added <= D/2
+             *
+             * Current bounds: t0..t8 <= C * (m + 1/2)
+             *                     t9 <= D * (m + 1/2)
+             */
+
+            t0 = (t0 >> 1) + ((t1 & one) << 25);
+            t1 = (t1 >> 1) + ((t2 & one) << 25);
+            t2 = (t2 >> 1) + ((t3 & one) << 25);
+            t3 = (t3 >> 1) + ((t4 & one) << 25);
+            t4 = (t4 >> 1) + ((t5 & one) << 25);
+            t5 = (t5 >> 1) + ((t6 & one) << 25);
+            t6 = (t6 >> 1) + ((t7 & one) << 25);
+            t7 = (t7 >> 1) + ((t8 & one) << 25);
+            t8 = (t8 >> 1) + ((t9 & one) << 25);
+            t9 = (t9 >> 1);
+
+            /* t0..t8: shifted right and added <= C/4 + 1/2
+             *     t9: shifted right
+             *
+             * Current bounds: t0..t8 <= C * (m/2 + 1/2)
+             *                     t9 <= D * (m/2 + 1/4)
+             */
+
+            /* Therefore the output magnitude (M) has to be set such that:
+             *     t0..t8: C * M >= C * (m/2 + 1/2)
+             *         t9: D * M >= D * (m/2 + 1/4)
+             *
+             * It suffices for all limbs that, for any input magnitude m:
+             *     M >= m/2 + 1/2
+             *
+             * and since we want the smallest such integer value for M:
+             *     M == floor(m/2) + 1
+             */
+            return new UInt256_10x26(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9
+#if DEBUG
+                , (magnitude >> 1) + 1, false
+#endif
+                );
+        }
+
+
+        /// <summary>
         /// Returns the additive inverse of this instance. Takes a maximum magnitude of the input as an argument.
         /// </summary>
         /// <param name="m">Magnitude</param>
@@ -1385,6 +1464,37 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // Check that a square root was actually calculated 
             t1 = result.Sqr();
             return t1.Equals(this);
+        }
+
+
+        /// <summary>
+        /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="a"></param>
+        /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt256_10x26 CMov(in UInt256_10x26 r, in UInt256_10x26 a, uint flag)
+        {
+            uint mask0, mask1;
+            mask0 = flag + ~0U;
+            mask1 = ~mask0;
+            return new UInt256_10x26(
+                (r.b0 & mask0) | (a.b0 & mask1),
+                (r.b1 & mask0) | (a.b1 & mask1),
+                (r.b2 & mask0) | (a.b2 & mask1),
+                (r.b3 & mask0) | (a.b3 & mask1),
+                (r.b4 & mask0) | (a.b4 & mask1),
+                (r.b5 & mask0) | (a.b5 & mask1),
+                (r.b6 & mask0) | (a.b6 & mask1),
+                (r.b7 & mask0) | (a.b7 & mask1),
+                (r.b8 & mask0) | (a.b8 & mask1),
+                (r.b9 & mask0) | (a.b9 & mask1)
+#if DEBUG
+                , flag != 0 ? a.magnitude : r.magnitude,
+                flag != 0 ? a.isNormalized : r.isNormalized
+#endif
+                );
         }
 
 
