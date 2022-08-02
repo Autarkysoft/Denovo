@@ -57,5 +57,29 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         /// <returns>Result</returns>
         public UInt256_10x26 ToUInt256_10x26() => new UInt256_10x26(b0, b1, b2, b3, b4, b5, b6, b7);
+
+
+        /// <summary>
+        /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="a"></param>
+        /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
+        /// <returns>Result</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt256_8x32 CMov(in UInt256_8x32 r, in UInt256_8x32 a, uint flag)
+        {
+            uint mask0 = flag + ~0U;
+            uint mask1 = ~mask0;
+            return new UInt256_8x32(
+                (r.b0 & mask0) | (a.b0 & mask1),
+                (r.b1 & mask0) | (a.b1 & mask1),
+                (r.b2 & mask0) | (a.b2 & mask1),
+                (r.b3 & mask0) | (a.b3 & mask1),
+                (r.b4 & mask0) | (a.b4 & mask1),
+                (r.b5 & mask0) | (a.b5 & mask1),
+                (r.b6 & mask0) | (a.b6 & mask1),
+                (r.b7 & mask0) | (a.b7 & mask1));
+        }
     }
 }
