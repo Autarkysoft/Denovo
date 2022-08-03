@@ -194,5 +194,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return result;
             }
         }
+
+
+        /// <summary>
+        /// Converts this instance in affine coordinates to point in jacobian coordinates
+        /// </summary>
+        public PointJacobian ToPointJacobian() => new PointJacobian(x, y, UInt256_10x26.One, isInfinity);
+
+        /// <summary>
+        /// Converts this instance to a <see cref="PointStorage"/>.
+        /// It is assumed that this instance is not infinity.
+        /// </summary>
+        /// <returns>Result</returns>
+        public PointStorage ToStorage()
+        {
+            Debug.Assert(!isInfinity);
+            return new PointStorage(x, y);
+        }
     }
 }
