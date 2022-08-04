@@ -479,5 +479,57 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 yNeg = yNorm.Negate(1);
             return new PointJacobian(x, yNeg, z, isInfinity);
         }
+
+
+        /// <summary>
+        /// Converts this instance to <see cref="Point"/>
+        /// </summary>
+        /// <remarks>
+        /// This method is constant-time
+        /// </remarks>
+        /// <returns>Result</returns>
+        public Point ToPoint()
+        {
+            UInt256_10x26 rz = z.Inverse_old();
+            UInt256_10x26 z2 = rz.Sqr();
+            UInt256_10x26 z3 = rz * z2;
+            UInt256_10x26 rx = x * z2;
+            UInt256_10x26 ry = y * z3;
+            return new Point(rx, ry, isInfinity);
+        }
+
+        /// <summary>
+        /// Converts this instance to <see cref="Point"/>
+        /// </summary>
+        /// <remarks>
+        /// This method is not constant-time
+        /// </remarks>
+        /// <returns>Result</returns>
+        public Point ToPointVar()
+        {
+            if (isInfinity)
+            {
+                return Point.Infinity;
+            }
+
+            UInt256_10x26 rz = z.InverseVariable_old();
+            UInt256_10x26 z2 = rz.Sqr();
+            UInt256_10x26 z3 = rz * z2;
+            UInt256_10x26 rx = x * z2;
+            UInt256_10x26 ry = y * z3;
+            return new Point(rx, ry, isInfinity);
+        }
+
+
+        internal Point ToPointZInv(in UInt256_10x26 zi)
+        {
+            Debug.Assert(!isInfinity);
+
+            UInt256_10x26 zi2 = zi.Sqr();
+            UInt256_10x26 zi3 = zi2 * zi;
+            UInt256_10x26 rx = x * zi2;
+            UInt256_10x26 ry = y * zi3;
+            return new Point(rx, ry, isInfinity);
+        }
     }
 }

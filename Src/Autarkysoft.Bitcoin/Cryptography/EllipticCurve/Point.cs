@@ -197,6 +197,70 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Converts all <see cref="PointJacobian"/>s in <paramref name="a"/> to <see cref="Point"/>s and
+        /// sets <paramref name="r"/> items.
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="a"></param>
+        /// <param name="len"></param>
+        public static void SetAllPointsToJacobianVar(Span<Point> r, ReadOnlySpan<PointJacobian> a, int len)
+        {
+            int i;
+            int lastI = int.MaxValue;
+
+            for (i = 0; i < len; i++)
+            {
+                if (a[i].isInfinity)
+                {
+                    r[i] = Infinity;
+                }
+                else
+                {
+                    // Use destination's x coordinates as scratch space
+                    if (lastI == int.MaxValue)
+                    {
+                        r[i] = new Point(a[i].z, r[i].y, r[i].isInfinity);
+                    }
+                    else
+                    {
+                        UInt256_10x26 rx = r[lastI].x * a[i].z;
+                        r[i] = new Point(rx, r[i].y, r[i].isInfinity);
+                    }
+                    lastI = i;
+                }
+            }
+            if (lastI == int.MaxValue)
+            {
+                return;
+            }
+            UInt256_10x26 u = r[lastI].x.InverseVariable_old();
+
+            i = lastI;
+            while (i > 0)
+            {
+                i--;
+                if (!a[i].isInfinity)
+                {
+                    UInt256_10x26 rx = r[i].x * u;
+                    r[lastI] = new Point(rx, r[lastI].y, r[lastI].isInfinity);
+                    u *= a[lastI].z;
+                    lastI = i;
+                }
+            }
+            Debug.Assert(!a[lastI].isInfinity);
+            r[lastI] = new Point(u, r[lastI].y, r[lastI].isInfinity);
+
+            for (i = 0; i < len; i++)
+            {
+                if (!a[i].isInfinity)
+                {
+                    r[i] = a[i].ToPointZInv(r[i].x);
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Converts this instance in affine coordinates to point in jacobian coordinates
         /// </summary>
         public PointJacobian ToPointJacobian() => new PointJacobian(x, y, UInt256_10x26.One, isInfinity);
