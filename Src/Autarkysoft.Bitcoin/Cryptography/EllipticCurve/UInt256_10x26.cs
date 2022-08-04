@@ -592,8 +592,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// 
+        /// Halves the value of this instance modulo the field prime.
         /// </summary>
+        /// <remarks>
+        /// This method is constant-time.
+        /// Result's magnitude is floor(m/2) + 1.
+        /// Result may not be normalized.
+        /// </remarks>
         /// <returns></returns>
         public UInt256_10x26 Half()
         {
@@ -614,8 +619,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
              *                     t9 <= D * m
              */
 
-            uint t0 = b0 + 0x3FFFC2FU & mask;
-            uint t1 = b1 + 0x3FFFFBFU & mask;
+            uint t0 = b0 + (0x3FFFC2FU & mask);
+            uint t1 = b1 + (0x3FFFFBFU & mask);
             uint t2 = b2 + mask;
             uint t3 = b3 + mask;
             uint t4 = b4 + mask;
@@ -623,7 +628,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint t6 = b6 + mask;
             uint t7 = b7 + mask;
             uint t8 = b8 + mask;
-            uint t9 = b9 + mask >> 4;
+            uint t9 = b9 + (mask >> 4);
 
             Debug.Assert((t0 & one) == 0);
 
@@ -1468,17 +1473,101 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Place holder for the non-constant-time implementation
+        /// </summary>
+        /// <returns></returns>
+        public UInt256_10x26 InverseVariable_old()
+        {
+            // TODO: complete these implementations
+            return Inverse_old();
+        }
+
+        /// <summary>
+        /// Returns the modular inverse of this instance.
+        /// Magnitude must be at most 8. The output magnitude will be 1.
+        /// </summary>
+        /// <remarks>
+        /// This method is constant-time.
+        /// 
+        /// This is the old method in secp256k1 library which will be replaced by the new one later
+        /// </remarks>
+        /// <returns>Modular inverse</returns>
+        public UInt256_10x26 Inverse_old()
+        {
+            UInt256_10x26 x2, x3, x6, x9, x11, x22, x44, x88, x176, x220, x223, t1;
+            // The binary representation of (p - 2) has 5 blocks of 1s, with lengths in
+            //  { 1, 2, 22, 223 }. Use an addition chain to calculate 2^n - 1 for each block:
+            //  [1], [2], 3, 6, 9, 11, [22], 44, 88, 176, 220, [223]
+
+            x2 = Sqr();
+            x2 *= this;
+
+            x3 = x2.Sqr();
+            x3 *= this;
+
+            x6 = x3;
+            x6 = x6.Sqr(3);
+            x6 *= x3;
+
+            x9 = x6;
+            x9 = x9.Sqr(3);
+            x9 *= x3;
+
+            x11 = x9;
+            x11 = x11.Sqr(2);
+
+            x11 *= x2;
+
+            x22 = x11;
+            x22 = x22.Sqr(11);
+            x22 *= x11;
+
+            x44 = x22;
+            x44 = x44.Sqr(22);
+            x44 *= x22;
+
+            x88 = x44;
+            x88 = x88.Sqr(44);
+            x88 *= x44;
+
+            x176 = x88;
+            x176 = x176.Sqr(88);
+            x176 *= x88;
+
+            x220 = x176;
+            x220 = x220.Sqr(44);
+            x220 *= x44;
+
+            x223 = x220;
+            x223 = x223.Sqr(3);
+            x223 *= x3;
+
+            // The final result is then assembled using a sliding window over the blocks. 
+            t1 = x223;
+            t1 = t1.Sqr(23);
+            t1 *= x22;
+
+            t1 = t1.Sqr(5);
+            t1 *= this;
+            t1 = t1.Sqr(3);
+            t1 *= x2;
+            t1 = t1.Sqr(2);
+            return this * t1;
+        }
+
+
+        /// <summary>
         /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
         /// </summary>
         /// <param name="r"></param>
         /// <param name="a"></param>
         /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
+        /// <returns>Result</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt256_10x26 CMov(in UInt256_10x26 r, in UInt256_10x26 a, uint flag)
         {
-            uint mask0, mask1;
-            mask0 = flag + ~0U;
-            mask1 = ~mask0;
+            uint mask0 = flag + ~0U;
+            uint mask1 = ~mask0;
             return new UInt256_10x26(
                 (r.b0 & mask0) | (a.b0 & mask1),
                 (r.b1 & mask0) | (a.b1 & mask1),
