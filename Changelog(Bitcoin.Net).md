@@ -1,5 +1,12 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.18.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.21.0.0...master)
+
+### Release 0.21.0 (2022-08-05)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.20.0.0...B0.21.0.0)
+* Introduce a new `LightDatabase` to be used in `TransactionVerifier` and as mock DB
+* Fix some issues with database, hash collision and handling duplicate transactions
+* Start adding a new and optimized implementation of ECC with the help of libsecp256k1 project
+* Some new tests and small code improvements
 
 ### Release 0.20.0 (2022-06-02)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.19.0.0...B0.20.0.0)
