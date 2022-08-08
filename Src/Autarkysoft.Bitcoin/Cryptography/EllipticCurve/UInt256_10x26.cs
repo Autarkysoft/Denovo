@@ -513,6 +513,61 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Adds three <see cref="UInt256_10x26"/> values
+        /// </summary>
+        /// <param name="a">First value</param>
+        /// <param name="b">Second value</param>
+        /// <param name="c">Third value</param>
+        /// <returns>Result</returns>
+        public static UInt256_10x26 Add(in UInt256_10x26 a, in UInt256_10x26 b, in UInt256_10x26 c)
+        {
+            return new UInt256_10x26(
+                a.b0 + b.b0 + c.b0,
+                a.b1 + b.b1 + c.b1,
+                a.b2 + b.b2 + c.b2,
+                a.b3 + b.b3 + c.b3,
+                a.b4 + b.b4 + c.b4,
+                a.b5 + b.b5 + c.b5,
+                a.b6 + b.b6 + c.b6,
+                a.b7 + b.b7 + c.b7,
+                a.b8 + b.b8 + c.b8,
+                a.b9 + b.b9 + c.b9
+#if DEBUG
+                , a.magnitude + b.magnitude + c.magnitude,
+                false
+#endif
+                );
+        }
+
+        /// <summary>
+        /// Adds four <see cref="UInt256_10x26"/> values
+        /// </summary>
+        /// <param name="a">First value</param>
+        /// <param name="b">Second value</param>
+        /// <param name="c">Third value</param>
+        /// <param name="d">Fourth value</param>
+        /// <returns>Result</returns>
+        public static UInt256_10x26 Add(in UInt256_10x26 a, in UInt256_10x26 b, in UInt256_10x26 c, in UInt256_10x26 d)
+        {
+            return new UInt256_10x26(
+                a.b0 + b.b0 + c.b0 + d.b0,
+                a.b1 + b.b1 + c.b1 + d.b1,
+                a.b2 + b.b2 + c.b2 + d.b2,
+                a.b3 + b.b3 + c.b3 + d.b3,
+                a.b4 + b.b4 + c.b4 + d.b4,
+                a.b5 + b.b5 + c.b5 + d.b5,
+                a.b6 + b.b6 + c.b6 + d.b6,
+                a.b7 + b.b7 + c.b7 + d.b7,
+                a.b8 + b.b8 + c.b8 + d.b8,
+                a.b9 + b.b9 + c.b9 + d.b9
+#if DEBUG
+                , a.magnitude + b.magnitude + c.magnitude + d.magnitude,
+                false
+#endif
+                );
+        }
+
+        /// <summary>
         /// Adds the given value to this instance
         /// </summary>
         /// <remarks>

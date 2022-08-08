@@ -114,8 +114,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 h3 = h2 * h;
             t = u1 * h2;
 
-            // TODO: write an add method taking multiple items
-            UInt256_10x26 rx = i.Sqr() + h3 + t + t;
+            UInt256_10x26 rx = UInt256_10x26.Add(i.Sqr(), h3, t, t);
 
             t += rx;
             UInt256_10x26 ry = (t * i) + (h3 * s1);
@@ -320,9 +319,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             h3 = h2 * h;
             t = u1 * h2;
 
-            UInt256_10x26 rx = i.Sqr();
-            // TODO: add a new method to add multiple items at the same time instead of one at a time
-            rx += h3 + t + t;
+            UInt256_10x26 rx = UInt256_10x26.Add(i.Sqr(), h3, t, t);
 
             t += rx;
             UInt256_10x26 ry = t * i;
@@ -398,7 +395,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             h3 = h2 * h;
             t = u1 * h2;
 
-            rx = i.Sqr() + h3 + t + t;
+            rx = UInt256_10x26.Add(i.Sqr(), h3, t, t);
 
             t += rx;
             ry = (t * i) + (h3 * s1);
