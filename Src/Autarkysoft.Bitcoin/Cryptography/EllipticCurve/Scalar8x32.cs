@@ -104,14 +104,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="overflow">Returns true if value was bigger than or equal to curve order; otherwise false</param>
         public unsafe Scalar8x32(byte* pt, out bool overflow)
         {
-            b0 = pt[31] | (uint)pt[30] << 8 | (uint)pt[29] << 16 | (uint)pt[28] << 24;
-            b1 = pt[27] | (uint)pt[26] << 8 | (uint)pt[25] << 16 | (uint)pt[24] << 24;
-            b2 = pt[23] | (uint)pt[22] << 8 | (uint)pt[21] << 16 | (uint)pt[20] << 24;
-            b3 = pt[19] | (uint)pt[18] << 8 | (uint)pt[17] << 16 | (uint)pt[16] << 24;
-            b4 = pt[15] | (uint)pt[14] << 8 | (uint)pt[13] << 16 | (uint)pt[12] << 24;
-            b5 = pt[11] | (uint)pt[10] << 8 | (uint)pt[09] << 16 | (uint)pt[08] << 24;
-            b6 = pt[07] | (uint)pt[06] << 8 | (uint)pt[05] << 16 | (uint)pt[04] << 24;
-            b7 = pt[03] | (uint)pt[02] << 8 | (uint)pt[01] << 16 | (uint)pt[00] << 24;
+            b0 = pt[31] | ((uint)pt[30] << 8) | ((uint)pt[29] << 16) | ((uint)pt[28] << 24);
+            b1 = pt[27] | ((uint)pt[26] << 8) | ((uint)pt[25] << 16) | ((uint)pt[24] << 24);
+            b2 = pt[23] | ((uint)pt[22] << 8) | ((uint)pt[21] << 16) | ((uint)pt[20] << 24);
+            b3 = pt[19] | ((uint)pt[18] << 8) | ((uint)pt[17] << 16) | ((uint)pt[16] << 24);
+            b4 = pt[15] | ((uint)pt[14] << 8) | ((uint)pt[13] << 16) | ((uint)pt[12] << 24);
+            b5 = pt[11] | ((uint)pt[10] << 8) | ((uint)pt[09] << 16) | ((uint)pt[08] << 24);
+            b6 = pt[07] | ((uint)pt[06] << 8) | ((uint)pt[05] << 16) | ((uint)pt[04] << 24);
+            b7 = pt[03] | ((uint)pt[02] << 8) | ((uint)pt[01] << 16) | ((uint)pt[00] << 24);
 
             uint of = CheckOverflow();
             overflow = of != 0;
@@ -151,14 +151,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             if (data.Length != 32)
                 throw new ArgumentOutOfRangeException(nameof(data));
 
-            b0 = data[31] | (uint)data[30] << 8 | (uint)data[29] << 16 | (uint)data[28] << 24;
-            b1 = data[27] | (uint)data[26] << 8 | (uint)data[25] << 16 | (uint)data[24] << 24;
-            b2 = data[23] | (uint)data[22] << 8 | (uint)data[21] << 16 | (uint)data[20] << 24;
-            b3 = data[19] | (uint)data[18] << 8 | (uint)data[17] << 16 | (uint)data[16] << 24;
-            b4 = data[15] | (uint)data[14] << 8 | (uint)data[13] << 16 | (uint)data[12] << 24;
-            b5 = data[11] | (uint)data[10] << 8 | (uint)data[09] << 16 | (uint)data[08] << 24;
-            b6 = data[07] | (uint)data[06] << 8 | (uint)data[05] << 16 | (uint)data[04] << 24;
-            b7 = data[03] | (uint)data[02] << 8 | (uint)data[01] << 16 | (uint)data[00] << 24;
+            b0 = data[31] | ((uint)data[30] << 8) | ((uint)data[29] << 16) | ((uint)data[28] << 24);
+            b1 = data[27] | ((uint)data[26] << 8) | ((uint)data[25] << 16) | ((uint)data[24] << 24);
+            b2 = data[23] | ((uint)data[22] << 8) | ((uint)data[21] << 16) | ((uint)data[20] << 24);
+            b3 = data[19] | ((uint)data[18] << 8) | ((uint)data[17] << 16) | ((uint)data[16] << 24);
+            b4 = data[15] | ((uint)data[14] << 8) | ((uint)data[13] << 16) | ((uint)data[12] << 24);
+            b5 = data[11] | ((uint)data[10] << 8) | ((uint)data[09] << 16) | ((uint)data[08] << 24);
+            b6 = data[07] | ((uint)data[06] << 8) | ((uint)data[05] << 16) | ((uint)data[04] << 24);
+            b7 = data[03] | ((uint)data[02] << 8) | ((uint)data[01] << 16) | ((uint)data[00] << 24);
 
             uint of = CheckOverflow();
             overflow = of != 0;
@@ -228,6 +228,35 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Returns if the value is equal to zero
         /// </summary>
         public bool IsZero => (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+        /// <summary>
+        /// Returns if the value is even
+        /// </summary>
+        public bool IsEven => (b0 & 1) == 0;
+        /// <summary>
+        /// Returns if this scalar is higher than the group order divided by 2
+        /// </summary>
+        public bool IsHigh
+        {
+            // TODO: needs testing, (int was replaced with bool)
+            get
+            {
+                bool yes = false;
+                bool no = false;
+                no |= (b7 < NH7);
+                yes |= (b7 > NH7) & !no;
+                no |= (b6 < NH6) & !yes; // No need for a > check.
+                no |= (b5 < NH5) & !yes; // No need for a > check.
+                no |= (b4 < NH4) & !yes; // No need for a > check.
+                no |= (b3 < NH3) & !yes;
+                yes |= (b3 > NH3) & !no;
+                no |= (b2 < NH2) & !yes;
+                yes |= (b2 > NH2) & !no;
+                no |= (b1 < NH1) & !yes;
+                yes |= (b1 > NH1) & !no;
+                yes |= (b0 > NH0) & !no;
+                return yes;
+            }
+        }
 
         private uint CheckOverflow()
         {
@@ -247,6 +276,107 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             yes |= (b0 >= N0 ? 1U : 0U) & ~no;
             return yes;
         }
+
+
+        /// <summary>
+        /// Adds the two scalars together modulo the group order.
+        /// </summary>
+        /// <param name="other">Other value</param>
+        /// <param name="overflow">Returns whether it overflowed</param>
+        /// <returns>Result</returns>
+        public Scalar8x32 Add(in Scalar8x32 other, out bool overflow)
+        {
+            ulong t = (ulong)b0 + other.b0;
+            uint r0 = (uint)t; t >>= 32;
+            t += (ulong)b1 + other.b1;
+            uint r1 = (uint)t; t >>= 32;
+            t += (ulong)b2 + other.b2;
+            uint r2 = (uint)t; t >>= 32;
+            t += (ulong)b3 + other.b3;
+            uint r3 = (uint)t; t >>= 32;
+            t += (ulong)b4 + other.b4;
+            uint r4 = (uint)t; t >>= 32;
+            t += (ulong)b5 + other.b5;
+            uint r5 = (uint)t; t >>= 32;
+            t += (ulong)b6 + other.b6;
+            uint r6 = (uint)t; t >>= 32;
+            t += (ulong)b7 + other.b7;
+            uint r7 = (uint)t; t >>= 32;
+
+            int yes = 0;
+            int no = 0;
+            no |= (r7 < N7 ? 1 : 0);
+            no |= (r6 < N6 ? 1 : 0);
+            no |= (r5 < N5 ? 1 : 0);
+            no |= (r4 < N4 ? 1 : 0);
+            yes |= (r4 > N4 ? 1 : 0) & ~no;
+            no |= (r3 < N3 ? 1 : 0) & ~yes;
+            yes |= (r3 > N3 ? 1 : 0) & ~no;
+            no |= (r2 < N2 ? 1 : 0) & ~yes;
+            yes |= (r2 > N2 ? 1 : 0) & ~no;
+            no |= (r1 < N1 ? 1 : 0) & ~yes;
+            yes |= (r1 > N1 ? 1 : 0) & ~no;
+            yes |= (r0 >= N0 ? 1 : 0) & ~no;
+
+            uint of = (uint)yes + (uint)t;
+            overflow = of != 0;
+
+            Debug.Assert(of == 0 || of == 1);
+
+            t = (ulong)r0 + (of * NC0);
+            r0 = (uint)t; t >>= 32;
+            t += (ulong)r1 + (of * NC1);
+            r1 = (uint)t; t >>= 32;
+            t += (ulong)r2 + (of * NC2);
+            r2 = (uint)t; t >>= 32;
+            t += (ulong)r3 + (of * NC3);
+            r3 = (uint)t; t >>= 32;
+            t += (ulong)r4 + (of * NC4);
+            r4 = (uint)t; t >>= 32;
+            t += r5;
+            r5 = (uint)t; t >>= 32;
+            t += r6;
+            r6 = (uint)t; t >>= 32;
+            t += r7;
+            r7 = (uint)t;
+
+            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+        }
+
+
+        /// <summary>
+        /// Conditionally add a power of two to this scalar. The result is not allowed to overflow.
+        /// </summary>
+        /// <param name="bit"></param>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public Scalar8x32 CAddBit(uint bit, int flag)
+        {
+            Debug.Assert(bit < 256);
+            bit += ((uint)flag - 1) & 0x100;  // forcing (bit >> 5) > 7 makes this a noop
+            int shift = (int)bit & 0x1F;
+            ulong t = (ulong)b0 + (((bit >> 5) == 0 ? 1U : 0) << shift);
+            uint r0 = (uint)t; t >>= 32;
+            t += (ulong)b1 + (((bit >> 5) == 1 ? 1U : 0) << shift);
+            uint r1 = (uint)t; t >>= 32;
+            t += (ulong)b2 + (((bit >> 5) == 2 ? 1U : 0) << shift);
+            uint r2 = (uint)t; t >>= 32;
+            t += (ulong)b3 + (((bit >> 5) == 3 ? 1U : 0) << shift);
+            uint r3 = (uint)t; t >>= 32;
+            t += (ulong)b4 + (((bit >> 5) == 4 ? 1U : 0) << shift);
+            uint r4 = (uint)t; t >>= 32;
+            t += (ulong)b5 + (((bit >> 5) == 5 ? 1U : 0) << shift);
+            uint r5 = (uint)t; t >>= 32;
+            t += (ulong)b6 + (((bit >> 5) == 6 ? 1U : 0) << shift);
+            uint r6 = (uint)t; t >>= 32;
+            t += (ulong)b7 + (((bit >> 5) == 7 ? 1U : 0) << shift);
+            uint r7 = (uint)t;
+
+            Debug.Assert((t >> 32) == 0);
+
+            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+        }
+
 
         /// <summary>
         /// Returns if the given scalar is equal to this instance
