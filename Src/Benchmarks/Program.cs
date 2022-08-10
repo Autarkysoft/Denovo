@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using BenchmarkDotNet.Running;
+using Benchmarks.Bitcoin.Cryptography.EllipticCurve;
 using Benchmarks.Bitcoin.Cryptography.Hashing;
 
 namespace Benchmarks
@@ -12,7 +13,7 @@ namespace Benchmarks
     {
         static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run(typeof(Sha256Bench));
+            var summary = BenchmarkRunner.Run(typeof(Scalar8x32Bench));
             //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
     }
