@@ -223,6 +223,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         private const uint NH6 = 0xFFFFFFFFU;
         private const uint NH7 = 0x7FFFFFFFU;
 
+        /// <summary>
+        /// Byte size of <see cref="Scalar8x32"/>
+        /// </summary>
+        public const int ByteSize = 32;
+
 
         /// <summary>
         /// Returns if the value is equal to zero
@@ -1811,6 +1816,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             return new Scalar8x32(p0, p1, p2, p3, p4, p5, p6, p7);
         }
+
+
+
 
 
         /// <summary>

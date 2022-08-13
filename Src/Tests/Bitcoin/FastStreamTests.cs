@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -15,7 +16,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void ConstructorTest()
         {
-            var stream = new FastStream();
+            FastStream stream = new();
             byte[] expected = new byte[FastStream.DefaultCapacity];
 
             Helper.ComparePrivateField(stream, "buffer", expected);
@@ -31,7 +32,7 @@ namespace Tests.Bitcoin
         [InlineData(FastStream.DefaultCapacity + 1, FastStream.DefaultCapacity + 1)]
         public void Constructor_CapactiyTest(int cap, int expLen)
         {
-            var stream = new FastStream(cap);
+            FastStream stream = new(cap);
             byte[] expBuffer = new byte[expLen];
 
             Helper.ComparePrivateField(stream, "buffer", expBuffer);
@@ -43,7 +44,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void GetSizeTest()
         {
-            var stream = new FastStream();
+            FastStream stream = new();
             int s1 = stream.GetSize();
             stream.Write((byte)1);
             int s2 = stream.GetSize();
@@ -58,7 +59,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void ToByteArrayTest()
         {
-            var stream = new FastStream();
+            FastStream stream = new();
             byte[] ba1 = stream.ToByteArray();
             stream.Write((byte)1);
             byte[] ba2 = stream.ToByteArray();
@@ -79,7 +80,7 @@ namespace Tests.Bitcoin
         [InlineData(int.MinValue, new byte[4] { 0x00, 0x00, 0x00, 0x80 })]
         public void Write_intTest(int val, byte[] expected)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(val);
 
             byte[] expBuffer = new byte[10];
@@ -93,7 +94,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_int_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[1]);
 
@@ -116,7 +117,7 @@ namespace Tests.Bitcoin
         [InlineData(long.MinValue, new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 })]
         public void Write_longTest(long val, byte[] expected)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(val);
 
             byte[] expBuffer = new byte[10];
@@ -130,7 +131,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_long_ResizeTest()
         {
-            var stream = new FastStream(2);
+            FastStream stream = new(2);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[2]);
 
@@ -155,7 +156,7 @@ namespace Tests.Bitcoin
         [InlineData(255)]
         public void Write_byteTest(byte val)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(val);
 
             byte[] expBuffer = new byte[10];
@@ -169,7 +170,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_byte_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[1]);
 
@@ -190,7 +191,7 @@ namespace Tests.Bitcoin
         [InlineData(ushort.MaxValue, new byte[2] { 0xff, 0xff })]
         public void Write_ushortTest(ushort val, byte[] expected)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(val);
 
             byte[] expBuffer = new byte[10];
@@ -204,7 +205,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_ushort_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[1]);
 
@@ -223,7 +224,7 @@ namespace Tests.Bitcoin
         [InlineData(uint.MaxValue, new byte[4] { 0xff, 0xff, 0xff, 0xff })]
         public void Write_uintTest(uint val, byte[] expected)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(val);
 
             byte[] expBuffer = new byte[10];
@@ -237,7 +238,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_uint_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[1]);
 
@@ -258,7 +259,7 @@ namespace Tests.Bitcoin
         [InlineData(ulong.MaxValue, new byte[8] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff })]
         public void Write_ulongTest(ulong val, byte[] expected)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(val);
 
             byte[] expBuffer = new byte[10];
@@ -272,7 +273,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_ulong_ResizeTest()
         {
-            var stream = new FastStream(2);
+            FastStream stream = new(2);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[2]);
 
@@ -297,7 +298,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[3] { 1, 2, 3 })]
         public void Write_bytes_smallTest(byte[] data)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(data);
 
             byte[] expBuffer = new byte[10];
@@ -311,7 +312,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_bytes_ResizeTest()
         {
-            var stream = new FastStream(2);
+            FastStream stream = new(2);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[2]);
 
@@ -328,7 +329,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_bytes_bigTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
             byte[] data = Helper.GetBytes(FastStream.DefaultCapacity + 10);
             stream.Write(data);
 
@@ -342,7 +343,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_bytesFromIndex_test()
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             byte[] data = new byte[] { 1, 2, 3, 4, 5 };
             stream.Write(data, 1, 3);
             byte[] expBuffer = new byte[] { 2, 3, 4 };
@@ -354,7 +355,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_bytesFromIndex_ZeroCount_test()
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             byte[] data = new byte[] { 1, 2, 3, 4, 5 };
             stream.Write(data, 1, 0);
 
@@ -371,7 +372,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 1, 2 }, 4, new byte[] { 1, 2, 0, 0 })]
         public void Write_bytes_withPadTest(byte[] data, int pad, byte[] expBytes)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.Write(data, pad);
 
             byte[] expBuffer = new byte[10];
@@ -385,7 +386,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_bytes_withPad_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
             byte[] data = new byte[] { 1, 2 };
             byte[] expBytes = new byte[] { 1, 2, 0 };
             stream.Write(data, 3);
@@ -407,7 +408,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 1, 2 }, 4, new byte[] { 0, 0, 1, 2 }, new byte[5] { 0, 0, 1, 2, 0 })]
         public void Write_bytes_withPadBeforeTest(byte[] data, int pad, byte[] expBytes, byte[] expBuffer)
         {
-            var stream = new FastStream(5);
+            FastStream stream = new(5);
             stream.Write(pad, data);
 
             Assert.Equal(expBytes, stream.ToByteArray());
@@ -418,7 +419,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_bytes_withPadBefore_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
             byte[] data = new byte[] { 1, 2 };
             byte[] expBytes = new byte[] { 0, 1, 2 };
             stream.Write(3, data);
@@ -433,7 +434,7 @@ namespace Tests.Bitcoin
 
         public static IEnumerable<object[]> GetWriteCompactIntCases()
         {
-            var rng = new Random(17);
+            Random rng = new(17);
             byte[] big = new byte[17059];
             byte[] usmax = new byte[ushort.MaxValue];
             byte[] veryBig = new byte[ushort.MaxValue + 1];
@@ -468,7 +469,7 @@ namespace Tests.Bitcoin
         [MemberData(nameof(GetWriteCompactIntCases))]
         public void WriteWithCompactIntLength(byte[] data, byte[] expBuffer, int expPos)
         {
-            var stream = new FastStream(expPos);
+            FastStream stream = new(expPos);
             stream.WriteWithCompactIntLength(data);
 
             Assert.Equal(expBuffer, stream.ToByteArray());
@@ -478,8 +479,8 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_streamTest()
         {
-            var stream = new FastStream(10);
-            var toWrite = new FastStream(8);
+            FastStream stream = new(10);
+            FastStream toWrite = new(8);
             toWrite.Write(new byte[] { 1, 2, 3 });
             stream.Write(toWrite);
 
@@ -496,8 +497,8 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_stream_ResizeTest()
         {
-            var stream = new FastStream(2);
-            var toWrite = new FastStream(8);
+            FastStream stream = new(2);
+            FastStream toWrite = new(8);
             toWrite.Write(new byte[] { 1, 2, 3 });
             stream.Write(toWrite);
 
@@ -511,13 +512,37 @@ namespace Tests.Bitcoin
             Helper.ComparePrivateField(stream, "position", 3);
         }
 
+
+        public static IEnumerable<object[]> GetScalarCases()
+        {
+            yield return new object[] { new byte[32] };
+            yield return new object[]
+            {
+                new byte[32]
+                {
+                    0x96,0xbb,0x33,0xd3, 0x85,0xa1,0xc4,0x9a, 0x1d,0x9d,0x3d,0x5c, 0x4a,0x47,0xe5,0xd4,
+                    0x5b,0x23,0x71,0x47, 0x0b,0x6d,0x30,0xa8, 0xc6,0x95,0x1f,0xd6, 0xe8,0x66,0x18,0xd0
+                }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetScalarCases))]
+        public void Write_Scalar8x32Test(byte[] array)
+        {
+            Scalar8x32 scalar = new(array, out bool b);
+            Assert.False(b);
+            FastStream stream = new(32);
+            stream.Write(scalar);
+            Assert.Equal(array, stream.ToByteArray());
+        }
+
         [Theory]
         [InlineData(0, new byte[2] { 0, 0 })]
         [InlineData(31534, new byte[2] { 0x7b, 0x2e })]
         [InlineData(ushort.MaxValue, new byte[2] { 0xff, 0xff })]
         public void Write_ushort_BETest(ushort val, byte[] expected)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.WriteBigEndian(val);
 
             byte[] expBuffer = new byte[10];
@@ -531,7 +556,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_ushort_BE_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[1]);
             ushort value = 31534;
@@ -550,7 +575,7 @@ namespace Tests.Bitcoin
         [InlineData(uint.MaxValue, new byte[4] { 0xff, 0xff, 0xff, 0xff })]
         public void Write_uint_BETest(uint val, byte[] expected)
         {
-            var stream = new FastStream(10);
+            FastStream stream = new(10);
             stream.WriteBigEndian(val);
 
             byte[] expBuffer = new byte[10];
@@ -564,7 +589,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Write_uint_BE_ResizeTest()
         {
-            var stream = new FastStream(1);
+            FastStream stream = new(1);
 
             Helper.ComparePrivateField(stream, "buffer", new byte[1]);
             uint value = 1274051374U;
@@ -582,7 +607,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Resize_smallTest()
         {
-            var stream = new FastStream();
+            FastStream stream = new();
             int dataLen = FastStream.DefaultCapacity + 1;
             byte[] data = Helper.GetBytes(dataLen);
             stream.Write(data);
@@ -599,7 +624,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void Resize_bigTest()
         {
-            var stream = new FastStream();
+            FastStream stream = new();
             int dataLen = FastStream.DefaultCapacity + (FastStream.DefaultCapacity + 5);
             byte[] data = Helper.GetBytes(dataLen);
             stream.Write(data);
