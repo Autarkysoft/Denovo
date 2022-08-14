@@ -1726,6 +1726,37 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Compare 2 <see cref="UInt256_10x26"/> values.
+        /// Assumes both values are normalized.
+        /// </summary>
+        /// <remarks>
+        /// This method is constant time.
+        /// </remarks>
+        /// <param name="b">Other value to compare to</param>
+        /// <returns>1 if this is bigger than <paramref name="b"/>, -1 if smaller and 0 if equal.</returns>
+        public int CompareToVar(in UInt256_10x26 b)
+        {
+#if DEBUG
+            Debug.Assert(isNormalized);
+            Debug.Assert(b.isNormalized);
+            Debug.Assert(Verify());
+            Debug.Assert(b.Verify());
+#endif
+            if (b9 > b.b9) return 1; else if (b9 < b.b9) return -1;
+            if (b8 > b.b8) return 1; else if (b8 < b.b8) return -1;
+            if (b7 > b.b7) return 1; else if (b7 < b.b7) return -1;
+            if (b6 > b.b6) return 1; else if (b6 < b.b6) return -1;
+            if (b5 > b.b5) return 1; else if (b5 < b.b5) return -1;
+            if (b4 > b.b4) return 1; else if (b4 < b.b4) return -1;
+            if (b3 > b.b3) return 1; else if (b3 < b.b3) return -1;
+            if (b2 > b.b2) return 1; else if (b2 < b.b2) return -1;
+            if (b1 > b.b1) return 1; else if (b1 < b.b1) return -1;
+            if (b0 > b.b0) return 1; else if (b0 < b.b0) return -1;
+
+            return 0;
+        }
+
+        /// <summary>
         /// Returns if the given <see cref="UInt256_10x26"/> is equal to this instance.
         /// </summary>
         /// <remarks>
