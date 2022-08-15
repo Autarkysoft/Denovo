@@ -228,6 +228,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public const int ByteSize = 32;
 
+        private static readonly Scalar8x32 _zero = new Scalar8x32(0);
+        /// <summary>
+        /// Zero
+        /// </summary>
+        public static ref readonly Scalar8x32 Zero => ref _zero;
 
         /// <summary>
         /// Returns if the value is equal to zero
@@ -1818,7 +1823,40 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        /// <summary>
+        /// Returns byte array representation of this instance
+        /// </summary>
+        /// <returns>32 bytes</returns>
+        public byte[] ToByteArray()
+        {
+            return new byte[32]
+            {
+                (byte)(b7 >> 24), (byte)(b7 >> 16), (byte)(b7 >> 8), (byte)b7,
+                (byte)(b6 >> 24), (byte)(b6 >> 16), (byte)(b6 >> 8), (byte)b6,
+                (byte)(b5 >> 24), (byte)(b5 >> 16), (byte)(b5 >> 8), (byte)b5,
+                (byte)(b4 >> 24), (byte)(b4 >> 16), (byte)(b4 >> 8), (byte)b4,
+                (byte)(b3 >> 24), (byte)(b3 >> 16), (byte)(b3 >> 8), (byte)b3,
+                (byte)(b2 >> 24), (byte)(b2 >> 16), (byte)(b2 >> 8), (byte)b2,
+                (byte)(b1 >> 24), (byte)(b1 >> 16), (byte)(b1 >> 8), (byte)b1,
+                (byte)(b0 >> 24), (byte)(b0 >> 16), (byte)(b0 >> 8), (byte)b0,
+            };
+        }
 
+
+        public void WriteToSpan(Span<byte> stream)
+        {
+            if (stream.Length < 32)
+                throw new ArgumentOutOfRangeException();
+
+            stream[0] = (byte)(b7 >> 24); stream[1] = (byte)(b7 >> 16); stream[2] = (byte)(b7 >> 8); stream[3] = (byte)b7;
+            stream[4] = (byte)(b6 >> 24); stream[5] = (byte)(b6 >> 16); stream[6] = (byte)(b6 >> 8); stream[7] = (byte)b6;
+            stream[8] = (byte)(b5 >> 24); stream[9] = (byte)(b5 >> 16); stream[10] = (byte)(b5 >> 8); stream[11] = (byte)b5;
+            stream[12] = (byte)(b4 >> 24); stream[13] = (byte)(b4 >> 16); stream[14] = (byte)(b4 >> 8); stream[15] = (byte)b4;
+            stream[16] = (byte)(b3 >> 24); stream[17] = (byte)(b3 >> 16); stream[18] = (byte)(b3 >> 8); stream[19] = (byte)b3;
+            stream[20] = (byte)(b2 >> 24); stream[21] = (byte)(b2 >> 16); stream[22] = (byte)(b2 >> 8); stream[23] = (byte)b2;
+            stream[24] = (byte)(b1 >> 24); stream[25] = (byte)(b1 >> 16); stream[26] = (byte)(b1 >> 8); stream[27] = (byte)b1;
+            stream[28] = (byte)(b0 >> 24); stream[29] = (byte)(b0 >> 16); stream[30] = (byte)(b0 >> 8); stream[31] = (byte)b0;
+        }
 
 
         /// <summary>
