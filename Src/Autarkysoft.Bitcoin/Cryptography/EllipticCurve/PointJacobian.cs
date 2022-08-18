@@ -528,5 +528,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 ry = y * zi3;
             return new Point(rx, ry, isInfinity);
         }
+
+
+        /// <summary>
+        /// Returns if the x coordinate of this instance is equal to the given x value.
+        /// </summary>
+        /// <remarks>
+        /// This method is not constant-time
+        /// </remarks>
+        /// <param name="x">x coordinate</param>
+        /// <returns>True if x coordinates were equal; otherwise false.</returns>
+        public bool EqualsXVar(in UInt256_10x26 x)
+        {
+            Debug.Assert(!isInfinity);
+            UInt256_10x26 r = z.Sqr() * x;
+            UInt256_10x26 r2 = x.NormalizeWeak();
+            return r.EqualsVar(r2);
+        }
     }
 }
