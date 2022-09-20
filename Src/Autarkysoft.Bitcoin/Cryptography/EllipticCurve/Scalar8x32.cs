@@ -388,6 +388,218 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        public static unsafe uint GetBits(uint* pt, int offset, int count)
+        {
+            Debug.Assert((offset + count - 1) >> 5 == offset >> 5);
+            return (pt[offset >> 5] >> (offset & 0x1F)) & ((1U << count) - 1);
+        }
+
+        public static unsafe uint GetBitsVar(uint* pt, int offset, int count)
+        {
+            Debug.Assert(count < 32);
+            Debug.Assert(offset + count <= 256);
+            if ((offset + count - 1) >> 5 == offset >> 5)
+            {
+                return GetBits(pt, offset, count);
+            }
+            else
+            {
+                Debug.Assert((offset >> 5) + 1 < 8);
+                return ((pt[offset >> 5] >> (offset & 0x1F)) | (pt[(offset >> 5) + 1] << (32 - (offset & 0x1F)))) & 
+                       ((1U << count) - 1);
+            }
+        }
+
+        public Scalar8x32 Inverse_old()
+        {
+            /* First compute xN as x ^ (2^N - 1) for some values of N,
+             * and uM as x ^ M for some values of M. */
+            Scalar8x32 x2, x3, x6, x8, x14, x28, x56, x112, x126;
+            Scalar8x32 u2, u5, u9, u11, u13;
+
+            u2 = this.Multiply(this);
+            x2 = u2.Multiply(this);
+            u5 = u2.Multiply(x2);
+            x3 = u5.Multiply(u2);
+            u9 = x3.Multiply(u2);
+            u11 = u9.Multiply(u2);
+            u13 = u11.Multiply(u2);
+
+            x6 = u13.Multiply(u13);
+            x6 = x6.Multiply(x6);
+            x6 = x6.Multiply(u11);
+
+            x8 = x6.Multiply(x6);
+            x8 = x8.Multiply(x8);
+            x8 = x8.Multiply(x2);
+
+            x14 = x8.Multiply(x8);
+            for (int i = 0; i < 5; i++)
+            {
+                x14 = x14.Multiply(x14);
+            }
+            x14 = x14.Multiply(x6);
+
+            x28 = x14.Multiply(x14);
+            for (int i = 0; i < 13; i++)
+            {
+                x28 = x28.Multiply(x28);
+            }
+            x28 = x28.Multiply(x14);
+
+            x56 = x28.Multiply(x28);
+            for (int i = 0; i < 27; i++)
+            {
+                x56 = x56.Multiply(x56);
+            }
+            x56 = x56.Multiply(x28);
+
+            x112 = x56.Multiply(x56);
+            for (int i = 0; i < 55; i++)
+            {
+                x112 = x112.Multiply(x112);
+            }
+            x112 = x112.Multiply(x56);
+
+            x126 = x112.Multiply(x112);
+            for (int i = 0; i < 13; i++)
+            {
+                x126 = x126.Multiply(x126);
+            }
+            x126 = x126.Multiply(x14);
+
+            /* Then accumulate the final result (t starts at x126). */
+            ref Scalar8x32 t = ref x126;
+            for (int i = 0; i < 3; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u5); /* 101 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x3); /* 111 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u5); /* 101 */
+            for (int i = 0; i < 5; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u11); /* 1011 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u11); /* 1011 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x3); /* 111 */
+            for (int i = 0; i < 5; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x3); /* 111 */
+            for (int i = 0; i < 6; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u13); /* 1101 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u5); /* 101 */
+            for (int i = 0; i < 3; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x3); /* 111 */
+            for (int i = 0; i < 5; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u9); /* 1001 */
+            for (int i = 0; i < 6; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u5); /* 101 */
+            for (int i = 0; i < 10; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x3); /* 111 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x3); /* 111 */
+            for (int i = 0; i < 9; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x8); /* 11111111 */
+            for (int i = 0; i < 5; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u9); /* 1001 */
+            for (int i = 0; i < 6; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u11); /* 1011 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u13); /* 1101 */
+            for (int i = 0; i < 5; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(x2); /* 11 */
+            for (int i = 0; i < 6; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u13); /* 1101 */
+            for (int i = 0; i < 10; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u13); /* 1101 */
+            for (int i = 0; i < 4; i++)
+            {
+                t = t.Multiply(t);
+            }
+            t = t.Multiply(u9); /* 1001 */
+            /* 00000 */
+            for (int i = 0; i < 6; i++)
+            {
+                t = t.Multiply(t);
+            }
+
+            t = t.Multiply(this); /* 1 */
+            for (int i = 0; i < 8; i++)
+            {
+                t = t.Multiply(t);
+            }
+            return t.Multiply(x6); /* 111111 */
+        }
+
+        public Scalar8x32 InverseVar_old()
+        {
+            return Inverse_old();
+        }
+
+
         /// <summary>
         /// Multiply two scalars modulo the group order.
         /// </summary>
@@ -1820,6 +2032,34 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             p7 = (uint)t;
 
             return new Scalar8x32(p0, p1, p2, p3, p4, p5, p6, p7);
+        }
+
+
+        /// <summary>
+        /// Returns the complement of this scalar modulo the group order.
+        /// </summary>
+        /// <returns></returns>
+        public Scalar8x32 Negate()
+        {
+            uint nonzero = 0xFFFFFFFFU * (IsZero ? 0U : 1U); // secp256k1_scalar_is_zero(a) == 0);
+            ulong t = (ulong)(~b0) + N0 + 1;
+            uint r0 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b1) + N1;
+            uint r1 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b2) + N2;
+            uint r2 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b3) + N3;
+            uint r3 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b4) + N4;
+            uint r4 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b5) + N5;
+            uint r5 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b6) + N6;
+            uint r6 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b7) + N7;
+            uint r7 = (uint)(t & nonzero);
+
+            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
         }
 
 
