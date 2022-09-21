@@ -307,6 +307,48 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(expected, scalar.IsZero);
         }
 
+
+        public static IEnumerable<object[]> GetMultCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("4166cab9fb3b70e2a5608df3f41224cbf79a5389705b0b3a0fe14d4d4ae62019"),
+                Helper.HexToBytes("a7b54ffabf58f1afb0b37b86521c2079d24bc4262a28b9e55a90aa19ee2298bf"),
+                new uint[8]
+                {
+                    0x7c3a39d9, 0xa2bcc5b0, 0x96e1dc44, 0x78d2caef, 0x3cb5a1ef, 0x3507462b, 0xf24f2995, 0x9aeb40ee
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("e774610894f0910499c1ad17523e18750c9f06fba8aed18c99e55a6c42d5eb21"),
+                Helper.HexToBytes("0ca42316dcbb4475797c89672af0808bd13f82f1112a6f38a3d46eae9524c2c4"),
+                new uint[8]
+                {
+                    0x679ce50a, 0x1caa21b4, 0x2f3f3d6d, 0xd88dd68f, 0x1d364db6, 0x20cdd6a2, 0x7c86946a, 0x304e130c
+                }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetMultCases))]
+        public void MultiplyTest(byte[] arr1, byte[] arr2, uint[] expected)
+        {
+            Scalar8x32 a = new(arr1, out bool overflow);
+            Assert.False(overflow);
+            Scalar8x32 b = new(arr2, out overflow);
+            Assert.False(overflow);
+
+            Scalar8x32 actual = a.Multiply(b);
+            Assert.Equal(expected[0], actual.b0);
+            Assert.Equal(expected[1], actual.b1);
+            Assert.Equal(expected[2], actual.b2);
+            Assert.Equal(expected[3], actual.b3);
+            Assert.Equal(expected[4], actual.b4);
+            Assert.Equal(expected[5], actual.b5);
+            Assert.Equal(expected[6], actual.b6);
+            Assert.Equal(expected[7], actual.b7);
+        }
+
         public static IEnumerable<object[]> EqualCases()
         {
             Random rng = new();
