@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -17,6 +18,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// even though it could be a valid <see cref="PushDataOp"/>. 
     /// See https://bitcoin.stackexchange.com/a/93664/87716 and test cases for more information.
     /// </remarks>
+    [DebuggerDisplay("{ToString()}")]
     public class PushDataOp : BaseOperation
     {
         /// <summary>
@@ -424,6 +426,22 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     hash = hash * 31 + b;
                 }
                 return hash;
+            }
+        }
+
+        /// <summary>
+        /// Returns the string representation of this operation
+        /// </summary>
+        /// <returns>The string representation of this operation</returns>
+        public override string ToString()
+        {
+            if (OpValue == OP._0 || OpValue == OP.Negative1 || (OpValue >= OP._1 && OpValue <= OP._16))
+            {
+                return $"OP{OpValue}";
+            }
+            else
+            {
+                return $"PushData<{data.ToBase16()}>";
             }
         }
     }

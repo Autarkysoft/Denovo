@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -11,6 +12,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     /// Base (abstract) class for all operations. Has basic methods shared among <see cref="IOperation"/>s 
     /// and Implements overrides for Equals() and GetHashCode() methods.
     /// </summary>
+    [DebuggerDisplay("OP_{OpValue}")]
     public abstract class BaseOperation : IOperation
     {
         /// <summary>

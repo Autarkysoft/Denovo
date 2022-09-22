@@ -4,12 +4,14 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
+using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 {
     /// <summary>
     /// Operation that is used to include an arbitrary data in transactions, it will fail on running.
     /// </summary>
+    [DebuggerDisplay("OP_{OpValue}<{data.ToBase16()}>")]
     public class ReturnOp : NotRunableOps
     {
         /// <summary>
