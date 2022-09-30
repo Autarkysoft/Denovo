@@ -958,7 +958,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Scalar8x32 r = new Scalar8x32(p0, p1, p2, p3, p4, p5, p6, p7);
 
             // Final reduction of r
-           return Reduce(r, (uint)c + GetOverflow(r));
+            return Reduce(r, (uint)c + GetOverflow(r));
         }
 
         private static Scalar8x32 Reduce(in Scalar8x32 r, uint overflow)
@@ -984,6 +984,30 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
         }
 
+        private static unsafe Scalar8x32 MulShiftVar(in Scalar8x32 a, in Scalar8x32 b, int shift)
+        {
+            Debug.Assert(shift >= 256);
+
+            uint* l = stackalloc uint[16];
+            Mult512(l, a, b);
+
+            int shiftlimbs = shift >> 5;
+            int shiftlow = shift & 0x1F;
+            int shifthigh = 32 - shiftlow;
+            bool sb = shiftlow != 0;
+
+            uint r0 = shift < 512 ? (l[0 + shiftlimbs] >> shiftlow | (shift < 480 && sb ? (l[1 + shiftlimbs] << shifthigh) : 0)) : 0;
+            uint r1 = shift < 480 ? (l[1 + shiftlimbs] >> shiftlow | (shift < 448 && sb ? (l[2 + shiftlimbs] << shifthigh) : 0)) : 0;
+            uint r2 = shift < 448 ? (l[2 + shiftlimbs] >> shiftlow | (shift < 416 && sb ? (l[3 + shiftlimbs] << shifthigh) : 0)) : 0;
+            uint r3 = shift < 416 ? (l[3 + shiftlimbs] >> shiftlow | (shift < 384 && sb ? (l[4 + shiftlimbs] << shifthigh) : 0)) : 0;
+            uint r4 = shift < 384 ? (l[4 + shiftlimbs] >> shiftlow | (shift < 352 && sb ? (l[5 + shiftlimbs] << shifthigh) : 0)) : 0;
+            uint r5 = shift < 352 ? (l[5 + shiftlimbs] >> shiftlow | (shift < 320 && sb ? (l[6 + shiftlimbs] << shifthigh) : 0)) : 0;
+            uint r6 = shift < 320 ? (l[6 + shiftlimbs] >> shiftlow | (shift < 288 && sb ? (l[7 + shiftlimbs] << shifthigh) : 0)) : 0;
+            uint r7 = shift < 288 ? (l[7 + shiftlimbs] >> shiftlow) : 0;
+
+            Scalar8x32 r = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            return r.CAddBit(0, (l[(shift - 1) >> 5] >> ((shift - 1) & 0x1f)) & 1);
+        }
 
         /// <summary>
         /// Returns the complement of this scalar modulo the group order.
@@ -1012,6 +1036,72 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
         }
 
+
+        internal static void SplitLambda(out Scalar8x32 r1, out Scalar8x32 r2, in Scalar8x32 k)
+        {
+            // these _var calls are constant time since the shift amount is constant
+            Scalar8x32 c1 = MulShiftVar(k, G1, 384);
+            Scalar8x32 c2 = MulShiftVar(k, G2, 384);
+            c1 = c1.Multiply(Minus_b1);
+            c2 = c2.Multiply(Minus_b2);
+            r2 = c1.Add(c2, out _);
+            r1 = r2.Multiply(secp256k1_const_lambda);
+            r1 = r1.Negate();
+            r1 = r1.Add(k, out _);
+
+#if DEBUG
+            SplitLambdaVerify(r1, r2, k);
+#endif
+        }
+
+#if DEBUG
+        private static void SplitLambdaVerify(in Scalar8x32 r1, in Scalar8x32 r2, in Scalar8x32 k)
+        {
+            // (a1 + a2 + 1)/2 is 0xa2a8918ca85bafe22016d0b917e4dd77
+            Span<byte> k1_bound = new byte[32]
+            {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0xa2, 0xa8, 0x91, 0x8c, 0xa8, 0x5b, 0xaf, 0xe2, 0x20, 0x16, 0xd0, 0xb9, 0x17, 0xe4, 0xdd, 0x77
+            };
+
+            // (-b1 + b2)/2 + 1 is 0x8a65287bd47179fb2be08846cea267ed
+            Span<byte> k2_bound = new byte[32]
+            {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x8a, 0x65, 0x28, 0x7b, 0xd4, 0x71, 0x79, 0xfb, 0x2b, 0xe0, 0x88, 0x46, 0xce, 0xa2, 0x67, 0xed
+            };
+
+            Scalar8x32 s = secp256k1_const_lambda.Multiply(r2);
+            s = s.Add(r1, out _);
+
+            Debug.Assert(s.Equals(k));
+
+            s = r1.Negate();
+            byte[] buf1 = r1.ToByteArray();
+            byte[] buf2 = s.ToByteArray();
+
+            Debug.Assert(MemCmpVar(buf1, k1_bound, 32) < 0 || MemCmpVar(buf2, k1_bound, 32) < 0);
+
+            s = r2.Negate();
+            buf1 = r2.ToByteArray();
+            buf2 = s.ToByteArray();
+
+            Debug.Assert(MemCmpVar(buf1, k2_bound, 32) < 0 || MemCmpVar(buf2, k2_bound, 32) < 0);
+        }
+
+        private static int MemCmpVar(Span<byte> s1, Span<byte> s2, int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                int diff = s1[i] - s2[i];
+                if (diff != 0)
+                {
+                    return diff;
+                }
+            }
+            return 0;
+        }
+#endif
 
         /// <summary>
         /// Returns byte array representation of this instance
