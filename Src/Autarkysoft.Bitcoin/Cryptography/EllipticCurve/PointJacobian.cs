@@ -339,7 +339,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="b">Point in jacobian coordinate</param>
         /// <param name="bzinv">inverse of b's Z coordinate</param>
         /// <returns></returns>
-        public PointJacobian AddZInvVar(in PointJacobian b, in UInt256_10x26 bzinv)
+        public PointJacobian AddZInvVar(in Point b, in UInt256_10x26 bzinv)
         {
             UInt256_10x26 rx, ry;
             if (isInfinity)
