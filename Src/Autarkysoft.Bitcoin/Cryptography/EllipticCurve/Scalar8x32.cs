@@ -1037,6 +1037,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        /// <summary>
+        /// Find r1 and r2 such that r1+r2*2^128 = k
+        /// </summary>
+        /// <param name="k"></param>
+        /// <param name="r1"></param>
+        /// <param name="r2"></param>
+        internal static void Split128(in Scalar8x32 k, out Scalar8x32 r1, out Scalar8x32 r2)
+        {
+            r1 = new Scalar8x32(k.b0, k.b1, k.b2, k.b3, 0, 0, 0, 0);
+            r2 = new Scalar8x32(k.b4, k.b5, k.b6, k.b7, 0, 0, 0, 0);
+        }
+
         internal static void SplitLambda(out Scalar8x32 r1, out Scalar8x32 r2, in Scalar8x32 k)
         {
             // these _var calls are constant time since the shift amount is constant
