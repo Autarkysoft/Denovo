@@ -124,6 +124,52 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Bring a batch of inputs to the same global z "denominator", based on ratios between
+        /// (omitted) z coordinates of adjacent elements.
+        /// 
+        /// Although the elements a[i] are _ge rather than _gej, they actually represent elements
+        /// in Jacobian coordinates with their z coordinates omitted.
+        /// 
+        /// Using the notation z(b) to represent the omitted z coordinate of b, the array zr of
+        /// z coordinate ratios must satisfy zr[i] == z(a[i]) / z(a[i - 1]) for 0 &#60; 'i' &#60; <paramref name="len"/>.
+        /// The zr[0] value is unused.
+        /// 
+        /// This function adjusts the coordinates of 'a' in place so that for all 'i', z(a[i]) == z(a[len - 1]).
+        /// In other words, the initial value of z(a[len - 1]) becomes the global z "denominator". Only the
+        /// a[i].x and a[i].y coordinates are explicitly modified; the adjustment of the omitted z coordinate is
+        /// implicit.
+        /// The coordinates of the final element a[len - 1] are not changed.
+        /// </summary>
+        /// <param name="len"></param>
+        /// <param name="a"></param>
+        /// <param name="zr"></param>
+        public static void SetGlobalZ(int len, Point[] a, UInt256_10x26[] zr)
+        {
+            int i = len - 1;
+            UInt256_10x26 zs;
+
+            if (len > 0) 
+            {
+                // Ensure all y values are in weak normal form for fast negation of points
+                a[i] = new Point(a[i].x, a[i].y.NormalizeWeak(), a[i].isInfinity);
+                zs = zr[i];
+
+                // Work our way backwards, using the z-ratios to scale the x/y values.
+                while (i > 0) 
+                {
+                    if (i != len - 1)
+                    {
+                        zs *= zr[i];
+                    }
+                    i--;
+                    PointJacobian tmpa = new PointJacobian(a[i].x, a[i].y, UInt256_10x26.Zero, false);
+                    a[i] = tmpa.ToPointZInv(zs);
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Creates a new instance of <see cref="Point"/> from the given x coordinate.
         /// Return value indicates success.
         /// </summary>
