@@ -99,6 +99,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public static ref readonly Point Infinity => ref _infinity;
 
+        private static readonly Point _g = new Point(
+            0x16F81798U, 0x59F2815BU, 0x2DCE28D9U, 0x029BFCDBU, 0xCE870B07U, 0x55A06295U, 0xF9DCBBACU, 0x79BE667EU,
+            0xFB10D4B8U, 0x9C47D08FU, 0xA6855419U, 0xFD17B448U, 0x0E1108A8U, 0x5DA4FBFCU, 0x26A3C465U, 0x483ADA77U);
+        /// <summary>
+        /// Secp256k1 curve generator point
+        /// </summary>
+        public static ref readonly Point G => ref _g;
 
         /// <summary>
         /// Returns if this instance is valid (on curve) and is not the point at infinity
