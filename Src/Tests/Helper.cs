@@ -229,6 +229,29 @@ namespace Tests
 
         /// <summary>
         /// Reads the embeded resource file located in "Tests.TestData" folder with the 
+        /// given name and file extention type and returns the stream. 
+        /// If the file wasn't found, it fails using <see cref="Assert.True(bool)"/>.
+        /// </summary>
+        /// <param name="resourceName">Name of the resource file</param>
+        /// <param name="fileExtention">[Default value = json] Type of the resource file</param>
+        /// <returns>Contents of the read file as string</returns>
+        public static Stream ReadResourceAsStream(string resourceName, string fileExtention = "json")
+        {
+            Assembly asm = Assembly.GetExecutingAssembly();
+            Stream stream = asm.GetManifestResourceStream($"Tests.TestData.{resourceName}.{fileExtention}");
+            if (!(stream is null))
+            {
+                return stream;
+            }
+            else
+            {
+                Assert.True(false, "File was not found among resources!");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Reads the embeded resource file located in "Tests.TestData" folder with the 
         /// given name and file extention type and returns the content without change. 
         /// If the file wasn't found, it fails using <see cref="Assert.True(bool)"/>.
         /// </summary>
@@ -237,18 +260,9 @@ namespace Tests
         /// <returns>Contents of the read file as string</returns>
         public static string ReadResource(string resourceName, string fileExtention = "json")
         {
-            Assembly asm = Assembly.GetExecutingAssembly();
-            using Stream stream = asm.GetManifestResourceStream($"Tests.TestData.{resourceName}.{fileExtention}");
-            if (!(stream is null))
-            {
-                using StreamReader reader = new(stream);
-                return reader.ReadToEnd();
-            }
-            else
-            {
-                Assert.True(false, "File was not found among resources!");
-                return string.Empty;
-            }
+            using Stream stream = ReadResourceAsStream(resourceName, fileExtention);
+            using StreamReader reader = new(stream);
+            return reader.ReadToEnd();
         }
 
         /// <summary>
