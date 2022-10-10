@@ -36,6 +36,7 @@
     <None Remove="TestData\HmacShaNistTestData.json" />
     <None Remove="TestData\HmacShaRfcTestData.json" />
     <None Remove="TestData\PBKDF2TestData.json" />
+    <None Remove="TestData\precomputed_ecmult.c" />
     <None Remove="TestData\Ripemd160ProgressiveTestData.json" />
     <None Remove="TestData\Sha256NistTestData.json" />
     <None Remove="TestData\Sha512NistTestData.json" />
@@ -56,6 +57,7 @@
     <EmbeddedResource Include="TestData\HmacShaNistTestData.json" />
     <EmbeddedResource Include="TestData\HmacShaRfcTestData.json" />
     <EmbeddedResource Include="TestData\PBKDF2TestData.json" />
+    <EmbeddedResource Include="TestData\precomputed_ecmult.c" />
     <EmbeddedResource Include="TestData\Ripemd160ProgressiveTestData.json" />
     <EmbeddedResource Include="TestData\Sha256NistTestData.json" />
     <EmbeddedResource Include="TestData\Sha512NistTestData.json" />
