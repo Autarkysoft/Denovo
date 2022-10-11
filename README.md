@@ -1,4 +1,4 @@
-[![.NET-CI](https://github.com/Autarkysoft/Denovo/actions/workflows/dotnetCI.yml/badge.svg?branch=master)](https://github.com/Autarkysoft/Denovo/actions/workflows/dotnetCI.yml) [![Build Status](https://travis-ci.org/Autarkysoft/Denovo.svg?branch=master)](https://travis-ci.org/Autarkysoft/Denovo)
+[![.NET-CI](https://github.com/Autarkysoft/Denovo/actions/workflows/dotnetCI.yml/badge.svg?branch=master)](https://github.com/Autarkysoft/Denovo/actions/workflows/dotnetCI.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Autarkysoft/Denovo/blob/master/License)  
 
 <p align="center">
@@ -30,6 +30,7 @@ Denovo can run on any operating systems.
 [![NuGet](https://img.shields.io/nuget/v/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
 [![NuGet](https://img.shields.io/nuget/dt/Autarkysoft.Bitcoin?style=for-the-badge)](https://www.nuget.org/packages/Autarkysoft.Bitcoin)
 [![Target](https://img.shields.io/badge/dynamic/xml?color=%23512bd4&label=target&query=%2F%2FTargetFramework%5B1%5D&url=https%3A%2F%2Fraw.githubusercontent.com%2FAutarkysoft%2FDenovo%2Fmaster%2FSrc%2FAutarkysoft.Bitcoin%2FAutarkysoft.Bitcoin.csproj&logo=.net&style=for-the-badge)](https://github.com/Autarkysoft/Denovo/blob/master/Src/Autarkysoft.Bitcoin/Autarkysoft.Bitcoin.csproj)
+![Dependencies: None](https://img.shields.io/badge/dependencies-none-success?style=for-the-badge)
 
 The backbone of Denovo, Bitcoin.net is a stand alone bitcoin library written completely in C# and from scratch (no code translating)
 with no dependencies. 
