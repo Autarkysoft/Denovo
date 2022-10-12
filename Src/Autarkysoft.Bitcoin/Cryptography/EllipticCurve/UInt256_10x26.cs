@@ -239,6 +239,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                                                                      0xFFFFFFFEU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU);
         private static readonly UInt256_10x26 _pn = new UInt256_10x26(0x2FC9BAEEU, 0x402DA172U, 0x50B75FC4U, 0x45512319U,
                                                                       1, 0, 0, 0);
+        private static readonly UInt256_10x26 _beta = new UInt256_10x26(0x719501eeU, 0xc1396c28U, 0x12f58995U, 0x9cf04975U,
+                                                                        0xac3434e9U, 0x6e64479eU, 0x657c0710U, 0x7ae96a2bU);
         /// <summary>
         /// Zero
         /// </summary>
@@ -255,6 +257,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Difference between secp256k1 prime and order (p-n=0x014551231950b75fc4402da1722fc9baee)
         /// </summary>
         public static ref readonly UInt256_10x26 PMinusN => ref _pn;
+        /// <summary>
+        /// 
+        /// </summary>
+        public static ref readonly UInt256_10x26 Beta => ref _beta;
 
         /// <summary>
         /// Returns if this instance is odd (needs to be normalized)
