@@ -11,7 +11,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             aux = new UInt256_10x26[size];
             preA = new Point[size];
-            ps = new StraussPointState[1];
+            ps = new StraussPointState[1] { new StraussPointState() };
         }
 
         public StraussState(UInt256_10x26[] aux, Point[] preA, StraussPointState[] ps)
