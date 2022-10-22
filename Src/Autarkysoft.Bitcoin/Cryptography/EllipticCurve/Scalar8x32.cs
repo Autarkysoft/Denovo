@@ -1180,5 +1180,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         /// <inheritdoc/>
         public override int GetHashCode() => HashCode.Combine(b0, b1, b2, b3, b4, b5, b6, b7);
+
+        /// <inheritdoc/>
+        public override string ToString() => $"0x{ToByteArray().ToBase16()}";
     }
 }
