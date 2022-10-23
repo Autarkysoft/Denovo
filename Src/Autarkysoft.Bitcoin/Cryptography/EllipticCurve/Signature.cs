@@ -81,19 +81,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if successful, otherwise false.</returns>
         public static bool TryReadLoose(byte[] derSig, out Signature result, out Errors error)
         {
+            // https://github.com/bitcoin/bitcoin/blob/e7a0e9627196655be5aa6c2738d4b57646a03726/src/pubkey.cpp#L25-L175
             result = null;
 
-            if (derSig == null)
+            if (derSig == null || derSig.Length == 0)
             {
-                error = Errors.NullBytes;
-                return false;
-            }
-
-            // Min = 3006[0201(01)0201(01)]-01
-            if (derSig.Length < 9)
-            {
-                // This also handles the Length == 0 case
-                error = Errors.InvalidDerEncodingLength;
+                error = Errors.NullOrEmptyBytes;
                 return false;
             }
 
@@ -105,13 +98,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
+            // TODO: core is only reading 1 byte here (maybe run a check on all pre-BIP66 sigs and simplify this)
+            // https://github.com/bitcoin/bitcoin/blob/e7a0e9627196655be5aa6c2738d4b57646a03726/src/pubkey.cpp#L55-L62
             if (!stream.TryReadDerLength(out int seqLen))
             {
                 error = Errors.InvalidDerSeqLength;
                 return false;
             }
 
-            if (seqLen < 6 || !stream.CheckRemaining(seqLen + 1)) // +1 is the SigHash byte (at least 1 byte)
+            if (!stream.CheckRemaining(seqLen + 1)) // +1 is the SigHash byte (at least 1 byte)
             {
                 error = Errors.InvalidDerSeqLength;
                 return false;
@@ -193,6 +188,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if successful, otherwise false.</returns>
         public static bool TryReadStrict(byte[] derSig, out Signature result, out Errors error)
         {
+            // https://github.com/bitcoin/bitcoin/blob/master/src/script/interpreter.cpp#L107
             result = null;
 
             if (derSig == null)
@@ -337,7 +333,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Buffer.BlockCopy(ba, start, temp, 32 - len, len);
 
             res = new Scalar8x32(temp, out bool overflow);
-            return overflow;
+            return !overflow;
         }
 
         /// <summary>
