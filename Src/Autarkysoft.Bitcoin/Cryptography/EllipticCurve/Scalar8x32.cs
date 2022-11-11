@@ -252,7 +252,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// The Secp256k1 curve has an endomorphism, where lambda* (x, y) = (beta* x, y), where lambda is:
         /// </summary>
-        internal static ref readonly Scalar8x32 secp256k1_const_lambda => ref _lambda;
+        internal static ref readonly Scalar8x32 Lambda => ref _lambda;
 
         /// <summary>
         /// Returns if the value is equal to zero
@@ -1057,7 +1057,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             c1 = c1.Multiply(Minus_b1);
             c2 = c2.Multiply(Minus_b2);
             r2 = c1.Add(c2, out _);
-            r1 = r2.Multiply(secp256k1_const_lambda);
+            r1 = r2.Multiply(Lambda);
             r1 = r1.Negate();
             r1 = r1.Add(k, out _);
 
@@ -1083,7 +1083,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 0x8a, 0x65, 0x28, 0x7b, 0xd4, 0x71, 0x79, 0xfb, 0x2b, 0xe0, 0x88, 0x46, 0xce, 0xa2, 0x67, 0xed
             };
 
-            Scalar8x32 s = secp256k1_const_lambda.Multiply(r2);
+            Scalar8x32 s = Lambda.Multiply(r2);
             s = s.Add(r1, out _);
 
             Debug.Assert(s.Equals(k));
