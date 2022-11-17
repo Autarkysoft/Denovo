@@ -378,6 +378,51 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Writes the given <see cref="UInt256_10x26"/> to this stream as bytes.
+        /// </summary>
+        /// <param name="val">256-bit value</param>
+        public void Write(in UInt256_10x26 val)
+        {
+            CheckAndResize(Scalar8x32.ByteSize);
+
+            buffer[position] = (byte)(val.b7 >> 24);
+            buffer[position + 1] = (byte)(val.b7 >> 16);
+            buffer[position + 2] = (byte)(val.b7 >> 8);
+            buffer[position + 3] = (byte)val.b7;
+            buffer[position + 4] = (byte)(val.b6 >> 24);
+            buffer[position + 5] = (byte)(val.b6 >> 16);
+            buffer[position + 6] = (byte)(val.b6 >> 8);
+            buffer[position + 7] = (byte)val.b6;
+            buffer[position + 8] = (byte)(val.b5 >> 24);
+            buffer[position + 9] = (byte)(val.b5 >> 16);
+            buffer[position + 10] = (byte)(val.b5 >> 8);
+            buffer[position + 11] = (byte)val.b5;
+            buffer[position + 12] = (byte)(val.b4 >> 24);
+            buffer[position + 13] = (byte)(val.b4 >> 16);
+            buffer[position + 14] = (byte)(val.b4 >> 8);
+            buffer[position + 15] = (byte)val.b4;
+            buffer[position + 16] = (byte)(val.b3 >> 24);
+            buffer[position + 17] = (byte)(val.b3 >> 16);
+            buffer[position + 18] = (byte)(val.b3 >> 8);
+            buffer[position + 19] = (byte)val.b3;
+            buffer[position + 20] = (byte)(val.b2 >> 24);
+            buffer[position + 21] = (byte)(val.b2 >> 16);
+            buffer[position + 22] = (byte)(val.b2 >> 8);
+            buffer[position + 23] = (byte)val.b2;
+            buffer[position + 24] = (byte)(val.b1 >> 24);
+            buffer[position + 25] = (byte)(val.b1 >> 16);
+            buffer[position + 26] = (byte)(val.b1 >> 8);
+            buffer[position + 27] = (byte)val.b1;
+            buffer[position + 28] = (byte)(val.b0 >> 24);
+            buffer[position + 29] = (byte)(val.b0 >> 16);
+            buffer[position + 30] = (byte)(val.b0 >> 8);
+            buffer[position + 31] = (byte)val.b0;
+
+            position += Scalar8x32.ByteSize;
+        }
+
+
+        /// <summary>
         /// Writes byte array representation of the given <see cref="ushort"/> to stream in big-endian order.
         /// </summary>
         /// <param name="val">16-bit usigned integer</param>
