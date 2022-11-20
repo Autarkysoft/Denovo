@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
 using System;
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
@@ -14,13 +13,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
     /// </summary>
     public class Signature
     {
-        /// <summary>
-        /// Initializes a new instance of <see cref="Signature"/> with empty parameters. Can be used to read stream.
-        /// </summary>
-        private Signature()
-        {
-        }
-
         /// <summary>
         /// Initializes a new instance of <see cref="Signature"/> using the given parameters.
         /// </summary>
@@ -40,7 +32,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="r">R value</param>
         /// <param name="s">S value</param>
         /// <param name="sigHash">Signature hash type</param>
-        public Signature(Scalar8x32 r, Scalar8x32 s, SigHashType sigHash)
+        public Signature(in Scalar8x32 r, in Scalar8x32 s, SigHashType sigHash)
         {
             R = r;
             S = s;
@@ -70,6 +62,32 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public SigHashType SigHash { get; set; }
 
 
+
+        private static bool TryCreateScalar(ReadOnlySpan<byte> ba, out Scalar8x32 res)
+        {
+            int start = 0;
+            while (start < ba.Length)
+            {
+                if (ba[start] != 0)
+                {
+                    break;
+                }
+                start++;
+            }
+
+            int len = ba.Length - start;
+            if (len > 32)
+            {
+                res = Scalar8x32.Zero;
+                return false;
+            }
+
+            byte[] temp = new byte[32];
+            Buffer.BlockCopy(ba.ToArray(), start, temp, 32 - len, len);
+
+            res = new Scalar8x32(temp, out bool overflow);
+            return !overflow;
+        }
 
         /// <summary>
         /// Creates a new instance of <see cref="Signature"/> by reading it from a DER encoded byte array with loose rules.
@@ -106,7 +124,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            if (!stream.CheckRemaining(seqLen + 1)) // +1 is the SigHash byte (at least 1 byte)
+            if (seqLen < 6 || !stream.CheckRemaining(seqLen + 1)) // +1 is the SigHash byte (at least 1 byte)
             {
                 error = Errors.InvalidDerSeqLength;
                 return false;
@@ -166,13 +184,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            result = new Signature()
-            {
-                R = r,
-                S = s,
-                SigHash = (SigHashType)derSig[^1]
-            };
-
+            result = new Signature(r, s, (SigHashType)derSig[^1]);
             error = Errors.None;
             return true;
         }
@@ -299,42 +311,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            result = new Signature()
-            {
-                R = r,
-                S = s,
-                SigHash = (SigHashType)derSig[^1]
-            };
-
+            result = new Signature(r, s, (SigHashType)derSig[^1]);
             error = Errors.None;
             return true;
         }
 
-        private static bool TryCreateScalar(byte[] ba, out Scalar8x32 res)
-        {
-            int start = 0;
-            while (start < ba.Length)
-            {
-                if (ba[start] != 0)
-                {
-                    break;
-                }
-                start++;
-            }
-
-            int len = ba.Length - start;
-            if (len > 32)
-            {
-                res = Scalar8x32.Zero;
-                return false;
-            }
-
-            byte[] temp = new byte[32];
-            Buffer.BlockCopy(ba, start, temp, 32 - len, len);
-
-            res = new Scalar8x32(temp, out bool overflow);
-            return !overflow;
-        }
 
         /// <summary>
         /// Creates a new instance of <see cref="Signature"/> by reading it from a fixed length byte array encoding
@@ -346,6 +327,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if successful, otherwise false.</returns>
         public static bool TryReadSchnorr(ReadOnlySpan<byte> data, out Signature result, out Errors error)
         {
+            // Note that empty signature is accepted as valid in Tapscripts (return true for parsing, false for success),
+            // but we handle it in CheckSigTapOp and are strict here.
             if (data == null || data.Length == 0)
             {
                 result = null;
@@ -381,19 +364,20 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            result = new Signature()
+            if (!TryCreateScalar(data.Slice(0, 32), out Scalar8x32 r))
             {
-                R = new Scalar8x32(data.Slice(0, 32), out bool of1),
-                S = new Scalar8x32(data.Slice(32, 32), out bool of2),
-                SigHash = sigHash
-            };
-
-            if (of1 || of2)
+                result = null;
+                error = Errors.InvalidDerRFormat;
+                return false;
+            }
+            if (!TryCreateScalar(data.Slice(32, 32), out Scalar8x32 s))
             {
-                result.R = Scalar8x32.Zero;
-                result.S = Scalar8x32.Zero;
+                result = null;
+                error = Errors.InvalidDerSFormat;
+                return false;
             }
 
+            result = new Signature(r, s, sigHash);
             error = Errors.None;
             return true;
         }
@@ -422,12 +406,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            result = new Signature()
-            {
-                R = new Scalar8x32(data.Slice(1, 32), out _),
-                S = new Scalar8x32(data.Slice(33, 32), out _),
-                RecoveryId = data[0]
-            };
+            result = new Signature(new Scalar8x32(data.Slice(1, 32), out _), new Scalar8x32(data.Slice(33, 32), out _), data[0]);
 
             error = null;
             return true;
