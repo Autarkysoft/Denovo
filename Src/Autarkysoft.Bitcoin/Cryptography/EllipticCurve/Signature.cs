@@ -433,11 +433,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public void WriteToStream(FastStream stream)
         {
             Span<byte> rBa = new byte[33]; R.WriteToSpan(rBa.Slice(1));
-            Span<byte> sBa = new byte[33]; R.WriteToSpan(sBa.Slice(1));
+            Span<byte> sBa = new byte[33]; S.WriteToSpan(sBa.Slice(1));
             int rLen = 33; int rStart = 0;
             int sLen = 33; int sStart = 0;
-            while (rLen > 1 && rBa[0] == 0 && rBa[1] < 0x80) { rLen--; rStart++; }
-            while (sLen > 1 && sBa[0] == 0 && sBa[1] < 0x80) { sLen--; sStart++; }
+            while (rLen > 1 && rBa[rStart] == 0 && rBa[rStart + 1] < 0x80) { rLen--; rStart++; }
+            while (sLen > 1 && sBa[sStart] == 0 && sBa[sStart + 1] < 0x80) { sLen--; sStart++; }
 
             stream.Write(SequenceTag);
             stream.Write((byte)(rLen + sLen + 4));
