@@ -349,6 +349,61 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(expected[7], actual.b7);
         }
 
+
+        public static IEnumerable<object[]> GetMulShiftVarCases()
+        {
+            yield return new object[]
+            {
+                Helper.HexToBytes("70c26dee31df21a9862a7eb4691c82bbcd6fa25aca54a019e0630bf05f345670"),
+                Helper.HexToBytes("248010c56bda6de7c632372c51db7c3f1b8fb265a5f6a37770d3891e0ae9df21"),
+                384,
+                new uint[8]
+                {
+                    0x24e77e63, 0x09ab6674, 0x921b45a4, 0x1013c00f, 0x00000000, 0x00000000, 0x00000000, 0x00000000
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("8e70dc336b8916b33850187997eca5592883a22f6e531fbb9505661681c4f5fb"),
+                Helper.HexToBytes("c797d53f87435d2222a067442ea895534940a7ec6f75a6de1c1fcd896ac1cb60"),
+                257,
+                new uint[8]
+                {
+                    0x1640f495, 0x8b4f558d, 0xdf179684, 0xdafddd13, 0x6573c474, 0x7c43641b, 0x8d95fb8e, 0x37871b32
+                }
+            };
+            yield return new object[]
+            {
+                Helper.HexToBytes("4f226a073400f62f18ebfa57b3622fe746032922998376fbbbe82af86b24bc34"),
+                Helper.HexToBytes("96d9e6142ebd47d62e0e616b9c75b02164ef1aced8714fc07308efbca7cc587e"),
+                272,
+                new uint[8]
+                {
+                    0x36ca316f, 0x8fe847ce, 0x3be6a72e, 0x029610b2, 0xc438e6cb, 0x180386da, 0x856b40f9, 0x00002ea1
+                }
+            };
+        }
+        [Theory]
+        [MemberData(nameof(GetMulShiftVarCases))]
+        public void MulShiftVarTest(byte[] arr1, byte[] arr2, int shift, uint[] expected)
+        {
+            Scalar8x32 a = new(arr1, out bool overflow);
+            Assert.False(overflow);
+            Scalar8x32 b = new(arr2, out overflow);
+            Assert.False(overflow);
+
+            Scalar8x32 actual = Scalar8x32.MulShiftVar(a, b, shift);
+            Assert.Equal(expected[0], actual.b0);
+            Assert.Equal(expected[1], actual.b1);
+            Assert.Equal(expected[2], actual.b2);
+            Assert.Equal(expected[3], actual.b3);
+            Assert.Equal(expected[4], actual.b4);
+            Assert.Equal(expected[5], actual.b5);
+            Assert.Equal(expected[6], actual.b6);
+            Assert.Equal(expected[7], actual.b7);
+        }
+
+
         public static IEnumerable<object[]> EqualCases()
         {
             Random rng = new();

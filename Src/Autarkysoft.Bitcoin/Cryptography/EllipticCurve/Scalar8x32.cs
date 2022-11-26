@@ -984,7 +984,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
         }
 
-        private static unsafe Scalar8x32 MulShiftVar(in Scalar8x32 a, in Scalar8x32 b, int shift)
+
+        public static unsafe Scalar8x32 MulShiftVar(in Scalar8x32 a, in Scalar8x32 b, int shift)
         {
             Debug.Assert(shift >= 256);
 
