@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
 using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
@@ -14,6 +15,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             PrecomputeEcMult.BuildTables(out PreG, out PreG128);
         }
 
+
+        private readonly Calc calc = new Calc();
 
         private static readonly PointStorage[] PreG;
         private static readonly PointStorage[] PreG128;
@@ -344,14 +347,72 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return r;
         }
 
-        private PointJacobian ECMult(PointJacobian a, Scalar8x32 na, Scalar8x32 ng)
+        private PointJacobian ECMult(in PointJacobian a, in Scalar8x32 na, in Scalar8x32 ng)
         {
             StraussState state = new StraussState(TableSizeWindowA);
             return StraussWnaf(state, new PointJacobian[] { a }, new Scalar8x32[] { na }, ng);
         }
 
+        private PointJacobian Multiply(in Scalar8x32 k, in Point point)
+        {
+            PointJacobian result = PointJacobian.Infinity;
+            PointJacobian addend = point.ToPointJacobian();
 
-        public bool Verify(in Signature sig, in Point pubkey, in Scalar8x32 hash)
+            Span<uint> temp = new uint[] { k.b0, k.b1, k.b2, k.b3, k.b4, k.b5, k.b6, k.b7 };
+            while (temp[^1] == 0)
+            {
+                temp = temp.Slice(0, temp.Length - 1);
+            }
+            for (int i = 0; i < temp.Length - 1; i++)
+            {
+                for (int j = 0; j < 32; j++)
+                {
+                    if ((temp[i] & 1) == 1)
+                    {
+                        result = result.AddVar(addend, out _);
+                    }
+                    addend = addend.AddVar(addend, out _);
+                    temp[i] >>= 1;
+                }
+            }
+
+            while (temp[^1] != 0)
+            {
+                if ((temp[^1] & 1) == 1)
+                {
+                    result = result.AddVar(addend, out _);
+                }
+                addend = addend.AddVar(addend, out _);
+                temp[^1] >>= 1;
+            }
+
+            return result;
+        }
+
+        public bool VerifySimple(Signature sig, in Point pubkey, in Scalar8x32 hash)
+        {
+            if (sig.R.IsZero || sig.S.IsZero)
+            {
+                return false;
+            }
+
+            Scalar8x32 invMod = sig.S.InverseVar_old();
+            Scalar8x32 u1 = hash.Multiply(invMod);
+            Scalar8x32 u2 = sig.R.Multiply(invMod);
+
+            Point Rxy = calc.MultiplyByG(u1).AddVar(Multiply(u2, pubkey), out _).ToPoint();
+
+            if (Rxy.x.IsZeroNormalizedVar() && Rxy.y.IsZeroNormalizedVar())
+            {
+                return false;
+            }
+
+            UInt256_10x26 temp = new UInt256_10x26(sig.R.b0, sig.R.b1, sig.R.b2, sig.R.b3, sig.R.b4, sig.R.b5, sig.R.b6, sig.R.b7);
+            return Rxy.x.EqualsVar(temp);
+        }
+
+
+        public bool Verify(Signature sig, in Point pubkey, in Scalar8x32 hash)
         {
             if (sig.R.IsZero || sig.S.IsZero)
             {
