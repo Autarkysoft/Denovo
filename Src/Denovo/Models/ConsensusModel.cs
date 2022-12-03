@@ -54,7 +54,14 @@ namespace Denovo.Models
         public bool IsBip16Enabled
         {
             get => _bip16;
-            set => SetField(ref _bip16, value);
+            set
+            {
+                if (SetField(ref _bip16, value) && !value)
+                {
+                    // Disable SegWit
+                    IsSegWitEnabled = value;
+                }
+            }
         }
 
         private bool _bip30;
@@ -103,14 +110,36 @@ namespace Denovo.Models
         public bool IsSegWitEnabled
         {
             get => _segwit;
-            set => SetField(ref _segwit, value);
+            set
+            {
+                if (SetField(ref _segwit, value))
+                {
+                    if (value)
+                    {
+                        // Enable BIP-16 (P2SH) when SegWit is enabled
+                        IsBip16Enabled = value;
+                    }
+                    else
+                    {
+                        // Disable Taproot
+                        IsTaprootEnabled = false;
+                    }
+                }
+            }
         }
 
         private bool _taproot;
         public bool IsTaprootEnabled
         {
             get => _taproot;
-            set => SetField(ref _taproot, value);
+            set
+            {
+                if (SetField(ref _taproot, value) && value)
+                {
+                    // Enable SegWit whenever Taproot is enabled
+                    IsSegWitEnabled = value;
+                }
+            }
         }
 
         public int MinBlockVersion => backup.MinBlockVersion;
