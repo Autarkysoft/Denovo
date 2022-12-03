@@ -164,6 +164,32 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return result;
         }
 
+        public Span<byte> GetPubkey(in Scalar8x32 priv, bool compressed)
+        {
+            PointJacobian pubJ = MultiplyByG(priv);
+            Point pub = pubJ.ToPoint();
+            return pub.ToByteArray(compressed);
+        }
+
+        public void GetPubkey(in Scalar8x32 priv, out Span<byte> comp, out Span<byte> uncomp)
+        {
+            PointJacobian pubJ = MultiplyByG(priv);
+            Point pub = pubJ.ToPoint();
+
+            UInt256_10x26 xNorm = pub.x.NormalizeVar();
+            UInt256_10x26 yNorm = pub.y.NormalizeVar();
+
+            byte firstByte = yNorm.IsOdd ? (byte)3 : (byte)2;
+
+            uncomp = new byte[65];
+            uncomp[0] = 4;
+            xNorm.WriteToSpan(uncomp[1..]);
+            yNorm.WriteToSpan(uncomp[33..]);
+
+            comp = new byte[33];
+            comp[0] = firstByte;
+            uncomp.Slice(1, 32).CopyTo(comp[1..]);
+        }
 
 
         // This method is a simple way of checking and debugging the code not an actual test
