@@ -20,25 +20,21 @@ namespace Denovo.ViewModels
         public VerifyTxViewModel() : base(800, 750)
         {
             VerifyCommand = new BindableCommand(Verify, () => IsVerifyEnable);
+
+            Consensus = new();
+            verifier = new(Consensus);
         }
 
 
 
         private readonly Transaction tx = new();
-        // TODO: add block height and network type
-        private static readonly Consensus consensus = new(NetworkType.MainNet);
-        private readonly TransactionVerifier verifier = new(consensus);
+        private readonly TransactionVerifier verifier;
+        public ConsensusModel Consensus { get; }
 
 
         public static string BlockHeightToolTip => "Block height is used to determine which consensus rules are active." +
             $"{Environment.NewLine}It is mandatory for verification of coinbase transactions.";
 
-        private int _blkHeight;
-        public int BlockHeight
-        {
-            get => _blkHeight;
-            set => SetField(ref _blkHeight, value);
-        }
 
         private string _txHex;
         public string TxHex
@@ -131,7 +127,6 @@ namespace Denovo.ViewModels
             }
 
             verifier.Init();
-            consensus.BlockHeight = BlockHeight;
             if (UtxoList.Length == 0)
             {
                 // Tx is guessed to be coinbase

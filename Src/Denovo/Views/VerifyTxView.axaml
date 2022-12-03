@@ -11,17 +11,32 @@
     <vm:VerifyTxViewModel/>
   </Design.DataContext>
 
-  <Grid RowDefinitions="100,*,auto,75">
-    <Grid ColumnDefinitions="*,100">
+  <Grid RowDefinitions="140,*,auto,75">
+    <Grid ColumnDefinitions="*,270">
       <TextBox Text="{Binding TxHex}"
                Watermark="Transaction hex"
                ScrollViewer.VerticalScrollBarVisibility="Visible"
                Grid.Row="0"/>
-      <NumericUpDown Value="{Binding BlockHeight}"
-                     Minimum="0"
-                     ToolTip.Tip="{Binding BlockHeightToolTip}"
-                     Height="40"
-                     Grid.Column="1"/>
+
+      <Grid ColumnDefinitions="*,*,*" RowDefinitions="*,*,*,*" Grid.Column="1">
+        <NumericUpDown Value="{Binding Consensus.BlockHeight}"
+                       Minimum="0"
+                       ToolTip.Tip="{Binding BlockHeightToolTip}"
+                       Height="40"
+                       Grid.ColumnSpan="3" Grid.Row="0"/>
+        <CheckBox Content="BIP16" IsChecked="{Binding Consensus.IsBip16Enabled}" Grid.Column="0" Grid.Row="1"/>
+        <CheckBox Content="BIP30" IsChecked="{Binding Consensus.IsBip30Enabled}" Grid.Column="0" Grid.Row="2"/>
+        <CheckBox Content="BIP34" IsChecked="{Binding Consensus.IsBip34Enabled}" Grid.Column="0" Grid.Row="3"/>
+        
+        <CheckBox Content="BIP65" IsChecked="{Binding Consensus.IsBip65Enabled}" Grid.Column="1" Grid.Row="1"/>
+        <CheckBox Content="Strict DER" IsChecked="{Binding Consensus.IsStrictDerSig}" Grid.Column="1" Grid.Row="2"/>
+        <CheckBox Content="BIP16" IsChecked="{Binding Consensus.IsBip112Enabled}" Grid.Column="1" Grid.Row="3"/>
+        
+        <CheckBox Content="BIP147" IsChecked="{Binding Consensus.IsBip147Enabled}" Grid.Column="2" Grid.Row="1"/>
+        <CheckBox Content="SegWit" IsChecked="{Binding Consensus.IsSegWitEnabled}" Grid.Column="2" Grid.Row="2"/>
+        <CheckBox Content="Taproot" IsChecked="{Binding Consensus.IsTaprootEnabled}" Grid.Column="2" Grid.Row="3"/>
+      </Grid>
+      
     </Grid>
 
     <ItemsControl Items="{Binding UtxoList}" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Visible">
