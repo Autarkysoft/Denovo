@@ -11,9 +11,7 @@ using Denovo.Models;
 using Denovo.MVVM;
 using Denovo.Services;
 using System;
-using System.Net;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Denovo.ViewModels
 {
