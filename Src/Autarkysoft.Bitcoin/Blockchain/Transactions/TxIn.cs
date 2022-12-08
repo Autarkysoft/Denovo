@@ -29,7 +29,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="index">The outpoint's index</param>
         /// <param name="sigScript">Signature script</param>
         /// <param name="sequence">Sequence</param>
-        public TxIn(Digest256 hash, uint index, ISignatureScript sigScript, uint sequence)
+        public TxIn(in Digest256 hash, uint index, ISignatureScript sigScript, uint sequence)
         {
             TxHash = hash;
             Index = index;

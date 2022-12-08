@@ -23,7 +23,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <param name="tip">The last valid block in the chain</param>
         /// <param name="merkle">Merkle root hash</param>
         /// <param name="nbits">Block target</param>
-        public BlockHeader(IConsensus consensus, BlockHeader tip, Digest256 merkle, Target nbits)
+        public BlockHeader(IConsensus consensus, BlockHeader tip, in Digest256 merkle, Target nbits)
             : this(consensus.MinBlockVersion, tip.Hash, merkle, (uint)UnixTimeStamp.GetEpochUtcNow(), nbits, 0)
         {
         }
@@ -37,7 +37,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <param name="blockTime">Block time</param>
         /// <param name="nbits">Block target</param>
         /// <param name="nonce">Block nonce</param>
-        public BlockHeader(int ver, Digest256 prevHd, Digest256 merkle, uint blockTime, Target nbits, uint nonce)
+        public BlockHeader(int ver, in Digest256 prevHd, in Digest256 merkle, uint blockTime, Target nbits, uint nonce)
         {
             Version = ver;
             PreviousBlockHeaderHash = prevHd;

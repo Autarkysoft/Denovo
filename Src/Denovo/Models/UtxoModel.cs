@@ -15,7 +15,7 @@ namespace Denovo.Models
     {
         public UtxoModel() { }
 
-        public UtxoModel(Digest256 txHash, uint index)
+        public UtxoModel(in Digest256 txHash, uint index)
         {
             TxId = Base16.EncodeReverse(txHash.ToByteArray());
             Index = index;

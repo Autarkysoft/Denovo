@@ -31,7 +31,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads
         /// <param name="ver">Protocol version</param>
         /// <param name="headerHashes">List of header hashes</param>
         /// <param name="stopHash">Stop hash</param>
-        public GetBlocksPayload(int ver, Digest256[] headerHashes, Digest256 stopHash)
+        public GetBlocksPayload(int ver, Digest256[] headerHashes, in Digest256 stopHash)
         {
             Version = ver;
             Hashes = headerHashes;

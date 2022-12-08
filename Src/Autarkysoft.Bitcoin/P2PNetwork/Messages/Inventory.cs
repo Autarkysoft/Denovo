@@ -24,7 +24,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
         /// </summary>
         /// <param name="invType"></param>
         /// <param name="hash">32 byte hash</param>
-        public Inventory(InventoryType invType, Digest256 hash)
+        public Inventory(InventoryType invType, in Digest256 hash)
         {
             InvType = invType;
             Hash = hash;
