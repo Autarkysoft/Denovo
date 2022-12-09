@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography;
 using Xunit;
 
 namespace Tests
@@ -149,7 +150,8 @@ namespace Tests
         internal static byte[] CreateRandomBytes(int length)
         {
             byte[] result = new byte[length];
-            new Random().NextBytes(result);
+            using RNGCryptoServiceProvider rng = new();
+            rng.GetBytes(result);
             return result;
         }
 

@@ -27,7 +27,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         private static Point CreateRandom()
         {
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 20; i++)
             {
                 byte[] ba = Helper.CreateRandomBytes(32);
                 UInt256_10x26 x = new(ba, out bool isValid);
