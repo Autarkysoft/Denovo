@@ -612,7 +612,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </remarks>
         /// <param name="u">The value to add</param>
         /// <returns>Result of the addition</returns>
-        public UInt256_10x26 Add(in uint u) => this + u;
+        public UInt256_10x26 Add(uint u) => this + u;
 
         /// <summary>
         /// Adds two <see cref="UInt256_10x26"/> values
