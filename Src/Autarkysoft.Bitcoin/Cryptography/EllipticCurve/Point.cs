@@ -107,6 +107,76 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public static ref readonly Point G => ref _g;
 
+
+        /// <summary>
+        /// Calculates y from y^2 = x^3 + ax + b (mod p) by having x and whether y is odd or even.
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="x">X coordinate</param>
+        /// <param name="isOdd">Whether y is odd or even</param>
+        /// <param name="y">Calculated y</param>
+        /// <returns>True if y was found; otherwise false.</returns>
+        public static bool TryFindY(in UInt256_10x26 x, bool isOdd, out UInt256_10x26 y)
+        {
+            // x^3 + b (mod p)
+            UInt256_10x26 right = x.Multiply(x.Sqr()) + 7;
+            if (!right.Sqrt(out y))
+            {
+                return false;
+            }
+            y = y.NormalizeVar();
+            if (y.IsOdd != isOdd)
+            {
+                y = y.Negate(1);
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Converts the given byte array to a <see cref="Point"/>. Return value indicates success.
+        /// </summary>
+        /// <param name="bytes">Byte sequence to use (must be 33 or 65 bytes and start with 2/3 or 4/6/7)</param>
+        /// <param name="result">Resulting point (<see cref="Infinity"/> if fails)</param>
+        /// <returns>True if the conversion is successful; otherwise false.</returns>
+        public static bool TryRead(ReadOnlySpan<byte> bytes, out Point result)
+        {
+            if (bytes == null || bytes.Length < 33)
+            {
+                result = Infinity;
+                return false;
+            }
+
+            byte b = bytes[0];
+            if (bytes.Length == 33 && (b == EvenByte || b == OddByte))
+            {
+                UInt256_10x26 x = new UInt256_10x26(bytes.Slice(1, 32), out bool isValid);
+                if (isValid && TryFindY(x, b == OddByte, out UInt256_10x26 y))
+                {
+                    result = new Point(x, y);
+                    return true;
+                }
+            }
+            else if (bytes.Length == 65 && (b == UncompressedByte || b == EvenHybridByte || b == OddHybridByte))
+            {
+                UInt256_10x26 x = new UInt256_10x26(bytes.Slice(1, 32), out bool isValidX);
+                UInt256_10x26 y = new UInt256_10x26(bytes.Slice(33, 32), out bool isValidY);
+                if (isValidX && isValidY)
+                {
+                    if ((b == EvenHybridByte && y.IsOdd) || (b == OddHybridByte && !y.IsOdd))
+                    {
+                        result = Infinity;
+                        return false;
+                    }
+
+                    result = new Point(x, y, false);
+                    return result.IsValidVar();
+                }
+            }
+
+            result = Infinity;
+            return false;
+        }
+
         /// <summary>
         /// Returns if this instance is valid (on curve) and is not the point at infinity
         /// </summary>
@@ -155,14 +225,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             int i = len - 1;
             UInt256_10x26 zs;
 
-            if (len > 0) 
+            if (len > 0)
             {
                 // Ensure all y values are in weak normal form for fast negation of points
                 a[i] = new Point(a[i].x, a[i].y.NormalizeWeak(), a[i].isInfinity);
                 zs = zr[i];
 
                 // Work our way backwards, using the z-ratios to scale the x/y values.
-                while (i > 0) 
+                while (i > 0)
                 {
                     if (i != len - 1)
                     {
