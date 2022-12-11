@@ -1,4 +1,9 @@
-﻿namespace Autarkysoft.Bitcoin.Blockchain.Scripts
+﻿// Autarkysoft.Bitcoin
+// Copyright (c) 2020 Autarkysoft
+// Distributed under the MIT software license, see the accompanying
+// file LICENCE or http://www.opensource.org/licenses/mit-license.php.
+
+namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
     /// <summary>
     /// Specifies the mode used in script evaluation. It will affect OP count, ignoring or rejecting certain OP codes, script
