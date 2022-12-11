@@ -44,7 +44,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public unsafe byte[] ComputeHash(byte[] data)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> data)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("Instance was disposed.");
