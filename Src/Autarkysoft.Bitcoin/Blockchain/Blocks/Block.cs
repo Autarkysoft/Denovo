@@ -29,7 +29,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <exception cref="ArgumentNullException"/>
         /// <param name="header">Block header</param>
         /// <param name="txs">List of transactions</param>
-        public Block(BlockHeader header, ITransaction[] txs)
+        public Block(in BlockHeader header, ITransaction[] txs)
         {
             Header = header;
             TransactionList = txs;
