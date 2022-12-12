@@ -99,8 +99,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         }
 
 
-
-        private static readonly BlockHeader NULL = new BlockHeader();
+        private static readonly BlockHeader _null = new BlockHeader();
+        private static ref readonly BlockHeader NULL => ref _null;
 
         /// <summary>
         /// Block header size in bytes when serialized
