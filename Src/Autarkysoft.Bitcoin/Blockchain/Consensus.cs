@@ -201,7 +201,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 NetworkType.MainNet => CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50_0000_0000),
                 NetworkType.TestNet => CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50_0000_0000),
                 NetworkType.RegTest => CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, 50_0000_0000),
-                _ => throw new ArgumentException(Err.InvalidNetwork),
+                _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
         }
 
