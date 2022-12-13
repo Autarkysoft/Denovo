@@ -36,7 +36,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentException"/>
         /// <param name="ba">Byte array to use</param>
-        public PushDataOp(byte[] ba)
+        public PushDataOp(ReadOnlySpan<byte> ba)
         {
             if (ba == null)
                 throw new ArgumentNullException(nameof(ba), "Byte array can not be null.");
@@ -48,7 +48,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     $"Data to be pushed to the stack can not be bigger than {Constants.MaxScriptItemLength} bytes.");
             }
 
-            data = ba.CloneByteArray();
+            data = ba.ToArray();
             StackInt size = new StackInt(ba.Length);
             _opVal = size.GetOpCode();
         }

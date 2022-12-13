@@ -64,7 +64,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <param name="data">Byte array to check</param>
         /// <returns>True if the given byte array could be encoded using an OP code instead</returns>
-        protected bool HasNumOp(byte[] data)
+        protected bool HasNumOp(ReadOnlySpan<byte> data)
         {
             return data.Length == 0 || TryConvertToLong(data, out long result, false) && result >= -1 && result <= 16;
         }
@@ -76,7 +76,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </summary>
         /// <param name="data">Byte array to check</param>
         /// <returns>True if given bytes represented zero or negative zero; False if otherwise.</returns>
-        protected bool IsNotZero(byte[] data)
+        protected bool IsNotZero(ReadOnlySpan<byte> data)
         {
             for (int i = 0; i < data.Length; i++)
             {
@@ -171,7 +171,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// </param>
         /// <param name="maxDataLength">[Default value = 4] Maximum number of bytes allowed to exist in the data</param>
         /// <returns>True if conversion was successful, false if otherwise</returns>
-        protected bool TryConvertToLong(byte[] data, out long result, bool isStrict = true, int maxDataLength = 4)
+        protected bool TryConvertToLong(ReadOnlySpan<byte> data, out long result, bool isStrict = true, int maxDataLength = 4)
         {
             result = 0;
             if (data == null || data.Length > maxDataLength)
