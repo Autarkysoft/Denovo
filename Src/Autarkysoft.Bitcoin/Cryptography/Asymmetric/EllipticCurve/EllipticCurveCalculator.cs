@@ -438,7 +438,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         /// <returns>True if the signature was valid, otherwise false.</returns>
         public bool Verify(byte[] hash, Signature sig, EllipticCurvePoint pubPoint, bool lowS = true)
         {
-            if (sig.R == 0 || sig.R > curve.N || sig.S == 0 || sig.S > curve.N || (lowS && sig.S > curve.N / 2))
+            if (sig.R == 0 || sig.R >= curve.N || sig.S == 0 || sig.S >= curve.N || (lowS && sig.S > curve.N / 2))
             {
                 return false;
             }
