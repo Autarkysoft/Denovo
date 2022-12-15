@@ -389,12 +389,26 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return result;
         }
 
-        public bool VerifySimple(Signature sig, in Point pubkey, in Scalar8x32 hash)
+        public bool VerifySimple(Signature sig, in Point pubkey, in Scalar8x32 hash, bool lowS)
         {
+            // Note that Scalar (r and s) is always < N so there is no need to check and reject r/s >= N here
             if (sig.R.IsZero || sig.S.IsZero)
             {
                 return false;
             }
+
+            if (sig.S.IsHigh)
+            {
+                if (lowS)
+                {
+                    return false;
+                }
+                else
+                {
+                    sig.S = sig.S.Negate();
+                }
+            }
+            Debug.Assert(!sig.S.IsHigh);
 
             Scalar8x32 invMod = sig.S.InverseVar_old();
             Scalar8x32 u1 = hash.Multiply(invMod);
@@ -412,11 +426,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        public bool Verify(Signature sig, in Point pubkey, in Scalar8x32 hash)
+        public bool Verify(Signature sig, in Point pubkey, in Scalar8x32 hash, bool lowS)
         {
             if (sig.R.IsZero || sig.S.IsZero)
             {
                 return false;
+            }
+
+            if (sig.S.IsHigh)
+            {
+                if (lowS)
+                {
+                    return false;
+                }
+                else
+                {
+                    sig.S = sig.S.Negate();
+                }
             }
 
             Scalar8x32 sn = sig.S.InverseVar_old();
