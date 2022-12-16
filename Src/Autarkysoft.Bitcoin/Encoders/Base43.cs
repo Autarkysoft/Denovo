@@ -76,7 +76,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentNullException"/>
         /// <param name="data">Byte array to encode.</param>
         /// <returns>The string representation in base-58.</returns>
-        public static string Encode(byte[] data)
+        public static string Encode(ReadOnlySpan<byte> data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Input can not be null.");

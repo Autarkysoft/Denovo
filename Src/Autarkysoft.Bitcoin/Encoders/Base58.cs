@@ -89,7 +89,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             return checksum.SequenceEqual(calculatedChecksum);
         }
 
-        internal static byte[] CalculateChecksum(byte[] data)
+        internal static byte[] CalculateChecksum(ReadOnlySpan<byte> data)
         {
             using Sha256 hash = new Sha256();
             return hash.ComputeChecksum(data);
@@ -244,7 +244,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         }
 
 
-        internal static string Encode(byte[] data, Mode mode)
+        internal static string Encode(ReadOnlySpan<byte> data, Mode mode)
         {
             Debug.Assert(data != null);
             Debug.Assert(Enum.IsDefined(typeof(Mode), mode));
@@ -279,7 +279,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentNullException"/>
         /// <param name="data">Byte array to encode.</param>
         /// <returns>The string representation in base-58.</returns>
-        public static string Encode(byte[] data)
+        public static string Encode(ReadOnlySpan<byte> data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Input can not be null.");
@@ -294,13 +294,17 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentNullException"/>
         /// <param name="data">Byte array to encode.</param>
         /// <returns>The string representation in base-58 with a checksum.</returns>
-        public static string EncodeWithChecksum(byte[] data)
+        public static string EncodeWithChecksum(ReadOnlySpan<byte> data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Input can not be null!");
 
-            byte[] checksum = CalculateChecksum(data);
-            return Encode(data.ConcatFast(checksum), Mode.B58);
+            Span<byte> checksum = CalculateChecksum(data);
+            Span<byte> buffer = new byte[checksum.Length + data.Length];
+            data.CopyTo(buffer);
+            checksum.CopyTo(buffer.Slice(data.Length));
+
+            return Encode(buffer, Mode.B58);
         }
     }
 }

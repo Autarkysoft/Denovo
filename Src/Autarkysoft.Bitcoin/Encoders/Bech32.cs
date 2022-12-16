@@ -127,7 +127,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         }
 
 
-        private static uint Polymod(byte[] data)
+        private static uint Polymod(ReadOnlySpan<byte> data)
         {
             uint chk = 1;
             foreach (byte b in data)
@@ -178,7 +178,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             return Polymod(temp) == (mode == Mode.B32 ? V0CS : V1CS);
         }
 
-        private static byte[] ConvertBits(byte[] data, int fromBits, int toBits, bool pad = true)
+        private static byte[] ConvertBits(ReadOnlySpan<byte> data, int fromBits, int toBits, bool pad = true)
         {
             // TODO: 
             // We can use a method similar to BIP39 here to avoid the nested loop, usage of List, increase the speed,
@@ -328,7 +328,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <param name="witVer">Witness version</param>
         /// <param name="hrp">Human readable part</param>
         /// <returns>The string representation in bech-32 with a checksum.</returns>
-        public static string Encode(byte[] data, Mode mode, byte witVer, string hrp)
+        public static string Encode(ReadOnlySpan<byte> data, Mode mode, byte witVer, string hrp)
         {
             if (data == null || data.Length == 0)
                 throw new ArgumentNullException(nameof(data), "Data can not be null or empty.");

@@ -157,7 +157,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentNullException"/>
         /// <param name="data">The array of bytes to convert</param>
         /// <returns>Base-16 (Hexadecimal) encoded string.</returns>
-        public static string Encode(byte[] data)
+        public static string Encode(ReadOnlySpan<byte> data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Byte array can not be null.");
@@ -182,7 +182,7 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <exception cref="ArgumentNullException"/>
         /// <param name="data">The array of bytes to convert</param>
         /// <returns>Base-16 (Hexadecimal) encoded string in reverse order.</returns>
-        public static string EncodeReverse(byte[] data)
+        public static string EncodeReverse(ReadOnlySpan<byte> data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Byte array can not be null.");
