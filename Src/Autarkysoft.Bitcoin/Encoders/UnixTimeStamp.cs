@@ -50,6 +50,5 @@ namespace Autarkysoft.Bitcoin.Encoders
         {
             return TimeToEpoch(DateTime.UtcNow);
         }
-
     }
 }

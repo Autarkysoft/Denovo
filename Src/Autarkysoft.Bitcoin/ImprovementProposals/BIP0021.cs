@@ -219,7 +219,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 }
             }
 
-            return $"{Scheme}:{Address}{optional.ToString()}";
+            return $"{Scheme}:{Address}{optional}";
         }
     }
 }
