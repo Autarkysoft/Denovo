@@ -1693,6 +1693,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        public byte[] ToByteArray()
+        {
+            Span<byte> res = new byte[32];
+            WriteToSpan(res);
+            return res.ToArray();
+        }
+
         /// <summary>
         /// Converts this instance to a 32-byte array in big-endian order and writes it to the given array.
         /// </summary>
