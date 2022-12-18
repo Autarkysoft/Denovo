@@ -177,6 +177,30 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return false;
         }
 
+
+        public static bool TryReadXOnly(ReadOnlySpan<byte> bytes, out Point result)
+        {
+            if (bytes == null || bytes.Length != 32)
+            {
+                result = Infinity;
+                return false;
+            }
+
+            UInt256_10x26 x = new UInt256_10x26(bytes, out bool isValid);
+            if (!isValid)
+            {
+                result = Infinity;
+                return false;
+            }
+            if (!TryCreateVar(x, false, out result))
+            {
+                result = Infinity;
+                return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Returns if this instance is valid (on curve) and is not the point at infinity
         /// </summary>
