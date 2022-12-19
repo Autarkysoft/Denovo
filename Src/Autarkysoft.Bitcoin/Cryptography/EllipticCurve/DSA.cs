@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Diagnostics;
 
@@ -490,6 +491,29 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return true;
             }
             return false;
+        }
+
+
+        private Scalar8x32 ComputeSchnorrE(in UInt256_10x26 r, in UInt256_10x26 px, byte[] hash)
+        {
+            // Compute tagged hash:
+            // tagHash = Sha256(tagstring)
+            // msg = R.X | P.X | hash
+            // return sha256(tagHash | tagHash | msg)
+            using Sha256 sha = new Sha256();
+            byte[] temp = sha.ComputeTaggedHash_BIP340_challenge(r.ToByteArray(), px.ToByteArray(), hash);
+            return new Scalar8x32(temp, out _);
+        }
+
+        public bool VerifySchnorr(SchnorrSignature sig, in Point pubkey, byte[] hash)
+        {
+            Scalar8x32 e = ComputeSchnorrE(sig.R, pubkey.x, hash);
+            // rj =  s*G + (-e)*pkj
+            e = e.Negate();
+            PointJacobian rj = calc.MultiplyByG(sig.S).AddVar(Multiply(e, pubkey), out _);
+            Point r = rj.ToPointVar();
+
+            return !r.isInfinity && !r.y.NormalizeVar().IsOdd && sig.R.EqualsVar(r.x);
         }
     }
 }
