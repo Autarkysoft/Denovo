@@ -96,9 +96,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-
             Scalar8x32 s = new Scalar8x32(data.Slice(32, 32), out valid);
-            if (!valid)
+            if (valid) // This is overflow not validity
             {
                 result = null;
                 error = Errors.InvalidDerSFormat;
