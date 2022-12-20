@@ -383,7 +383,9 @@ namespace Autarkysoft.Bitcoin
         /// <param name="val">256-bit value (has to be normalized)</param>
         public void Write(in UInt256_10x26 val)
         {
+#if DEBUG
             Debug.Assert(val.isNormalized);
+#endif
 
             CheckAndResize(Scalar8x32.ByteSize);
 
