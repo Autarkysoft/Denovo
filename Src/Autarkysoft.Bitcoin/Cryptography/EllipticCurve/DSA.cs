@@ -354,7 +354,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return StraussWnaf(state, new PointJacobian[] { a }, new Scalar8x32[] { na }, ng);
         }
 
-        private PointJacobian Multiply(in Scalar8x32 k, in Point point)
+        internal PointJacobian Multiply(in Scalar8x32 k, in Point point)
         {
             PointJacobian result = PointJacobian.Infinity;
             PointJacobian addend = point.ToPointJacobian();
@@ -389,6 +389,92 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             return result;
         }
+
+
+
+        /// <summary>
+        /// Creates a signature using ECDSA based on Standards for Efficient Cryptography (SEC 1: Elliptic Curve Cryptography)
+        /// section 4.1.3 Signing Operation (page 44).
+        /// Return value indicates success.
+        /// </summary>
+        /// <param name="hash">Hash(m) to use for signing</param>
+        /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
+        /// <param name="nonce">
+        /// The ephemeral elliptic curve key used for signing
+        /// (k should be smaller than <see cref="IECurveFp.N"/>, it is always smaller if <see cref="Rfc6979"/> is used).
+        /// </param>
+        /// <param name="lowS">If true s values bigger than <see cref="IECurveFp.N"/>/2 will be converted.</param>
+        /// <param name="lowR">If true the process fails if R.X had its highest bit set</param>
+        /// <param name="sig">Signature (null if process fails)</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public bool TrySign(byte[] hash, Scalar8x32 key, byte[] nonce, bool lowS, bool lowR, out Signature sig)
+        {
+            Scalar8x32 e = new Scalar8x32(hash, out _);
+            Scalar8x32 k = new Scalar8x32(nonce, out bool overflow);
+            // RFC-6979a returns valid values
+            Debug.Assert(!overflow && !k.IsZero);
+
+            PointJacobian rj = calc.MultiplyByG(k);
+            Point rp = rj.ToPoint();
+            Scalar8x32 r = new Scalar8x32(rp.x.Normalize().ToByteArray(), out overflow);
+
+            if (r.IsZero || (lowR && (r.b7 & 0b10000000_00000000_00000000_00000000U) != 0))
+            {
+                sig = null;
+                return false;
+            }
+            byte v = (byte)((r.IsHigh ? 2 : 0) | (rp.y.IsOdd ? 1 : 0));
+
+            Scalar8x32 s  = k.Inverse_old().Multiply(e.Add(r.Multiply(key), out _));
+            
+            if (s.IsZero)
+            {
+                sig = null;
+                return false;
+            }
+            if (lowS && s.IsHigh)
+            {
+                v ^= 1;
+                s = s.Negate();
+            }
+
+            sig = new Signature(r, s, v);
+            return true;
+        }
+
+
+        /// <summary>
+        /// Creates a signature using ECDSA based on Standards for Efficient Cryptography (SEC 1: Elliptic Curve Cryptography)
+        /// section 4.1.3 Signing Operation (page 44) with a low s (&#60;<see cref="IECurveFp.N"/>) and 
+        /// low r (DER encoding of it will be &#60;= 32 bytes)
+        /// </summary>
+        /// <param name="hash">Hash(m) to use for signing</param>
+        /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
+        /// <returns>Signature</returns>
+        public Signature Sign(byte[] hash, Scalar8x32 key)
+        {
+            using Rfc6979 kGen = new Rfc6979();
+            if (TrySign(hash, key, kGen.GetK(hash, key.ToByteArray(), null).ToByteArray(true, true), true, true, out Signature sig))
+            {
+                return sig;
+            }
+            else
+            {
+                uint count = 1;
+                byte[] extraEntropy = new byte[32];
+                do
+                {
+                    extraEntropy[0] = (byte)count;
+                    extraEntropy[1] = (byte)(count >> 8);
+                    extraEntropy[2] = (byte)(count >> 16);
+                    extraEntropy[3] = (byte)(count >> 24);
+                    count++;
+                } while (!TrySign(hash, key, kGen.GetK(hash, key.ToByteArray(), extraEntropy).ToByteArray(true, true), true, true, out sig));
+                return sig;
+            }
+        }
+
+
 
         public bool VerifySimple(Signature sig, in Point pubkey, in Scalar8x32 hash, bool lowS)
         {
