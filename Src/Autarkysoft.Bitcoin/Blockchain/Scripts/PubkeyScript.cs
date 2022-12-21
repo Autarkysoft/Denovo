@@ -4,7 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
@@ -204,16 +204,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <summary>
-        /// Sets this script to a "pay to pubkey" script using the given <see cref="PublicKey"/>.
+        /// Sets this script to a "pay to pubkey" script using the given <see cref="Point"/>.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="pubKey">Public key to use</param>
-        /// <param name="useCompressed">Determines whether to use compressed or uncompressed <see cref="PublicKey"/> format</param>
-        public void SetToP2PK(PublicKey pubKey, bool useCompressed)
+        /// <param name="useCompressed">Determines whether to use compressed or uncompressed <see cref="Point"/> format</param>
+        public void SetToP2PK(in Point pubKey, bool useCompressed)
         {
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
-
             var ops = new IOperation[]
             {
                 new PushDataOp(pubKey.ToByteArray(useCompressed)),
@@ -248,16 +244,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <summary>
-        /// Sets this script to a "pay to pubkey hash" script using the given <see cref="PublicKey"/>.
+        /// Sets this script to a "pay to pubkey hash" script using the given <see cref="Point"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        /// <param name="pubKey"><see cref="PublicKey"/> to use</param>
-        /// <param name="useCompressed">Indicates whether to use compressed or uncompressed <see cref="PublicKey"/> format</param>
-        public void SetToP2PKH(PublicKey pubKey, bool useCompressed)
+        /// <param name="pubKey"><see cref="Point"/> to use</param>
+        /// <param name="useCompressed">Indicates whether to use compressed or uncompressed <see cref="Point"/> format</param>
+        public void SetToP2PKH(in Point pubKey, bool useCompressed)
         {
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
-
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(useCompressed));
             SetToP2PKH(hash);
@@ -336,20 +329,16 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <summary>
         /// Sets this script to a "pay to witness pubkey hash inside a pay to script hash" script 
-        /// using the given <see cref="PublicKey"/>.
+        /// using the given <see cref="Point"/>.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="pubKey">Public key to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
         /// Indicates whether to use compressed or uncompressed public key in the redeem script.
         /// <para/> * Note that uncompressed public keys are non-standard and can lead to funds being lost.
         /// </param>
-        public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed = true)
+        public void SetToP2SH_P2WPKH(in Point pubKey, bool useCompressed = true)
         {
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
-
             RedeemScript redeemScrBuilder = new RedeemScript();
             redeemScrBuilder.SetToP2SH_P2WPKH(pubKey, useCompressed);
             SetToP2SH(redeemScrBuilder);
@@ -420,7 +409,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <summary>
         /// Sets this script to a "pay to witness pubkey hash" script for version 0 witness program
-        /// using the given <see cref="PublicKey"/>.
+        /// using the given <see cref="Point"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <param name="pubKey">Public key to use</param>
@@ -429,11 +418,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Indicates whether to use compressed or uncompressed public key in the redeem script.
         /// <para/> * Note that uncompressed public keys are non-standard and can lead to funds being lost.
         /// </param>
-        public void SetToP2WPKH(PublicKey pubKey, bool useCompressed = true)
+        public void SetToP2WPKH(in Point pubKey, bool useCompressed = true)
         {
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Pubkey can not be null.");
-
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(useCompressed));
             SetToP2WPKH(hash);

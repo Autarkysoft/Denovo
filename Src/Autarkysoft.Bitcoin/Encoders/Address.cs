@@ -5,7 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 
@@ -158,10 +158,9 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
-        /// Return the pay to public key hash address from the given <see cref="PublicKey"/>.
+        /// Return the pay to public key hash address from the given <see cref="Point"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="pubk">Public key to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
@@ -169,17 +168,14 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public static string GetP2pkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2pkh(in Point pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
-            if (pubk is null)
-                throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
-
             byte ver = netType switch
             {
                 NetworkType.MainNet => P2pkhVerMainNet,
                 NetworkType.TestNet => P2pkhVerTestNet,
                 NetworkType.RegTest => P2pkhVerRegTest,
-                _ => throw new ArgumentException(Err.InvalidNetwork)
+                _ => throw new ArgumentException(Errors.InvalidNetwork.Convert())
             };
 
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
@@ -207,7 +203,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                 NetworkType.MainNet => P2shVerMainNet,
                 NetworkType.TestNet => P2shVerTestNet,
                 NetworkType.RegTest => P2shVerRegTest,
-                _ => throw new ArgumentException(Err.InvalidNetwork)
+                _ => throw new ArgumentException(Errors.InvalidNetwork.Convert())
             };
 
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
@@ -218,10 +214,9 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
-        /// Return the pay to witness public key hash address from the given <see cref="PublicKey"/>.
+        /// Return the pay to witness public key hash address from the given <see cref="Point"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="pubk">Public key to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
@@ -230,17 +225,14 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public static string GetP2wpkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2wpkh(in Point pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
-            if (pubk is null)
-                throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
-
             string hrp = netType switch
             {
                 NetworkType.MainNet => HrpMainNet,
                 NetworkType.TestNet => HrpTestNet,
                 NetworkType.RegTest => HrpRegTest,
-                _ => throw new ArgumentException(Err.InvalidNetwork),
+                _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
 
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
@@ -254,10 +246,9 @@ namespace Autarkysoft.Bitcoin.Encoders
 
 
         /// <summary>
-        /// Return the pay to witness public key hash address from the given <see cref="PublicKey"/>.
+        /// Return the pay to witness public key hash address from the given <see cref="Point"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="pubk">Public key to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
@@ -266,12 +257,10 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </param>
         /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
         /// <returns>The resulting address</returns>
-        public static string GetP2sh_P2wpkh(PublicKey pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
+        public static string GetP2sh_P2wpkh(in Point pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
-            if (pubk is null)
-                throw new ArgumentNullException(nameof(pubk), "Public key can not be null.");
             if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
-                throw new ArgumentException(Err.InvalidNetwork);
+                throw new ArgumentException(Errors.InvalidNetwork.Convert());
 
             var rdm = new RedeemScript();
             rdm.SetToP2SH_P2WPKH(pubk, useCompressed);
@@ -297,7 +286,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                 NetworkType.MainNet => HrpMainNet,
                 NetworkType.TestNet => HrpTestNet,
                 NetworkType.RegTest => HrpRegTest,
-                _ => throw new ArgumentException(Err.InvalidNetwork),
+                _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
 
             using Sha256 witHashFunc = new Sha256();
@@ -323,7 +312,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             if (script is null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
             if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
-                throw new ArgumentException(Err.InvalidNetwork);
+                throw new ArgumentException(Errors.InvalidNetwork.Convert());
 
             RedeemScript rdm = new RedeemScript();
             rdm.SetToP2SH_P2WSH(script);
@@ -354,29 +343,26 @@ namespace Autarkysoft.Bitcoin.Encoders
                 NetworkType.MainNet => HrpMainNet,
                 NetworkType.TestNet => HrpTestNet,
                 NetworkType.RegTest => HrpRegTest,
-                _ => throw new ArgumentException(Err.InvalidNetwork),
+                _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
 
             return Bech32.Encode(data32, Bech32.Mode.B32m, 1, hrp);
         }
 
-        /// <summary>
-        /// Return the pay to taproot address from the given public key.
-        /// </summary>
-        /// <exception cref="ArgumentException"/>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <param name="pub">Public key to use</param>
-        /// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
-        /// <returns>The resulting address</returns>
-        public static string GetP2tr(PublicKey pub, NetworkType netType = NetworkType.MainNet)
-        {
-            if (pub is null)
-                throw new ArgumentNullException(nameof(pub), "Public key can not be null.");
-
-            byte[] tweaked = pub.ToTweaked(out _);
-            return GetP2tr(tweaked, netType);
-        }
+        ///// <summary>
+        ///// Return the pay to taproot address from the given public key.
+        ///// </summary>
+        ///// <exception cref="ArgumentException"/>
+        ///// <exception cref="ArgumentNullException"/>
+        ///// <exception cref="ArgumentOutOfRangeException"/>
+        ///// <param name="pub">Public key to use</param>
+        ///// <param name="netType">[Default value = <see cref="NetworkType.MainNet"/>] Network type</param>
+        ///// <returns>The resulting address</returns>
+        //public static string GetP2tr(in Point pub, NetworkType netType = NetworkType.MainNet)
+        //{
+        //    byte[] tweaked = pub.ToTweaked(out _);
+        //    return GetP2tr(tweaked, netType);
+        //}
 
 
         /// <summary>

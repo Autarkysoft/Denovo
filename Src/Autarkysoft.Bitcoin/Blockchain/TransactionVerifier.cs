@@ -6,8 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
@@ -42,7 +41,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         {
             this.consensus = consensus;
 
-            calc = new EllipticCurveCalculator();
+            calc = new Calc();
             scrSer = new ScriptSerializer();
             hash160 = new Ripemd160Sha256();
             sha256 = new Sha256();
@@ -70,7 +69,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
             mempool = memoryPool;
             this.consensus = consensus;
 
-            calc = new EllipticCurveCalculator();
+            calc = new Calc();
+            dsa = new DSA();
             scrSer = new ScriptSerializer();
             hash160 = new Ripemd160Sha256();
             sha256 = new Sha256();
@@ -79,7 +79,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         private readonly bool isMempool;
         private readonly LightDatabase localDb = new LightDatabase();
-        private readonly EllipticCurveCalculator calc;
+        private readonly Calc calc;
+        private readonly DSA dsa;
         private readonly ScriptSerializer scrSer;
         private readonly IMemoryPool mempool;
         private readonly IConsensus consensus;
@@ -215,14 +216,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 }
             }
 
-            if (!PublicKey.TryRead(pubPush.data, out PublicKey pubK))
+            if (!Point.TryRead(pubPush.data, out Point pubK))
             {
                 error = $"OP_CheckSig failed due to invalid public key for input at index={index}.";
                 return false;
             }
 
             byte[] toSign = tx.SerializeForSigning(pubScrData.ToArray(), index, sig.SigHash);
-            if (calc.Verify(toSign, sig, pubK, ForceLowS))
+            Scalar8x32 hash = new Scalar8x32(toSign, out bool overflow);
+            if (dsa.VerifySimple(sig, pubK, hash, ForceLowS))
             {
                 error = null;
                 return true;
@@ -265,14 +267,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            if (!PublicKey.TryRead(pubPush, out PublicKey pubK))
+            if (!Point.TryRead(pubPush, out Point pubK))
             {
                 error = $"OP_CheckSig failed due to invalid public key for input at index={index}.";
                 return false;
             }
 
             byte[] toSign = tx.SerializeForSigningSegWit(scrSer.ConvertP2wpkh(actualHash), index, amount, sig.SigHash);
-            if (calc.Verify(toSign, sig, pubK, ForceLowS))
+            Scalar8x32 hash = new Scalar8x32(toSign, out bool overflow);
+            if (dsa.VerifySimple(sig, pubK, hash, ForceLowS))
             {
                 error = null;
                 return true;
@@ -362,22 +365,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private bool VerifyTaprootCommitment(ReadOnlySpan<byte> control, ReadOnlySpan<byte> program, ReadOnlySpan<byte> k)
         {
             // Internal pubkey
-            PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(control.Slice(1, 32), out PublicKey p);
-            if (ptype == PublicKey.PublicKeyType.None || ptype == PublicKey.PublicKeyType.Unknown)
+            if (!Point.TryReadXOnly(control.Slice(1, 32), out Point p))
             {
                 return false;
             }
-
             // Output pubkey (taken from the PubKey script)
-            PublicKey.PublicKeyType qtype = PublicKey.TryReadTaproot(program, out PublicKey q);
-            if (qtype == PublicKey.PublicKeyType.None || qtype == PublicKey.PublicKeyType.Unknown)
+            if (!Point.TryReadXOnly(program, out Point q))
             {
                 return false;
             }
 
             int pathLen = (control.Length - TaprootControlBaseSize) / TaprootControlNodeSize;
             // Compute the Merkle root from the leaf and the provided path.
-            for (int i = 0; i < pathLen; ++i)
+            for (int i = 0; i < pathLen; i++)
             {
                 // e is each inner node
                 ReadOnlySpan<byte> e = control.Slice(TaprootControlBaseSize + TaprootControlNodeSize * i, TaprootControlNodeSize);
@@ -393,19 +393,15 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
             // Verify that the output pubkey matches the tweaked internal pubkey, after correcting for parity.
             byte[] t = sha256.ComputeTaggedHash_TapTweak(control.Slice(1, 32), k);
-            BigInteger tInt = t.ToBigInt(true, true);
-            if (tInt >= BigInteger.Parse("115792089237316195423570985008687907852837564279074904382605163141518161494337"))
+            Scalar8x32 tweak = new Scalar8x32(t, out bool overflow);
+            if (overflow)
             {
                 return false;
             }
 
-            EllipticCurvePoint Q = calc.AddChecked(calc.MultiplyByG(tInt), p.ToPoint());
-            if (q.ToPoint().X != Q.X || (control[0] & 1) != Q.Y % 2)
-            {
-                return false;
-            }
-
-            return true;
+            PointJacobian Q = calc.MultiplyByG(tweak).AddVar(p, out _);
+            bool parity = (control[0] & 1) == 0 ? false : true;
+            return !Q.isInfinity && q.x.EqualsVar(Q.x.NormalizeVar()) && parity == Q.y.NormalizeVar().IsOdd;
         }
 
 
@@ -965,7 +961,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     {
                         // Key path spending:
                         // The witness item is a signature
-                        if (!Signature.TryReadSchnorr(tx.WitnessList[i].Items[0], out Signature sig, out Errors er))
+                        if (!SchnorrSignature.TryRead(tx.WitnessList[i].Items[0], out SchnorrSignature sig, out Errors er))
                         {
                             error = er.Convert();
                             return false;
@@ -976,15 +972,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
                             return false;
                         }
 
-                        PublicKey.PublicKeyType ptype = PublicKey.TryReadTaproot(program, out PublicKey pub);
-                        if (ptype == PublicKey.PublicKeyType.None || ptype == PublicKey.PublicKeyType.Unknown)
+                        if (!Point.TryReadXOnly(program, out Point pub))
                         {
                             error = "Invalid public key.";
                             return false;
                         }
 
                         byte[] sigHash = tx.SerializeForSigningTaproot_KeyPath(sig.SigHash, utxos, i, annexHash);
-                        if (!calc.VerifySchnorr(sigHash, sig, pub))
+                        if (!dsa.VerifySchnorr(sig, pub, sigHash))
                         {
                             error = "Invalid signature.";
                             return false;

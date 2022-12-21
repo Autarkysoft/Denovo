@@ -19,6 +19,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
     /// When normalized, each limb stores 26 bits except the last one that stores 22 bits.
     /// <para/>The arithmetic here is all modulo secp256k1 prime
     /// </remarks>
+    [DebuggerDisplay("{ToByteArray().ToBase16()}")]
     public readonly struct UInt256_10x26
     {
         /// <summary>

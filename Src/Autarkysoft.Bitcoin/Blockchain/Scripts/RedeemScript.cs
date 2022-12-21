@@ -4,7 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 
@@ -180,7 +180,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
 
         /// <summary>
-        /// Sets this script to a "m of n multi-signature" script using the given <see cref="PublicKey"/>s.
+        /// Sets this script to a "m of n multi-signature" script using the given <see cref="Point"/>s.
         /// </summary>
         /// <remarks>
         /// Since normally a m-of-n redeem script is created from all compressed or all uncompressed public keys
@@ -199,7 +199,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="useCompressed">
         /// [Default value = true] If true compressed public keys are used, uncompressed otherwise
         /// </param>
-        public void SetToMultiSig(int m, PublicKey[] pubKeys, bool useCompressed = true)
+        public void SetToMultiSig(int m, Point[] pubKeys, bool useCompressed = true)
         {
             if (pubKeys == null || pubKeys.Length == 0)
                 throw new ArgumentNullException(nameof(pubKeys), "Pubkey list can not be null or empty.");
@@ -233,18 +233,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <summary>
         /// Sets this script to a P2SH-P2WPKH redeem script using the given parameters.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="pubKey">Public key to use</param>
         /// <param name="useCompressed">
         /// [Default value = true]
         /// Indicates whether to use compressed or uncompressed public key in the redeem script.
         /// <para/> * Note that uncompressed public keys are non-standard and can lead to funds being lost.
         /// </param>
-        public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed = true)
+        public void SetToP2SH_P2WPKH(in Point pubKey, bool useCompressed = true)
         {
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
-
             using Ripemd160Sha256 hashFunc = new Ripemd160Sha256();
             byte[] hash = hashFunc.ComputeHash(pubKey.ToByteArray(useCompressed));
             var ops = new IOperation[]

@@ -107,6 +107,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
             for (int i = 1; i < block.TransactionList.Length; i++)
             {
+                // TODO: verify each tx's locktime here
                 if (!txVer.Verify(block.TransactionList[i], out error))
                 {
                     txVer.UtxoDb.Undo(block.TransactionList, i);

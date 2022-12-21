@@ -3,8 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
@@ -77,7 +76,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="pubKey">Public key</param>
         /// <param name="sigBa">Signature bytes to remove</param>
         /// <returns>True if verification succeeds, otherwise false.</returns>
-        bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa);
+        bool Verify(Signature sig, in Point pubKey, ReadOnlySpan<byte> sigBa);
 
         /// <summary>
         /// Verifies multiple signatures versus multiple public keys (for <see cref="OP.CheckMultiSig"/> operations).
@@ -98,7 +97,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         /// <param name="pub">Public key</param>
         /// <param name="error">Error message</param>
         /// <returns>True if all verifications succeed, otherwise false.</returns>
-        bool VerifySchnorr(ReadOnlySpan<byte> sig, PublicKey pub, out Errors error);
+        bool VerifySchnorr(ReadOnlySpan<byte> sig, in Point pub, out Errors error);
 
         /// <summary>
         /// Checks to see if the extra (last) item that a <see cref="OP.CheckMultiSig"/> operation pops is valid

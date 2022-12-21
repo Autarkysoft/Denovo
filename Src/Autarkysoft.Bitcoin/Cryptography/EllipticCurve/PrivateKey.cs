@@ -3,7 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin.Blockchain.Scripts;
+using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
@@ -12,7 +13,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
+namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
     /// <summary>
     /// Implementation of bitcoin private keys.
@@ -22,7 +23,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
     {
         /// <summary>
         /// This constructor is only used by <see cref="MiniPrivateKey"/> as the derived class. 
-        /// Derived classes have to call <see cref="SetBytes(byte[])"/> method with the appropriate bytes.
+        /// Derived classes have to call <see cref="SetBytes(Span{byte})"/> method with the appropriate bytes.
         /// </summary>
         protected PrivateKey()
         {
@@ -42,12 +43,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="PrivateKey"/> using the given <see cref="Scalar8x32"/>.
+        /// </summary>
+        /// <param name="value">Scalar to use</param>
+        public PrivateKey(in Scalar8x32 value)
+        {
+            SetBytes(value.ToByteArray());
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="PrivateKey"/> using the given byte array.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="ba">Byte array to use</param>
-        public PrivateKey(byte[] ba)
+        public PrivateKey(Span<byte> ba)
         {
             SetBytes(ba);
         }
@@ -76,10 +86,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 catch (Exception)
                 {
                     count++;
-                    // This should never happen:
+                    // The exception should never be thrown:
                     if (count == Constants.RngRetryCount)
                         throw new ArgumentException(Err.BadRNG);
-                    // TODO: maybe use a mod Curve.N in case bytes were bigger than N (out of range)
                 }
             }
         }
@@ -103,7 +112,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 throw new ArgumentNullException(nameof(wif), "Input WIF can not be null or empty.");
 
 
-            byte[] ba = Base58.DecodeWithChecksum(wif);
+            Span<byte> ba = Base58.DecodeWithChecksum(wif);
             if (ba[0] != GetWifFirstByte(netType))
             {
                 throw new FormatException("Invalid first byte.");
@@ -111,7 +120,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
             if (ba.Length == KeyByteSize + 1) // Uncompressed
             {
-                SetBytes(ba.SubArray(1));
+                SetBytes(ba.Slice(1));
             }
             else if (ba.Length == KeyByteSize + 2) // Compressed
             {
@@ -120,7 +129,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                     throw new FormatException("Invalid compressed byte.");
                 }
 
-                SetBytes(ba.SubArray(1, ba.Length - 2));
+                SetBytes(ba.Slice(1, ba.Length - 2));
             }
             else
             {
@@ -129,12 +138,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         }
 
 
-
-        private readonly EllipticCurveCalculator calc = new EllipticCurveCalculator();
-        private readonly BigInteger minValue = BigInteger.One;
-        // Curve.N - 1
-        private readonly BigInteger maxValue =
-            BigInteger.Parse("115792089237316195423570985008687907852837564279074904382605163141518161494336");
         private const int KeyByteSize = 32;
         private const byte MainNetByte = 128;
         private const byte TestNetByte = 239;
@@ -144,33 +147,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         private byte[] keyBytes;
 
 
-
         /// <summary>
         /// Checks the given byte array and sets the keyBytes or throws an exception.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="key">Key bytes to use</param>
-        protected void SetBytes(byte[] key)
+        protected void SetBytes(Span<byte> key)
         {
             if (key == null)
                 throw new ArgumentNullException(nameof(key), "Key bytes can not be null.");
-
-            key = key.TrimStart(); // bytes are treated as big-endian
             if (key.Length > 32)
-            {
-                throw new ArgumentOutOfRangeException(nameof(key), $"Given key value is bigger than 256 bits.");
-            }
+                throw new ArgumentOutOfRangeException(nameof(key), "Key byte length has to be 32 bytes.");
 
-            BigInteger num = key.ToBigInt(true, true);
-            if (num < minValue || num > maxValue)
+            keyBytes = new byte[32];
+            key.CopyTo(((Span<byte>)keyBytes).Slice(32 - key.Length, key.Length));
+
+            Scalar8x32 sc = new Scalar8x32(keyBytes, out bool overflow);
+            if (sc.IsZero || overflow)
             {
                 throw new ArgumentOutOfRangeException(nameof(key), "Given key value is outside the defined range by the curve.");
             }
-
-            keyBytes = new byte[32];
-            // due to big-endianness byte array must be padded with initial zeros hence the dstOffset below
-            Buffer.BlockCopy(key, 0, keyBytes, dstOffset: 32 - key.Length, count: key.Length);
         }
 
         /// <exception cref="ArgumentException"/>
@@ -221,14 +218,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
 
         /// <summary>
-        /// Converts this instance to its equivalent <see cref="PublicKey"/>.
+        /// Converts the bytes sequence of this instance to its equivalent <see cref="BigInteger"/> representation.
         /// </summary>
         /// <exception cref="ObjectDisposedException"/>
-        /// <returns>The derived <see cref="PublicKey"/>.</returns>
-        public PublicKey ToPublicKey()
+        /// <returns>The <see cref="BigInteger"/> representation of this instance.</returns>
+        public Scalar8x32 ToScalar()
         {
             CheckDisposed();
-            return new PublicKey(calc.MultiplyByG(ToBigInt()));
+            return new Scalar8x32(keyBytes, out _);
+        }
+
+
+        /// <summary>
+        /// Converts this instance to its equivalent <see cref="Point"/>.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException"/>
+        /// <param name="calc">EC multiplication calculator</param>
+        /// <returns>The derived <see cref="Point"/>.</returns>
+        public Point ToPublicKey(Calc calc)
+        {
+            CheckDisposed();
+            return calc.MultiplyByG(new Scalar8x32(keyBytes, out _)).ToPoint();
         }
 
 
@@ -269,8 +279,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="message">Message to sign</param>
+        /// <param name="dsa">Digital signature algorithm</param>
         /// <returns>Signature</returns>
-        public Signature Sign(string message)
+        public Signature Sign(string message, DSA dsa)
         {
             CheckDisposed();
             // Empty string is OK but we don't accept it
@@ -289,7 +300,39 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
             byte[] toSign = hash.ComputeHashTwice(stream.ToByteArray());
 
-            return calc.Sign(toSign, keyBytes);
+            return dsa.Sign(toSign, ToScalar());
+        }
+
+
+        /// <summary>
+        /// Signs the given transaction's input at the given index with the given <see cref="SigHashType"/> and
+        /// sets its signature.
+        /// </summary>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ObjectDisposedException"/>
+        /// <param name="dsa"></param>
+        /// <param name="calc"></param>
+        /// <param name="tx">The transaction to sign</param>
+        /// <param name="txToSpend">The previous tx that the transaction to sign is spending</param>
+        /// <param name="index">Index of the input to sign</param>
+        /// <param name="sht">[Default value =<see cref="SigHashType.All"/>] Signature hash type</param>
+        /// <param name="redeem">[Default value = null] Redeem script required only for spending pay-to-script outputs</param>
+        /// <param name="witRedeem">[Default value = null] Redeem script for spending pay-to-witness-script outputs</param>
+        public void Sign(DSA dsa, Calc calc,
+                         ITransaction tx, ITransaction txToSpend, int index, SigHashType sht = SigHashType.All,
+                         IRedeemScript redeem = null, IRedeemScript witRedeem = null)
+        {
+            CheckDisposed();
+            if (tx == null)
+                throw new ArgumentNullException(nameof(tx), "Transaction can not be null!");
+            if (txToSpend == null)
+                throw new ArgumentNullException(nameof(txToSpend), "Previous out script can not be null!");
+
+            // TODO: change ITransaction.Sign so that it takes public key and does the initial checks 
+            // such as correct txout being spent.
+            Signature sig = dsa.Sign(tx.GetBytesToSign(txToSpend, index, sht, redeem, witRedeem), ToScalar());
+            sig.SigHash = sht;
+            tx.WriteScriptSig(sig, ToPublicKey(calc), txToSpend, index, redeem);
         }
 
 
@@ -299,13 +342,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="FormatException"/>
+        /// <param name="dsa"></param>
         /// <param name="encrypted">Encrypted message encoded using Base-64 encoding</param>
         /// <param name="magic">
         /// [Default value = BIE1]
         /// A magic string added to encrypted result before computing its HMAC-SHA256
         /// </param>
         /// <returns>Decrypted message encoded using UTF8</returns>
-        public string Decrypt(string encrypted, string magic = "BIE1")
+        public string Decrypt(DSA dsa, string encrypted, string magic = "BIE1")
         {
             if (encrypted is null)
                 throw new ArgumentNullException(nameof(encrypted), "Encrypted string can not be null.");
@@ -328,12 +372,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 throw new FormatException("Invalid magic bytes.");
             }
 
-            if (!PublicKey.TryRead(ephemeralPubkeyBytes, out PublicKey ephemeralPubkey))
+            if (!Point.TryRead(ephemeralPubkeyBytes, out Point ephemeralPubkey))
             {
                 throw new FormatException("Invalid public key (not on curve or invalid first byte).");
             }
 
-            byte[] ecdhKey = new PublicKey(calc.Multiply(ToBigInt(), ephemeralPubkey.ToPoint())).ToByteArray(true);
+            Span<byte> ecdhKey = dsa.Multiply(ToScalar(), ephemeralPubkey).ToPointVar().ToByteArray(true);
 
             using Sha512 sha512 = new Sha512();
             var key = sha512.ComputeHash(ecdhKey);

@@ -423,10 +423,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 sig = null;
                 return false;
             }
-            byte v = (byte)((r.IsHigh ? 2 : 0) | (rp.y.IsOdd ? 1 : 0));
+            byte v = (byte)((r.IsHigh ? 2 : 0) | (rp.y.Normalize().IsOdd ? 1 : 0));
 
-            Scalar8x32 s  = k.Inverse_old().Multiply(e.Add(r.Multiply(key), out _));
-            
+            Scalar8x32 s = k.Inverse_old().Multiply(e.Add(r.Multiply(key), out _));
+
             if (s.IsZero)
             {
                 sig = null;
@@ -442,6 +442,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return true;
         }
 
+        private static byte[] Pad32(byte[] input)
+        {
+            if (input.Length > 32)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+            else if (input.Length < 32)
+            {
+                byte[] temp = new byte[32];
+                Buffer.BlockCopy(input, 0, temp, 32 - input.Length, input.Length);
+                input = temp;
+            }
+
+            return input;
+        }
 
         /// <summary>
         /// Creates a signature using ECDSA based on Standards for Efficient Cryptography (SEC 1: Elliptic Curve Cryptography)
@@ -454,7 +469,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public Signature Sign(byte[] hash, Scalar8x32 key)
         {
             using Rfc6979 kGen = new Rfc6979();
-            if (TrySign(hash, key, kGen.GetK(hash, key.ToByteArray(), null).ToByteArray(true, true), true, true, out Signature sig))
+            byte[] nonce = kGen.GetK(hash, key.ToByteArray(), null).ToByteArray(true, true);
+            if (TrySign(hash, key, Pad32(nonce), true, true, out Signature sig))
             {
                 return sig;
             }
@@ -469,7 +485,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                     extraEntropy[2] = (byte)(count >> 16);
                     extraEntropy[3] = (byte)(count >> 24);
                     count++;
-                } while (!TrySign(hash, key, kGen.GetK(hash, key.ToByteArray(), extraEntropy).ToByteArray(true, true), true, true, out sig));
+                    nonce = kGen.GetK(hash, key.ToByteArray(), extraEntropy).ToByteArray(true, true);
+                } while (!TrySign(hash, key, Pad32(nonce), true, true, out sig));
                 return sig;
             }
         }

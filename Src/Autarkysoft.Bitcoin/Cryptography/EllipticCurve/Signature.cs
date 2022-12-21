@@ -8,7 +8,7 @@ using System;
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
     /// <summary>
-    /// Signatures produced by Elliptic Curve digital signature algorithms (ECDSA and ECSDSA) 
+    /// Signatures produced by Elliptic Curve digital signature algorithm (ECDSA)
     /// storing R and S values with recovery ID and signature hash type.
     /// </summary>
     public class Signature
@@ -319,71 +319,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         /// <summary>
         /// Creates a new instance of <see cref="Signature"/> by reading it from a fixed length byte array encoding
-        /// used by Schnorr signatures. Return value indicates success.
-        /// </summary>
-        /// <param name="data">Signature bytes containing the signature</param>
-        /// <param name="result">Resulting signature (null in case of failure)</param>
-        /// <param name="error">Error message</param>
-        /// <returns>True if successful, otherwise false.</returns>
-        public static bool TryReadSchnorr(ReadOnlySpan<byte> data, out Signature result, out Errors error)
-        {
-            // Note that empty signature is accepted as valid in Tapscripts (return true for parsing, false for success),
-            // but we handle it in CheckSigTapOp and are strict here.
-            if (data == null || data.Length == 0)
-            {
-                result = null;
-                error = Errors.NullOrEmptyBytes;
-                return false;
-            }
-
-            SigHashType sigHash;
-            if (data.Length == 64)
-            {
-                sigHash = SigHashType.Default;
-            }
-            else if (data.Length == 65)
-            {
-                sigHash = (SigHashType)data[^1];
-                if (sigHash == SigHashType.Default)
-                {
-                    result = null;
-                    error = Errors.SigHashTypeZero;
-                    return false;
-                }
-                else if (!((int)sigHash <= 0x03 || ((int)sigHash >= 0x81 && (int)sigHash <= 0x83)))
-                {
-                    result = null;
-                    error = Errors.InvalidSigHashType;
-                    return false;
-                }
-            }
-            else
-            {
-                result = null;
-                error = Errors.InvalidSchnorrSigLength;
-                return false;
-            }
-
-            if (!TryCreateScalar(data.Slice(0, 32), out Scalar8x32 r))
-            {
-                result = null;
-                error = Errors.InvalidDerRFormat;
-                return false;
-            }
-            if (!TryCreateScalar(data.Slice(32, 32), out Scalar8x32 s))
-            {
-                result = null;
-                error = Errors.InvalidDerSFormat;
-                return false;
-            }
-
-            result = new Signature(r, s, sigHash);
-            error = Errors.None;
-            return true;
-        }
-
-        /// <summary>
-        /// Creates a new instance of <see cref="Signature"/> by reading it from a fixed length byte array encoding
         /// used by signatures with a recovery ID as their first byte. Return value indicates success.
         /// </summary>
         /// <param name="data">Signature bytes containing the signature</param>
@@ -448,35 +383,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             stream.Write((byte)sLen);
             stream.Write(sBa.Slice(sStart, sLen).ToArray());
             stream.Write((byte)SigHash);
-        }
-
-
-        /// <summary>
-        /// Converts this instance to its byte array representation with the specified <see cref="SigHashType"/>
-        /// added to the end using a fixed length encoding used in Schnorr signatures and returns the result.
-        /// </summary>
-        /// <returns>A DER encoded signature bytes with <see cref="SigHashType"/></returns>
-        public byte[] ToByteArraySchnorr()
-        {
-            var stream = new FastStream(65);
-            WriteToStreamSchnorr(stream);
-            return stream.ToByteArray();
-        }
-
-        /// <summary>
-        /// Converts this instance to its byte array representation with the specified <see cref="SigHashType"/>
-        /// added to the end using a fixed length encoding used in Schnorr signatures and writes the result to the given 
-        /// <see cref="FastStream"/>.
-        /// </summary>
-        /// <param name="stream">Stream to use</param>
-        public void WriteToStreamSchnorr(FastStream stream)
-        {
-            stream.Write(R);
-            stream.Write(S);
-            if (SigHash != SigHashType.Default)
-            {
-                stream.Write((byte)SigHash);
-            }
         }
 
 

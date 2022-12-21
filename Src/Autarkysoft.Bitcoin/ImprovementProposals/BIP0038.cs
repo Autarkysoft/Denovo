@@ -3,8 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions;
 using Autarkysoft.Bitcoin.Encoders;
@@ -29,6 +28,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         {
             scrypt = new Scrypt(16384, 8, 8);
             hash = new Sha256();
+            calc = new Calc();
             aes = new AesManaged
             {
                 KeySize = 256, // AES-256
@@ -36,7 +36,6 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 IV = new byte[16], // No initialization vector is used
                 Padding = PaddingMode.None // No padding
             };
-            curveOrder = new SecP256k1().N;
         }
 
         // TODO: add code for EC multiply encryption mode (decryption is already implemented)
@@ -50,8 +49,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         private Scrypt scrypt;
         private Aes aes;
         private Sha256 hash;
-        private readonly BigInteger curveOrder;
-
+        private Calc calc;
 
 
         /// <summary>
@@ -128,7 +126,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             PrivateKey result = isEcMultMode ? DecryptECMult(encryptedBytes, password, salt.ToArray()) :
                                                DecryptNormal(encryptedBytes, password, salt.ToArray());
 
-            string address = Address.GetP2pkh(result.ToPublicKey(), isCompressed, NetworkType.MainNet);
+            string address = Address.GetP2pkh(result.ToPublicKey(calc), isCompressed, NetworkType.MainNet);
             Span<byte> computedHash = hash.ComputeHashTwice(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
             if (!computedHash.SequenceEqual(salt))
             {
@@ -166,7 +164,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             byte[] passFactor = hasLot ? hash.ComputeHashTwice(preFactor.ConcatFast(ownerEntropy.ToArray())) : preFactor;
 
             using PrivateKey tempKey = new PrivateKey(passFactor);
-            PublicKey passPoint = tempKey.ToPublicKey();
+            Point passPoint = tempKey.ToPublicKey(calc);
 
             using Scrypt smallScrypt = new Scrypt(1024, 1, 1);
             byte[] dk = smallScrypt.GetBytes(passPoint.ToByteArray(true), addressHash.ConcatFast(ownerEntropy.ToArray()), 64);
@@ -199,7 +197,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             byte[] factorb = hash.ComputeHashTwice(seedb);
 
-            BigInteger keyValue = (new BigInteger(passFactor, true, true) * new BigInteger(factorb, true, true)) % curveOrder;
+            Scalar8x32 keyValue = new Scalar8x32(passFactor, out _).Multiply(new Scalar8x32(factorb, out _));
             return new PrivateKey(keyValue);
         }
 
@@ -252,7 +250,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (password == null || password.Length == 0)
                 throw new ArgumentNullException(nameof(password), "Password can not be null or empty.");
 
-            string address = Address.GetP2pkh(key.ToPublicKey(), isCompressed, NetworkType.MainNet);
+            string address = Address.GetP2pkh(key.ToPublicKey(calc), isCompressed, NetworkType.MainNet);
             byte[] salt = hash.ComputeHashTwice(Encoding.ASCII.GetBytes(address)).SubArray(0, 4);
 
             byte[] dk = scrypt.GetBytes(password, salt, 64);

@@ -7,7 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -437,18 +437,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
         [Theory]
         [MemberData(nameof(GetP2pkCases))]
-        public void SetToP2PKTest(PublicKey pub, bool comp, byte[] expected)
+        public void SetToP2PKTest(in Point pub, bool comp, byte[] expected)
         {
             PubkeyScript scr = new();
             scr.SetToP2PK(pub, comp);
             Assert.Equal(expected, scr.Data);
-        }
-
-        [Fact]
-        public void SetToP2PK_ExceptionTest()
-        {
-            PubkeyScript scr = new();
-            Assert.Throws<ArgumentNullException>(() => scr.SetToP2PK(null, true));
         }
 
 
@@ -476,7 +469,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
         [Theory]
         [MemberData(nameof(GetP2pkhCases))]
-        public void SetToP2PKH_FromPubTest(PublicKey pub, bool comp, byte[] expected)
+        public void SetToP2PKH_FromPubTest(in Point pub, bool comp, byte[] expected)
         {
             PubkeyScript scr = new();
             scr.SetToP2PKH(pub, comp);
@@ -497,12 +490,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             PubkeyScript scr = new();
             byte[] nba = null;
-            PublicKey npub = null;
             string naddr = null;
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(nba));
             Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToP2PKH(new byte[19]));
-            Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(npub, true));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(naddr));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(""));
             Assert.Throws<FormatException>(() => scr.SetToP2PKH("$"));
@@ -569,7 +560,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
         [Theory]
         [MemberData(nameof(GetNestedP2wpkhCases))]
-        public void SetToP2SH_P2WPKH_FromPubkeyTest(PublicKey pub, bool comp, byte[] expected)
+        public void SetToP2SH_P2WPKH_FromPubkeyTest(in Point pub, bool comp, byte[] expected)
         {
             PubkeyScript scr = new();
             scr.SetToP2SH_P2WPKH(pub, comp);
@@ -591,7 +582,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             PubkeyScript scr = new();
 
-            Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null, true));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null));
             Assert.Throws<ArgumentException>(()
                 => scr.SetToP2SH_P2WPKH(new MockSerializableRedeemScript(RedeemScriptType.Empty, Array.Empty<byte>(), 1)));
@@ -641,7 +631,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
         [Theory]
         [MemberData(nameof(GetP2wpkhCases))]
-        public void SetToP2WPKH_FromPubTest(PublicKey pub, bool comp, byte[] expected)
+        public void SetToP2WPKH_FromPubTest(in Point pub, bool comp, byte[] expected)
         {
             PubkeyScript scr = new();
             scr.SetToP2WPKH(pub, comp);
@@ -662,12 +652,10 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             PubkeyScript scr = new();
             byte[] nba = null;
-            PublicKey npub = null;
             string naddr = null;
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2WPKH(nba));
             Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToP2WPKH(new byte[19]));
-            Assert.Throws<ArgumentNullException>(() => scr.SetToP2WPKH(npub));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2WPKH(naddr));
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2WPKH(""));
             Assert.Throws<FormatException>(() => scr.SetToP2WPKH(KeyHelper.Pub1CompAddr));

@@ -3,8 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Linq;
 
@@ -117,17 +116,15 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>
-        public void SetToP2WPKH(Signature sig, PublicKey pubKey, bool useCompressed = true)
+        public void SetToP2WPKH(Signature sig, in Point pubKey, bool useCompressed = true)
         {
             if (sig is null)
                 throw new ArgumentNullException(nameof(sig));
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey));
 
             Items = new byte[2][]
             {
                 sig.ToByteArray(),
-                pubKey.ToByteArray(useCompressed)
+                pubKey.ToByteArray(useCompressed).ToArray()
             };
         }
 

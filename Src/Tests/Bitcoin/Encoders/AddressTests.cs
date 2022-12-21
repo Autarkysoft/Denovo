@@ -5,7 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.Collections.Generic;
@@ -220,7 +220,7 @@ namespace Tests.Bitcoin.Encoders
         }
         [Theory]
         [MemberData(nameof(GetP2pkhCases))]
-        public void GetP2pkhTest(PublicKey pub, bool comp, NetworkType netType, string expected)
+        public void GetP2pkhTest(in Point pub, bool comp, NetworkType netType, string expected)
         {
             string actual = Address.GetP2pkh(pub, comp, netType);
             Assert.Equal(actual, expected);
@@ -229,7 +229,6 @@ namespace Tests.Bitcoin.Encoders
         [Fact]
         public void GetP2pkhTest_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2pkh(null));
             Assert.Throws<ArgumentException>(() => Address.GetP2pkh(KeyHelper.Pub1, netType: (NetworkType)100));
         }
 
@@ -284,7 +283,7 @@ namespace Tests.Bitcoin.Encoders
         }
         [Theory]
         [MemberData(nameof(GetP2wpkhCases))]
-        public void GetP2wpkhTest(PublicKey pub, bool comp, NetworkType netType, string expected)
+        public void GetP2wpkhTest(in Point pub, bool comp, NetworkType netType, string expected)
         {
             string actual = Address.GetP2wpkh(pub, comp, netType);
             Assert.Equal(actual, expected);
@@ -293,8 +292,6 @@ namespace Tests.Bitcoin.Encoders
         [Fact]
         public void GetP2wpkh_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2wpkh(null));
-
             Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2wpkh(KeyHelper.Pub1, netType: (NetworkType)100));
             Assert.Contains(Err.InvalidNetwork, ex.Message);
         }
@@ -314,7 +311,7 @@ namespace Tests.Bitcoin.Encoders
         }
         [Theory]
         [MemberData(nameof(GetP2sh_P2wpkhCases))]
-        public void GetP2sh_P2wpkhTest(PublicKey pub, bool comp, NetworkType netType, string expected)
+        public void GetP2sh_P2wpkhTest(in Point pub, bool comp, NetworkType netType, string expected)
         {
             string actual = Address.GetP2sh_P2wpkh(pub, comp, netType);
             Assert.Equal(expected, actual);
@@ -323,8 +320,6 @@ namespace Tests.Bitcoin.Encoders
         [Fact]
         public void GetP2sh_P2wpkh_ExceptionTest()
         {
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2sh_P2wpkh(null));
-
             Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2sh_P2wpkh(KeyHelper.Pub1, netType: (NetworkType)100));
             Assert.Contains(Err.InvalidNetwork, ex.Message);
         }
@@ -449,9 +444,7 @@ namespace Tests.Bitcoin.Encoders
         public void GetP2sh_P2tr_ExceptionTest()
         {
             byte[] nba = null;
-            PublicKey npub = null;
             Assert.Throws<ArgumentNullException>(() => Address.GetP2tr(nba));
-            Assert.Throws<ArgumentNullException>(() => Address.GetP2tr(npub));
             Assert.Throws<ArgumentOutOfRangeException>(() => Address.GetP2tr(new byte[31]));
 
             Exception ex = Assert.Throws<ArgumentException>(() => Address.GetP2tr(new byte[32]));

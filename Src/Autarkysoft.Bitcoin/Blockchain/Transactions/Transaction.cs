@@ -5,8 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
@@ -698,7 +697,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (!prvScr.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] prevPubOps, out int opCount, out Errors error))
                 throw new ArgumentException($"Previous transaction pubkey script can not be evaluated: {error}.");
             if (opCount > Constants.MaxScriptOpCount)
-                throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
+                throw new ArgumentOutOfRangeException(nameof(opCount), Errors.OpCountOverflow.Convert());
 
             using Ripemd160Sha256 ripSha = new Ripemd160Sha256();
 
@@ -715,7 +714,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 if (!redeem.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] rdmOps, out opCount, out error))
                     throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
                 if (opCount > Constants.MaxScriptOpCount)
-                    throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
+                    throw new ArgumentOutOfRangeException(nameof(opCount), Errors.OpCountOverflow.Convert());
 
                 ReadOnlySpan<byte> expHash = ripSha.ComputeHash(redeem.Data);
                 // Previous is OP_HASH160 PushData(20) OP_EQUAL
@@ -745,7 +744,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                     if (!witRedeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] witRdmOps, out opCount, out error))
                         throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
                     if (opCount > Constants.MaxScriptOpCount)
-                        throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
+                        throw new ArgumentOutOfRangeException(nameof(opCount), Errors.OpCountOverflow.Convert());
 
                     RedeemScriptType witRdmType = witRedeem.GetRedeemScriptType();
                     if (witRdmType == RedeemScriptType.MultiSig || witRdmType == RedeemScriptType.CheckLocktimeVerify)
@@ -779,7 +778,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 if (!witRedeem.TryEvaluate(ScriptEvalMode.WitnessV0, out IOperation[] witRdmOps, out opCount, out error))
                     throw new ArgumentException($"Redeem script could not be evaluated: {error}.");
                 if (opCount > Constants.MaxScriptOpCount)
-                    throw new ArgumentOutOfRangeException(nameof(opCount), Err.OpCountOverflow);
+                    throw new ArgumentOutOfRangeException(nameof(opCount), Errors.OpCountOverflow.Convert());
 
                 RedeemScriptType witRdmType = witRedeem.GetRedeemScriptType();
                 if (witRdmType == RedeemScriptType.MultiSig || witRdmType == RedeemScriptType.CheckLocktimeVerify)
@@ -812,12 +811,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem)
+        public void WriteScriptSig(Signature sig, in Point pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem)
         {
             if (sig is null)
                 throw new ArgumentNullException(nameof(sig), "Signature can not be null.");
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
             if (prevTx is null)
                 throw new ArgumentNullException(nameof(prevTx), "Previous transaction can not be null.");
             if (inputIndex < 0 || inputIndex >= TxInList.Length)
@@ -978,7 +975,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         }
 
         /// <inheritdoc/>
-        public void WriteScriptSig(Signature sig, PublicKey pubKey, RedeemScript redeem, ITransaction prevTx, int index)
+        public void WriteScriptSig(Signature sig, in Point pubKey, RedeemScript redeem, ITransaction prevTx, int index)
         {
             if (prevTx.TxOutList[TxInList[index].Index].PubScript.GetPublicScriptType() != PubkeyScriptType.P2SH)
                 throw new ArgumentException();

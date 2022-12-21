@@ -6,8 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -111,7 +110,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         }
         [Theory]
         [MemberData(nameof(GetRunCases))]
-        public void RunTest(Signature expSig, PublicKey expPub, byte[] expSigBa, bool success, bool der, byte[][] pop, bool expBool)
+        public void RunTest(Signature expSig, in Point expPub, byte[] expSigBa, bool success, bool der, byte[][] pop, bool expBool)
         {
             MockOpData data = new(FuncCallName.PopCount, FuncCallName.PushBool)
             {

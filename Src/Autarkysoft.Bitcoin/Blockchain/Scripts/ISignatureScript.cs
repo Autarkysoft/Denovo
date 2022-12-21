@@ -4,8 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -35,12 +34,12 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <summary>
         /// Sets this script to a single signature used for spending a "pay to pubkey hash" output,
-        /// using the given <see cref="Signature"/> and the <see cref="PublicKey"/> with its compression type.
+        /// using the given <see cref="Signature"/> and the <see cref="Point"/> with its compression type.
         /// </summary>
         /// <param name="sig">Signature to use (must have its <see cref="SigHashType"/> set)</param>
         /// <param name="pubKey">Public key to use </param>
         /// <param name="useCompressed">Indicates whether to use the compressed or uncompressed public key</param>
-        void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed);
+        void SetToP2PKH(Signature sig, in Point pubKey, bool useCompressed);
 
         /// <summary>
         /// Sets this script to a multi-signature script using the given parameters. 
@@ -69,7 +68,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Indicates whether to use compressed or uncompressed public key in the redeem script.
         /// <para/> * Note that uncompressed public keys are non-standard and can lead to funds being lost.
         /// </param>
-        void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed);
+        void SetToP2SH_P2WPKH(in Point pubKey, bool useCompressed);
 
         /// <summary>
         /// Sets this instance to a P2SH-P2WSH script using the given redeem script.

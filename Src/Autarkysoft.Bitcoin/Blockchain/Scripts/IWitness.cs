@@ -3,8 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 {
@@ -29,6 +28,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// Indicates whether to use compressed or uncompressed public key in this witness.
         /// <para/> * Note that uncompressed public keys are non-standard and can lead to funds being lost.
         /// </param>
-        void SetToP2WPKH(Signature sig, PublicKey pubKey, bool useCompressed = true);
+        void SetToP2WPKH(Signature sig, in Point pubKey, bool useCompressed = true);
     }
 }

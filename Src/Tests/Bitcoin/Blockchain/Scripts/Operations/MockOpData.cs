@@ -5,8 +5,7 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -36,11 +35,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         internal bool sigVerificationSuccess = true;
 
         internal Signature expectedSig;
-        internal PublicKey expectedPubkey;
+        internal Point expectedPubkey;
         internal byte[] expectedSigBa;
-        public bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa)
+        public bool Verify(Signature sig, in Point pubKey, ReadOnlySpan<byte> sigBa)
         {
-            if (expectedSig is null || expectedPubkey is null || expectedSigBa is null)
+            if (expectedSig is null || expectedSigBa is null)
             {
                 Assert.True(false, "Expected signature and/or public key must be set first.");
             }
@@ -48,7 +47,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             Assert.Equal(expectedSig.R, sig.R);
             Assert.Equal(expectedSig.S, sig.S);
             Assert.Equal(expectedSig.SigHash, sig.SigHash);
-            Assert.Equal(expectedPubkey.ToByteArray(true), pubKey.ToByteArray(true));
+            Assert.Equal(expectedPubkey.ToByteArray(true).ToArray(), pubKey.ToByteArray(true).ToArray());
             Assert.True(sigBa.SequenceEqual(expectedSigBa));
 
             return sigVerificationSuccess;
@@ -71,7 +70,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             return sigVerificationSuccess;
         }
 
-        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out Errors error)
+        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, in Point pub, out Errors error)
         {
             throw new NotImplementedException();
         }

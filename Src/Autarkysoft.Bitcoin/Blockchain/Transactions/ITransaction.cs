@@ -4,8 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Transactions
@@ -214,6 +213,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <param name="prevTx">The transaction being spent</param>
         /// <param name="inputIndex">Index of the input in <see cref="TxInList"/> that was signed</param>
         /// <param name="redeem">Redeem script for spending pay-to-script outputs (can be null)</param>
-        void WriteScriptSig(Signature sig, PublicKey pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem);
+        void WriteScriptSig(Signature sig, in Point pubKey, ITransaction prevTx, int inputIndex, IRedeemScript redeem);
     }
 }

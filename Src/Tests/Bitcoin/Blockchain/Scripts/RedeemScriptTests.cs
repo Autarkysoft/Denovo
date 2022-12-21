@@ -6,7 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -376,33 +376,33 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             yield return new object[]
             {
-                1, new PublicKey[] { KeyHelper.Pub1 }, true,
+                1, new Point[] { KeyHelper.Pub1 }, true,
                 Helper.HexToBytes($"5121{KeyHelper.Pub1CompHex}51ae")
             };
             yield return new object[]
             {
-                1, new PublicKey[] { KeyHelper.Pub1 }, false,
+                1, new Point[] { KeyHelper.Pub1 }, false,
                 Helper.HexToBytes($"5141{KeyHelper.Pub1UnCompHex}51ae")
             };
             yield return new object[]
             {
-                1, new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2 }, true,
+                1, new Point[] { KeyHelper.Pub1, KeyHelper.Pub2 }, true,
                 Helper.HexToBytes($"5121{KeyHelper.Pub1CompHex}21{KeyHelper.Pub2CompHex}52ae")
             };
             yield return new object[]
             {
-                1, new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2 }, false,
+                1, new Point[] { KeyHelper.Pub1, KeyHelper.Pub2 }, false,
                 Helper.HexToBytes($"5141{KeyHelper.Pub1UnCompHex}41{KeyHelper.Pub2UnCompHex}52ae")
             };
             yield return new object[]
             {
-                2, new PublicKey[] { KeyHelper.Pub1, KeyHelper.Pub2 }, false,
+                2, new Point[] { KeyHelper.Pub1, KeyHelper.Pub2 }, false,
                 Helper.HexToBytes($"5241{KeyHelper.Pub1UnCompHex}41{KeyHelper.Pub2UnCompHex}52ae")
             };
         }
         [Theory]
         [MemberData(nameof(GetSetToMultiSigCases))]
-        public void SetToMultiSigTest(int m, PublicKey[] pubs, bool comp, byte[] expected)
+        public void SetToMultiSigTest(int m, Point[] pubs, bool comp, byte[] expected)
         {
             RedeemScript scr = new();
             scr.SetToMultiSig(m, pubs, comp);
@@ -414,43 +414,43 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             yield return new object[]
             {
-                -1, new PublicKey[2], true,
+                -1, new Point[2], true,
                 "M must be between 1 and (7 uncomprssed or 15 compressed) public keys and smaller than N."
             };
             yield return new object[]
             {
-                0, new PublicKey[2], true,
+                0, new Point[2], true,
                 "M must be between 1 and (7 uncomprssed or 15 compressed) public keys and smaller than N."
             };
             yield return new object[]
             {
-                3, new PublicKey[2], true,
+                3, new Point[2], true,
                 "M must be between 1 and (7 uncomprssed or 15 compressed) public keys and smaller than N."
             };
             yield return new object[]
             {
-                16, new PublicKey[16], true,
+                16, new Point[16], true,
                 "M must be between 1 and (7 uncomprssed or 15 compressed) public keys and smaller than N."
             };
             yield return new object[]
             {
-                8, new PublicKey[8], false,
+                8, new Point[8], false,
                 "M must be between 1 and (7 uncomprssed or 15 compressed) public keys and smaller than N."
             };
             yield return new object[]
             {
-                1, new PublicKey[16], true,
+                1, new Point[16], true,
                 "Pubkey list must contain at least 1 and at most 15 compressed or 7 uncompressed keys."
             };
             yield return new object[]
             {
-                1, new PublicKey[8], false,
+                1, new Point[8], false,
                 "Pubkey list must contain at least 1 and at most 15 compressed or 7 uncompressed keys."
             };
         }
         [Theory]
         [MemberData(nameof(GetSetToMultiSigFailCases))]
-        public void SetToMultiSig_OutOfRangeExceptionTest(int m, PublicKey[] pubs, bool comp, string expError)
+        public void SetToMultiSig_OutOfRangeExceptionTest(int m, Point[] pubs, bool comp, string expError)
         {
             RedeemScript scr = new();
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => scr.SetToMultiSig(m, pubs, comp));
@@ -462,7 +462,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             RedeemScript scr = new();
             Assert.Throws<ArgumentNullException>(() => scr.SetToMultiSig(1, null, true));
-            Assert.Throws<ArgumentNullException>(() => scr.SetToMultiSig(1, Array.Empty<PublicKey>(), true));
+            Assert.Throws<ArgumentNullException>(() => scr.SetToMultiSig(1, Array.Empty<Point>(), true));
         }
 
 
@@ -486,13 +486,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             byte[] expected = Helper.HexToBytes($"0014{KeyHelper.Pub1UnCompHashHex}");
 
             Assert.Equal(expected, scr.Data);
-        }
-
-        [Fact]
-        public void SetToP2SH_P2WPKH_ExceptionTest()
-        {
-            RedeemScript scr = new();
-            Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null, false));
         }
 
 

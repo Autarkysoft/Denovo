@@ -6,8 +6,7 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
@@ -18,6 +17,9 @@ namespace Tests.Bitcoin.Blockchain.Transactions
 {
     public class TransactionTests
     {
+        private readonly Calc calc = new();
+        private readonly DSA dsa = new();
+
         public static IEnumerable<object[]> GetCtorNullExCases()
         {
             yield return new object[] { null, new TxOut[1], "List of transaction inputs can not be null or empty." };
@@ -141,7 +143,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
             using PrivateKey key = new(wif, NetworkType.TestNet);
             for (int i = 0; i < indexes.Length; i++)
             {
-                key.Sign(tx, prvTx, indexes[i], sht);
+                key.Sign(dsa, calc, tx, prvTx, indexes[i], sht);
             }
 
             var stream = new FastStream(expSer.Length);

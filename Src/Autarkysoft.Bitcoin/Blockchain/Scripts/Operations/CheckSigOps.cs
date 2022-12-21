@@ -3,8 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 
 namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
@@ -17,7 +16,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
     {
         /// <summary>
         /// Removes top two stack items as public key and signature and calls 
-        /// <see cref="IOpData.Verify(Signature, PublicKey, ReadOnlySpan{byte})"/>.
+        /// <see cref="IOpData.Verify(Signature, in Point, ReadOnlySpan{byte})"/>.
         /// Return value indicates success.
         /// </summary>
         /// <param name="opData">Stack to use</param>
@@ -56,7 +55,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
             }
 
-            if (!PublicKey.TryRead(values[1], out PublicKey pubK))
+            if (!Point.TryRead(values[1], out Point pubK))
             {
                 error = Errors.None;
                 return false;
@@ -340,21 +339,30 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 }
             }
 
-            PublicKey.PublicKeyType kt = PublicKey.TryReadTaproot(pubBa, out PublicKey pubK);
-            if (kt == PublicKey.PublicKeyType.None)
+            if (pubBa == null || pubBa.Length == 0)
             {
                 error = Errors.InvalidPublicKey;
                 return false;
             }
-            else if (kt == PublicKey.PublicKeyType.Schnorr)
+            else if (pubBa.Length == 32)
             {
-                if (success && !opData.VerifySchnorr(sigBa, pubK, out error))
+                if (success)
                 {
-                    return false;
+                    if (!Point.TryRead(pubBa, out Point pubK))
+                    {
+                        error = Errors.InvalidPublicKey;
+                        return false;
+                    }
+                    if (!opData.VerifySchnorr(sigBa, pubK, out error))
+                    {
+                        return false;
+                    }
                 }
             }
             else
             {
+                // Future soft-forks can add new rules here
+
                 // TODO: a standard rule can be added to IOpData to reject pubkeys here
             }
 

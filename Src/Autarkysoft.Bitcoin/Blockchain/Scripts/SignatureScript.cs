@@ -5,8 +5,7 @@
 
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -121,12 +120,10 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>
-        public void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed)
+        public void SetToP2PKH(Signature sig, in Point pubKey, bool useCompressed)
         {
             if (sig is null)
                 throw new ArgumentNullException(nameof(sig), "Signature can not be null.");
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
 
             var ops = new IOperation[]
             {
@@ -190,7 +187,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 return;
             }
 
-            var calc = new EllipticCurveCalculator();
+            DSA dsa = new DSA();
             bool didSetSig = false;
             // OP_0 sig1 | sig2 | sig_m | redeem
             List<PushDataOp> pushOps = sigOps.Cast<PushDataOp>().ToList();
@@ -198,13 +195,13 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             // OP_m | pub1 | pub2 | ... | pub(n) | OP_n | OP_CheckMultiSig
             for (int i = rdmOps.Length - 3; i >= 1; i--)
             {
-                if (!PublicKey.TryRead(((PushDataOp)rdmOps[i]).data, out PublicKey pubK))
+                if (!Point.TryRead(((PushDataOp)rdmOps[i]).data, out Point pubK))
                 {
                     throw new ArgumentException("Invalid public key");
                 }
                 byte[] dataToSign = tx.SerializeForSigning(redeem.Data, inputIndex, sig.SigHash);
-
-                if (calc.Verify(dataToSign, sig, pubK))
+                Scalar8x32 hash = new Scalar8x32(dataToSign, out bool overflow);
+                if (dsa.VerifySimple(sig, pubK, hash, true))
                 {
                     pushOps.Insert(insertIndex, new PushDataOp(sig.ToByteArray()));
                     didSetSig = true;
@@ -215,7 +212,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 {
                     throw new ArgumentException("Invalid signature found in this script.");
                 }
-                if (calc.Verify(dataToSign, tempSig, pubK))
+                if (dsa.VerifySimple(tempSig, pubK, hash, true))
                 {
                     insertIndex--;
                 }
@@ -259,12 +256,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         }
 
         /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException"/>
-        public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed)
+        public void SetToP2SH_P2WPKH(in Point pubKey, bool useCompressed)
         {
-            if (pubKey is null)
-                throw new ArgumentNullException(nameof(pubKey), "Public key can not be null.");
-
             RedeemScript redeemBuilder = new RedeemScript();
             redeemBuilder.SetToP2SH_P2WPKH(pubKey, useCompressed);
             SetData(new IOperation[] { new PushDataOp(redeemBuilder.Data) });

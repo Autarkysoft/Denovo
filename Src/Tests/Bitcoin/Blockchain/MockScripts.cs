@@ -8,8 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using Xunit;
 
@@ -31,9 +30,9 @@ namespace Tests.Bitcoin.Blockchain
         public virtual void SetToEmpty() => throw new NotImplementedException();
         public virtual void SetToMultiSig(Signature sig, IRedeemScript redeem, ITransaction tx, int inputIndex) => throw new NotImplementedException();
         public virtual void SetToP2PK(Signature sig) => throw new NotImplementedException();
-        public virtual void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public virtual void SetToP2PKH(Signature sig, in Point pubKey, bool useCompressed) => throw new NotImplementedException();
         public virtual void SetToP2SH_P2WPKH(IRedeemScript redeem) => throw new NotImplementedException();
-        public virtual void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public virtual void SetToP2SH_P2WPKH(in Point pubKey, bool useCompressed) => throw new NotImplementedException();
         public virtual void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
         public virtual bool VerifyCoinbase(IConsensus consensus) => throw new NotImplementedException();
     }
@@ -143,9 +142,9 @@ namespace Tests.Bitcoin.Blockchain
         public void SetToEmpty() => throw new NotImplementedException();
         public void SetToMultiSig(Signature sig, IRedeemScript redeem, ITransaction tx, int inputIndex) => throw new NotImplementedException();
         public void SetToP2PK(Signature sig) => throw new NotImplementedException();
-        public void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public void SetToP2PKH(Signature sig, in Point pubKey, bool useCompressed) => throw new NotImplementedException();
         public void SetToP2SH_P2WPKH(IRedeemScript redeem) => throw new NotImplementedException();
-        public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public void SetToP2SH_P2WPKH(in Point pubKey, bool useCompressed) => throw new NotImplementedException();
         public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
         public bool VerifyCoinbase(IConsensus consensus) => throw new NotImplementedException();
@@ -240,9 +239,9 @@ namespace Tests.Bitcoin.Blockchain
         public void SetToEmpty() => throw new NotImplementedException();
         public void SetToMultiSig(Signature sig, IRedeemScript redeem, ITransaction tx, int inputIndex) => throw new NotImplementedException();
         public void SetToP2PK(Signature sig) => throw new NotImplementedException();
-        public void SetToP2PKH(Signature sig, PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public void SetToP2PKH(Signature sig, in Point pubKey, bool useCompressed) => throw new NotImplementedException();
         public void SetToP2SH_P2WPKH(IRedeemScript redeem) => throw new NotImplementedException();
-        public void SetToP2SH_P2WPKH(PublicKey pubKey, bool useCompressed) => throw new NotImplementedException();
+        public void SetToP2SH_P2WPKH(in Point pubKey, bool useCompressed) => throw new NotImplementedException();
         public void SetToP2SH_P2WSH(IRedeemScript redeem) => throw new NotImplementedException();
         public void SetToCheckLocktimeVerify(Signature sig, IRedeemScript redeem) => throw new NotImplementedException();
         public bool VerifyCoinbase(IConsensus consensus) => throw new NotImplementedException();

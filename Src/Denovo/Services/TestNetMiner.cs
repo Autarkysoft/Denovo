@@ -8,7 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
@@ -39,7 +39,7 @@ namespace Denovo.Services
             // A weak key used only for testing
             using PrivateKey key = new(new Sha256().ComputeHash(Encoding.UTF8.GetBytes(cbText)));
             PubkeyScript pkScr = new();
-            pkScr.SetToP2WPKH(key.ToPublicKey());
+            pkScr.SetToP2WPKH(key.ToPublicKey(new Calc()));
 
             byte[] commitment = null;
 

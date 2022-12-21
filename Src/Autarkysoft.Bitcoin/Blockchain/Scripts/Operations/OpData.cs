@@ -4,8 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Diagnostics;
 
@@ -67,7 +66,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         // Don't rename (used by test through reflection).
         private byte[][] holder;
 
-        private readonly EllipticCurveCalculator calc = new EllipticCurveCalculator();
+        private readonly DSA dsa = new DSA();
         private readonly ScriptSerializer scriptSer = new ScriptSerializer();
 
         /// <summary>
@@ -135,7 +134,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
 
 
         /// <inheritdoc/>
-        public bool Verify(Signature sig, PublicKey pubKey, ReadOnlySpan<byte> sigBa)
+        public bool Verify(Signature sig, in Point pubKey, ReadOnlySpan<byte> sigBa)
         {
             byte[] spendScr, dataToSign;
             if (IsSegWit)
@@ -149,7 +148,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
             }
 
-            return calc.Verify(dataToSign, sig, pubKey, ForceLowS);
+            Scalar8x32 hash = new Scalar8x32(dataToSign, out bool overflow);
+            return dsa.VerifySimple(sig, pubKey, hash, ForceLowS);
         }
 
         /// <inheritdoc/>
@@ -198,7 +198,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     }
                 }
 
-                if (!PublicKey.TryRead(pubKeys[pubIndex--], out PublicKey pubK))
+                if (!Point.TryRead(pubKeys[pubIndex--], out Point pubK))
                 {
                     continue;
                 }
@@ -213,7 +213,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
                 }
 
-                if (calc.Verify(dataToSign, sig, pubK, ForceLowS))
+                Scalar8x32 hash = new Scalar8x32(dataToSign, out bool overflow);
+                if (dsa.VerifySimple(sig, pubK, hash, ForceLowS))
                 {
                     sigIndex--;
                     m--;
@@ -225,11 +226,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
         }
 
         /// <inheritdoc/>
-        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, PublicKey pub, out Errors error)
+        public bool VerifySchnorr(ReadOnlySpan<byte> sigBa, in Point pub, out Errors error)
         {
             Debug.Assert(UtxoList != null);
 
-            if (!Signature.TryReadSchnorr(sigBa, out Signature sig, out error))
+            if (!SchnorrSignature.TryRead(sigBa, out SchnorrSignature sig, out error))
             {
                 return false;
             }
@@ -241,7 +242,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
             }
 
             byte[] sigHash = Tx.SerializeForSigningTaproot_ScriptPath(sig.SigHash, UtxoList, TxInIndex, AnnexHash, TapLeafHash, CodeSeparatorPosition);
-            if (calc.VerifySchnorr(sigHash, sig, pub))
+            if (dsa.VerifySchnorr(sig, pub, sigHash))
             {
                 error = Errors.None;
                 return true;

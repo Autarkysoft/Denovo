@@ -8,8 +8,7 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
@@ -173,7 +172,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
         [Theory]
         [MemberData(nameof(GetP2PKHCases))]
-        public void SetToP2PKHTest(bool useComp, PublicKey pub, Signature sig, byte[] expected)
+        public void SetToP2PKHTest(bool useComp, in Point pub, Signature sig, byte[] expected)
         {
             SignatureScript scr = new();
             scr.SetToP2PKH(sig, pub, useComp);
@@ -184,9 +183,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         public void SetToP2PKH_ExceptionTest()
         {
             SignatureScript scr = new();
-
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(null, KeyHelper.Pub1, true));
-            Assert.Throws<ArgumentNullException>(() => scr.SetToP2PKH(Helper.ShortSig1, null, true));
         }
 
 
@@ -428,7 +425,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         }
         [Theory]
         [MemberData(nameof(GetP2sh_P2wpkhCases))]
-        public void SetToP2SH_P2WPKH_FromPubkeyTest(PublicKey pub, bool comp, byte[] expected)
+        public void SetToP2SH_P2WPKH_FromPubkeyTest(in Point pub, bool comp, byte[] expected)
         {
             SignatureScript scr = new();
             scr.SetToP2SH_P2WPKH(pub, comp);
@@ -442,7 +439,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts
             MockSerializableRedeemScript rdm = new(RedeemScriptType.Empty, Array.Empty<byte>(), 0);
 
             Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null));
-            Assert.Throws<ArgumentNullException>(() => scr.SetToP2SH_P2WPKH(null, true));
             Assert.Throws<ArgumentException>(() => scr.SetToP2SH_P2WPKH(rdm));
         }
 

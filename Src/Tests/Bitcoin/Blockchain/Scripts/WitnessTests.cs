@@ -189,7 +189,6 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         {
             Witness wit = new();
             Assert.Throws<ArgumentNullException>(() => wit.SetToP2WPKH(null, KeyHelper.Pub1));
-            Assert.Throws<ArgumentNullException>(() => wit.SetToP2WPKH(Helper.ShortSig1, null));
         }
     }
 }
