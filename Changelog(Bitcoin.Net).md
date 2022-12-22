@@ -1,7 +1,13 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.22.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.23.0.0...master)
 
-### Release 0.21.0 (2022-12-04)
+### Release 0.23.0 (2022-12-21)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.22.0.0...B0.23.0.0)
+* Replace old ECC with the new implementation
+* Disabled BIP-137
+* Small code improvement and bug fixes
+
+### Release 0.22.0 (2022-12-04)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.21.0.0...B0.22.0.0)
 * Improve ECC implementation
 * Add a new signature class and a DSA class
