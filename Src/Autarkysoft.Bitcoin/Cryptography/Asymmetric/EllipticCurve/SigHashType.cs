@@ -17,6 +17,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// <remarks>
     /// https://github.com/bitcoin/bitcoin/blob/907d636e5e76bd884a4ca1a1ebd8db68a3e64705/src/script/interpreter.h#L23-L34
     /// </remarks>
+    [Obsolete]
     [Flags]
     public enum SigHashType
     {

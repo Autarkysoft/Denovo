@@ -12,6 +12,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// Implementation of signatures produced by Elliptic Curve digital signature algorithms (ECDSA and ECSDSA)
     /// holding R and S values.
     /// </summary>
+    [Obsolete]
     public class Signature
     {
         /// <summary>

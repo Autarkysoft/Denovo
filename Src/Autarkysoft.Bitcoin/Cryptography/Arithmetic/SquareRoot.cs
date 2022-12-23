@@ -11,6 +11,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Arithmetic
     /// <summary>
     /// Implementation of square root in modular arithmetic.
     /// </summary>
+    [Obsolete]
     public static class SquareRoot
     {
         /// <summary>

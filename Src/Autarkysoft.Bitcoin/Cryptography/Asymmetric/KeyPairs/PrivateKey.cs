@@ -18,6 +18,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
     /// Implementation of bitcoin private keys.
     /// Implements <see cref="IDisposable"/>.
     /// </summary>
+    [Obsolete]
     public class PrivateKey : IDisposable
     {
         /// <summary>

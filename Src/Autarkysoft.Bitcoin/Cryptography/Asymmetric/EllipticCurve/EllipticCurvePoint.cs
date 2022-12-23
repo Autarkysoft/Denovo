@@ -11,6 +11,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// <summary>
     /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
     /// </summary>
+    [Obsolete]
     public readonly struct EllipticCurvePoint : IEquatable<EllipticCurvePoint>
     {
         /// <summary>

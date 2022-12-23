@@ -16,6 +16,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
     /// <summary>
     /// The public part of the key pair
     /// </summary>
+    [Obsolete]
     public class PublicKey
     {
         /// <summary>

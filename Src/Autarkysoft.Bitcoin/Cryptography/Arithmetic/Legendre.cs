@@ -12,6 +12,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Arithmetic
     /// Implementation of Legendre symbol
     /// <para/> https://en.wikipedia.org/wiki/Legendre_symbol
     /// </summary>
+    [Obsolete]
     public static class Legendre
     {
         // TODO: benchmark which one is faster, this function or using the following

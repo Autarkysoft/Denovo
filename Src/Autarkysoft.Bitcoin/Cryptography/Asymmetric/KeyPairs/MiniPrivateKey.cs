@@ -15,6 +15,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
     /// These are keys used in some physical bitcoins.
     /// <para/>https://en.bitcoin.it/wiki/Mini_private_key_format
     /// </summary>
+    [Obsolete]
     public class MiniPrivateKey : PrivateKey
     {
         /// <summary>

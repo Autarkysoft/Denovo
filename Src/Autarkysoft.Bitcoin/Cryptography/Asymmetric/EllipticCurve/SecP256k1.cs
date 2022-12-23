@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
 using System.Numerics;
 
 namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
@@ -10,6 +11,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// <summary>
     /// Secp256k1 elliptic curve values. Implements <see cref="IECurveFp"/>.
     /// </summary>
+    [Obsolete]
     public sealed class SecP256k1 : IECurveFp
     {
         /// <summary>

@@ -17,6 +17,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// Implementation of elliptic curve cryptography for secp256k1 curve. 
     /// From basic functions such as EC point multiplication to signing (ECDSA and ECSDSA).
     /// </summary>
+    [Obsolete]
     public class EllipticCurveCalculator
     {
         /// <summary>
