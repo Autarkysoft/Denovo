@@ -60,8 +60,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 return false;
             }
 
-            using Sha1 hash = new Sha1();
-            opData.Push(hash.ComputeHash(opData.Pop()));
+            opData.Push(Sha1.ComputeHash(opData.Pop()));
 
             error = Errors.None;
             return true;
