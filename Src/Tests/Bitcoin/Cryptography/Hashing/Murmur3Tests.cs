@@ -67,16 +67,14 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(GetHash32Cases))]
         public void ComputeHash32Test(byte[] data, uint seed, uint expected)
         {
-            Murmur3 hasher = new Murmur3();
-            uint actual = hasher.ComputeHash32(data, seed);
+            uint actual = Murmur3.ComputeHash32(data, seed);
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void ComputeHash32_ExceptionTest()
         {
-            Murmur3 hasher = new Murmur3();
-            Assert.Throws<ArgumentNullException>(() => hasher.ComputeHash32(null, 0));
+            Assert.Throws<ArgumentNullException>(() => Murmur3.ComputeHash32(null, 0));
         }
     }
 }

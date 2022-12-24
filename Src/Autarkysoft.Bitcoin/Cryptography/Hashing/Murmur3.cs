@@ -10,7 +10,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// <summary>
     /// Implementation of version 3 of the non-cryptographic hash function called MurmurHash
     /// </summary>
-    public sealed class Murmur3
+    public static class Murmur3
     {
         /// <summary>
         /// Computes 32-bit hash of the given data.
@@ -19,7 +19,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="data">Data to hash</param>
         /// <param name="seed">Seed to use</param>
         /// <returns>32-bit unsigned integer (hash result)</returns>
-        public unsafe uint ComputeHash32(byte[] data, uint seed)
+        public static unsafe uint ComputeHash32(ReadOnlySpan<byte> data, uint seed)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
@@ -40,13 +40,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             uint hash = seed;
             fixed (byte* dPt = &data[0])
             {
-                int rem = data.Length & 3; /*=(data.Length % 4)*/
+                int rem = data.Length & 3; //=(data.Length % 4)
                 for (int i = 0; i < data.Length - rem; i += 4)
                 {
                     uint k1 = (uint)(dPt[i] | (dPt[i + 1] << 8) | (dPt[i + 2] << 16) | (dPt[i + 3] << 24));
 
                     k1 *= 0xcc9e2d51;
-                    k1 = ((k1 << 15) | (k1 >> 17));
+                    k1 = (k1 << 15) | (k1 >> 17);
                     k1 *= 0x1b873593;
 
                     hash ^= k1;
@@ -89,7 +89,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     k2 *= 0x1b873593;
 
                     hash ^= k2;
-
 
                     hash ^= (uint)data.Length;
                     hash ^= hash >> 16;
