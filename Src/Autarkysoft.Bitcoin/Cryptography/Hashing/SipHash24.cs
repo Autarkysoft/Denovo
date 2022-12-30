@@ -21,7 +21,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="key">Key to use (it must be 128-bits or 16-bytes)</param>
         /// <param name="data">Data to hash</param>
         /// <returns>The 64-bit hash</returns>
-        public unsafe ulong ComputeHash(byte[] key, byte[] data)
+        public unsafe ulong ComputeHash(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
