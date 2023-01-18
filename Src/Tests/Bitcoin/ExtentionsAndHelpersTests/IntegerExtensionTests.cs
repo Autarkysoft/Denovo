@@ -29,6 +29,30 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         }
 
         [Theory]
+        [InlineData(-1, "-1")]
+        [InlineData(0, "0")]
+        [InlineData(1, "1st")]
+        [InlineData(2, "2nd")]
+        [InlineData(3, "3rd")]
+        [InlineData(4, "4th")]
+        [InlineData(10, "10th")]
+        [InlineData(11, "11th")]
+        [InlineData(12, "12th")]
+        [InlineData(13, "13th")]
+        [InlineData(14, "14th")]
+        [InlineData(20, "20th")]
+        [InlineData(21, "21st")]
+        [InlineData(22, "22nd")]
+        [InlineData(23, "23rd")]
+        [InlineData(24, "24th")]
+        [InlineData(101, "101st")]
+        public void ToOrdinalTest(int val, string expected)
+        {
+            string actual = val.ToOrdinal();
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
         [InlineData(0, 0)]
         [InlineData(-1, -1)] // -1 is 0xffffffff
         [InlineData(0x12345678, 0x78563412)]

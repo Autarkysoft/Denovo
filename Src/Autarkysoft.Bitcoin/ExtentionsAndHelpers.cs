@@ -420,6 +420,25 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        public static string ToOrdinal(this int i)
+        {
+            return i <= 0
+                ? i.ToString()
+                : (i % 100) switch
+                {
+                    11 => $"{i}th",
+                    12 => $"{i}th",
+                    13 => $"{i}th",
+                    _ => (i % 10) switch
+                    {
+                        1 => $"{i}st",
+                        2 => $"{i}nd",
+                        3 => $"{i}rd",
+                        _ => $"{i}th",
+                    },
+                };
+        }
+
         /// <summary>
         /// Changes endianness of the given 32-bit signed integer (from big to little endian and vice versa)
         /// </summary>
