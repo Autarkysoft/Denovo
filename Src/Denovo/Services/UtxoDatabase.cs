@@ -196,7 +196,7 @@ namespace Denovo.Services
         }
 
 
-        public bool Contains(Digest256 hash, uint index, bool checkCoinbases)
+        public bool Contains(in Digest256 hash, uint index, bool checkCoinbases)
         {
             if (database.Contains(hash, index))
             {
@@ -204,12 +204,16 @@ namespace Denovo.Services
             }
             else if (checkCoinbases)
             {
-                return coinbaseQueue.Any(x => x is not null && x.GetTransactionHash().Equals(hash));
+                foreach (var item in coinbaseQueue)
+                {
+                    if (item is not null && item.GetTransactionHash().Equals(hash))
+                    {
+                        return true;
+                    }
+                }
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
 

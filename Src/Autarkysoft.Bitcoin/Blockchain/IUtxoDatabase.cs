@@ -20,7 +20,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="index">Index of the output</param>
         /// <param name="checkCoinbases">Check the coinbase queue too</param>
         /// <returns>True if the UTXO exists; otherwise false.</returns>
-        public bool Contains(Digest256 hash, uint index, bool checkCoinbases);
+        public bool Contains(in Digest256 hash, uint index, bool checkCoinbases);
         /// <summary>
         /// Searches inside the UTXO database for the given transaction input and returns the <see cref="IUtxo"/>
         /// if it was found, otherwise null.

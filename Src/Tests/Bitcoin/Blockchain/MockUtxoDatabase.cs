@@ -22,7 +22,7 @@ namespace Tests.Bitcoin.Blockchain
         {
         }
 
-        public MockUtxoDatabase(Digest256 hash, IUtxo output)
+        public MockUtxoDatabase(in Digest256 hash, IUtxo output)
         {
             Add(hash, output);
         }
@@ -44,7 +44,7 @@ namespace Tests.Bitcoin.Blockchain
         private Dictionary<Digest256, List<Utxo>> database;
 
 
-        internal void Add(Digest256 hash, IUtxo output)
+        internal void Add(in Digest256 hash, IUtxo output)
         {
             if (database is null)
             {
@@ -63,7 +63,7 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
-        public bool Contains(Digest256 hash, uint index, bool checkCoinbases)
+        public bool Contains(in Digest256 hash, uint index, bool checkCoinbases)
         {
             Assert.NotNull(database);
             bool b = database.ContainsKey(hash);
