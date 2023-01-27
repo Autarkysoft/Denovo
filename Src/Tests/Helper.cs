@@ -206,7 +206,7 @@ namespace Tests
         /// </summary>
         /// <param name="ba">Bytes to convert.</param>
         /// <returns></returns>
-        internal static string BytesToHex(byte[] ba)
+        internal static string BytesToHex(ReadOnlySpan<byte> ba)
         {
             char[] ca = new char[ba.Length * 2];
             int b;

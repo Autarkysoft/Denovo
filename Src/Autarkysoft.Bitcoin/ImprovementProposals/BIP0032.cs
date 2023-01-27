@@ -4,8 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
@@ -134,7 +133,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             if (isPublic)
             {
                 PrvKey = null;
-                if (!PublicKey.TryRead(key, out PubKey))
+                if (!Point.TryRead(key, out PubKey))
                 {
                     throw new ArgumentOutOfRangeException("public key", "Invalid public key format.");
                 }
@@ -143,7 +142,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             {
                 // The following line will check if the key is valid and throws ArgumentOutOfRangeException if not
                 PrvKey = new PrivateKey(key.SubArray(1));
-                PubKey = PrvKey.ToPublicKey();
+                PubKey = PrvKey.ToPublicKey(calc);
             }
         }
 
@@ -265,19 +264,18 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         // version(4) + depth(1) + fingerPrint(4) + index(4) + chain(32) + key(33)
         internal const int ExtendedKeyLength = 78;
 
-        private readonly BigInteger N = new SecP256k1().N;
-
         // TODO: hardcode this value?
         private readonly byte[] MasterKeyHashKey = Encoding.UTF8.GetBytes("Bitcoin seed");
 
         private HmacSha512 hmac = new HmacSha512();
+        private readonly Calc calc = new Calc();
 
         private byte ExtendedKeyDepth;
         internal byte[] ParentFingerPrint;
         internal byte[] ChildNumber;
         private byte[] ChainCode;
         private PrivateKey PrvKey;
-        private PublicKey PubKey;
+        private Point PubKey;
 
         /// <summary>
         /// Gets or sets the extended key type
@@ -303,7 +301,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             // Master key doesn't have the (+previous private key % N), we use 'il' itself
             // The following line will check if the key is valid and throws ArgumentOutOfRangeException if not
             PrvKey = new PrivateKey(il);
-            PubKey = PrvKey.ToPublicKey();
+            PubKey = PrvKey.ToPublicKey(calc);
             ChainCode = ir;
 
             ExtendedKeyDepth = 0;
@@ -354,8 +352,8 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             // First start deriving the extended keys for each index
             byte[] prevPrvBa = PrvKey.ToBytes();
-            BigInteger prevPrvInt = PrvKey.ToBigInt();
-            byte[] prevPubBa = PubKey.ToByteArray(true);
+            Scalar8x32 prevPrvInt = PrvKey.ToScalar();
+            byte[] prevPubBa = PubKey.ToByteArray(true).ToArray();
             byte[] tempCC = ChainCode;
             byte[] tempLeft;
             foreach (var index in path.Indexes)
@@ -373,18 +371,17 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.WriteBigEndian(index);
                 HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out tempCC);
 
-                BigInteger kTemp = tempLeft.ToBigInt(true, true);
+                Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
                 // Note that we throw an exception here if the values were invalid (highly unlikely)
                 // because it is the extended keys, we can't skip anything here.
-                if (kTemp == 0 || kTemp >= N)
+                if (kTemp.IsZero || overflow)
                 {
                     throw new ArgumentException();
                 }
-                // Let PrivateKey do the additional checks and throw here
-                PrivateKey temp = new PrivateKey((kTemp + prevPrvInt) % N);
-                prevPrvInt = temp.ToBigInt();
+                PrivateKey temp = new PrivateKey(kTemp.Add(prevPrvInt, out _));
+                prevPrvInt = temp.ToScalar();
                 prevPrvBa = temp.ToBytes();
-                prevPubBa = temp.ToPublicKey().ToByteArray(true);
+                prevPubBa = temp.ToPublicKey(calc).ToByteArray(true).ToArray();
             }
 
             // Then derive the actual keys
@@ -408,14 +405,14 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                     stream.WriteBigEndian(childIndex);
                     HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out _);
 
-                    BigInteger kTemp = tempLeft.ToBigInt(true, true);
+                    Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
                     // Note: we don't throw any exceptions here. We simply ignore invalid values (highly unlikely)
                     // and move on to the next index. The returned value will always be filled with expected number of items.
-                    if (kTemp == 0 || kTemp >= N)
+                    if (kTemp.IsZero || overflow)
                     {
                         continue;
                     }
-                    PrivateKey temp = new PrivateKey((kTemp + prevPrvInt) % N);
+                    PrivateKey temp = new PrivateKey(kTemp.Add(prevPrvInt, out _));
                     result[i++] = temp;
                 }
                 catch (ArgumentOutOfRangeException)
@@ -443,7 +440,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <param name="startIndex">[Default value = 0] Starting index of the child key</param>
         /// <param name="step">[Default value = 1] Steps between each key (minimum will always be 1)</param>
         /// <returns>An array of derived child public keys</returns>
-        public PublicKey[] GetPublicKeys(BIP0032Path path, uint count, uint startIndex = 0, uint step = 1)
+        public Point[] GetPublicKeys(BIP0032Path path, uint count, uint startIndex = 0, uint step = 1)
         {
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(BIP0032));
@@ -453,13 +450,13 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentOutOfRangeException(nameof(ExtendedKeyDepth), "Can not get children since " +
                     "depth will be bigger than 1 byte");
 
-            PublicKey[] result = new PublicKey[count];
+            Point[] result = new Point[count];
             if (!(PrvKey is null))
             {
                 PrivateKey[] tempPK = GetPrivateKeys(path, count, startIndex, step);
                 for (int j = 0; j < tempPK.Length; j++)
                 {
-                    result[j] = tempPK[j].ToPublicKey();
+                    result[j] = tempPK[j].ToPublicKey(calc);
                     tempPK[j].Dispose();
                 }
                 return result;
@@ -480,11 +477,10 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             // First start deriving the extended keys for each index
             BigInteger prevPrvInt = PrvKey.ToBigInt();
-            byte[] prevPubBa = PubKey.ToByteArray(true);
-            EllipticCurvePoint prevPubPoint = PubKey.ToPoint();
+            byte[] prevPubBa = PubKey.ToByteArray(true).ToArray();
+            PointJacobian prevPubPoint = PubKey.ToPointJacobian();
             byte[] tempCC = ChainCode;
             byte[] tempLeft;
-            EllipticCurveCalculator calc = new EllipticCurveCalculator();
             foreach (var index in path.Indexes)
             {
                 // There is no hardened indexes thanks to first check
@@ -493,17 +489,17 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.WriteBigEndian(index);
                 HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out tempCC);
 
-                BigInteger kTemp = tempLeft.ToBigInt(true, true);
+                Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
                 // Note that we throw an exception here if the values were invalid (highly unlikely)
                 // because it is the extended keys, we can't skip anything here.
-                if (kTemp == 0 || kTemp >= N)
+                if (kTemp.IsZero || overflow)
                 {
                     throw new ArgumentException();
                 }
-                EllipticCurvePoint pt = calc.AddChecked(calc.MultiplyByG(kTemp), prevPubPoint);
-                PublicKey tempPub = new PublicKey(pt);
-                prevPubPoint = tempPub.ToPoint();
-                prevPubBa = tempPub.ToByteArray(true);
+                PointJacobian pt = calc.MultiplyByG(kTemp).AddVar(prevPubPoint, out _);
+                Point tempPub = pt.ToPointVar();
+                prevPubPoint = tempPub.ToPointJacobian();
+                prevPubBa = tempPub.ToByteArray(true).ToArray();
             }
 
             // Then derive the actual keys
@@ -518,15 +514,15 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.WriteBigEndian(childIndex);
                 HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out _);
 
-                BigInteger kTemp = tempLeft.ToBigInt(true, true);
+                Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
                 // Note: we don't throw any exceptions here. We simply ignore invalid values (highly unlikely)
                 // and move on to the next index. The returned value will always be filled with expected number of items.
-                if (kTemp == 0 || kTemp >= N)
+                if (kTemp.IsZero || overflow)
                 {
                     continue;
                 }
-                EllipticCurvePoint pt = calc.AddChecked(calc.MultiplyByG(kTemp), prevPubPoint);
-                PublicKey temp = new PublicKey(pt);
+                PointJacobian pt = calc.MultiplyByG(kTemp).AddVar(prevPubPoint, out _);
+                Point temp = pt.ToPointVar();
                 result[i++] = temp;
 
                 childIndex += step;
@@ -559,7 +555,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             stream.Write(ChainCode);
             if (isPub)
             {
-                stream.Write(PubKey.ToByteArray(true));
+                stream.Write(PubKey.ToByteArray(true).ToArray());
             }
             else
             {
@@ -593,7 +589,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                         PrvKey.Dispose();
                     PrvKey = null;
 
-                    PubKey = null;
+                    PubKey = Point.Infinity;
 
                     if (ChainCode != null)
                         Array.Clear(ChainCode, 0, ChainCode.Length);
