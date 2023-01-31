@@ -21,7 +21,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// </summary>
         public HmacSha512()
         {
-            hashFunc = new Sha512();
         }
 
         /// <summary>
@@ -31,13 +30,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="key">Key to use, if the key is bigger than 64 bytes it will be hashed using <see cref="Sha512"/></param>
         public HmacSha512(byte[] key)
         {
-            hashFunc = new Sha512();
             Key = key;
         }
 
 
-
-        private Sha512 hashFunc;
 
         /// <inheritdoc/>
         public int BlockSize => 128;
@@ -67,7 +63,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
                 if (value.Length > Sha512.BlockByteSize)
                 {
-                    _keyValue = hashFunc.ComputeHash(value);
+                    _keyValue = Sha512.ComputeHash(value);
                 }
                 else
                 {
@@ -146,19 +142,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 throw new ArgumentNullException(nameof(key), "Key can not be null.");
 
 
+            ulong* pt = stackalloc ulong[88];
             fixed (byte* kPt = key, dPt = data)
             fixed (ulong* oPt = &opad[0], iPt = &ipad[0])
-            fixed (ulong* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
                 if (key.Length > Sha512.BlockByteSize)
                 {
-                    hashFunc.Init(hPt);
-                    hashFunc.CompressData(kPt, key.Length, key.Length, hPt, wPt);
+                    Sha512.Init(pt);
+                    Sha512.CompressData(kPt, key.Length, key.Length, pt, pt + 8);
 
                     for (int i = 0; i < 8; i++) // 8 items in HashState = 8*8 = 64 byte
                     {
-                        iPt[i] = 0x3636363636363636U ^ hPt[i];
-                        oPt[i] = 0x5c5c5c5c5c5c5c5cU ^ hPt[i];
+                        iPt[i] = 0x3636363636363636U ^ pt[i];
+                        oPt[i] = 0x5c5c5c5c5c5c5c5cU ^ pt[i];
                     }
                     for (int i = 8; i < 16; i++)
                     {
@@ -196,30 +192,30 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 // Final result is SHA512(outer_pad | SHA512(inner_pad | data))
 
                 // 1. Compute SHA512(inner_pad | data)
-                hashFunc.Init(hPt);
-                hashFunc.CompressBlock(hPt, iPt);
+                Sha512.Init(pt);
+                Sha512.CompressBlock(pt, iPt);
                 // Total data length is len + hashFunc.BlockByteSize
-                hashFunc.CompressData(dPt, data.Length, data.Length + Sha512.BlockByteSize, hPt, wPt);
+                Sha512.CompressData(dPt, data.Length, data.Length + Sha512.BlockByteSize, pt, pt + 8);
 
                 // 2. Compute SHA512(outer_pad | hash)
                 // Copy 64 bytes and fill unto index 7 in wPt
-                *(Block64*)wPt = *(Block64*)hPt;
-                wPt[8] = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000UL; // 1 followed by 0 bits: pad1
-                wPt[9] = 0;
-                wPt[10] = 0;
-                wPt[11] = 0;
-                wPt[12] = 0;
-                wPt[13] = 0;
+                *(Block64*)(pt + 8) = *(Block64*)pt;
+                pt[16] = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000UL; // 1 followed by 0 bits: pad1
+                pt[17] = 0;
+                pt[18] = 0;
+                pt[19] = 0;
+                pt[20] = 0;
+                pt[21] = 0;
 
                 // The total data length is: oPad.Length(=128) + hashState.Lengh(=64) = 192 byte *8 = 1,536 bit
-                wPt[14] = 0;
-                wPt[15] = 1536;
+                pt[22] = 0;
+                pt[23] = 1536;
 
-                hashFunc.Init(hPt);
-                hashFunc.CompressBlock(hPt, oPt);
-                hashFunc.CompressBlock(hPt, wPt);
+                Sha512.Init(pt);
+                Sha512.CompressBlock(pt, oPt);
+                Sha512.CompressBlock(pt, pt + 8);
 
-                return hashFunc.GetBytes(hPt);
+                return Sha512.GetBytes(pt);
             }
         }
 
@@ -240,39 +236,38 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             if (_keyValue == null)
                 throw new ArgumentNullException(nameof(Key), "Key must be set before calling this function");
 
-
+            ulong* pt = stackalloc ulong[88];
             // Pads are already set
             fixed (byte* dPt = data)
             fixed (ulong* oPt = &opad[0], iPt = &ipad[0])
-            fixed (ulong* hPt = &hashFunc.hashState[0], wPt = &hashFunc.w[0])
             {
                 // Final result is SHA512(outer_pad | SHA512(inner_pad | data))
 
                 // 1. Compute SHA512(inner_pad | data)
-                hashFunc.Init(hPt);
-                hashFunc.CompressBlock(hPt, iPt);
+                Sha512.Init(pt);
+                Sha512.CompressBlock(pt, iPt);
                 // Total data length is len + hashFunc.BlockByteSize
-                hashFunc.CompressData(dPt, data.Length, data.Length + Sha512.BlockByteSize, hPt, wPt);
+                Sha512.CompressData(dPt, data.Length, data.Length + Sha512.BlockByteSize, pt, pt + 8);
 
                 // 2. Compute SHA512(outer_pad | hash)
                 // Copy 64 bytes and fill unto index 7 in wPt
-                *(Block64*)wPt = *(Block64*)hPt;
-                wPt[8] = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000UL; // 1 followed by 0 bits: pad1
-                wPt[9] = 0;
-                wPt[10] = 0;
-                wPt[11] = 0;
-                wPt[12] = 0;
-                wPt[13] = 0;
+                *(Block64*)(pt + 8) = *(Block64*)pt;
+                pt[16] = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000UL; // 1 followed by 0 bits: pad1
+                pt[17] = 0;
+                pt[18] = 0;
+                pt[19] = 0;
+                pt[20] = 0;
+                pt[21] = 0;
 
                 // The total data length is: oPad.Length(=128) + hashState.Lengh(=64) = 192 byte *8 = 1,536 bit
-                wPt[14] = 0;
-                wPt[15] = 1536;
+                pt[22] = 0;
+                pt[23] = 1536;
 
-                hashFunc.Init(hPt);
-                hashFunc.CompressBlock(hPt, oPt);
-                hashFunc.CompressBlock(hPt, wPt);
+                Sha512.Init(pt);
+                Sha512.CompressBlock(pt, oPt);
+                Sha512.CompressBlock(pt, pt + 8);
 
-                return hashFunc.GetBytes(hPt);
+                return Sha512.GetBytes(pt);
             }
         }
 
@@ -286,10 +281,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         {
             if (!disposedValue)
             {
-                if (!(hashFunc is null))
-                    hashFunc.Dispose();
-                hashFunc = null;
-
                 if (!(_keyValue is null))
                     Array.Clear(_keyValue, 0, _keyValue.Length);
                 _keyValue = null;

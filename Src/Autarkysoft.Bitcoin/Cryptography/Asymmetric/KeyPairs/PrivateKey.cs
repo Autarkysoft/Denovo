@@ -336,8 +336,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
 
             byte[] ecdhKey = new PublicKey(calc.Multiply(ToBigInt(), ephemeralPubkey.ToPoint())).ToByteArray(true);
 
-            using Sha512 sha512 = new Sha512();
-            var key = sha512.ComputeHash(ecdhKey);
+            var key = Sha512.ComputeHash(ecdhKey);
 
             using HmacSha256 hmac = new HmacSha256();
             Span<byte> actualMac = hmac.ComputeHash(encBytes.SubArray(0, encBytes.Length - 32), key.SubArray(32));

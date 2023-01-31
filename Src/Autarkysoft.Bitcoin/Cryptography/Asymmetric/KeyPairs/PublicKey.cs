@@ -221,8 +221,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             using PrivateKey ephemeral = new PrivateKey(rng);
 
             byte[] ecdhKey = new PublicKey(calc.Multiply(ephemeral.ToBigInt(), point)).ToByteArray(true);
-            using Sha512 sha512 = new Sha512();
-            byte[] key = sha512.ComputeHash(ecdhKey);
+            byte[] key = Sha512.ComputeHash(ecdhKey);
 
             using Aes aes = new AesManaged
             {

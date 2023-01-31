@@ -1,4 +1,4 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Benchmarks
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
@@ -6,15 +6,21 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Hashing
+namespace Benchmarks
 {
     /// <summary>
     /// Implementation of 512-bit Secure Hash Algorithm (SHA) based on RFC-6234.
     /// <para/>Implements <see cref="IDisposable"/>.
     /// <para/>https://tools.ietf.org/html/rfc6234
     /// </summary>
-    public static class Sha512
+    public sealed class Sha512Instance : IDisposable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Sha512Instance"/>.
+        /// </summary>
+        public Sha512Instance() { }
+
+
         /// <summary>
         /// Size of the hash result in bytes (=64 bytes).
         /// </summary>
@@ -24,6 +30,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// </summary>
         public const int BlockByteSize = 128;
 
+
+        internal ulong[] hashState = new ulong[8];
+        internal ulong[] w = new ulong[80];
 
         private static readonly ulong[] Ks =
         {
@@ -57,18 +66,20 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public static unsafe byte[] ComputeHash(ReadOnlySpan<byte> data)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> data)
         {
+            if (isDisposed)
+                throw new ObjectDisposedException("Instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
-            ulong* pt = stackalloc ulong[88];
             fixed (byte* dPt = data)
+            fixed (ulong* hPt = &hashState[0], wPt = &w[0])
             {
-                Init(pt);
-                CompressData(dPt, data.Length, data.Length, pt, pt + 8);
+                Init(hPt);
+                CompressData(dPt, data.Length, data.Length, hPt, wPt);
 
-                return GetBytes(pt);
+                return GetBytes(hPt);
             }
         }
 
@@ -83,8 +94,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash</returns>
-        public static unsafe byte[] ComputeHash(ReadOnlySpan<byte> buffer, int offset, int count)
+        public unsafe byte[] ComputeHash(ReadOnlySpan<byte> buffer, int offset, int count)
         {
+            if (isDisposed)
+                throw new ObjectDisposedException("Instance was disposed.");
             if (buffer == null)
                 throw new ArgumentNullException(nameof(buffer), "Data can not be null.");
             if (offset < 0 || count < 0)
@@ -94,13 +107,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             if (count > buffer.Length - offset)
                 throw new IndexOutOfRangeException("Array is not long enough.");
 
-            ulong* pt = stackalloc ulong[88];
             fixed (byte* dPt = &buffer[offset])
+            fixed (ulong* hPt = &hashState[0], wPt = &w[0])
             {
-                Init(pt);
-                CompressData(dPt, count, count, pt, pt + 8);
+                Init(hPt);
+                CompressData(dPt, count, count, hPt, wPt);
 
-                return GetBytes(pt);
+                return GetBytes(hPt);
             }
         }
 
@@ -112,22 +125,33 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public static unsafe byte[] ComputeHashTwice(ReadOnlySpan<byte> data)
+        public unsafe byte[] ComputeHashTwice(ReadOnlySpan<byte> data)
         {
+            if (isDisposed)
+                throw new ObjectDisposedException("Instance was disposed.");
             if (data == null)
                 throw new ArgumentNullException(nameof(data), "Data can not be null.");
 
-            ulong* pt = stackalloc ulong[88];
             fixed (byte* dPt = data)
+            fixed (ulong* hPt = &hashState[0], wPt = &w[0])
             {
-                Init(pt);
-                CompressData(dPt, data.Length, data.Length, pt, pt + 8);
-                ComputeSecondHash(pt, pt + 8);
+                Init(hPt);
+                CompressData(dPt, data.Length, data.Length, hPt, wPt);
+                ComputeSecondHash(hPt, wPt);
 
-                return GetBytes(pt);
+                return GetBytes(hPt);
             }
         }
 
+
+
+        internal unsafe void Init()
+        {
+            fixed (ulong* hPt = &hashState[0])
+            {
+                Init(hPt);
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe void Init(ulong* hPt)
@@ -142,6 +166,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             hPt[7] = 0x5be0cd19137e2179;
         }
 
+
+        internal unsafe byte[] GetBytes()
+        {
+            fixed (ulong* hPt = &hashState[0])
+                return GetBytes(hPt);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe byte[] GetBytes(ulong* hPt)
@@ -175,7 +205,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
 
-        internal static unsafe void CompressData(byte* dPt, int dataLen, int totalLen, ulong* hPt, ulong* wPt)
+        internal unsafe void CompressData(byte* dPt, int dataLen, int totalLen, ulong* hPt, ulong* wPt)
         {
             Span<byte> finalBlock = stackalloc byte[BlockByteSize];
 
@@ -258,7 +288,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             }
         }
 
-        internal static unsafe void ComputeSecondHash(ulong* hPt, ulong* wPt)
+        internal unsafe void ComputeSecondHash(ulong* hPt, ulong* wPt)
         {
             // Result of previous hash (hashState[]) is now our new block. So copy it here:
             wPt[0] = hPt[0];
@@ -288,9 +318,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
 
-        internal static unsafe void CompressBlock(ulong* hPt, ulong* wPt)
+        internal unsafe void CompressBlock(ulong* hPt, ulong* wPt)
         {
-            for (int i = 16; i < 80; i++)
+            for (int i = 16; i < w.Length; i++)
             {
                 wPt[i] = SSIG1(wPt[i - 2]) + wPt[i - 7] + SSIG0(wPt[i - 15]) + wPt[i - 16];
             }
@@ -404,6 +434,29 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         {
             // ROTR(x, 19) ^ ROTR(x, 61) ^ (x >> 6);
             return (x >> 19 | x << 45) ^ (x >> 61 | x << 3) ^ (x >> 6);
+        }
+
+
+
+        private bool isDisposed = false;
+
+        /// <summary>
+        /// Releases all resources used by the current instance of the <see cref="Sha512Instance"/> class.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!isDisposed)
+            {
+                if (!(hashState is null))
+                    Array.Clear(hashState, 0, hashState.Length);
+                hashState = null;
+
+                if (!(w is null))
+                    Array.Clear(w, 0, w.Length);
+                w = null;
+
+                isDisposed = true;
+            }
         }
     }
 }
