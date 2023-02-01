@@ -420,6 +420,11 @@ namespace Autarkysoft.Bitcoin
             }
         }
 
+        /// <summary>
+        /// Converts the integer to ordinal string (1st, 2nd, etc.)
+        /// </summary>
+        /// <param name="i">Integer to use</param>
+        /// <returns>Ordinal string (1st, 2nd, ...)</returns>
         public static string ToOrdinal(this int i)
         {
             return i <= 0
@@ -513,8 +518,8 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// Converts the given <see cref="Errors"/> enum to a user friendly string.
         /// </summary>
-        /// <param name="err"></param>
-        /// <returns></returns>
+        /// <param name="err">Error enum</param>
+        /// <returns>String representation of the error enum</returns>
         public static string Convert(this Errors err)
         {
             return err switch
