@@ -24,6 +24,10 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// </summary>
         /// <remarks>All letters excluding 0OIl</remarks>
         public const string CharSet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        /// <summary>
+        /// Number of bytes in the checksum (first 4 bytes of double SHA256 of data)
+        /// </summary>
+        public const int ChecksumSize = 4;
 
         internal enum Mode
         {
@@ -77,13 +81,13 @@ namespace Autarkysoft.Bitcoin.Encoders
         internal static bool HasValidChecksum(string val, Mode mode)
         {
             byte[] data = DecodeWithoutValidation(val, mode);
-            if (data.Length < Constants.ChecksumSize)
+            if (data.Length < ChecksumSize)
             {
                 return false;
             }
 
-            byte[] dataWithoutChecksum = data.SubArray(0, data.Length - Constants.ChecksumSize);
-            ReadOnlySpan<byte> checksum = data.SubArrayFromEnd(Constants.ChecksumSize);
+            byte[] dataWithoutChecksum = data.SubArray(0, data.Length - ChecksumSize);
+            ReadOnlySpan<byte> checksum = data.SubArrayFromEnd(ChecksumSize);
             ReadOnlySpan<byte> calculatedChecksum = CalculateChecksum(dataWithoutChecksum);
 
             return checksum.SequenceEqual(calculatedChecksum);
@@ -194,10 +198,10 @@ namespace Autarkysoft.Bitcoin.Encoders
             if (HasValidChars(b58EncodedStringWithChecksum, Mode.B58))
             {
                 byte[] data = DecodeWithoutValidation(b58EncodedStringWithChecksum, Mode.B58);
-                if (data.Length >= Constants.ChecksumSize)
+                if (data.Length >= ChecksumSize)
                 {
-                    result = data.SubArray(0, data.Length - Constants.ChecksumSize);
-                    ReadOnlySpan<byte> checksum = data.SubArrayFromEnd(Constants.ChecksumSize);
+                    result = data.SubArray(0, data.Length - ChecksumSize);
+                    ReadOnlySpan<byte> checksum = data.SubArrayFromEnd(ChecksumSize);
                     ReadOnlySpan<byte> calculatedChecksum = CalculateChecksum(result);
 
                     if (checksum.SequenceEqual(calculatedChecksum))
@@ -226,13 +230,13 @@ namespace Autarkysoft.Bitcoin.Encoders
             }
 
             byte[] data = DecodeWithoutValidation(b58EncodedStringWithChecksum, Mode.B58);
-            if (data.Length < Constants.ChecksumSize)
+            if (data.Length < ChecksumSize)
             {
                 throw new FormatException("Input is not a valid base-58 encoded string.");
             }
 
-            byte[] dataWithoutChecksum = data.SubArray(0, data.Length - Constants.ChecksumSize);
-            byte[] checksum = data.SubArrayFromEnd(Constants.ChecksumSize);
+            byte[] dataWithoutChecksum = data.SubArray(0, data.Length - ChecksumSize);
+            byte[] checksum = data.SubArrayFromEnd(ChecksumSize);
             byte[] calculatedChecksum = CalculateChecksum(dataWithoutChecksum);
 
             if (!((ReadOnlySpan<byte>)checksum).SequenceEqual(calculatedChecksum))

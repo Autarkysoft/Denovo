@@ -105,11 +105,11 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                      OperationList[0] is PushDataOp op0 && op0.OpValue == OP._0 &&
                      OperationList[1] is PushDataOp push1)
             {
-                if (push1.data?.Length == Constants.Hash160Length)
+                if (push1.data?.Length == Ripemd160Sha256.HashByteSize)
                 {
                     return RedeemScriptType.P2SH_P2WPKH;
                 }
-                else if (push1.data?.Length == Constants.Sha256Length)
+                else if (push1.data?.Length == Sha256.HashByteSize)
                 {
                     return RedeemScriptType.P2SH_P2WSH;
                 }

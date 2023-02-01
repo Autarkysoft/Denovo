@@ -46,18 +46,6 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const int UncompressedPubkeyLen = 65;
         /// <summary>
-        /// Number of bytes in a checksum (first 4 bytes of double SHA256 of data)
-        /// </summary>
-        public const int ChecksumSize = 4;
-        /// <summary>
-        /// Byte length of <see cref="Cryptography.Hashing.Ripemd160Sha256"/> hash result
-        /// </summary>
-        public const int Hash160Length = 20;
-        /// <summary>
-        /// Byte length of <see cref="Cryptography.Hashing.Sha256"/> hash result
-        /// </summary>
-        public const int Sha256Length = 32;
-        /// <summary>
         /// Maximum allowed block weight (BIP-141)
         /// </summary>
         public const int MaxBlockWeight = 4_000_000;

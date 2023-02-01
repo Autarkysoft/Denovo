@@ -120,7 +120,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             else if (OperationList.Length == 5 &&
                      OperationList[0] is DUPOp &&
                      OperationList[1] is Hash160Op &&
-                     OperationList[2] is PushDataOp push2 && push2.data?.Length == Constants.Hash160Length &&
+                     OperationList[2] is PushDataOp push2 && push2.data?.Length == Ripemd160Sha256.HashByteSize &&
                      OperationList[3] is EqualVerifyOp &&
                      OperationList[4] is CheckSigOp)
             {
@@ -128,20 +128,20 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             }
             else if (OperationList.Length == 3 &&
                      OperationList[0] is Hash160Op &&
-                     OperationList[1] is PushDataOp push3 && push3.data?.Length == Constants.Hash160Length &&
+                     OperationList[1] is PushDataOp push3 && push3.data?.Length == Ripemd160Sha256.HashByteSize &&
                      OperationList[2] is EqualOp)
             {
                 return PubkeyScriptType.P2SH;
             }
             else if (OperationList.Length == 2 &&
                      OperationList[0] is PushDataOp && OperationList[0].OpValue == OP._0 &&
-                     OperationList[1] is PushDataOp push4 && push4.data?.Length == Constants.Hash160Length)
+                     OperationList[1] is PushDataOp push4 && push4.data?.Length == Ripemd160Sha256.HashByteSize)
             {
                 return PubkeyScriptType.P2WPKH;
             }
             else if (OperationList.Length == 2 &&
                      OperationList[0] is PushDataOp && OperationList[0].OpValue == OP._0 &&
-                     OperationList[1] is PushDataOp push5 && push5.data?.Length == Constants.Sha256Length)
+                     OperationList[1] is PushDataOp push5 && push5.data?.Length == Sha256.HashByteSize)
             {
                 return PubkeyScriptType.P2WSH;
             }
@@ -229,8 +229,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (hash == null)
                 throw new ArgumentNullException(nameof(hash), "Hash can not be null.");
-            if (hash.Length != Constants.Hash160Length)
-                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Constants.Hash160Length} bytes long.");
+            if (hash.Length != Ripemd160Sha256.HashByteSize)
+                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Ripemd160Sha256.HashByteSize} bytes long.");
 
             var ops = new IOperation[]
             {
@@ -283,8 +283,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (hash == null)
                 throw new ArgumentNullException(nameof(hash), "Hash can not be null.");
-            if (hash.Length != Constants.Hash160Length)
-                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Constants.Hash160Length} bytes long.");
+            if (hash.Length != Ripemd160Sha256.HashByteSize)
+                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Ripemd160Sha256.HashByteSize} bytes long.");
 
             var ops = new IOperation[]
             {
@@ -395,8 +395,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (hash == null)
                 throw new ArgumentNullException(nameof(hash), "Hash can not be null.");
-            if (hash.Length != Constants.Hash160Length)
-                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Constants.Hash160Length} bytes long.");
+            if (hash.Length != Ripemd160Sha256.HashByteSize)
+                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Ripemd160Sha256.HashByteSize} bytes long.");
 
             var ops = new IOperation[]
             {
@@ -454,8 +454,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             if (hash == null)
                 throw new ArgumentNullException(nameof(hash), "Hash can not be null.");
-            if (hash.Length != Constants.Sha256Length)
-                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Constants.Sha256Length} bytes long.");
+            if (hash.Length != Sha256.HashByteSize)
+                throw new ArgumentOutOfRangeException(nameof(hash), $"Hash must be {Sha256.HashByteSize} bytes long.");
 
             var ops = new IOperation[]
             {
