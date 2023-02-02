@@ -4,12 +4,12 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Text;
 using Xunit;
 
-namespace Tests.Bitcoin.Cryptography.Asymmetric.KeyPairs
+namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class MiniPrivateKeyTests
     {
@@ -17,7 +17,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.KeyPairs
         [Fact]
         public void Constructor_RNGTest()
         {
-            using MiniPrivateKey key = new MiniPrivateKey(new SharpRandom());
+            using MiniPrivateKey key = new(new SharpRandom());
             string actual = key.ToString();
 
             using var sha = System.Security.Cryptography.SHA256.Create();
@@ -44,7 +44,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.KeyPairs
         [InlineData("S6c56bnXQiBjk9mqSYE7ykVQ7NzrRy", "4c7a9640c72dc2099f23715d0c8a0d8a35f8906e3cab61dd3f78b67bf887c9ab")]
         public void Constructor_StringTest(string key, string hex)
         {
-            using MiniPrivateKey mKey = new MiniPrivateKey(key);
+            using MiniPrivateKey mKey = new(key);
 
             string actualStr = mKey.ToString();
             // Test if base is set correctly
@@ -89,7 +89,7 @@ namespace Tests.Bitcoin.Cryptography.Asymmetric.KeyPairs
         [Fact]
         public void ToString_DisposedExceptionTest()
         {
-            MiniPrivateKey key = new MiniPrivateKey("SzavMBLoXU6kDrqtUVmffv");
+            MiniPrivateKey key = new("SzavMBLoXU6kDrqtUVmffv");
             key.Dispose();
             Exception ex = Assert.Throws<ObjectDisposedException>(() => key.ToString());
         }
