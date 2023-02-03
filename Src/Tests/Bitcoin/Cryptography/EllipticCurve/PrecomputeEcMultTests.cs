@@ -63,7 +63,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         {
             PrecomputeEcMult.BuildTables(out PointStorage[] table, out PointStorage[] table128);
             // https://github.com/bitcoin-core/secp256k1/blob/694ce8fb2d1fd8a3d641d7c33705691d41a2a860/src/precomputed_ecmult.c
-            using Stream stream = Helper.ReadResourceAsStream("precomputed_ecmult", "c");
+            using Stream stream = Helper.ReadResourceAsStream("precomputed_ecmult", "txt");
             using StreamReader reader = new(stream);
             VerifyTable(table, reader);
             VerifyTable(table128, reader);
