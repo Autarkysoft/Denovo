@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Encoders;
+using Autarkysoft.Bitcoin.ImprovementProposals;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -464,7 +465,7 @@ namespace Autarkysoft.Bitcoin
 
 
     /// <summary>
-    /// <see cref="SigHashType"/> extention
+    /// <see cref="SigHashType"/> extension
     /// </summary>
     public static class SigHashTypeExtension
     {
@@ -656,7 +657,28 @@ namespace Autarkysoft.Bitcoin
 
 
     /// <summary>
-    /// String extentions
+    /// BIP-39 word-list extension
+    /// </summary>
+    public static class WordListExtension
+    {
+        /// <summary>
+        /// Return if the given BIP-39 world list uses the Chinese, Japanese or Korean language.
+        /// </summary>
+        /// <param name="wl">BIP-39 word list</param>
+        /// <returns>True if the given word list uses the Chinese, Japanese or Korean language; false otherwise.</returns>
+        public static bool IsCJK(this BIP0039.WordLists wl)
+        {
+            return wl == BIP0039.WordLists.ChineseSimplified || wl == BIP0039.WordLists.ChineseTraditional ||
+                   wl == BIP0039.WordLists.Japanese || wl == BIP0039.WordLists.Korean;
+        }
+    }
+
+
+
+
+
+    /// <summary>
+    /// String extensions
     /// </summary>
     public static class StringExtension
     {
