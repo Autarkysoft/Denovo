@@ -108,11 +108,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Zero
         /// </summary>
-        public static Digest256 Zero => _zero;
+        public static ref readonly Digest256 Zero => ref _zero;
         /// <summary>
         /// One
         /// </summary>
-        public static Digest256 One => _one;
+        public static ref readonly Digest256 One => ref _one;
 
 
         /// <summary>
