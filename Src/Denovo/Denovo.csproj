@@ -36,32 +36,4 @@
   <ItemGroup>
     <Folder Include="Assets\" />
   </ItemGroup>
-
-  <ItemGroup>
-    <AvaloniaResource Remove="Views\ConfigurationView.xaml" />
-    <AvaloniaResource Remove="Views\MinerView.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Views\ConfigurationView.xaml" />
-    <None Remove="Views\MinerView.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Views\ConfigurationView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Views\MinerView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Views\ConfigurationView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Views\MinerView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-  </ItemGroup>
 </Project>
