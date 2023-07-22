@@ -230,10 +230,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public const int ByteSize = 32;
 
         private static readonly Scalar8x32 _zero = new Scalar8x32(0);
+        private static readonly Scalar8x32 _one = new Scalar8x32(1);
         /// <summary>
         /// Zero
         /// </summary>
         public static ref readonly Scalar8x32 Zero => ref _zero;
+        /// <summary>
+        /// One
+        /// </summary>
+        public static ref readonly Scalar8x32 One => ref _one;
 
         private static readonly Scalar8x32 _mb1 = new Scalar8x32(0x0ABFE4C3U, 0x6F547FA9U, 0x010E8828U, 0xE4437ED6U,
                                                                  0x00000000U, 0x00000000U, 0x00000000U, 0x00000000U);
@@ -258,6 +263,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Returns if the value is equal to zero
         /// </summary>
         public bool IsZero => (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+        /// <summary>
+        /// Returns if the value is equal to one
+        /// </summary>
+        public bool IsOne => ((b0 ^ 1) | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
         /// <summary>
         /// Returns if the value is even
         /// </summary>
