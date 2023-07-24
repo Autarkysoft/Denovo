@@ -276,24 +276,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public bool IsHigh
         {
-            // TODO: needs testing, (int was replaced with bool)
             get
             {
-                bool yes = false;
-                bool no = false;
-                no |= (b7 < NH7);
-                yes |= (b7 > NH7) & !no;
-                no |= (b6 < NH6) & !yes; // No need for a > check.
-                no |= (b5 < NH5) & !yes; // No need for a > check.
-                no |= (b4 < NH4) & !yes; // No need for a > check.
-                no |= (b3 < NH3) & !yes;
-                yes |= (b3 > NH3) & !no;
-                no |= (b2 < NH2) & !yes;
-                yes |= (b2 > NH2) & !no;
-                no |= (b1 < NH1) & !yes;
-                yes |= (b1 > NH1) & !no;
-                yes |= (b0 > NH0) & !no;
-                return yes;
+                int yes = 0;
+                int no = 0;
+                no |= (b7 < NH7 ? 1 : 0);
+                yes |= (b7 > NH7 ? 1 : 0) & ~no;
+                no |= (b6 < NH6 ? 1 : 0) & ~yes; // No need for a > check
+                no |= (b5 < NH5 ? 1 : 0) & ~yes; // No need for a > check
+                no |= (b4 < NH4 ? 1 : 0) & ~yes; // No need for a > check
+                no |= (b3 < NH3 ? 1 : 0) & ~yes;
+                yes |= (b3 > NH3 ? 1 : 0) & ~no;
+                no |= (b2 < NH2 ? 1 : 0) & ~yes;
+                yes |= (b2 > NH2 ? 1 : 0) & ~no;
+                no |= (b1 < NH1 ? 1 : 0) & ~yes;
+                yes |= (b1 > NH1 ? 1 : 0) & ~no;
+                yes |= (b0 > NH0 ? 1 : 0) & ~no;
+                return yes != 0;
             }
         }
 
