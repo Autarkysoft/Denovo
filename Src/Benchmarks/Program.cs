@@ -13,7 +13,7 @@ namespace Benchmarks
     {
         static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run(typeof(Scalar8x32Bench));
+            var summary = BenchmarkRunner.Run(typeof(Scalar8x32_MultiplyBench));
             //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
     }
