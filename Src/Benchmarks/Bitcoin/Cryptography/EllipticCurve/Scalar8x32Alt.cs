@@ -78,6 +78,8 @@ namespace Benchmarks.Bitcoin.Cryptography.EllipticCurve
         private const uint NH6 = 0xFFFFFFFFU;
         private const uint NH7 = 0x7FFFFFFFU;
 
+        public bool IsZero => (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+
         private uint CheckOverflow()
         {
             uint yes = 0U;
@@ -1923,6 +1925,52 @@ namespace Benchmarks.Bitcoin.Cryptography.EllipticCurve
             p7 = (uint)t;
 
             return new Scalar8x32Alt(p0, p1, p2, p3, p4, p5, p6, p7);
+        }
+
+
+        public Scalar8x32Alt Negate()
+        {
+            uint nonzero = 0xFFFFFFFFU * (IsZero ? 0U : 1U);
+            ulong t = (ulong)(~b0) + (N0 + 1);
+            uint r0 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b1) + N1;
+            uint r1 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b2) + N2;
+            uint r2 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b3) + N3;
+            uint r3 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b4) + N4;
+            uint r4 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b5) + N5;
+            uint r5 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b6) + N6;
+            uint r6 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b7) + N7;
+            uint r7 = (uint)(t & nonzero);
+
+            return new Scalar8x32Alt(r0, r1, r2, r3, r4, r5, r6, r7);
+        }
+        public Scalar8x32Alt Negate_ulong()
+        {
+            ulong nonzero = IsZero ? 0 : 0xFFFFFFFFUL;
+            ulong t = (ulong)(~b0) + (N0 + 1);
+            uint r0 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b1) + N1;
+            uint r1 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b2) + N2;
+            uint r2 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b3) + N3;
+            uint r3 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b4) + N4;
+            uint r4 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b5) + N5;
+            uint r5 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b6) + N6;
+            uint r6 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(~b7) + N7;
+            uint r7 = (uint)(t & nonzero);
+
+            return new Scalar8x32Alt(r0, r1, r2, r3, r4, r5, r6, r7);
         }
     }
 }

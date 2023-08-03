@@ -1024,8 +1024,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public Scalar8x32 Negate()
         {
-            uint nonzero = 0xFFFFFFFFU * (IsZero ? 0U : 1U); // secp256k1_scalar_is_zero(a) == 0);
-            ulong t = (ulong)(~b0) + N0 + 1;
+            // uint32_t nonzero = 0xFFFFFFFFUL * (secp256k1_scalar_is_zero(a) == 0);
+            // Instead of a branch to get 1/0 then multiply it by the constant we use branch to get the resulting constant directly
+            // ie. we skip multiplication (optimization effect is minuscule though!)
+            uint nonzero = IsZero ? 0 : 0xFFFFFFFFU;
+            ulong t = (ulong)(~b0) + (N0 + 1);
             uint r0 = (uint)(t & nonzero); t >>= 32;
             t += (ulong)(~b1) + N1;
             uint r1 = (uint)(t & nonzero); t >>= 32;
