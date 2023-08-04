@@ -1048,6 +1048,40 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
         }
 
+        /// <summary>
+        /// Returns the conditional complement of this scalar modulo the group order.
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <param name="result"></param>
+        /// <returns>-1 if the number was negated; otherwise 1.</returns>
+        public int NegateConditional(int flag, out Scalar8x32 result)
+        {
+            // If flag = 0 then mask = 00...00 so this is a no-op
+            // if flag = 1 then mask = 11...11 so this is identical Negate()
+            uint mask = (uint)-flag;
+            // nonzero is computed same as above
+            uint nonzero = IsZero ? 0 : 0xFFFFFFFFU;
+            ulong t = (ulong)(b0 ^ mask) + ((N0 + 1) & mask);
+            uint r0 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(b1 ^ mask) + (N1 & mask);
+            uint r1 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(b2 ^ mask) + (N2 & mask);
+            uint r2 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(b3 ^ mask) + (N3 & mask);
+            uint r3 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(b4 ^ mask) + (N4 & mask);
+            uint r4 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(b5 ^ mask) + (N5 & mask);
+            uint r5 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(b6 ^ mask) + (N6 & mask);
+            uint r6 = (uint)(t & nonzero); t >>= 32;
+            t += (ulong)(b7 ^ mask) + (N7 & mask);
+            uint r7 = (uint)(t & nonzero);
+            result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            // return 2 * (mask == 0) - 1;
+            return mask == 0 ? 1 : -1;
+        }
+
 
         /// <summary>
         /// Find r1 and r2 such that r1+r2*2^128 = k
