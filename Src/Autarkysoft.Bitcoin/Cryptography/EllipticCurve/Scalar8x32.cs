@@ -73,6 +73,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="Scalar8x32"/> using the given pointer.
         /// </summary>
+        /// <remarks>
+        /// Assumes there is no overflow
+        /// </remarks>
+        /// <param name="pt">Pointer of the array containing 8 items (256 bits)</param>
+        public unsafe Scalar8x32(uint* pt)
+        {
+            b0 = pt[0]; b1 = pt[1]; b2 = pt[2]; b3 = pt[3];
+            b4 = pt[4]; b5 = pt[5]; b6 = pt[6]; b7 = pt[7];
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Scalar8x32"/> using the given pointer.
+        /// </summary>
         /// <param name="hPt"><see cref="Hashing.Sha256.hashState"/> pointer</param>
         /// <param name="overflow">Returns true if value is bigger than or equal to curve order; otherwise false</param>
         public unsafe Scalar8x32(uint* hPt, out bool overflow)
@@ -335,69 +348,81 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        private static unsafe uint GetOverflow(uint* r)
+        {
+            uint yes = 0;
+            uint no = 0;
+            no |= (r[7] < N7 ? 1U : 0);
+            no |= (r[6] < N6 ? 1U : 0);
+            no |= (r[5] < N5 ? 1U : 0);
+            no |= (r[4] < N4 ? 1U : 0);
+            yes |= (r[4] > N4 ? 1U : 0) & ~no;
+            no |= (r[3] < N3 ? 1U : 0) & ~yes;
+            yes |= (r[3] > N3 ? 1U : 0) & ~no;
+            no |= (r[2] < N2 ? 1U : 0) & ~yes;
+            yes |= (r[2] > N2 ? 1U : 0) & ~no;
+            no |= (r[1] < N1 ? 1U : 0) & ~yes;
+            yes |= (r[1] > N1 ? 1U : 0) & ~no;
+            yes |= (r[0] >= N0 ? 1U : 0) & ~no;
+            return yes;
+        }
+
+        private static unsafe void Reduce(uint* r, uint overflow)
+        {
+            Debug.Assert(overflow <= 1);
+
+            ulong t = (ulong)r[0] + (overflow * NC0);
+            r[0] = (uint)t; t >>= 32;
+            t += (ulong)r[1] + (overflow * NC1);
+            r[1] = (uint)t; t >>= 32;
+            t += (ulong)r[2] + (overflow * NC2);
+            r[2] = (uint)t; t >>= 32;
+            t += (ulong)r[3] + (overflow * NC3);
+            r[3] = (uint)t; t >>= 32;
+            t += (ulong)r[4] + (overflow * NC4);
+            r[4] = (uint)t; t >>= 32;
+            t += r[5];
+            r[5] = (uint)t; t >>= 32;
+            t += r[6];
+            r[6] = (uint)t; t >>= 32;
+            t += r[7];
+            r[7] = (uint)t;
+        }
+
         /// <summary>
         /// Adds the two scalars together modulo the group order.
         /// </summary>
         /// <param name="other">Other value</param>
         /// <param name="overflow">Returns whether it overflowed</param>
         /// <returns>Result</returns>
-        public Scalar8x32 Add(in Scalar8x32 other, out bool overflow)
+        public unsafe Scalar8x32 Add(in Scalar8x32 other, out bool overflow)
         {
+            uint* r = stackalloc uint[8];
+
             ulong t = (ulong)b0 + other.b0;
-            uint r0 = (uint)t; t >>= 32;
+            r[0] = (uint)t; t >>= 32;
             t += (ulong)b1 + other.b1;
-            uint r1 = (uint)t; t >>= 32;
+            r[1] = (uint)t; t >>= 32;
             t += (ulong)b2 + other.b2;
-            uint r2 = (uint)t; t >>= 32;
+            r[2] = (uint)t; t >>= 32;
             t += (ulong)b3 + other.b3;
-            uint r3 = (uint)t; t >>= 32;
+            r[3] = (uint)t; t >>= 32;
             t += (ulong)b4 + other.b4;
-            uint r4 = (uint)t; t >>= 32;
+            r[4] = (uint)t; t >>= 32;
             t += (ulong)b5 + other.b5;
-            uint r5 = (uint)t; t >>= 32;
+            r[5] = (uint)t; t >>= 32;
             t += (ulong)b6 + other.b6;
-            uint r6 = (uint)t; t >>= 32;
+            r[6] = (uint)t; t >>= 32;
             t += (ulong)b7 + other.b7;
-            uint r7 = (uint)t; t >>= 32;
+            r[7] = (uint)t; t >>= 32;
 
-            int yes = 0;
-            int no = 0;
-            no |= (r7 < N7 ? 1 : 0);
-            no |= (r6 < N6 ? 1 : 0);
-            no |= (r5 < N5 ? 1 : 0);
-            no |= (r4 < N4 ? 1 : 0);
-            yes |= (r4 > N4 ? 1 : 0) & ~no;
-            no |= (r3 < N3 ? 1 : 0) & ~yes;
-            yes |= (r3 > N3 ? 1 : 0) & ~no;
-            no |= (r2 < N2 ? 1 : 0) & ~yes;
-            yes |= (r2 > N2 ? 1 : 0) & ~no;
-            no |= (r1 < N1 ? 1 : 0) & ~yes;
-            yes |= (r1 > N1 ? 1 : 0) & ~no;
-            yes |= (r0 >= N0 ? 1 : 0) & ~no;
-
-            uint of = (uint)yes + (uint)t;
+            uint of = GetOverflow(r) + (uint)t;
             overflow = of != 0;
 
             Debug.Assert(of == 0 || of == 1);
+            Reduce(r, of);
 
-            t = (ulong)r0 + (of * NC0);
-            r0 = (uint)t; t >>= 32;
-            t += (ulong)r1 + (of * NC1);
-            r1 = (uint)t; t >>= 32;
-            t += (ulong)r2 + (of * NC2);
-            r2 = (uint)t; t >>= 32;
-            t += (ulong)r3 + (of * NC3);
-            r3 = (uint)t; t >>= 32;
-            t += (ulong)r4 + (of * NC4);
-            r4 = (uint)t; t >>= 32;
-            t += r5;
-            r5 = (uint)t; t >>= 32;
-            t += r6;
-            r6 = (uint)t; t >>= 32;
-            t += r7;
-            r7 = (uint)t;
-
-            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            return new Scalar8x32(r);
         }
 
 
@@ -971,9 +996,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         private static Scalar8x32 Reduce(in Scalar8x32 r, uint overflow)
         {
-            ulong t;
             Debug.Assert(overflow <= 1);
-            t = (ulong)r.b0 + (overflow * NC0);
+
+            ulong t = (ulong)r.b0 + (overflow * NC0);
             uint r0 = (uint)t; t >>= 32;
             t += (ulong)r.b1 + (overflow * NC1);
             uint r1 = (uint)t; t >>= 32;
