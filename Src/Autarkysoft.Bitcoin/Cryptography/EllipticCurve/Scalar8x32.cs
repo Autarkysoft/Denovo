@@ -118,39 +118,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="overflow">Returns true if value was bigger than or equal to curve order; otherwise false</param>
         public unsafe Scalar8x32(byte* pt, out bool overflow)
         {
-            b0 = pt[31] | ((uint)pt[30] << 8) | ((uint)pt[29] << 16) | ((uint)pt[28] << 24);
-            b1 = pt[27] | ((uint)pt[26] << 8) | ((uint)pt[25] << 16) | ((uint)pt[24] << 24);
-            b2 = pt[23] | ((uint)pt[22] << 8) | ((uint)pt[21] << 16) | ((uint)pt[20] << 24);
-            b3 = pt[19] | ((uint)pt[18] << 8) | ((uint)pt[17] << 16) | ((uint)pt[16] << 24);
-            b4 = pt[15] | ((uint)pt[14] << 8) | ((uint)pt[13] << 16) | ((uint)pt[12] << 24);
-            b5 = pt[11] | ((uint)pt[10] << 8) | ((uint)pt[09] << 16) | ((uint)pt[08] << 24);
-            b6 = pt[07] | ((uint)pt[06] << 8) | ((uint)pt[05] << 16) | ((uint)pt[04] << 24);
-            b7 = pt[03] | ((uint)pt[02] << 8) | ((uint)pt[01] << 16) | ((uint)pt[00] << 24);
-
-            uint of = CheckOverflow();
-            overflow = of != 0;
-
-            Debug.Assert(of == 0 || of == 1);
-
-            ulong t = (ulong)b0 + (of * NC0);
-            b0 = (uint)t; t >>= 32;
-            t += (ulong)b1 + (of * NC1);
-            b1 = (uint)t; t >>= 32;
-            t += (ulong)b2 + (of * NC2);
-            b2 = (uint)t; t >>= 32;
-            t += (ulong)b3 + (of * NC3);
-            b3 = (uint)t; t >>= 32;
-            t += (ulong)b4 + (of * NC4);
-            b4 = (uint)t; t >>= 32;
-            t += b5;
-            b5 = (uint)t; t >>= 32;
-            t += b6;
-            b6 = (uint)t; t >>= 32;
-            t += b7;
-            b7 = (uint)t;
-
-            Debug.Assert((of == 1 && t >> 32 == 1) || (of == 0 && t >> 32 == 0));
-            Debug.Assert(CheckOverflow() == 0);
+            uint* r = stackalloc uint[8];
+            overflow = SetB32(pt, r);
+            b0 = r[0]; b1 = r[1]; b2 = r[2]; b3 = r[3];
+            b4 = r[4]; b5 = r[5]; b6 = r[6]; b7 = r[7];
         }
 
         /// <summary>
@@ -160,44 +131,36 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="data">Array to use</param>
         /// <param name="overflow">Returns true if value was bigger than or equal to curve order; otherwise false</param>
-        public Scalar8x32(ReadOnlySpan<byte> data, out bool overflow)
+        public unsafe Scalar8x32(ReadOnlySpan<byte> data, out bool overflow)
         {
             if (data.Length != 32)
                 throw new ArgumentOutOfRangeException(nameof(data));
 
-            b0 = data[31] | ((uint)data[30] << 8) | ((uint)data[29] << 16) | ((uint)data[28] << 24);
-            b1 = data[27] | ((uint)data[26] << 8) | ((uint)data[25] << 16) | ((uint)data[24] << 24);
-            b2 = data[23] | ((uint)data[22] << 8) | ((uint)data[21] << 16) | ((uint)data[20] << 24);
-            b3 = data[19] | ((uint)data[18] << 8) | ((uint)data[17] << 16) | ((uint)data[16] << 24);
-            b4 = data[15] | ((uint)data[14] << 8) | ((uint)data[13] << 16) | ((uint)data[12] << 24);
-            b5 = data[11] | ((uint)data[10] << 8) | ((uint)data[09] << 16) | ((uint)data[08] << 24);
-            b6 = data[07] | ((uint)data[06] << 8) | ((uint)data[05] << 16) | ((uint)data[04] << 24);
-            b7 = data[03] | ((uint)data[02] << 8) | ((uint)data[01] << 16) | ((uint)data[00] << 24);
+            uint* r = stackalloc uint[8];
+            fixed (byte* pt = &data[0])
+            {
+                overflow = SetB32(pt, r);
+                b0 = r[0]; b1 = r[1]; b2 = r[2]; b3 = r[3];
+                b4 = r[4]; b5 = r[5]; b6 = r[6]; b7 = r[7];
+            }
+        }
 
-            uint of = CheckOverflow();
-            overflow = of != 0;
+        private static unsafe bool SetB32(byte* pt, uint* r)
+        {
+            r[0] = pt[31] | ((uint)pt[30] << 8) | ((uint)pt[29] << 16) | ((uint)pt[28] << 24);
+            r[1] = pt[27] | ((uint)pt[26] << 8) | ((uint)pt[25] << 16) | ((uint)pt[24] << 24);
+            r[2] = pt[23] | ((uint)pt[22] << 8) | ((uint)pt[21] << 16) | ((uint)pt[20] << 24);
+            r[3] = pt[19] | ((uint)pt[18] << 8) | ((uint)pt[17] << 16) | ((uint)pt[16] << 24);
+            r[4] = pt[15] | ((uint)pt[14] << 8) | ((uint)pt[13] << 16) | ((uint)pt[12] << 24);
+            r[5] = pt[11] | ((uint)pt[10] << 8) | ((uint)pt[09] << 16) | ((uint)pt[08] << 24);
+            r[6] = pt[07] | ((uint)pt[06] << 8) | ((uint)pt[05] << 16) | ((uint)pt[04] << 24);
+            r[7] = pt[03] | ((uint)pt[02] << 8) | ((uint)pt[01] << 16) | ((uint)pt[00] << 24);
 
+            uint of = GetOverflow(r);
             Debug.Assert(of == 0 || of == 1);
-
-            ulong t = (ulong)b0 + (of * NC0);
-            b0 = (uint)t; t >>= 32;
-            t += (ulong)b1 + (of * NC1);
-            b1 = (uint)t; t >>= 32;
-            t += (ulong)b2 + (of * NC2);
-            b2 = (uint)t; t >>= 32;
-            t += (ulong)b3 + (of * NC3);
-            b3 = (uint)t; t >>= 32;
-            t += (ulong)b4 + (of * NC4);
-            b4 = (uint)t; t >>= 32;
-            t += b5;
-            b5 = (uint)t; t >>= 32;
-            t += b6;
-            b6 = (uint)t; t >>= 32;
-            t += b7;
-            b7 = (uint)t;
-
-            Debug.Assert((of == 1 && t >> 32 == 1) || (of == 0 && t >> 32 == 0));
-            Debug.Assert(CheckOverflow() == 0);
+            Reduce(r, of);
+            Debug.Assert(GetOverflow(r) == 0);
+            return of != 0;
         }
 
 
@@ -436,22 +399,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             Debug.Assert(bit < 256);
             bit += (flag - 1) & 0x100;  // forcing (bit >> 5) > 7 makes this a noop
-            int shift = (int)bit & 0x1F;
-            ulong t = (ulong)b0 + (((bit >> 5) == 0 ? 1U : 0) << shift);
+            ulong t = (ulong)b0 + (((bit >> 5) == 0 ? 1U : 0) << ((int)bit & 0x1F));
             uint r0 = (uint)t; t >>= 32;
-            t += (ulong)b1 + (((bit >> 5) == 1 ? 1U : 0) << shift);
+            t += (ulong)b1 + (((bit >> 5) == 1 ? 1U : 0) << ((int)bit & 0x1F));
             uint r1 = (uint)t; t >>= 32;
-            t += (ulong)b2 + (((bit >> 5) == 2 ? 1U : 0) << shift);
+            t += (ulong)b2 + (((bit >> 5) == 2 ? 1U : 0) << ((int)bit & 0x1F));
             uint r2 = (uint)t; t >>= 32;
-            t += (ulong)b3 + (((bit >> 5) == 3 ? 1U : 0) << shift);
+            t += (ulong)b3 + (((bit >> 5) == 3 ? 1U : 0) << ((int)bit & 0x1F));
             uint r3 = (uint)t; t >>= 32;
-            t += (ulong)b4 + (((bit >> 5) == 4 ? 1U : 0) << shift);
+            t += (ulong)b4 + (((bit >> 5) == 4 ? 1U : 0) << ((int)bit & 0x1F));
             uint r4 = (uint)t; t >>= 32;
-            t += (ulong)b5 + (((bit >> 5) == 5 ? 1U : 0) << shift);
+            t += (ulong)b5 + (((bit >> 5) == 5 ? 1U : 0) << ((int)bit & 0x1F));
             uint r5 = (uint)t; t >>= 32;
-            t += (ulong)b6 + (((bit >> 5) == 6 ? 1U : 0) << shift);
+            t += (ulong)b6 + (((bit >> 5) == 6 ? 1U : 0) << ((int)bit & 0x1F));
             uint r6 = (uint)t; t >>= 32;
-            t += (ulong)b7 + (((bit >> 5) == 7 ? 1U : 0) << shift);
+            t += (ulong)b7 + (((bit >> 5) == 7 ? 1U : 0) << ((int)bit & 0x1F));
             uint r7 = (uint)t;
 
             Debug.Assert((t >> 32) == 0);
