@@ -648,54 +648,53 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void Muladd(uint a, uint b, ref ulong c0, ref ulong c1, ref ulong c2)
+        private static void Muladd(uint a, uint b, ref uint c0, ref uint c1, ref uint c2)
         {
             ulong t = (ulong)a * b;
             uint th = (uint)(t >> 32);
             uint tl = (uint)t;
 
-            c0 = (c0 & uint.MaxValue) + tl; // overflow is handled on the next line
-            th += (uint)(c0 >> 32);         // at most 0xFFFFFFFF
-            c1 += th;                       // overflow is handled on the next line
-            c2 += (uint)(c1 >> 32);         // never overflows by contract (verified in the next line)
+            c0 += tl;                    // overflow is handled on the next line
+            th += (c0 < tl) ? 1U : 0U;   // at most 0xFFFFFFFF
+            c1 += th;                    // overflow is handled on the next line
+            c2 += (c1 < th) ? 1U : 0U;   // never overflows by contract (verified in the next line)
 
-            c1 &= uint.MaxValue;
             Debug.Assert((c1 >= th) || (c2 != 0));
         }
 
         // Add a*b to the number defined by (c0,c1). c1 must never overflow.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void MuladdFast(uint a, uint b, ref ulong c0, ref ulong c1)
+        private static void MuladdFast(uint a, uint b, ref uint c0, ref uint c1)
         {
             ulong t = (ulong)a * b;
-            uint th = (uint)(t >> 32);      // at most 0xFFFFFFFE
+            uint th = (uint)(t >> 32);   // at most 0xFFFFFFFE
             uint tl = (uint)t;
 
-            c0 = (c0 & uint.MaxValue) + tl; // overflow is handled on the next line
-            th += (uint)(c0 >> 32);         // at most 0xFFFFFFFF
-            c1 += th;                       // never overflows by contract (verified in the next line)
+            c0 += tl;                    // overflow is handled on the next line
+            th += (c0 < tl) ? 1U : 0U;   // at most 0xFFFFFFFF
+            c1 += th;                    // never overflows by contract (verified in the next line)
 
             Debug.Assert(c1 >= th);
         }
 
         // Add a to the number defined by (c0,c1,c2). c2 must never overflow.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void SumAdd(uint a, ref ulong c0, ref ulong c1, ref ulong c2)
+        private static void SumAdd(uint a, ref uint c0, ref uint c1, ref uint c2)
         {
-            c0 = (c0 & uint.MaxValue) + a;  // overflow is handled on the next line
-            uint over = (uint)(c0 >> 32);
+            c0 += a;                        // overflow is handled on the next line
+            uint over = (c0 < a) ? 1U : 0U;
             c1 += over;                     // overflow is handled on the next line
-            c2 += (uint)(c1 >> 32);         // never overflows by contract
+            c2 += (c1 < over) ? 1U : 0U;    // never overflows by contract
 
             c1 &= uint.MaxValue;
         }
 
         // Add a to the number defined by (c0,c1). c1 must never overflow, c2 must be zero.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void SumaddFast(uint a, ref ulong c0, ref ulong c1, ref ulong c2)
+        private static void SumaddFast(uint a, ref uint c0, ref uint c1, ref uint c2)
         {
-            c0 = (c0 & uint.MaxValue) + a;    // overflow is handled on the next line
-            c1 += (uint)(c0 >> 32);             // never overflows by contract (verified the next line)
+            c0 += a;                        // overflow is handled on the next line
+            c1 += (c0 < a) ? 1U : 0U;       // never overflows by contract (verified the next line)
 
             Debug.Assert((c1 != 0) | (c0 >= a));
             Debug.Assert(c2 == 0);
@@ -703,9 +702,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         // Extract the lowest 32 bits of (c0,c1,c2) into n, and left shift the number 32 bits.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void Extract(ref uint n, ref ulong c0, ref ulong c1, ref ulong c2)
+        private static void Extract(ref uint n, ref uint c0, ref uint c1, ref uint c2)
         {
-            n = (uint)c0;
+            n = c0;
             c0 = c1;
             c1 = c2;
             c2 = 0;
@@ -713,9 +712,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         // Extract the lowest 32 bits of (c0,c1,c2) into n, and left shift the number 32 bits. c2 is required to be zero.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void ExtractFast(ref uint n, ref ulong c0, ref ulong c1, ref ulong c2)
+        private static void ExtractFast(ref uint n, ref uint c0, ref uint c1, ref uint c2)
         {
-            n = (uint)c0;
+            n = c0;
             c0 = c1;
             c1 = 0;
 
@@ -725,7 +724,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         private static unsafe void Mult512(uint* l, in Scalar8x32 a, in Scalar8x32 b)
         {
             // 96 bit accumulator
-            ulong c0 = 0, c1 = 0, c2 = 0;
+            uint c0 = 0, c1 = 0, c2 = 0;
 
             // l[0..15] = a[0..7] * b[0..7]
             MuladdFast(a.b0, b.b0, ref c0, ref c1);
@@ -808,7 +807,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             MuladdFast(a.b7, b.b7, ref c0, ref c1);
             ExtractFast(ref l[14], ref c0, ref c1, ref c2);
             Debug.Assert(c1 == 0);
-            l[15] = (uint)c0;
+            l[15] = c0;
         }
 
         private static unsafe Scalar8x32 Reduce512(uint* l)
@@ -819,7 +818,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint p0 = 0, p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0, p7 = 0, p8 = 0;
 
             // 96 bit accumulator
-            ulong c0, c1, c2;
+            uint c0, c1, c2;
 
             // Reduce 512 bits into 385
             // m[0..12] = l[0..7] + n[0..7] * NC
@@ -884,7 +883,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             SumaddFast(n7, ref c0, ref c1, ref c2);
             ExtractFast(ref m11, ref c0, ref c1, ref c2);
             Debug.Assert(c0 <= 1);
-            m12 = (uint)c0;
+            m12 = c0;
 
             // Reduce 385 bits into 258
             // p[0..8] = m[0..7] + m[8..12] * NC
@@ -928,7 +927,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             MuladdFast(m12, NC3, ref c0, ref c1);
             SumaddFast(m11, ref c0, ref c1, ref c2);
             ExtractFast(ref p7, ref c0, ref c1, ref c2);
-            p8 = (uint)c0 + m12;
+            p8 = c0 + m12;
             Debug.Assert(p8 <= 2);
 
             // Reduce 258 bits into 256
