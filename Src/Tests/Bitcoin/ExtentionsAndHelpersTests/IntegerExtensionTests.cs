@@ -69,5 +69,27 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         {
             Assert.Equal(expected, val.SwapEndian());
         }
+
+        [Theory]
+        [InlineData(-1, "Invalid (negative) size.")]
+        [InlineData(0, "0 B")]
+        [InlineData(1, "1 B")]
+        [InlineData(999, "999 B")]
+        [InlineData(1000, "0.98 KB")] // 0.9765 rounded up with 2 decimal places
+        [InlineData(1024, "1.00 KB")] // 1.0000 with 2 decimal places
+        [InlineData(1030, "1.01 KB")] // 1.0058 rounded up
+        [InlineData(10240, "10.0 KB")] // 1 decimal place
+        [InlineData(102400, "100 KB")] // 0 decimal place
+        [InlineData(153600, "150 KB")] // 0 decimal place
+        [InlineData(1032192, "0.98 MB")] // 0.984375
+        [InlineData(1024L * 1024, "1.00 MB")]
+        [InlineData(1024L * 1024 * 1024, "1.00 GB")]
+        [InlineData(1024L * 1024 * 1024 * 1024, "1.00 TB")]
+        [InlineData(1024L * 1024 * 1024 * 1024 * 1024, "1.00 PB")]
+        [InlineData(1024L * 1024 * 1024 * 1024 * 1024 * 1024, "1.00 EB")]
+        public void ToDataSizeTest(long val, string expected)
+        {
+            Assert.Equal(expected, val.ToDataSize());
+        }
     }
 }

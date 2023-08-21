@@ -458,6 +458,33 @@ namespace Autarkysoft.Bitcoin
         /// <param name="i">The 32-bit unsigned integer to reverse</param>
         /// <returns>The 32-bit signed uninteger result with reverse endianness</returns>
         public static uint SwapEndian(this uint i) => (i >> 24) | (i << 24) | ((i >> 8) & 0xff00) | ((i << 8) & 0xff0000);
+
+        /// <summary>
+        /// Converts the given 64-bit signed integer to binary data size (byte, kilo-byte, mega-byte, etc.)
+        /// </summary>
+        /// <param name="val">64-bit signed integer</param>
+        /// <returns>Data size</returns>
+        public static string ToDataSize(this long val)
+        {
+            if (val < 0)
+            {
+                return "Invalid (negative) size.";
+            }
+
+            decimal size = val;
+            int index = 0;
+            while (size >= 1000 && index < SizeSuffix.Length - 1)
+            {
+                index++;
+                size /= 1024;
+            }
+
+            return $"{(index == 0 ? $"{size:n0}" : (size < 10 ? $"{size:n2}" : (size < 100 ? $"{size:n1}" : $"{size:n0}")))}" +
+                   $" {SizeSuffix[index]}";
+        }
+
+        // exabyte is 10^18 and same size as long.MaxValue
+        private static readonly string[] SizeSuffix = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
     }
 
 
