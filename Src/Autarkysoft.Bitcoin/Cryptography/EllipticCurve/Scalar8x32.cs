@@ -159,7 +159,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint of = GetOverflow(r);
             Debug.Assert(of == 0 || of == 1);
             Reduce(r, of);
-            Debug.Assert(GetOverflow(r) == 0);
             return of != 0;
         }
 
@@ -238,15 +237,39 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Returns if the value is equal to zero
         /// </summary>
-        public bool IsZero => (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+        public bool IsZero
+        {
+            get
+            {
+                Debug.Assert(GetOverflow(this) == 0);
+                return (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+            }
+        }
+
         /// <summary>
         /// Returns if the value is equal to one
         /// </summary>
-        public bool IsOne => ((b0 ^ 1) | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+        public bool IsOne
+        {
+            get
+            {
+                Debug.Assert(GetOverflow(this) == 0);
+                return ((b0 ^ 1) | b1 | b2 | b3 | b4 | b5 | b6 | b7) == 0;
+            }
+        }
+
         /// <summary>
         /// Returns if the value is even
         /// </summary>
-        public bool IsEven => (b0 & 1) == 0;
+        public bool IsEven
+        {
+            get
+            {
+                Debug.Assert(GetOverflow(this) == 0);
+                return (b0 & 1) == 0;
+            }
+        }
+
         /// <summary>
         /// Returns if this scalar is higher than the group order divided by 2
         /// </summary>
@@ -254,6 +277,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             get
             {
+                Debug.Assert(GetOverflow(this) == 0);
+
                 int yes = 0;
                 int no = 0;
                 no |= (b7 < NH7 ? 1 : 0);
@@ -350,6 +375,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             r[6] = (uint)t; t >>= 32;
             t += r[7];
             r[7] = (uint)t;
+
+            Debug.Assert(GetOverflow(r) == 0);
         }
 
         /// <summary>
@@ -360,6 +387,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Result</returns>
         public unsafe Scalar8x32 Add(in Scalar8x32 other, out bool overflow)
         {
+            Debug.Assert(GetOverflow(this) == 0);
+            Debug.Assert(GetOverflow(other) == 0);
+
             uint* r = stackalloc uint[8];
 
             ulong t = (ulong)b0 + other.b0;
@@ -397,7 +427,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public Scalar8x32 CAddBit(uint bit, uint flag)
         {
+            Debug.Assert(GetOverflow(this) == 0);
             Debug.Assert(bit < 256);
+
             bit += (flag - 1) & 0x100;  // forcing (bit >> 5) > 7 makes this a noop
             ulong t = (ulong)b0 + (((bit >> 5) == 0 ? 1U : 0) << ((int)bit & 0x1F));
             uint r0 = (uint)t; t >>= 32;
@@ -424,12 +456,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         public static unsafe uint GetBits(uint* pt, int offset, int count)
         {
+            Debug.Assert(GetOverflow(pt) == 0);
             Debug.Assert((offset + count - 1) >> 5 == offset >> 5);
             return (pt[offset >> 5] >> (offset & 0x1F)) & ((1U << count) - 1);
         }
 
         public static unsafe uint GetBitsVar(uint* pt, int offset, int count)
         {
+            Debug.Assert(GetOverflow(pt) == 0);
             Debug.Assert(count < 32);
             Debug.Assert(offset + count <= 256);
             if ((offset + count - 1) >> 5 == offset >> 5)
@@ -630,6 +664,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         public Scalar8x32 InverseVar_old()
         {
+            Debug.Assert(GetOverflow(this) == 0);
+
             return Inverse_old();
         }
 
@@ -641,6 +677,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public unsafe Scalar8x32 Multiply(in Scalar8x32 b)
         {
+            Debug.Assert(GetOverflow(this) == 0);
+            Debug.Assert(GetOverflow(b) == 0);
+
             uint* l = stackalloc uint[16];
             Mult512(l, this, b);
             return Reduce512(l);
@@ -987,6 +1026,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Shifted scalar</returns>
         public unsafe Scalar8x32 Shr16(int shift, out uint ret)
         {
+            Debug.Assert(GetOverflow(this) == 0);
             Debug.Assert(shift > 0);
             Debug.Assert(shift < 16);
 
@@ -1004,26 +1044,36 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        /// <summary>
+        /// Multiply a and b (without taking the modulus!), divide by 2**shift, and round to the nearest integer.
+        /// Shift must be at least 256
+        /// </summary>
+        /// <param name="a">A</param>
+        /// <param name="b">B</param>
+        /// <param name="shift">Shift must be at least 256</param>
+        /// <returns>Result</returns>
         public static unsafe Scalar8x32 MulShiftVar(in Scalar8x32 a, in Scalar8x32 b, int shift)
         {
+            Debug.Assert(GetOverflow(a) == 0);
+            Debug.Assert(GetOverflow(b) == 0);
             Debug.Assert(shift >= 256);
 
             uint* l = stackalloc uint[16];
             Mult512(l, a, b);
 
-            int shiftlimbs = shift >> 5;
+            int shLimbs = shift >> 5;
             int shiftlow = shift & 0x1F;
             int shifthigh = 32 - shiftlow;
             bool sb = shiftlow != 0;
 
-            uint r0 = shift < 512 ? (l[0 + shiftlimbs] >> shiftlow | (shift < 480 && sb ? (l[1 + shiftlimbs] << shifthigh) : 0)) : 0;
-            uint r1 = shift < 480 ? (l[1 + shiftlimbs] >> shiftlow | (shift < 448 && sb ? (l[2 + shiftlimbs] << shifthigh) : 0)) : 0;
-            uint r2 = shift < 448 ? (l[2 + shiftlimbs] >> shiftlow | (shift < 416 && sb ? (l[3 + shiftlimbs] << shifthigh) : 0)) : 0;
-            uint r3 = shift < 416 ? (l[3 + shiftlimbs] >> shiftlow | (shift < 384 && sb ? (l[4 + shiftlimbs] << shifthigh) : 0)) : 0;
-            uint r4 = shift < 384 ? (l[4 + shiftlimbs] >> shiftlow | (shift < 352 && sb ? (l[5 + shiftlimbs] << shifthigh) : 0)) : 0;
-            uint r5 = shift < 352 ? (l[5 + shiftlimbs] >> shiftlow | (shift < 320 && sb ? (l[6 + shiftlimbs] << shifthigh) : 0)) : 0;
-            uint r6 = shift < 320 ? (l[6 + shiftlimbs] >> shiftlow | (shift < 288 && sb ? (l[7 + shiftlimbs] << shifthigh) : 0)) : 0;
-            uint r7 = shift < 288 ? (l[7 + shiftlimbs] >> shiftlow) : 0;
+            uint r0 = shift < 512 ? (l[0 + shLimbs] >> shiftlow | (shift < 480 && sb ? (l[1 + shLimbs] << shifthigh) : 0)) : 0;
+            uint r1 = shift < 480 ? (l[1 + shLimbs] >> shiftlow | (shift < 448 && sb ? (l[2 + shLimbs] << shifthigh) : 0)) : 0;
+            uint r2 = shift < 448 ? (l[2 + shLimbs] >> shiftlow | (shift < 416 && sb ? (l[3 + shLimbs] << shifthigh) : 0)) : 0;
+            uint r3 = shift < 416 ? (l[3 + shLimbs] >> shiftlow | (shift < 384 && sb ? (l[4 + shLimbs] << shifthigh) : 0)) : 0;
+            uint r4 = shift < 384 ? (l[4 + shLimbs] >> shiftlow | (shift < 352 && sb ? (l[5 + shLimbs] << shifthigh) : 0)) : 0;
+            uint r5 = shift < 352 ? (l[5 + shLimbs] >> shiftlow | (shift < 320 && sb ? (l[6 + shLimbs] << shifthigh) : 0)) : 0;
+            uint r6 = shift < 320 ? (l[6 + shLimbs] >> shiftlow | (shift < 288 && sb ? (l[7 + shLimbs] << shifthigh) : 0)) : 0;
+            uint r7 = shift < 288 ? (l[7 + shLimbs] >> shiftlow) : 0;
 
             Scalar8x32 r = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
             return r.CAddBit(0, (l[(shift - 1) >> 5] >> ((shift - 1) & 0x1f)) & 1);
@@ -1035,6 +1085,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public Scalar8x32 Negate()
         {
+            Debug.Assert(GetOverflow(this) == 0);
+
             // uint32_t nonzero = 0xFFFFFFFFUL * (secp256k1_scalar_is_zero(a) == 0);
             // Instead of a branch to get 1/0 then multiply it by the constant we use branch to get the resulting constant directly
             // ie. we skip multiplication (optimization effect is minuscule though!)
@@ -1067,6 +1119,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>-1 if the number was negated; otherwise 1.</returns>
         public int NegateConditional(int flag, out Scalar8x32 result)
         {
+            Debug.Assert(GetOverflow(this) == 0);
+
             // If flag = 0 then mask = 00...00 so this is a no-op
             // if flag = 1 then mask = 11...11 so this is identical Negate()
             uint mask = (uint)-flag;
@@ -1094,6 +1148,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+
+        public static Scalar8x32 CMov(in Scalar8x32 r, in Scalar8x32 a, uint flag)
+        {
+            Debug.Assert(GetOverflow(r) == 0);
+            Debug.Assert(GetOverflow(a) == 0);
+
+            uint mask0 = flag + ~0U;
+            uint mask1 = ~mask0;
+            uint r0 = (r.b0 & mask0) | (a.b0 & mask1);
+            uint r1 = (r.b1 & mask0) | (a.b1 & mask1);
+            uint r2 = (r.b2 & mask0) | (a.b2 & mask1);
+            uint r3 = (r.b3 & mask0) | (a.b3 & mask1);
+            uint r4 = (r.b4 & mask0) | (a.b4 & mask1);
+            uint r5 = (r.b5 & mask0) | (a.b5 & mask1);
+            uint r6 = (r.b6 & mask0) | (a.b6 & mask1);
+            uint r7 = (r.b7 & mask0) | (a.b7 & mask1);
+
+            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+        }
+
+
         /// <summary>
         /// Find r1 and r2 such that r1+r2*2^128 = k
         /// </summary>
@@ -1102,6 +1177,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="r2"></param>
         internal static void Split128(in Scalar8x32 k, out Scalar8x32 r1, out Scalar8x32 r2)
         {
+            Debug.Assert(GetOverflow(k) == 0);
+
             r1 = new Scalar8x32(k.b0, k.b1, k.b2, k.b3, 0, 0, 0, 0);
             r2 = new Scalar8x32(k.b4, k.b5, k.b6, k.b7, 0, 0, 0, 0);
         }
@@ -1178,6 +1255,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>32 bytes</returns>
         public byte[] ToByteArray()
         {
+            Debug.Assert(GetOverflow(this) == 0);
+
             return new byte[32]
             {
                 (byte)(b7 >> 24), (byte)(b7 >> 16), (byte)(b7 >> 8), (byte)b7,
@@ -1196,6 +1275,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             if (stream.Length < 32)
                 throw new ArgumentOutOfRangeException();
+
+            Debug.Assert(GetOverflow(this) == 0);
 
             stream[0] = (byte)(b7 >> 24); stream[1] = (byte)(b7 >> 16); stream[2] = (byte)(b7 >> 8); stream[3] = (byte)b7;
             stream[4] = (byte)(b6 >> 24); stream[5] = (byte)(b6 >> 16); stream[6] = (byte)(b6 >> 8); stream[7] = (byte)b6;
@@ -1223,9 +1304,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="left">First scalar</param>
         /// <param name="right">Second scalar</param>
         /// <returns>True if the two scalars are equal; otherwise false.</returns>
-        public static bool operator ==(in Scalar8x32 left, in Scalar8x32 right) =>
-            ((left.b0 ^ right.b0) | (left.b1 ^ right.b1) | (left.b2 ^ right.b2) | (left.b3 ^ right.b3) |
-             (left.b4 ^ right.b4) | (left.b5 ^ right.b5) | (left.b6 ^ right.b6) | (left.b7 ^ right.b7)) == 0;
+        public static bool operator ==(in Scalar8x32 left, in Scalar8x32 right)
+        {
+            Debug.Assert(GetOverflow(left) == 0);
+            Debug.Assert(GetOverflow(right) == 0);
+
+            return ((left.b0 ^ right.b0) | (left.b1 ^ right.b1) | (left.b2 ^ right.b2) | (left.b3 ^ right.b3) |
+                    (left.b4 ^ right.b4) | (left.b5 ^ right.b5) | (left.b6 ^ right.b6) | (left.b7 ^ right.b7)) == 0;
+        }
 
         /// <summary>
         /// Returns if the two scalars are not equal to each other
