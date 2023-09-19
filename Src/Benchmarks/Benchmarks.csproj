@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Authors>Coding-Enthusiast</Authors>
     <Company>Autarkysoft</Company>
     <Copyright>Copyright (c) 2020 Autarkysoft</Copyright>
