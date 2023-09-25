@@ -98,7 +98,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="Scalar8x32"/> using the given pointer.
         /// </summary>
-        /// <param name="hPt"><see cref="Hashing.Sha512.hashState"/> pointer</param>
+        /// <param name="hPt">SHA512 hashState pointer</param>
         /// <param name="overflow">Returns true if value is bigger than or equal to curve order; otherwise false</param>
         public unsafe Scalar8x32(ulong* hPt, out bool overflow)
         {
@@ -1148,7 +1148,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-
+        /// <summary>
+        /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="a"></param>
+        /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
+        /// <returns></returns>
         public static Scalar8x32 CMov(in Scalar8x32 r, in Scalar8x32 a, uint flag)
         {
             Debug.Assert(GetOverflow(r) == 0);
@@ -1183,9 +1189,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             r2 = new Scalar8x32(k.b4, k.b5, k.b6, k.b7, 0, 0, 0, 0);
         }
 
+        /// <summary>
+        /// Find r1 and r2 such that r1+r2*lambda = k, where r1 and r2 or their negations are
+        /// maximum 128 bits long (see <see cref="Point.MulLambda"/>).
+        /// </summary>
+        /// <param name="r1"></param>
+        /// <param name="r2"></param>
+        /// <param name="k"></param>
         internal static void SplitLambda(out Scalar8x32 r1, out Scalar8x32 r2, in Scalar8x32 k)
         {
-            // these _var calls are constant time since the shift amount is constant
+            Debug.Assert(GetOverflow(k) == 0);
+
+            // these *Var calls are constant time since the shift amount is constant
             Scalar8x32 c1 = MulShiftVar(k, G1, 384);
             Scalar8x32 c2 = MulShiftVar(k, G2, 384);
             c1 = c1.Multiply(Minus_b1);
@@ -1195,6 +1210,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             r1 = r1.Negate();
             r1 = r1.Add(k, out _);
 
+            Debug.Assert(GetOverflow(r1) == 0);
+            Debug.Assert(GetOverflow(r2) == 0);
 #if DEBUG
             SplitLambdaVerify(r1, r2, k);
 #endif
@@ -1235,7 +1252,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Debug.Assert(MemCmpVar(buf1, k2_bound, 32) < 0 || MemCmpVar(buf2, k2_bound, 32) < 0);
         }
 
-        private static int MemCmpVar(Span<byte> s1, Span<byte> s2, int n)
+        // https://github.com/bitcoin-core/secp256k1/blob/b314cf28334a91db2fe144d04f86077e2bfd7a25/src/util.h#L212-L228
+        private static int MemCmpVar(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2, int n)
         {
             for (int i = 0; i < n; i++)
             {
@@ -1247,7 +1265,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
             return 0;
         }
-#endif
+#endif // DEBUG
+
 
         /// <summary>
         /// Returns byte array representation of this instance
