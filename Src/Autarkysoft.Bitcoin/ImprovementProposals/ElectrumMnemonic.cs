@@ -7,8 +7,11 @@ using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Cryptography.KeyDerivationFunctions;
 using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Autarkysoft.Bitcoin.ImprovementProposals
@@ -124,6 +127,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
 
 
+        private const int OldWordListLength = 1626;
         private const int EntropyByteLen = 17; // 132 bits
         private const int WordLen = 12;
         private int[] wordIndexes;
@@ -182,7 +186,12 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                     (entropy[0]  & 0b00001111) << 7  | entropy[1]  >> 1,                    // 4 + 7
                 };
 
-                if (GetMnemonicType(Normalize(ToMnemonic())) == MnType)
+                string normalized = Normalize(ToMnemonic());
+                if (IsOld(normalized))
+                {
+                    continue;
+                }
+                if (GetMnemonicType(normalized) == MnType)
                 {
                     break;
                 }
@@ -316,6 +325,79 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <returns>An array of 2048 strings</returns>
         public static string[] GetAllWords(BIP0039.WordLists wl) => BIP0039.GetAllWords(wl);
 
+
+        private static string[] GetOldWordList()
+        {
+            string[] allWords = new string[OldWordListLength];
+            string path = $"Autarkysoft.Bitcoin.ImprovementProposals.BIP0039WordLists.OldElectrumEnglish.txt";
+            Assembly asm = Assembly.GetExecutingAssembly();
+            using Stream stream = asm.GetManifestResourceStream(path);
+            if (stream != null)
+            {
+                using StreamReader reader = new StreamReader(stream);
+                int i = 0;
+
+                while (!reader.EndOfStream)
+                {
+                    allWords[i++] = reader.ReadLine();
+                }
+                if (i != OldWordListLength)
+                {
+                    throw new ArgumentException("There is something wrong with the embeded word list.");
+                }
+            }
+            else
+            {
+                throw new ArgumentException("Word list was not found.");
+            }
+
+            return allWords;
+        }
+
+        private static bool IsOld(string normalized, ReadOnlySpan<string> allWords)
+        {
+            string[] words = normalized.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            try
+            {
+                // We don't actually support old versions, just the verification is enough
+                //BigInteger val = BigInteger.Zero;
+                for (int i = 0; i < words.Length; i += 3)
+                {
+                    int w1 = allWords.IndexOf(words[i]);
+                    int w2 = allWords.IndexOf(words[i + 1]) % OldWordListLength;
+                    int w3 = allWords.IndexOf(words[i + 2]) % OldWordListLength;
+                    if (w1 < 0 || w2 < 0 || w3 < 0)
+                    {
+                        return false;
+                    }
+
+                    //int x = w1 + n * ((w2 - w1) % n) + n * n * ((w3 - w2) % n);
+                    //val += x;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print(ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns if the given mnemonic is of the old Electrum mnemonic type
+        /// </summary>
+        /// <remarks>
+        /// https://github.com/spesmilo/electrum/blob/63143307f1ed588f9ce0bca4adff71f6baca4277/electrum/old_mnemonic.py
+        /// https://github.com/spesmilo/electrum/blob/63143307f1ed588f9ce0bca4adff71f6baca4277/electrum/mnemonic.py#L241-L256
+        /// </remarks>
+        /// <param name="mnemonic">Mneomonic to check</param>
+        /// <returns>True if the given words are of the old Electrum mnemonic type; false otherwise.</returns>
+        public static bool IsOld(string mnemonic)
+        {
+            ReadOnlySpan<string> allWords = GetOldWordList();
+            return IsOld(Normalize(mnemonic), allWords);
+        }
 
         private void SetBip32(string passPhrase)
         {
