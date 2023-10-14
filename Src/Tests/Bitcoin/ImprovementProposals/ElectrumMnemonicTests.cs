@@ -208,5 +208,32 @@ namespace Tests.Bitcoin.ImprovementProposals
             Assert.Equal(2048, actual.Length);
             Assert.Equal("abandon", actual[0]);
         }
+
+        // https://github.com/spesmilo/electrum/blob/63143307f1ed588f9ce0bca4adff71f6baca4277/electrum/tests/test_mnemonic.py#L153-L173
+        [Theory]
+        [InlineData("cell dumb heartbeat north boom tease ship baby bright kingdom rare squeeze", true)]
+        [InlineData("cell dumb heartbeat north boom tease ", true)]
+        [InlineData("cell dumb heartbeat north boom tease ship baby bright kingdom rare badword", false)]
+        [InlineData("cElL DuMb hEaRtBeAt nOrTh bOoM TeAsE ShIp bAbY BrIgHt kInGdOm rArE SqUeEzE", true)]
+        [InlineData("   cElL  DuMb hEaRtBeAt nOrTh bOoM  TeAsE ShIp    bAbY BrIgHt kInGdOm rArE SqUeEzE   ", true)]
+        [InlineData("hurry idiot prefer sunset mention mist jaw inhale impossible kingdom rare squeeze", true)]
+        [InlineData("cram swing cover prefer miss modify ritual silly deliver chunk behind inform able", false)]
+        [InlineData("cram swing cover prefer miss modify ritual silly deliver chunk behind inform", false)]
+        [InlineData("ostrich security deer aunt climb inner alpha arm mutual marble solid task", false)]
+        [InlineData("OSTRICH SECURITY DEER AUNT CLIMB INNER ALPHA ARM MUTUAL MARBLE SOLID TASK", false)]
+        [InlineData("   oStRiCh sEcUrItY DeEr aUnT ClImB       InNeR AlPhA ArM MuTuAl mArBlE   SoLiD TaSk  ", false)]
+        [InlineData("x8", false)]
+        [InlineData("science dawn member doll dutch real can brick knife deny drive list", false)]
+        [InlineData("science dawn member doll dutch real ca brick knife deny drive list", false)]
+        [InlineData(" sCience dawn   member doll Dutch rEAl can brick knife deny drive  lisT", false)]
+        [InlineData("frost pig brisk excite novel report camera enlist axis nation novel desert", false)]
+        [InlineData("  fRoSt pig brisk excIte novel rePort CamEra enlist axis nation nOVeL dEsert ", false)]
+        [InlineData("9dk", false)]
+        [InlineData("hardly point goal hallway patience key stone difference ready caught listen fact", true)]
+        public void IsOldTest(string m, bool expected)
+        {
+            bool actual = ElectrumMnemonic.IsOld(m);
+            Assert.Equal(expected, actual);
+        }
     }
 }
