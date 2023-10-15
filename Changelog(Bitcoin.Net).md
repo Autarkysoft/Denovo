@@ -1,5 +1,20 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.23.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.25.0.0...master)
+
+### Release 0.25.0 (2023-10-15)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.24.0.0...B0.25.0.0)
+* Some improvements in Scalar8x32 implementation with new methods
+* Add a new Inverse method
+* Two new extensions: IsCJK and ToDataSize
+* Electrum mnemonic can now verify if the given words are old mnemonic and will reject it and valid BIP-39 ones
+* Small code improvements and some benchmarks
+
+### Release 0.24.0 (2023-03-20)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.23.0.0...B0.24.0.0)
+* Old ECC is now obsolete
+* SHA1, SHA512 and Murmur3 are now all static classes
+* BIP-32 and BIP-85 both use the new ECC now
+* Small cleanup
 
 ### Release 0.23.0 (2022-12-21)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.22.0.0...B0.23.0.0)
