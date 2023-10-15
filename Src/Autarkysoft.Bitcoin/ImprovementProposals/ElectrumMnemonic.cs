@@ -191,6 +191,17 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 {
                     continue;
                 }
+
+                // TODO: add a new method in BIP0039 to check if the mneomonic is valid
+                try
+                {
+                    using BIP0039 temp = new BIP0039(normalized);
+                    continue;
+                }
+                catch (Exception)
+                {
+                }
+
                 if (GetMnemonicType(normalized) == MnType)
                 {
                     break;
