@@ -12,7 +12,7 @@
 
   <Grid RowDefinitions="auto,*,*">
     <StackPanel Orientation="Horizontal" Spacing="3" Grid.Row="0">
-      <ComboBox Items="{Binding NetworkList}"
+      <ComboBox ItemsSource="{Binding NetworkList}"
                 SelectedItem="{Binding SelectedNetwork}"
                 IsEnabled="{Binding !IsConnected}"/>
       <Button Content="Connect"

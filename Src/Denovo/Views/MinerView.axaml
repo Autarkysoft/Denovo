@@ -19,10 +19,11 @@
     
     <TextBox Text="{Binding PreviousBlockHex}" Height="100" TextWrapping="Wrap" AcceptsReturn="True" Margin="3" Grid.Row="1"/>
 
-    <ListBox Height="200" Items="{Binding AllNodes}"
+    <ListBox Height="200"
+			 ItemsSource="{Binding AllNodes}"
              SelectedItem="{Binding SelectedNode}"
              Margin="3" Grid.Row="2">
-      <ListBox.DataTemplates>
+      <ListBox.ItemTemplate>
         <DataTemplate>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="{Binding NodeStatus.HandShake}"/>
@@ -31,7 +32,7 @@
             <TextBlock Text="{Binding NodeStatus.UserAgent}"/>
           </StackPanel>
         </DataTemplate>
-      </ListBox.DataTemplates>
+      </ListBox.ItemTemplate>
     </ListBox>
 
     <TextBlock Text="{Binding NodeInfo}" Margin="3" Grid.Row="3"/>

@@ -4,20 +4,11 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 
 namespace Denovo.Views
 {
-    public class MinerView : UserControl
+    public partial class MinerView : UserControl
     {
-        public MinerView()
-        {
-            this.InitializeComponent();
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
+        public MinerView() => InitializeComponent();
     }
 }

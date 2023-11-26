@@ -4,17 +4,16 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Denovo.ViewModels;
 
 namespace Denovo.Views
 {
-    public class MainWindow : Window
+    public partial class MainWindow : Window
     {
         public MainWindow()
         {
-            this.InitializeComponent();
-            this.Opened += MainWindow_Opened;
+            InitializeComponent();
+            Opened += MainWindow_Opened;
         }
 
         private void MainWindow_Opened(object sender, System.EventArgs e)
@@ -24,11 +23,6 @@ namespace Denovo.Views
             {
                 vm.OpenConfig();
             }
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

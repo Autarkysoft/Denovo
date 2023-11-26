@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Avalonia;
+using Avalonia.Input.Platform;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -16,7 +17,13 @@ namespace Denovo.ViewModels
         {
         }
 
+        public AboutViewModel(IClipboard clipboard) : this()
+        {
+            Clipboard = clipboard;
+        }
 
+
+        public IClipboard Clipboard { get; set; }
         public string NameAndVersion => $"Denovo {Assembly.GetExecutingAssembly().GetName().Version.ToString(4)}";
         public string SourceLink => "https://github.com/Autarkysoft/Denovo";
         public string BitcointalkLink => "";
@@ -29,9 +36,12 @@ namespace Denovo.ViewModels
         private const string Bip21Extras = "?label=Coding-Enthusiast&message=Donation%20for%20Denovo%20project";
 
 
-        public void Copy(int i)
+        public async void Copy(int i)
         {
-            Application.Current.Clipboard.SetTextAsync(i == 1 ? DonationAddr1 : DonationAddr2);
+            if (Clipboard is not null)
+            {
+                await Clipboard.SetTextAsync(i == 1 ? DonationAddr1 : DonationAddr2);
+            }
         }
 
         // Taken from avalonia source code

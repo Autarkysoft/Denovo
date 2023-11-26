@@ -12,7 +12,7 @@
   </Design.DataContext>
 
   <Grid ColumnDefinitions="auto,*" RowDefinitions="*,*">
-    <ListBox Items="{Binding ConversionType}"
+    <ListBox ItemsSource="{Binding ConversionType}"
              SelectedItem="{Binding SelectedConversionType}"
              Classes="RadioButtonListBox"
              Grid.Column="0"

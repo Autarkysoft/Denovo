@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
+using Avalonia.Input.Platform;
 using Denovo.Models;
 using Denovo.MVVM;
 using Denovo.Services;
@@ -54,6 +55,7 @@ namespace Denovo.ViewModels
         public NetworkType Network { get; }
         public NodePool AllNodes { get; set; }
 
+        public IClipboard Clipboard { get; set; }
         public IWindowManager WinMan { get; set; }
         public IDenovoFileManager FileMan { get; set; }
         public bool IsInitialized { get; }

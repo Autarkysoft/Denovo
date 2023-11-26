@@ -39,7 +39,7 @@
       
     </Grid>
 
-    <ItemsControl Items="{Binding UtxoList}" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Visible">
+    <ItemsControl ItemsSource="{Binding UtxoList}" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Visible">
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>
           <StackPanel Orientation="Vertical"/>

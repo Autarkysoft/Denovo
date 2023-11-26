@@ -45,9 +45,10 @@
 
         <TextBlock Text="{Binding Result}" TextWrapping="Wrap"/>
 
-        <ListBox Height="200" Items="{Binding AllNodes}"
+        <ListBox Height="200"
+				 ItemsSource="{Binding AllNodes}"
                  SelectedItem="{Binding SelectedNode}">
-          <ListBox.DataTemplates>
+          <ListBox.ItemTemplate>
             <DataTemplate>
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="{Binding NodeStatus.HandShake}"/>
@@ -61,7 +62,7 @@
                 <TextBlock Text="{Binding NodeStatus.Violation}"/>
               </StackPanel>
             </DataTemplate>
-          </ListBox.DataTemplates>
+          </ListBox.ItemTemplate>
         </ListBox>
 
         <Grid ColumnDefinitions="*,*">

@@ -51,10 +51,12 @@ namespace Denovo
                     }
                 }
 
+                MainWindowViewModel vm = new(network);
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(network)
+                    DataContext = vm
                 };
+                vm.Clipboard = desktop.MainWindow.Clipboard;
             }
 
             base.OnFrameworkInitializationCompleted();

@@ -14,12 +14,12 @@ namespace Denovo
     {
         public bool SupportsRecycling => false;
 
-        public IControl Build(object data)
+        public Control Build(object data)
         {
             string name = data.GetType().FullName.Replace("ViewModel", "View");
             Type type = Type.GetType(name);
 
-            if (!(type is null))
+            if (type is not null)
             {
                 return (Control)Activator.CreateInstance(type);
             }

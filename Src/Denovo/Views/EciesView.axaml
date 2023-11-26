@@ -19,7 +19,7 @@
              Margin="3"
              Grid.Column="0"
              Grid.Row="0"/>
-    <ListBox Items="{Binding InputEncodingList}"
+    <ListBox ItemsSource="{Binding InputEncodingList}"
              SelectedItem="{Binding SelectedInputEncoding}"
              Classes="RadioButtonListBox"
              Grid.Column="1"
@@ -31,7 +31,7 @@
              Margin="3"
              Grid.Column="0"
              Grid.Row="1"/>
-    <ListBox Items="{Binding KeyEncodingList}"
+    <ListBox ItemsSource="{Binding KeyEncodingList}"
              SelectedItem="{Binding SelectedKeyEncoding}"
              Classes="RadioButtonListBox"
              Grid.Column="1"
@@ -46,7 +46,7 @@
              Margin="3"
              Grid.Column="0"
              Grid.Row="2"/>
-    <ListBox Items="{Binding OutputEncodingList}"
+    <ListBox ItemsSource="{Binding OutputEncodingList}"
              SelectedItem="{Binding SelectedOutputEncoding}"
              Classes="RadioButtonListBox"
              Grid.Column="1"
