@@ -13,9 +13,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
     /// 256-bit unsigned integer used as field elements, implemented using radix-2^26 representation (instead of 2^32)
     /// in little-endian order.
     /// <para/>integer = sum(i=0..9, b[i]*2^(i*26)) % p [where p = 2^256 - 0x1000003D1]
+    /// <para/>integer value can exceed P unless it's normalized
     /// </summary>
     /// <remarks>
-    /// This implements a UInt256 using 10x UInt32 parts (total of 320 bits).
+    /// This implements a UInt256 using 10x UInt32 limbs (total of 320 bits).
     /// When normalized, each limb stores 26 bits except the last one that stores 22 bits.
     /// <para/>The arithmetic here is all modulo secp256k1 prime
     /// </remarks>
@@ -25,19 +26,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given unsigned 32-bit integer.
         /// </summary>
-        /// <param name="a">Value to use (must be smaller than 0x7FFF</param>
+        /// <param name="a"></param>
         public UInt256_10x26(uint a)
         {
-            // TODO: libsecp256k1 enforces <= 0x7FFF
-            Debug.Assert((a >> 26) == 0);
-
             b0 = a;
             b1 = 0; b2 = 0; b3 = 0; b4 = 0;
             b5 = 0; b6 = 0; b7 = 0; b8 = 0; b9 = 0;
 #if DEBUG
             magnitude = (a == 0) ? 0 : 1;
             isNormalized = true;
-            Debug.Assert(Verify());
+            Verify();
 #endif
         }
 
@@ -75,9 +73,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // 22 bits uint_7
             b9 = u7 >> 10;
 #if DEBUG
-            magnitude = 1;
-            isNormalized = true;
-            Debug.Assert(Verify());
+            magnitude = ((b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7 | b8 | b9) == 0) ? 0 : 1;
+            isNormalized = !((b7 & b6 & b5 & b4 & b3 & b2) == 0xffffffffU &&
+                             (b1 == 0xffffffffU || (b1 == 0xfffffffeU && (b0 >= 0xfffffc2fU))));
+            Verify();
 #endif
         }
 
@@ -107,38 +106,39 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             this.magnitude = magnitude;
             isNormalized = normalized;
-            Debug.Assert(Verify());
+            Verify();
 #endif
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given array.
         /// </summary>
-        /// <param name="arr9">Array</param>
+        /// <param name="arr10">Array</param>
         /// <param name="magnitude">Magnitude</param>
         /// <param name="normalized">Is normalized</param>
-        public UInt256_10x26(ReadOnlySpan<uint> arr9
+        public UInt256_10x26(ReadOnlySpan<uint> arr10
 #if DEBUG
             , int magnitude, bool normalized
 #endif
             )
         {
-            Debug.Assert(arr9.Length == 10);
+            Debug.Assert(arr10.Length == 10);
 
-            b0 = arr9[0]; b1 = arr9[1]; b2 = arr9[2]; b3 = arr9[3]; b4 = arr9[4];
-            b5 = arr9[5]; b6 = arr9[6]; b7 = arr9[7]; b8 = arr9[8]; b9 = arr9[9];
+            b0 = arr10[0]; b1 = arr10[1]; b2 = arr10[2]; b3 = arr10[3]; b4 = arr10[4];
+            b5 = arr10[5]; b6 = arr10[6]; b7 = arr10[7]; b8 = arr10[8]; b9 = arr10[9];
 #if DEBUG
             this.magnitude = magnitude;
             isNormalized = normalized;
-            Debug.Assert(Verify());
+            Verify();
 #endif
         }
 
         /// <summary>
-        /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given 32-byte array.
+        /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given 32-byte big-endian array.
         /// </summary>
         /// <param name="ba32">32-byte array</param>
         /// <param name="isValid"></param>
+        [Obsolete]
         public UInt256_10x26(ReadOnlySpan<byte> ba32, out bool isValid)
         {
             Debug.Assert(ba32.Length == 32);
@@ -171,9 +171,51 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             isNormalized = isValid;
             if (isValid)
             {
-                Debug.Assert(Verify());
+                Verify();
             }
 #endif
+        }
+
+
+        public static UInt256_10x26 SetB32Mod(ReadOnlySpan<byte> ba32)
+        {
+            Debug.Assert(ba32.Length == 32);
+
+            // 8 + 8 + 8 + 2
+            uint u0 = (uint)(ba32[31] | (ba32[30] << 8) | (ba32[29] << 16) | ((ba32[28] & 0b00000011) << 24));
+            // 6 + 8 + 8 + 4
+            uint u1 = (uint)((ba32[28] >> 2) | (ba32[27] << 6) | (ba32[26] << 14) | ((ba32[25] & 0b00001111) << 22));
+            // 4 + 8 + 8 + 6
+            uint u2 = (uint)((ba32[25] >> 4) | (ba32[24] << 4) | (ba32[23] << 12) | ((ba32[22] & 0b00111111) << 20));
+            // 2 + 8 + 8 + 8
+            uint u3 = (uint)((ba32[22] >> 6) | (ba32[21] << 2) | (ba32[20] << 10) | (ba32[19] << 18));
+            // 8 + 8 + 8 + 2
+            uint u4 = (uint)(ba32[18] | (ba32[17] << 8) | (ba32[16] << 16) | ((ba32[15] & 0b00000011) << 24));
+            // 6 + 8 + 8 + 4
+            uint u5 = (uint)((ba32[15] >> 2) | (ba32[14] << 6) | (ba32[13] << 14) | ((ba32[12] & 0b00001111) << 22));
+            // 4 + 8 + 8 + 6
+            uint u6 = (uint)((ba32[12] >> 4) | (ba32[11] << 4) | (ba32[10] << 12) | ((ba32[9] & 0b00111111) << 20));
+            // 2 + 8 + 8 + 8
+            uint u7 = (uint)((ba32[9] >> 6) | (ba32[8] << 2) | (ba32[7] << 10) | (ba32[6] << 18));
+            // 8 + 8 + 8 + 2
+            uint u8 = (uint)(ba32[5] | (ba32[4] << 8) | (ba32[3] << 16) | ((ba32[2] & 0b00000011) << 24));
+            // 6 + 8 + 8 (last item is only 22 bits)
+            uint u9 = (uint)((ba32[2] >> 2) | (ba32[1] << 6) | (ba32[0] << 14));
+
+            return new UInt256_10x26(u0, u1, u2, u3, u4, u5, u6, u7, u8, u9
+#if DEBUG
+                , 1, false
+#endif
+                );
+        }
+
+        public static UInt256_10x26 SetB32Limit(ReadOnlySpan<byte> ba32, out bool isValid)
+        {
+            UInt256_10x26 r = SetB32Mod(ba32);
+            isValid = !((r.b9 == 0x3FFFFFU) & ((r.b8 & r.b7 & r.b6 & r.b5 & r.b4 & r.b3 & r.b2) == 0x3FFFFFFU) &
+                        ((r.b1 + 0x40U + ((r.b0 + 0x3D1U) >> 26)) > 0x3FFFFFFU));
+
+            return r;
         }
 
 
@@ -194,37 +236,43 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public readonly bool isNormalized;
 
-        private bool Verify()
+        /// <summary>
+        /// Only works in DEBUG
+        /// </summary>
+        private void Verify()
         {
-            int m = isNormalized ? 1 : 2 * magnitude;
-            int r = 1;
-            r &= (b0 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b1 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b2 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b3 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b4 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b5 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b6 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b7 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b8 <= 0x3FFFFFFU * m) ? 1 : 0;
-            r &= (b9 <= 0x03FFFFFU * m) ? 1 : 0;
-            r &= (magnitude >= 0 ? 1 : 0);
-            r &= (magnitude <= 32 ? 1 : 0);
+            Debug.Assert(magnitude >= 0 && magnitude <= 32);
             if (isNormalized)
             {
-                r &= (magnitude <= 1 ? 1 : 0);
-                if (r != 0 && (b9 == 0x03FFFFFU))
+                Debug.Assert(magnitude == 0 || magnitude == 1);
+            }
+
+            int m = isNormalized ? 1 : 2 * magnitude;
+            Debug.Assert(b0 <= 0x3FFFFFFU * m);
+            Debug.Assert(b1 <= 0x3FFFFFFU * m);
+            Debug.Assert(b2 <= 0x3FFFFFFU * m);
+            Debug.Assert(b3 <= 0x3FFFFFFU * m);
+            Debug.Assert(b4 <= 0x3FFFFFFU * m);
+            Debug.Assert(b5 <= 0x3FFFFFFU * m);
+            Debug.Assert(b6 <= 0x3FFFFFFU * m);
+            Debug.Assert(b7 <= 0x3FFFFFFU * m);
+            Debug.Assert(b8 <= 0x3FFFFFFU * m);
+            Debug.Assert(b9 <= 0x03FFFFFU * m);
+
+            if (isNormalized)
+            {
+                if (b9 == 0x03FFFFFU)
                 {
                     uint mid = b8 & b7 & b6 & b5 & b4 & b3 & b2;
                     if (mid == 0x3FFFFFFU)
                     {
-                        r &= ((b1 + 0x40U + ((b0 + 0x3D1U) >> 26)) <= 0x3FFFFFFU) ? 1 : 0;
+                        Debug.Assert((b1 + 0x40U + ((b0 + 0x3D1U) >> 26)) <= 0x3FFFFFFU);
                     }
                 }
             }
-            return r == 1;
         }
-#endif
+#endif // DEBUG
+
 
         private static readonly UInt256_10x26 _zero = new UInt256_10x26(0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 #if DEBUG
@@ -272,7 +320,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             {
 #if DEBUG
                 Debug.Assert(isNormalized);
-                Debug.Assert(Verify());
+                Verify();
 #endif
                 return (b0 & 1) != 0;
 
@@ -288,7 +336,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             {
 #if DEBUG
                 Debug.Assert(isNormalized);
-                Debug.Assert(Verify());
+                Verify();
 #endif
                 return (b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7 | b8 | b9) == 0;
             }
@@ -296,6 +344,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         /// <summary>
         /// Returns if this instance is zero when normalized
+        /// ie. if this ≡ 0 (mod p)
         /// </summary>
         /// <remarks>
         /// This method is constant time
@@ -303,6 +352,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if normalizes to zero</returns>
         public bool IsZeroNormalized()
         {
+#if DEBUG
+            Verify();
+#endif
             // z0 tracks a possible raw value of 0, z1 tracks a possible raw value of P
             uint z0, z1;
 
@@ -311,8 +363,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint t9 = b9 & 0b00000000_00111111_11111111_11111111;
 
             // The first pass ensures the magnitude is 1, ...
-            uint t0 = b0 + (x * 0x3D1U); uint t1 = b1 + (x << 6);
-            t1 += (t0 >> 26); t0 &= 0x03FFFFFFU; z0 = t0; z1 = t0 ^ 0x3D0U;
+            uint t0 = b0 + (x * 0x03D1U); uint t1 = b1 + (x << 6);
+            t1 += (t0 >> 26); t0 &= 0x03FFFFFFU; z0 = t0; z1 = t0 ^ 0x03D0U;
             uint t2 = b2 + (t1 >> 26); t1 &= 0x03FFFFFFU; z0 |= t1; z1 &= t1 ^ 0x40U;
             uint t3 = b3 + (t2 >> 26); t2 &= 0x03FFFFFFU; z0 |= t2; z1 &= t2;
             uint t4 = b4 + (t3 >> 26); t3 &= 0x03FFFFFFU; z0 |= t3; z1 &= t3;
@@ -326,11 +378,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // ... except for a possible carry at bit 22 of t9 (i.e. bit 256 of the field element)
             Debug.Assert(t9 >> 23 == 0);
 
-            return (z0 == 0) | (z1 == 0x3FFFFFFU);
+            return (z0 == 0) | (z1 == 0x03FFFFFFU);
         }
 
         /// <summary>
         /// Returns if this instance is zero when normalized without constant-time guarantee
+        /// ie. if this ≡ 0 (mod p)
         /// </summary>
         /// <remarks>
         /// This method is not constant time
@@ -338,40 +391,43 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if normalizes to zero</returns>
         public bool IsZeroNormalizedVar()
         {
+#if DEBUG
+            Verify();
+#endif
             // Reduce t9 at the start so there will be at most a single carry from the first pass
             uint x = b9 >> 22;
 
             // The first pass ensures the magnitude is 1, ...
-            uint t0 = b0 + (x * 0x3D1U);
+            uint t0 = b0 + (x * 0x03D1U);
 
             // z0 tracks a possible raw value of 0, z1 tracks a possible raw value of P
-            uint z0 = t0 & 0x3FFFFFFU;
-            uint z1 = z0 ^ 0x3D0U;
+            uint z0 = t0 & 0x03FFFFFFU;
+            uint z1 = z0 ^ 0x03D0U;
 
             // Fast return path should catch the majority of cases
-            if ((z0 != 0U) & (z1 != 0x3FFFFFFU))
+            if ((z0 != 0U) && (z1 != 0x03FFFFFFU))
             {
                 return false;
             }
 
-            uint t9 = b9 & 0x03FFFFFU;
+            uint t9 = b9 & 0x003FFFFFU;
             uint t1 = b1 + (x << 6);
 
             t1 += (t0 >> 26);
-            uint t2 = b2 + (t1 >> 26); t1 &= 0x3FFFFFFU; z0 |= t1; z1 &= t1 ^ 0x40U;
-            uint t3 = b3 + (t2 >> 26); t2 &= 0x3FFFFFFU; z0 |= t2; z1 &= t2;
-            uint t4 = b4 + (t3 >> 26); t3 &= 0x3FFFFFFU; z0 |= t3; z1 &= t3;
-            uint t5 = b5 + (t4 >> 26); t4 &= 0x3FFFFFFU; z0 |= t4; z1 &= t4;
-            uint t6 = b6 + (t5 >> 26); t5 &= 0x3FFFFFFU; z0 |= t5; z1 &= t5;
-            uint t7 = b7 + (t6 >> 26); t6 &= 0x3FFFFFFU; z0 |= t6; z1 &= t6;
-            uint t8 = b8 + (t7 >> 26); t7 &= 0x3FFFFFFU; z0 |= t7; z1 &= t7;
-            t9 += (t8 >> 26); t8 &= 0x3FFFFFFU; z0 |= t8; z1 &= t8;
-            z0 |= t9; z1 &= t9 ^ 0x3C00000U;
+            uint t2 = b2 + (t1 >> 26); t1 &= 0x03FFFFFFU; z0 |= t1; z1 &= t1 ^ 0x40U;
+            uint t3 = b3 + (t2 >> 26); t2 &= 0x03FFFFFFU; z0 |= t2; z1 &= t2;
+            uint t4 = b4 + (t3 >> 26); t3 &= 0x03FFFFFFU; z0 |= t3; z1 &= t3;
+            uint t5 = b5 + (t4 >> 26); t4 &= 0x03FFFFFFU; z0 |= t4; z1 &= t4;
+            uint t6 = b6 + (t5 >> 26); t5 &= 0x03FFFFFFU; z0 |= t5; z1 &= t5;
+            uint t7 = b7 + (t6 >> 26); t6 &= 0x03FFFFFFU; z0 |= t6; z1 &= t6;
+            uint t8 = b8 + (t7 >> 26); t7 &= 0x03FFFFFFU; z0 |= t7; z1 &= t7;
+            t9 += (t8 >> 26); t8 &= 0x03FFFFFFU; z0 |= t8; z1 &= t8;
+            z0 |= t9; z1 &= t9 ^ 0x03C00000U;
 
             // ... except for a possible carry at bit 22 of t9 (i.e. bit 256 of the field element)
             Debug.Assert(t9 >> 23 == 0);
 
-            return (z0 == 0) | (z1 == 0x3FFFFFFU);
+            return (z0 == 0) | (z1 == 0x03FFFFFFU);
         }
 
         /// <summary>
@@ -384,6 +440,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Normalized result</returns>
         public UInt256_10x26 Normalize()
         {
+#if DEBUG
+            Verify();
+#endif
             // Reduce b9 at the start so there will be at most a single carry from the first pass
             uint x = b9 >> 22;
             uint t9 = b9 & 0b00000000_00111111_11111111_11111111U;
@@ -409,7 +468,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 & ((t1 + 0x40U + ((t0 + 0x03D1U) >> 26)) > 0x03FFFFFFU ? 1u : 0));
 
             // Apply the final reduction (always do it for constant-time behaviour)
-            t0 += x * 0x3D1U; t1 += (x << 6);
+            t0 += x * 0x03D1U; t1 += (x << 6);
             t1 += (t0 >> 26); t0 &= 0x03FFFFFFU;
             t2 += (t1 >> 26); t1 &= 0x03FFFFFFU;
             t3 += (t2 >> 26); t2 &= 0x03FFFFFFU;
@@ -439,9 +498,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <remarks>
         /// Result's magnitude will be 1
         /// </remarks>
-        /// <returns></returns>
+        /// <returns>Result with same <see cref="isNormalized"/> but magnitude of 1</returns>
         public UInt256_10x26 NormalizeWeak()
         {
+#if DEBUG
+            Verify();
+#endif
             // Reduce t9 at the start so there will be at most a single carry from the first pass
             uint x = b9 >> 22;
             uint t9 = b9 & 0x003FFFFFU;
@@ -479,16 +541,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Normalized result</returns>
         public UInt256_10x26 NormalizeVar()
         {
+#if DEBUG
+            Verify();
+#endif
             // Reduce t9 at the start so there will be at most a single carry from the first pass
-            uint m;
             uint x = b9 >> 22;
-            uint t9 = b9 & 0x03FFFFFU;
+            uint t9 = b9 & 0x003FFFFFU;
 
             // The first pass ensures the magnitude is 1, ...
             uint t0 = b0 + (x * 0x03D1U); uint t1 = b1 + (x << 6);
             t1 += (t0 >> 26); t0 &= 0x03FFFFFFU;
             uint t2 = b2 + (t1 >> 26); t1 &= 0x03FFFFFFU;
-            uint t3 = b3 + (t2 >> 26); t2 &= 0x03FFFFFFU; m = t2;
+            uint t3 = b3 + (t2 >> 26); t2 &= 0x03FFFFFFU; uint m = t2;
             uint t4 = b4 + (t3 >> 26); t3 &= 0x03FFFFFFU; m &= t3;
             uint t5 = b5 + (t4 >> 26); t4 &= 0x03FFFFFFU; m &= t4;
             uint t6 = b6 + (t5 >> 26); t5 &= 0x03FFFFFFU; m &= t5;
@@ -506,7 +570,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             if (x != 0)
             {
                 t0 += 0x03D1U; t1 += (x << 6);
-                t1 += (t0 >> 26); t0 &= 0x3FFFFFFU;
+                t1 += (t0 >> 26); t0 &= 0x03FFFFFFU;
                 t2 += (t1 >> 26); t1 &= 0x03FFFFFFU;
                 t3 += (t2 >> 26); t2 &= 0x03FFFFFFU;
                 t4 += (t3 >> 26); t3 &= 0x03FFFFFFU;
@@ -520,7 +584,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(t9 >> 22 == x);
 
                 // Mask off the possible multiple of 2^256 from the final reduction
-                t9 &= 0x03FFFFFU;
+                t9 &= 0x003FFFFFU;
             }
 
             return new UInt256_10x26(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9
@@ -530,80 +594,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 );
         }
 
-
-        /// <summary>
-        /// Rescale a jacobian point by b (this instance) which must be non-zero.
-        /// </summary>
-        /// <remarks>
-        /// This method is constant-time.
-        /// </remarks>
-        /// <param name="r">Result</param>
-        public void Rescale(ref PointJacobian r)
-        {
-            Debug.Assert(!IsZero);
-            // Operations: 4 mul, 1 sqr
-            UInt256_10x26 zz = Sqr(1);
-            UInt256_10x26 x = r.x.Multiply(zz);                 // r->x *= s^2
-            UInt256_10x26 y = r.y.Multiply(zz).Multiply(this);  // r->y *= s^3
-            UInt256_10x26 z = r.z.Multiply(this);               // r->z *= s
-            r = new PointJacobian(x, y, z);
-        }
-
-
-        /// <summary>
-        /// Adds three <see cref="UInt256_10x26"/> values
-        /// </summary>
-        /// <param name="a">First value</param>
-        /// <param name="b">Second value</param>
-        /// <param name="c">Third value</param>
-        /// <returns>Result</returns>
-        public static UInt256_10x26 Add(in UInt256_10x26 a, in UInt256_10x26 b, in UInt256_10x26 c)
-        {
-            return new UInt256_10x26(
-                a.b0 + b.b0 + c.b0,
-                a.b1 + b.b1 + c.b1,
-                a.b2 + b.b2 + c.b2,
-                a.b3 + b.b3 + c.b3,
-                a.b4 + b.b4 + c.b4,
-                a.b5 + b.b5 + c.b5,
-                a.b6 + b.b6 + c.b6,
-                a.b7 + b.b7 + c.b7,
-                a.b8 + b.b8 + c.b8,
-                a.b9 + b.b9 + c.b9
-#if DEBUG
-                , a.magnitude + b.magnitude + c.magnitude,
-                false
-#endif
-                );
-        }
-
-        /// <summary>
-        /// Adds four <see cref="UInt256_10x26"/> values
-        /// </summary>
-        /// <param name="a">First value</param>
-        /// <param name="b">Second value</param>
-        /// <param name="c">Third value</param>
-        /// <param name="d">Fourth value</param>
-        /// <returns>Result</returns>
-        public static UInt256_10x26 Add(in UInt256_10x26 a, in UInt256_10x26 b, in UInt256_10x26 c, in UInt256_10x26 d)
-        {
-            return new UInt256_10x26(
-                a.b0 + b.b0 + c.b0 + d.b0,
-                a.b1 + b.b1 + c.b1 + d.b1,
-                a.b2 + b.b2 + c.b2 + d.b2,
-                a.b3 + b.b3 + c.b3 + d.b3,
-                a.b4 + b.b4 + c.b4 + d.b4,
-                a.b5 + b.b5 + c.b5 + d.b5,
-                a.b6 + b.b6 + c.b6 + d.b6,
-                a.b7 + b.b7 + c.b7 + d.b7,
-                a.b8 + b.b8 + c.b8 + d.b8,
-                a.b9 + b.b9 + c.b9 + d.b9
-#if DEBUG
-                , a.magnitude + b.magnitude + c.magnitude + d.magnitude,
-                false
-#endif
-                );
-        }
 
         /// <summary>
         /// Adds the given value to this instance
@@ -683,6 +673,65 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 );
         }
 
+        /// <summary>
+        /// Adds three <see cref="UInt256_10x26"/> values
+        /// </summary>
+        /// <param name="a">First value</param>
+        /// <param name="b">Second value</param>
+        /// <param name="c">Third value</param>
+        /// <returns>Result</returns>
+        public static UInt256_10x26 Add(in UInt256_10x26 a, in UInt256_10x26 b, in UInt256_10x26 c)
+        {
+            return new UInt256_10x26(
+                a.b0 + b.b0 + c.b0,
+                a.b1 + b.b1 + c.b1,
+                a.b2 + b.b2 + c.b2,
+                a.b3 + b.b3 + c.b3,
+                a.b4 + b.b4 + c.b4,
+                a.b5 + b.b5 + c.b5,
+                a.b6 + b.b6 + c.b6,
+                a.b7 + b.b7 + c.b7,
+                a.b8 + b.b8 + c.b8,
+                a.b9 + b.b9 + c.b9
+#if DEBUG
+                , a.magnitude + b.magnitude + c.magnitude,
+                false
+#endif
+                );
+        }
+
+        /// <summary>
+        /// Adds four <see cref="UInt256_10x26"/> values
+        /// </summary>
+        /// <param name="a">First value</param>
+        /// <param name="b">Second value</param>
+        /// <param name="c">Third value</param>
+        /// <param name="d">Fourth value</param>
+        /// <returns>Result</returns>
+        public static UInt256_10x26 Add(in UInt256_10x26 a, in UInt256_10x26 b, in UInt256_10x26 c, in UInt256_10x26 d)
+        {
+            return new UInt256_10x26(
+                a.b0 + b.b0 + c.b0 + d.b0,
+                a.b1 + b.b1 + c.b1 + d.b1,
+                a.b2 + b.b2 + c.b2 + d.b2,
+                a.b3 + b.b3 + c.b3 + d.b3,
+                a.b4 + b.b4 + c.b4 + d.b4,
+                a.b5 + b.b5 + c.b5 + d.b5,
+                a.b6 + b.b6 + c.b6 + d.b6,
+                a.b7 + b.b7 + c.b7 + d.b7,
+                a.b8 + b.b8 + c.b8 + d.b8,
+                a.b9 + b.b9 + c.b9 + d.b9
+#if DEBUG
+                , a.magnitude + b.magnitude + c.magnitude + d.magnitude,
+                false
+#endif
+                );
+        }
+
+
+
+
+
 
         /// <summary>
         /// Halves the value of this instance modulo the field prime.
@@ -696,7 +745,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public UInt256_10x26 Half()
         {
 #if DEBUG
-            Debug.Assert(Verify());
+            Verify();
             Debug.Assert(magnitude < 32);
 #endif
             uint one = 1U;
@@ -860,8 +909,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             Debug.Assert(a.magnitude <= 8);
             Debug.Assert(b.magnitude <= 8);
-            Debug.Assert(a.Verify());
-            Debug.Assert(b.Verify());
+            a.Verify();
+            b.Verify();
 #endif
             Debug.Assert(a.b0 >> 30 == 0);
             Debug.Assert(a.b1 >> 30 == 0);
@@ -1212,7 +1261,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
 #if DEBUG
             Debug.Assert(magnitude <= 8);
-            Debug.Assert(Verify());
+            Verify();
 #endif
             const uint M = 0x03FFFFFFU, R0 = 0x03D10U, R1 = 0x0400U;
             uint r0 = b0;
@@ -1681,6 +1730,25 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Rescale a jacobian point by b (this instance) which must be non-zero.
+        /// </summary>
+        /// <remarks>
+        /// This method is constant-time.
+        /// </remarks>
+        /// <param name="r">Result</param>
+        public void Rescale(ref PointJacobian r)
+        {
+            Debug.Assert(!IsZero);
+            // Operations: 4 mul, 1 sqr
+            UInt256_10x26 zz = Sqr(1);
+            UInt256_10x26 x = r.x.Multiply(zz);                 // r->x *= s^2
+            UInt256_10x26 y = r.y.Multiply(zz).Multiply(this);  // r->y *= s^3
+            UInt256_10x26 z = r.z.Multiply(this);               // r->z *= s
+            r = new PointJacobian(x, y, z);
+        }
+
+
+        /// <summary>
         /// Converts this instance to <see cref="UInt256_8x32"/>.
         /// Assumes the instance is normalized.
         /// </summary>
@@ -1694,6 +1762,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        /// <summary>
+        /// Converts this instance to a 32-byte array in big-endian order.
+        /// </summary>
+        /// <returns>Big-endian byte array</returns>
         public byte[] ToByteArray()
         {
             Span<byte> res = new byte[32];
@@ -1711,6 +1783,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public void WriteToSpan(Span<byte> ba)
         {
 #if DEBUG
+            Verify();
             Debug.Assert(isNormalized);
 #endif
             Debug.Assert(ba.Length >= 32);
@@ -1772,8 +1845,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             Debug.Assert(isNormalized);
             Debug.Assert(b.isNormalized);
-            Debug.Assert(Verify());
-            Debug.Assert(b.Verify());
+            Verify();
+            b.Verify();
 #endif
             if (b9 > b.b9) return 1; else if (b9 < b.b9) return -1;
             if (b8 > b.b8) return 1; else if (b8 < b.b8) return -1;
@@ -1794,12 +1867,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         /// <remarks>
         /// This method is constant time.
-        /// Magnitude should be 1.
+        /// Magnitude of this instance should be at most 1.
+        /// Magnitude of b should be at most 31.
         /// </remarks>
-        /// <param name="b">Other <see cref="UInt256_10x26"/> to compare to</param>
+        /// <param name="b">Other <see cref="UInt256_10x26"/> to compare to (magnitude of at most 31)</param>
         /// <returns>True if the two instances are equal; otherwise false.</returns>
         public bool Equals(in UInt256_10x26 b)
         {
+#if DEBUG
+            Verify();
+            b.Verify();
+            Debug.Assert(magnitude == 0 || magnitude == 1);
+            Debug.Assert(b.magnitude >= 0 || b.magnitude <= 31);
+#endif
             UInt256_10x26 na = Negate(1);
             na += b;
             return na.IsZeroNormalized();
@@ -1814,6 +1894,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </remarks>
         /// <param name="b">Other <see cref="UInt256_10x26"/> to compare to</param>
         /// <returns>True if the two instances are equal; otherwise false.</returns>
+        [Obsolete("Removed from libsecp256k1")]
         public bool EqualsVar(in UInt256_10x26 b)
         {
             UInt256_10x26 na = Negate(1);
