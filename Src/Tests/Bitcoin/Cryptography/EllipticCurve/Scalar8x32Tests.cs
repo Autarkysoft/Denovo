@@ -26,6 +26,23 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         private const ulong NN2 = 0xFFFFFFFFFFFFFFFEUL;
         private const ulong NN3 = 0xFFFFFFFFFFFFFFFFUL;
 
+
+        private static Scalar8x32 GetRandom()
+        {
+            Random rng = new();
+            byte[] b32 = new byte[32];
+            do
+            {
+                rng.NextBytes(b32);
+                Scalar8x32 res = new(b32, out bool overflow);
+                if (!overflow && !res.IsZero)
+                {
+                    return res;
+                }
+            } while (true);
+        }
+
+
         [Fact]
         public void Constructor_uintTest()
         {
@@ -307,6 +324,14 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(expected, scalar.IsZero);
         }
 
+        [Fact]
+        public void HalfTest()
+        {
+            Scalar8x32 s = GetRandom();
+            Scalar8x32 r = s.Add(s, out _);
+            r = r.Half();
+            Assert.True(s.Equals(r));
+        }
 
         public static IEnumerable<object[]> GetMultCases()
         {

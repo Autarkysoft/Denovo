@@ -297,6 +297,62 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
+
+        /// <summary>
+        /// Multiply a scalar with the multiplicative inverse of 2
+        /// </summary>
+        /// <returns></returns>
+        public Scalar8x32 Half()
+        {
+            // Writing `/` for field division and `//` for integer division, we compute
+            //
+            //   a/2 = (a - (a&1))/2 + (a&1)/2
+            //       = (a >> 1) + (a&1 ?    1/2 : 0)
+            //       = (a >> 1) + (a&1 ? n//2+1 : 0),
+            //
+            // where n is the group order and in the last equality we have used 1/2 = n//2+1 (mod n).
+            // For n//2, we have the constants SECP256K1_N_H_0, ...
+            //
+            // This sum does not overflow. The most extreme case is a = -2, the largest odd scalar.
+            // Here:
+            // - the left summand is:  a >> 1 = (a - a&1)/2 = (n-2-1)//2           = (n-3)//2
+            // - the right summand is: a&1 ? n//2+1 : 0 = n//2+1 = (n-1)//2 + 2//2 = (n+1)//2
+            // Together they sum to (n-3)//2 + (n+1)//2 = (2n-2)//2 = n - 1, which is less than n.
+
+            uint mask = (uint)-(b0 & 1U);
+            ulong t = (b0 >> 1) | (b1 << 31);
+            Debug.Assert(GetOverflow(this) == 0);
+
+            t += (NH0 + 1U) & mask;
+            uint r0 = (uint)t; t >>= 32;
+            t += (b1 >> 1) | (b2 << 31);
+            t += NH1 & mask;
+            uint r1 = (uint)t; t >>= 32;
+            t += (b2 >> 1) | (b3 << 31);
+            t += NH2 & mask;
+            uint r2 = (uint)t; t >>= 32;
+            t += (b3 >> 1) | (b4 << 31);
+            t += NH3 & mask;
+            uint r3 = (uint)t; t >>= 32;
+            t += (b4 >> 1) | (b5 << 31);
+            t += NH4 & mask;
+            uint r4 = (uint)t; t >>= 32;
+            t += (b5 >> 1) | (b6 << 31);
+            t += NH5 & mask;
+            uint r5 = (uint)t; t >>= 32;
+            t += (b6 >> 1) | (b7 << 31);
+            t += NH6 & mask;
+            uint r6 = (uint)t; t >>= 32;
+            uint r7 = (uint)t + (b7 >> 1) + (NH7 & mask);
+
+            // The line above only computed the bottom 32 bits of r->d[7]. Redo the computation
+            // in full 64 bits to make sure the top 32 bits are indeed zero.
+            Debug.Assert((t + (b7 >> 1) + (NH7 & mask)) >> 32 == 0);
+
+            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+        }
+
+
         private uint CheckOverflow()
         {
             uint yes = 0U;
