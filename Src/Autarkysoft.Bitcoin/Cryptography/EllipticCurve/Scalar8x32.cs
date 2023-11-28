@@ -1116,32 +1116,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// Shift this scalar right by the given amount strictly between 0 and 16.
-        /// </summary>
-        /// <param name="shift">Shift must be between 0 and 16</param>
-        /// <param name="ret">Low bits that were shifted off</param>
-        /// <returns>Shifted scalar</returns>
-        public unsafe Scalar8x32 Shr16(int shift, out uint ret)
-        {
-            Debug.Assert(GetOverflow(this) == 0);
-            Debug.Assert(shift > 0);
-            Debug.Assert(shift < 16);
-
-            ret = b0 & ((1U << shift) - 1);
-            uint r0 = (b0 >> shift) + (b1 << (32 - shift));
-            uint r1 = (b1 >> shift) + (b2 << (32 - shift));
-            uint r2 = (b2 >> shift) + (b3 << (32 - shift));
-            uint r3 = (b3 >> shift) + (b4 << (32 - shift));
-            uint r4 = (b4 >> shift) + (b5 << (32 - shift));
-            uint r5 = (b5 >> shift) + (b6 << (32 - shift));
-            uint r6 = (b6 >> shift) + (b7 << (32 - shift));
-            uint r7 = (b7 >> shift);
-
-            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
-        }
-
-
-        /// <summary>
         /// Multiply a and b (without taking the modulus!), divide by 2**shift, and round to the nearest integer.
         /// Shift must be at least 256
         /// </summary>
