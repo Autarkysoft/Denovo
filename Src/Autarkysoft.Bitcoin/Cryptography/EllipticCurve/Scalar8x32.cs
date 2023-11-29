@@ -319,7 +319,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // - the right summand is: a&1 ? n//2+1 : 0 = n//2+1 = (n-1)//2 + 2//2 = (n+1)//2
             // Together they sum to (n-3)//2 + (n+1)//2 = (2n-2)//2 = n - 1, which is less than n.
 
-            uint mask = (uint)-(b0 & 1U);
+            // uint32_t mask = -(uint32_t)(a->d[0] & 1U);
+            uint mask = (b0 & 1U) * 0xFFFFFFFFU;
             ulong t = (b0 >> 1) | (b1 << 31);
             Debug.Assert(GetOverflow(this) == 0);
 
