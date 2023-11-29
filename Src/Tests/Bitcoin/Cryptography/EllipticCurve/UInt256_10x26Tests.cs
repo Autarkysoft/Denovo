@@ -156,7 +156,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         public static IEnumerable<object[]> GetCtor8Cases()
         {
-            yield return new object[] { new uint[8], new uint[10] };
+            yield return new object[] { new uint[8], new uint[10], 0 };
             yield return new object[]
             {
                 new uint[8]
@@ -168,11 +168,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                     0x0229e005, 0x00b3f86a, 0x00aa60e0, 0x01a34775, 0x02d43e93,
                     0x02e25cf0, 0x02101547, 0x0211a98b, 0x0306f8ce, 0x0009e1a9
                 },
+                1
             };
         }
         [Theory]
         [MemberData(nameof(GetCtor8Cases))]
-        public void Constructor_From8UintsTest(uint[] arr, uint[] exp)
+        public void Constructor_From8UintsTest(uint[] arr, uint[] exp, int expMagnitude)
         {
             UInt256_10x26 val1 = new(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]);
             Assert.Equal(exp[0], val1.b0);
@@ -187,7 +188,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(exp[9], val1.b9);
 #if DEBUG
             Assert.True(val1.isNormalized);
-            Assert.Equal(1, val1.magnitude);
+            Assert.Equal(expMagnitude, val1.magnitude);
 #endif
         }
 
