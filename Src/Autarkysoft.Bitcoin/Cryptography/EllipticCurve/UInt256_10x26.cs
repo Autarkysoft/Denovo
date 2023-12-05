@@ -963,7 +963,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             ulong u0, u1, u2, u3, u4, u5, u6, u7, u8;
             uint t9, t1, t0, t2, t3, t4, t5, t6, t7;
-            const uint M = 0x03FFFFFFU, R0 = 0x03D10U, R1 = 0x0400U;
+            const uint M = 0x03FFFFFFU, R0 = 0x3D10U, R1 = 0x0400U;
 
             // [... a b c] is a shorthand for ... + a<<52 + b<<26 + c<<0 mod n.
             // for 0 <= x <= 9, px is a shorthand for sum(a[i]*b[x-i], i=0..x).
@@ -1276,21 +1276,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         /// <summary>
         /// Returns square (x^(2^n)) of this instance.
-        /// <para/>Useful to subsequently compute squares (ie. (((x^2)^2)2)^2)
+        /// <para/>Useful to compute squares in a for loop (ie. (((x^2)^2)2)^2)
         /// </summary>
         /// <remarks>
         /// Magnitude must be below 8.
         /// Result's magnitude is 1 but is not normalized.
         /// </remarks>
-        /// <param name="times">Number of times to repeat sauaring</param>
+        /// <param name="times">Number of times to repeat squaring</param>
         /// <returns>Result</returns>
         public UInt256_10x26 Sqr(int times)
         {
 #if DEBUG
-            Debug.Assert(magnitude <= 8);
             Verify();
+            VerifyMagnitude(magnitude, 8);
 #endif
-            const uint M = 0x03FFFFFFU, R0 = 0x03D10U, R1 = 0x0400U;
+            const uint M = 0x03FFFFFFU, R0 = 0x3D10U, R1 = 0x0400U;
             uint r0 = b0;
             uint r1 = b1;
             uint r2 = b2;
@@ -1328,7 +1328,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                   + (ulong)(r3 * 2) * r6
                   + (ulong)(r4 * 2) * r5;
                 // [d 0 0 0 0 0 0 0 0 0] = [p9 0 0 0 0 0 0 0 0 0] 
-                t9 = (uint)(d & M); d >>= 26;
+                t9 = (uint)d & M; d >>= 26;
                 Debug.Assert(t9 >> 26 == 0);
                 Debug.Assert(d >> 38 == 0);
                 // [d t9 0 0 0 0 0 0 0 0 0] = [p9 0 0 0 0 0 0 0 0 0] 
@@ -1348,7 +1348,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(d >> 37 == 0);
                 Debug.Assert(c >> 61 == 0);
                 // [d u0 t9 0 0 0 0 0 0 0 0 c-u0*R0] = [p10 p9 0 0 0 0 0 0 0 0 p0] 
-                t0 = (uint)(c & M); c >>= 26; c += u0 * R1;
+                t0 = (uint)c & M; c >>= 26; c += u0 * R1;
                 Debug.Assert(t0 >> 26 == 0);
                 Debug.Assert(c >> 37 == 0);
                 // [d u0 t9 0 0 0 0 0 0 0 c-u0*R1 t0-u0*R0] = [p10 p9 0 0 0 0 0 0 0 0 p0] 
@@ -1368,7 +1368,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(d >> 37 == 0);
                 Debug.Assert(c >> 63 == 0);
                 // [d u1 0 t9 0 0 0 0 0 0 0 c-u1*R0 t0] = [p11 p10 p9 0 0 0 0 0 0 0 p1 p0] 
-                t1 = (uint)(c & M); c >>= 26; c += u1 * R1;
+                t1 = (uint)c & M; c >>= 26; c += u1 * R1;
                 Debug.Assert(t1 >> 26 == 0);
                 Debug.Assert(c >> 38 == 0);
                 // [d u1 0 t9 0 0 0 0 0 0 c-u1*R1 t1-u1*R0 t0] = [p11 p10 p9 0 0 0 0 0 0 0 p1 p0] 
@@ -1389,7 +1389,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(d >> 37 == 0);
                 Debug.Assert(c >> 63 == 0);
                 // [d u2 0 0 t9 0 0 0 0 0 0 c-u2*R0 t1 t0] = [p12 p11 p10 p9 0 0 0 0 0 0 p2 p1 p0] 
-                t2 = (uint)(c & M); c >>= 26; c += u2 * R1;
+                t2 = (uint)c & M; c >>= 26; c += u2 * R1;
                 Debug.Assert(t2 >> 26 == 0);
                 Debug.Assert(c >> 38 == 0);
                 // [d u2 0 0 t9 0 0 0 0 0 c-u2*R1 t2-u2*R0 t1 t0] = [p12 p11 p10 p9 0 0 0 0 0 0 p2 p1 p0] 
@@ -1408,7 +1408,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(u3 >> 26 == 0);
                 Debug.Assert(d >> 37 == 0);
                 // [d u3 0 0 0 t9 0 0 0 0 0 c-u3*R0 t2 t1 t0] = [p13 p12 p11 p10 p9 0 0 0 0 0 p3 p2 p1 p0] 
-                t3 = (uint)(c & M); c >>= 26; c += u3 * R1;
+                t3 = (uint)c & M; c >>= 26; c += u3 * R1;
                 Debug.Assert(t3 >> 26 == 0);
                 Debug.Assert(c >> 39 == 0);
                 // [d u3 0 0 0 t9 0 0 0 0 c-u3*R1 t3-u3*R0 t2 t1 t0] = [p13 p12 p11 p10 p9 0 0 0 0 0 p3 p2 p1 p0] 
@@ -1428,7 +1428,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(u4 >> 26 == 0);
                 Debug.Assert(d >> 36 == 0);
                 // [d u4 0 0 0 0 t9 0 0 0 0 c-u4*R0 t3 t2 t1 t0] = [p14 p13 p12 p11 p10 p9 0 0 0 0 p4 p3 p2 p1 p0] 
-                t4 = (uint)(c & M); c >>= 26; c += u4 * R1;
+                t4 = (uint)c & M; c >>= 26; c += u4 * R1;
                 Debug.Assert(t4 >> 26 == 0);
                 Debug.Assert(c >> 39 == 0);
                 // [d u4 0 0 0 0 t9 0 0 0 c-u4*R1 t4-u4*R0 t3 t2 t1 t0] = [p14 p13 p12 p11 p10 p9 0 0 0 0 p4 p3 p2 p1 p0] 
@@ -1447,7 +1447,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(u5 >> 26 == 0);
                 Debug.Assert(d >> 36 == 0);
                 // [d u5 0 0 0 0 0 t9 0 0 0 c-u5*R0 t4 t3 t2 t1 t0] = [p15 p14 p13 p12 p11 p10 p9 0 0 0 p5 p4 p3 p2 p1 p0] 
-                t5 = (uint)(c & M); c >>= 26; c += u5 * R1;
+                t5 = (uint)c & M; c >>= 26; c += u5 * R1;
                 Debug.Assert(t5 >> 26 == 0);
                 Debug.Assert(c >> 39 == 0);
                 // [d u5 0 0 0 0 0 t9 0 0 c-u5*R1 t5-u5*R0 t4 t3 t2 t1 t0] = [p15 p14 p13 p12 p11 p10 p9 0 0 0 p5 p4 p3 p2 p1 p0] 
@@ -1467,7 +1467,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(u6 >> 26 == 0);
                 Debug.Assert(d >> 35 == 0);
                 // [d u6 0 0 0 0 0 0 t9 0 0 c-u6*R0 t5 t4 t3 t2 t1 t0] = [p16 p15 p14 p13 p12 p11 p10 p9 0 0 p6 p5 p4 p3 p2 p1 p0] 
-                t6 = (uint)(c & M); c >>= 26; c += u6 * R1;
+                t6 = (uint)c & M; c >>= 26; c += u6 * R1;
                 Debug.Assert(t6 >> 26 == 0);
                 Debug.Assert(c >> 39 == 0);
                 // [d u6 0 0 0 0 0 0 t9 0 c-u6*R1 t6-u6*R0 t5 t4 t3 t2 t1 t0] = [p16 p15 p14 p13 p12 p11 p10 p9 0 0 p6 p5 p4 p3 p2 p1 p0] 
@@ -1487,7 +1487,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(d >> 32 == 0);
                 Debug.Assert(c <= 0x800001703FFFC2F7UL);
                 // [d u7 0 0 0 0 0 0 0 t9 0 c-u7*R0 t6 t5 t4 t3 t2 t1 t0] = [p17 p16 p15 p14 p13 p12 p11 p10 p9 0 p7 p6 p5 p4 p3 p2 p1 p0] 
-                t7 = (uint)(c & M); c >>= 26; c += u7 * R1;
+                t7 = (uint)c & M; c >>= 26; c += u7 * R1;
                 Debug.Assert(t7 >> 26 == 0);
                 Debug.Assert(c >> 38 == 0);
                 // [d u7 0 0 0 0 0 0 0 t9 c-u7*R1 t7-u7*R0 t6 t5 t4 t3 t2 t1 t0] = [p17 p16 p15 p14 p13 p12 p11 p10 p9 0 p7 p6 p5 p4 p3 p2 p1 p0] 
@@ -1524,7 +1524,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(r7 >> 26 == 0);
                 // [d u8 0 0 0 0 0 0 0 0 t9 c-u8*R0 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
 
-                r8 = (uint)(c & M); c >>= 26; c += u8 * R1;
+                r8 = (uint)c & M; c >>= 26; c += u8 * R1;
                 Debug.Assert(r8 >> 26 == 0);
                 Debug.Assert(c >> 39 == 0);
                 // [d u8 0 0 0 0 0 0 0 0 t9+c-u8*R1 r8-u8*R0 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
@@ -1532,7 +1532,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 c += d * R0 + t9;
                 Debug.Assert(c >> 45 == 0);
                 // [d 0 0 0 0 0 0 0 0 0 c-d*R0 r8 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
-                r9 = (uint)(c & (M >> 4)); c >>= 22; c += d * (R1 << 4);
+                r9 = (uint)c & (M >> 4); c >>= 22; c += d * (R1 << 4);
                 Debug.Assert(r9 >> 22 == 0);
                 Debug.Assert(c >> 46 == 0);
                 // [d 0 0 0 0 0 0 0 0 r9+((c-d*R1<<4)<<22)-d*R0 r8 r7 r6 r5 r4 r3 t2 t1 t0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
@@ -1542,7 +1542,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 d = c * (R0 >> 4) + t0;
                 Debug.Assert(d >> 56 == 0);
                 // [r9+(c<<22) r8 r7 r6 r5 r4 r3 t2 t1 d-c*R0>>4] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
-                r0 = (uint)(d & M); d >>= 26;
+                r0 = (uint)d & M; d >>= 26;
                 Debug.Assert(r0 >> 26 == 0);
                 Debug.Assert(d >> 30 == 0);
                 // [r9+(c<<22) r8 r7 r6 r5 r4 r3 t2 t1+d r0-c*R0>>4] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
@@ -1551,7 +1551,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert(d <= 0x10000003FFFFBFUL);
                 // [r9+(c<<22) r8 r7 r6 r5 r4 r3 t2 d-c*R1>>4 r0-c*R0>>4] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
                 // [r9 r8 r7 r6 r5 r4 r3 t2 d r0] = [p18 p17 p16 p15 p14 p13 p12 p11 p10 p9 p8 p7 p6 p5 p4 p3 p2 p1 p0] 
-                r1 = (uint)(d & M); d >>= 26;
+                r1 = (uint)d & M; d >>= 26;
                 Debug.Assert(r1 >> 26 == 0);
                 Debug.Assert(d >> 27 == 0);
                 Debug.Assert(d <= 0x4000000UL);
@@ -1573,12 +1573,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// Return square root of this instance if it has a square root, otherwise returns square root of its negation.
+        /// Return square root of this instance if it has a square root (returns true),
+        /// otherwise returns square root of its negation (returns false).
         /// </summary>
+        /// <remarks>
+        /// Magnitude must be below 8.
+        /// Result will have a magnitude of 1 but will not be normalized.
+        /// </remarks>
         /// <param name="result">Square root result</param>
         /// <returns>True if square root existed, otherwise false.</returns>
         public bool Sqrt(out UInt256_10x26 result)
         {
+#if DEBUG
+            Verify();
+            VerifyMagnitude(magnitude, 8);
+#endif
             // Given that p is congruent to 3 mod 4, we can compute the square root of
             // a mod p as the (p+1)/4'th power of a.
             //
@@ -1588,12 +1597,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // Also because (p+1)/4 is an even number, the computed square root is
             // itself always a square (a ** ((p+1)/4) is the square of a ** ((p+1)/8)).
 
-            UInt256_10x26 x2, x3, x6, x9, x11, x22, x44, x88, x176, x220, x223, t1;
-
             // The binary representation of (p + 1)/4 has 3 blocks of 1s, with lengths in
             //  { 2, 22, 223 }. Use an addition chain to calculate 2^n - 1 for each block:
             //  1, [2], 3, 6, 9, 11, [22], 44, 88, 176, 220, [223]
 
+            UInt256_10x26 x2, x3, x6, x9, x11, x22, x44, x88, x176, x220, x223, t1;
             x2 = Sqr();
             x2 *= this;
 
@@ -1637,7 +1645,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             // Check that a square root was actually calculated 
             t1 = result.Sqr();
-            return t1.Equals(this);
+            bool b = t1.Equals(this);
+#if DEBUG
+            if (!b)
+            {
+                t1 = t1.Negate(1);
+                t1 = t1.NormalizeVar();
+                Debug.Assert(t1.Equals(this));
+            }
+#endif
+            return b;
         }
 
 
@@ -1728,13 +1745,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="a"></param>
+        /// <remarks>
+        /// This method is constant time.
+        /// </remarks>
+        /// <param name="r">Destination</param>
+        /// <param name="a">Source</param>
         /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
-        /// <returns>Result</returns>
+        /// <returns><paramref name="a"/> if flag was one; otherwise r.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt256_10x26 CMov(in UInt256_10x26 r, in UInt256_10x26 a, uint flag)
         {
+#if DEBUG
+            r.Verify();
+            a.Verify();
+            Debug.Assert(flag == 0 || flag == 1);
+#endif
             uint mask0 = flag + ~0U;
             uint mask1 = ~mask0;
             return new UInt256_10x26(
@@ -1783,6 +1808,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public UInt256_8x32 ToUInt256_8x32()
         {
 #if DEBUG
+            Verify();
             Debug.Assert(isNormalized);
 #endif
             return new UInt256_8x32(this);
@@ -1863,7 +1889,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Assumes both values are normalized.
         /// </summary>
         /// <remarks>
-        /// This method is constant time.
+        /// This method is not constant time.
         /// </remarks>
         /// <param name="b">Other value to compare to</param>
         /// <returns>1 if this is bigger than <paramref name="b"/>, -1 if smaller and 0 if equal.</returns>
