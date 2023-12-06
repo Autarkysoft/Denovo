@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
@@ -62,13 +63,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="a"></param>
+        /// <remarks>
+        /// This method is constant time.
+        /// </remarks>
+        /// <param name="r">Destination</param>
+        /// <param name="a">Source</param>
         /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
-        /// <returns>Result</returns>
+        /// <returns><paramref name="a"/> if flag was one; otherwise r.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt256_8x32 CMov(in UInt256_8x32 r, in UInt256_8x32 a, uint flag)
         {
+            Debug.Assert(flag == 0 || flag == 1);
+
             uint mask0 = flag + ~0U;
             uint mask1 = ~mask0;
             return new UInt256_8x32(
