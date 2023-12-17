@@ -6,7 +6,6 @@
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
@@ -26,21 +25,6 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         private const ulong NN2 = 0xFFFFFFFFFFFFFFFEUL;
         private const ulong NN3 = 0xFFFFFFFFFFFFFFFFUL;
 
-
-        private static Scalar8x32 GetRandom()
-        {
-            Random rng = new();
-            byte[] b32 = new byte[32];
-            do
-            {
-                rng.NextBytes(b32);
-                Scalar8x32 res = new(b32, out bool overflow);
-                if (!overflow && !res.IsZero)
-                {
-                    return res;
-                }
-            } while (true);
-        }
 
 
         [Fact]
@@ -324,14 +308,6 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(expected, scalar.IsZero);
         }
 
-        [Fact]
-        public void HalfTest()
-        {
-            Scalar8x32 s = GetRandom();
-            Scalar8x32 r = s.Add(s, out _);
-            r = r.Half();
-            Assert.True(s.Equals(r));
-        }
 
         public static IEnumerable<object[]> GetMultCases()
         {
@@ -462,5 +438,189 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             int h2 = new Scalar8x32(2).GetHashCode();
             Assert.NotEqual(h1, h2);
         }
+
+
+
+        #region https://github.com/bitcoin-core/secp256k1/blob/77af1da9f631fa622fb5b5895fd27be431432368/src/tests.c#L2126-L2946
+
+        private const int Count = 64;
+
+        // random_scalar_order_test
+        private static Scalar8x32 CreateRandom(Rand rng)
+        {
+            byte[] b32 = new byte[32];
+            do
+            {
+                rng.secp256k1_testrand256_test(b32);
+                Scalar8x32 result = new(b32, out bool overflow);
+                if (!overflow && !result.IsZero)
+                {
+                    return result;
+                }
+            } while (true);
+        }
+
+        // scalar_test(void)
+        private static unsafe void ScalarTest(Rand rng)
+        {
+            // Set 's' to a random scalar, with value 'snum'.
+            Scalar8x32 s = CreateRandom(rng);
+
+            // Set 's1' to a random scalar, with value 's1num'.
+            Scalar8x32 s1 = CreateRandom(rng);
+
+            // Set 's2' to a random scalar, with value 'snum2', and byte array representation 'c'.
+            Scalar8x32 s2 = CreateRandom(rng);
+            byte[] c = s2.ToByteArray();
+
+            uint* pt = stackalloc uint[8] { s.b0, s.b1, s.b2, s.b3, s.b4, s.b5, s.b6, s.b7 };
+
+            {
+                // Test that fetching groups of 4 bits from a scalar
+                // and recursing n(i)=16*n(i-1)+p(i) reconstructs it.
+                Scalar8x32 n = new(0);
+                for (int i = 0; i < 256; i += 4)
+                {
+                    Scalar8x32 t = new(Scalar8x32.GetBits(pt, 256 - 4 - i, 4));
+                    for (int j = 0; j < 4; j++)
+                    {
+                        n = n.Add(n, out _);
+                    }
+                    n = n.Add(t, out _);
+                }
+                Assert.Equal(n, s);
+            }
+
+            {
+                // Test that fetching groups of randomly-sized bits from a scalar
+                // and recursing n(i)=b*n(i-1)+p(i) reconstructs it
+                Scalar8x32 n = new(0);
+                int i = 0;
+                while (i < 256)
+                {
+                    int now = (int)(rng.secp256k1_testrand_int(15) + 1);
+                    if (now + i > 256)
+                    {
+                        now = 256 - i;
+                    }
+                    Scalar8x32 t = new(Scalar8x32.GetBitsVar(pt, 256 - now - i, now));
+                    for (int j = 0; j < now; j++)
+                    {
+                        n = n.Add(n, out _);
+                    }
+                    n = n.Add(t, out _);
+                    i += now;
+                }
+                Assert.Equal(n, s);
+            }
+
+            {
+                // Test commutativity of add
+                Scalar8x32 r1 = s1.Add(s2, out _);
+                Scalar8x32 r2 = s2.Add(s1, out _);
+                Assert.Equal(r1, r2);
+            }
+
+            {
+                // Test add_bit
+                uint bit = (uint)rng.secp256k1_testrand_bits(8);
+                Scalar8x32 b = new(1);
+                Assert.True(b.IsOne);
+                for (int i = 0; i < bit; i++)
+                {
+                    b = b.Add(b, out _);
+                }
+                Scalar8x32 r1 = s1;
+                Scalar8x32 r2 = s1;
+                r1 = r1.Add(b, out bool overflow);
+                if (!overflow)
+                {
+                    // No overflow happened
+                    r2 = r2.CAddBit(bit, 1);
+                    Assert.Equal(r1, r2);
+
+                    // cadd is a noop when flag is zero
+                    r2 = r2.CAddBit(bit, 0);
+                    Assert.Equal(r1, r2);
+                }
+            }
+
+            {
+                // Test commutativity of mul
+                Scalar8x32 r1 = s1.Multiply(s2);
+                Scalar8x32 r2 = s2.Multiply(s1);
+                Assert.Equal(r1, r2);
+            }
+
+            {
+                // Test associativity of add
+                // s1 + s2 + s == s2 + s + s1
+                Scalar8x32 r1 = s1.Add(s2, out _);
+                r1 = r1.Add(s, out _);
+                Scalar8x32 r2 = s2.Add(s, out _);
+                r2 = s1.Add(r2, out _);
+                Assert.Equal(r1, r2);
+            }
+
+            {
+                // Test associativity of mul
+                // s1 * s2 * s == s2 * s * s1
+                Scalar8x32 r1 = s1.Multiply(s2);
+                r1 = r1.Multiply(s);
+                Scalar8x32 r2 = s2.Multiply(s);
+                r2 = s1.Multiply(r2);
+                Assert.Equal(r1, r2);
+            }
+
+            {
+                // Test distributitivity of mul over add
+                // (s1 + s2) * s == (s1 * s) + (s2 * s)
+                Scalar8x32 r1 = s1.Add(s2, out _);
+                r1 = r1.Multiply(s);
+                Scalar8x32 r2 = s1.Multiply(s);
+                Scalar8x32 t = s2.Multiply(s);
+                r2 = r2.Add(t, out _);
+                Assert.Equal(r1, r2);
+            }
+
+            {
+                // Test multiplicative identity
+                Scalar8x32 r1 = s1.Multiply(Scalar8x32.One);
+                Assert.Equal(r1, s1);
+            }
+
+            {
+                // Test additive identity
+                Scalar8x32 r1 = s1.Add(Scalar8x32.Zero, out _);
+                Assert.Equal(r1, s1);
+            }
+
+            {
+                // Test zero product property
+                Scalar8x32 r1 = s1.Multiply(Scalar8x32.Zero);
+                Assert.Equal(r1, Scalar8x32.Zero);
+            }
+
+            {
+                // Test halving
+                Scalar8x32 r = s.Add(s, out _);
+                r = r.Half();
+                Assert.Equal(r, s);
+            }
+        }
+
+        [Fact]
+        public void Libsecp256k1Tests() // run_scalar_tests
+        {
+            Rand rng = new();
+            rng.Init(null);
+
+            for (int i = 0; i < 128 * Count; i++)
+            {
+                ScalarTest(rng);
+            }
+        }
+
+        #endregion
     }
 }

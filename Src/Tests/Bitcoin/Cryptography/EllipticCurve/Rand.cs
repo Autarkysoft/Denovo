@@ -57,7 +57,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             return result;
         }
 
-        private ulong secp256k1_testrand_bits(int bits)
+        /// <summary>
+        /// Generate a pseudorandom number in the range [0..2**bits-1].
+        /// </summary>
+        /// <param name="bits">Bits must be 1 or more</param>
+        /// <returns></returns>
+        internal ulong secp256k1_testrand_bits(int bits)
         {
             if (bits == 0) return 0;
             return secp256k1_testrand64() >> (64 - bits);
@@ -68,7 +73,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             return (uint)(secp256k1_testrand64() >> 32);
         }
 
-        private uint secp256k1_testrand_int(uint range)
+        internal uint secp256k1_testrand_int(uint range)
         {
             uint mask = 0;
             uint range_copy;
@@ -127,9 +132,19 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
-        private void secp256k1_testrand256_test(byte[] b32)
+        internal void secp256k1_testrand256_test(byte[] b32)
         {
             secp256k1_testrand_bytes_test(b32, 32);
+        }
+
+        internal void secp256k1_testrand256_test(ushort[] arr16)
+        {
+            byte[] b32 = new byte[32];
+            secp256k1_testrand_bytes_test(b32, 32);
+            for (int i = 0, j = 0; i < b32.Length && j < arr16.Length; i += 2, j++)
+            {
+                arr16[j] = (ushort)(b32[i] | b32[i + 1] << 8);
+            }
         }
 
         private void secp256k1_testrand_flip(byte[] b, int len)
@@ -137,7 +152,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             b[secp256k1_testrand_int((uint)len)] ^= (byte)(1 << (int)secp256k1_testrand_bits(3));
         }
 
-        private void secp256k1_testrand_init(string hexseed)
+        internal void Init(string hexseed)
         {
             byte[] seed16 = new byte[16];
             if (!string.IsNullOrEmpty(hexseed))
@@ -145,7 +160,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 Span<byte> temp = Helper.HexToBytes(hexseed);
                 if (temp.Length <= seed16.Length)
                 {
-                    temp.CopyTo(seed16); 
+                    temp.CopyTo(seed16);
                 }
                 else
                 {
@@ -164,6 +179,31 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         {
             byte[] run32 = new byte[32];
             secp256k1_testrand256(run32);
+        }
+
+
+        internal void RunXoshiro256ppTests()
+        {
+            // Sanity check that we run before the actual seeding.
+            for (int i = 0; i < state.Length; i++)
+            {
+                Assert.True(state[i] == 0);
+            }
+            byte[] buf32 = new byte[32];
+            byte[] seed16 = "CHICKEN!CHICKEN!"u8.ToArray();
+            byte[] buf32_expected = new byte[32]
+            {
+                0xAF, 0xCC, 0xA9, 0x16, 0xB5, 0x6C, 0xE3, 0xF0,
+                0x44, 0x3F, 0x45, 0xE0, 0x47, 0xA5, 0x08, 0x36,
+                0x4C, 0xCC, 0xC1, 0x18, 0xB2, 0xD8, 0x8F, 0xEF,
+                0x43, 0x26, 0x15, 0x57, 0x37, 0x00, 0xEF, 0x30,
+            };
+            secp256k1_testrand_seed(seed16);
+            for (int i = 0; i < 17; i++)
+            {
+                secp256k1_testrand256(buf32);
+            }
+            Assert.Equal(buf32_expected, buf32);
         }
     }
 }
