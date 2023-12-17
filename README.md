@@ -49,7 +49,7 @@ Using .Net CLI:
     dotnet add package Autarkysoft.Bitcoin
 
 ### Current Features
-* Full xml documentation of the code explaining what each member does, expections that may be thrown, examples if needed,...
+* Full xml documentation of the code explaining what each member does, expectations that may be thrown, examples if needed,...
 * Neatly categorized namespaces for ease of access: `Blockchain`, `Cryptography`, `P2PNetwork` are the 3 main ones and there are
 `Encoders`, `ImprovementProposals` covering the rest.
 * Near 100% test coverage (for finished parts only, _for now_).
@@ -103,7 +103,7 @@ are in separate classes. Currently:
   * SLIP: [132](https://github.com/satoshilabs/slips/blob/master/slip-0132.md "Registered HD version bytes for BIP-0032")
 
 ### Future plans
-* Optimization of the libray
+* Optimization of the library
 * Complete testing of remaining parts
 * Add more relevant and useful BIPs
 * Add support for Lightning Network
