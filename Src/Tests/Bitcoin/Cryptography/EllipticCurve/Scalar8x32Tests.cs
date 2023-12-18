@@ -308,6 +308,17 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.Equal(expected, scalar.IsZero);
         }
 
+        [Fact]
+        public void StaticPropTest()
+        {
+            Assert.True(Scalar8x32.Zero.IsZero);
+            Scalar8x32 zero = new(0);
+            Assert.Equal(zero, Scalar8x32.Zero);
+
+            Assert.True(Scalar8x32.One.IsOne);
+            Scalar8x32 one = new(1);
+            Assert.Equal(one, Scalar8x32.One);
+        }
 
         public static IEnumerable<object[]> GetMultCases()
         {
@@ -619,7 +630,77 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             {
                 ScalarTest(rng);
             }
+
+            // Check that the scalar constants secp256k1_scalar_zero and
+            // secp256k1_scalar_one contain the expected values.
+            // Note: these are tested in StaticPropTest()
+
+            {
+                // (-1)+1 should be zero
+                Scalar8x32 o = Scalar8x32.One.Negate();
+                o = o.Add(Scalar8x32.One, out _);
+                Assert.True(o.IsZero);
+                o = o.Negate();
+                Assert.True(o.IsZero);
+            }
+
+            // Note: HALF_TESTS is turned into Libsecp256k1_HalfTest()
+
+            {
+                Span<uint> arr = new uint[8];
+                arr.Fill(uint.MaxValue);
+                unsafe
+                {
+                    fixed (uint* ptr = arr)
+                    {
+                        Scalar8x32 s = new(ptr);
+                        Assert.True(s.CheckOverflow() == 1);
+                    }
+                }
+            }
         }
+
+        public static IEnumerable<object[]> GetLibsecp256k1_HalfCases()
+        {
+            // Test that halving and doubling roundtrips on some fixed values.
+            // Note: our ctors are in reverse (take lowest limb first)
+            Scalar8x32[] HALF_TESTS =
+            [
+                // 0
+                new Scalar8x32(0, 0, 0, 0, 0, 0, 0, 0),
+                // 1
+                new Scalar8x32(1, 0, 0, 0, 0, 0, 0, 0),
+                // -1
+                new(0xd0364140u, 0xbfd25e8cu, 0xaf48a03bu, 0xbaaedce6u, 0xfffffffeu, 0xffffffffu, 0xffffffffu, 0xffffffffu),
+                // -2 (largest odd value)
+                new(0xd036413Fu, 0xbfd25e8cu, 0xaf48a03bu, 0xbaaedce6u, 0xfffffffeu, 0xffffffffu, 0xffffffffu, 0xffffffffu),
+                // Half the secp256k1 order
+                new(0x681b20a0u, 0xdfe92f46u, 0x57a4501du, 0x5d576e73u, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0x7fffffffu),
+                // Half the secp256k1 order + 1
+                new(0x681b20a1u, 0xdfe92f46u, 0x57a4501du, 0x5d576e73u, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0x7fffffffu),
+                // 2^255
+                new(0, 0, 0, 0, 0, 0, 0, 0x80000000u),
+                // 2^255 - 1
+                new(0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0x7fffffffu),
+            ];
+
+            foreach (var item in HALF_TESTS)
+            {
+                yield return new object[] { item };
+            }
+        }
+        [Theory]
+        [MemberData(nameof(GetLibsecp256k1_HalfCases))]
+        public void Libsecp256k1_HalfTest(in Scalar8x32 n)
+        {
+            Scalar8x32 s = n.Half();
+            s = s.Add(s, out _);
+            Assert.Equal(n, s);
+            s = s.Add(s, out _);
+            s = s.Half();
+            Assert.Equal(n, s);
+        }
+
 
         #endregion
     }

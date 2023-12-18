@@ -354,7 +354,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        private uint CheckOverflow()
+        public uint CheckOverflow()
         {
             uint yes = 0U;
             uint no = 0U;
