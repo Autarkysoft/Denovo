@@ -49,7 +49,7 @@ Using .Net CLI:
     dotnet add package Autarkysoft.Bitcoin
 
 ### Current Features
-* Full xml documentation of the code explaining what each member does, expectations that may be thrown, examples if needed,...
+* Full xml documentation of the code explaining what each member does, exception that may be thrown, examples if needed,...
 * Neatly categorized namespaces for ease of access: `Blockchain`, `Cryptography`, `P2PNetwork` are the 3 main ones and there are
 `Encoders`, `ImprovementProposals` covering the rest.
 * Near 100% test coverage (for finished parts only, _for now_).
