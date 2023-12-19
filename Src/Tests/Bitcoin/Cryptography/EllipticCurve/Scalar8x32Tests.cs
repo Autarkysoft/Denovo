@@ -654,7 +654,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                     fixed (uint* ptr = arr)
                     {
                         Scalar8x32 s = new(ptr);
-                        Assert.True(s.CheckOverflow() == 1);
+                        Assert.False(s.Verify());
                     }
                 }
             }
@@ -700,7 +700,6 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             s = s.Half();
             Assert.Equal(n, s);
         }
-
 
         #endregion
     }

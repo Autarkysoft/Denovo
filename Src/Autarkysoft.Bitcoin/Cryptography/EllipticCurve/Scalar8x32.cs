@@ -25,14 +25,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             b0 = u;
             b1 = 0; b1 = 0; b2 = 0; b3 = 0; b4 = 0; b5 = 0; b6 = 0; b7 = 0;
-            Debug.Assert(CheckOverflow() == 0);
+            Debug.Assert(Verify());
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="Scalar8x32"/> using the given parameters.
         /// </summary>
         /// <remarks>
-        /// Assumes there is no overflow
+        /// Assumes caller handles overflow
         /// </remarks>
         /// <param name="u0">1st 32 bits</param>
         /// <param name="u1">2nd 32 bits</param>
@@ -46,14 +46,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             b0 = u0; b1 = u1; b2 = u2; b3 = u3;
             b4 = u4; b5 = u5; b6 = u6; b7 = u7;
-            Debug.Assert(CheckOverflow() == 0);
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="Scalar8x32"/> using the given array.
         /// </summary>
         /// <remarks>
-        /// Assumes there is no overflow
+        /// Assumes caller handles overflow
         /// </remarks>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
@@ -67,7 +66,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             b0 = array[0]; b1 = array[1]; b2 = array[2]; b3 = array[3];
             b4 = array[4]; b5 = array[5]; b6 = array[6]; b7 = array[7];
-            Debug.Assert(CheckOverflow() == 0);
         }
 
         /// <summary>
@@ -350,11 +348,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // in full 64 bits to make sure the top 32 bits are indeed zero.
             Debug.Assert((t + (b7 >> 1) + (NH7 & mask)) >> 32 == 0);
 
-            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Scalar8x32 result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Debug.Assert(result.Verify());
+            return result;
         }
 
 
-        public uint CheckOverflow()
+        public bool Verify()
+        {
+            return CheckOverflow() == 0;
+        }
+
+        private uint CheckOverflow()
         {
             uint yes = 0U;
             uint no = 0U;
@@ -507,7 +512,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             Debug.Assert((t >> 32) == 0);
 
-            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Scalar8x32 result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Debug.Assert(result.Verify());
+            return result;
         }
 
 
@@ -1112,7 +1119,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint r6 = (uint)t; t >>= 32;
             t += r.b7;
             uint r7 = (uint)t;
-            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+
+            Scalar8x32 result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Debug.Assert(result.Verify());
+            return result;
         }
 
 
@@ -1148,6 +1158,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint r7 = shift < 288 ? (l[7 + shLimbs] >> shiftlow) : 0;
 
             Scalar8x32 r = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Debug.Assert(r.Verify());
             return r.CAddBit(0, (l[(shift - 1) >> 5] >> ((shift - 1) & 0x1f)) & 1);
         }
 
@@ -1180,7 +1191,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             t += (ulong)(~b7) + N7;
             uint r7 = (uint)(t & nonzero);
 
-            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Scalar8x32 result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Debug.Assert(result.Verify());
+            return result;
         }
 
         /// <summary>
@@ -1214,7 +1227,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint r6 = (uint)(t & nonzero); t >>= 32;
             t += (ulong)(b7 ^ mask) + (N7 & mask);
             uint r7 = (uint)(t & nonzero);
+
             result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Debug.Assert(result.Verify());
             // return 2 * (mask == 0) - 1;
             return mask == 0 ? 1 : -1;
         }
@@ -1243,7 +1258,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             uint r6 = (r.b6 & mask0) | (a.b6 & mask1);
             uint r7 = (r.b7 & mask0) | (a.b7 & mask1);
 
-            return new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Scalar8x32 result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
+            Debug.Assert(result.Verify());
+            return result;
         }
 
 
@@ -1259,6 +1276,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             r1 = new Scalar8x32(k.b0, k.b1, k.b2, k.b3, 0, 0, 0, 0);
             r2 = new Scalar8x32(k.b4, k.b5, k.b6, k.b7, 0, 0, 0, 0);
+
+            Debug.Assert(r1.Verify());
+            Debug.Assert(r2.Verify());
         }
 
         /// <summary>
