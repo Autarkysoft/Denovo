@@ -5,7 +5,7 @@
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
-    internal readonly struct ModInv32ModInfo
+    public readonly struct ModInv32ModInfo
     {
         public ModInv32ModInfo(in ModInv32Signed30 mod, uint modinv30)
         {
@@ -13,12 +13,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             modulus_inv30 = modinv30;
         }
 
-        internal readonly ModInv32Signed30 modulus;
-        internal readonly uint modulus_inv30;
+        public readonly ModInv32Signed30 modulus;
+        public readonly uint modulus_inv30;
 
         private static readonly ModInv32ModInfo _const = new ModInv32ModInfo(
             new ModInv32Signed30(0x10364141, 0x3F497A33, 0x348A03BB, 0x2BB739AB, -0x146, 0, 0, 0, 65536),
             0x2A774EC1U);
+        // secp256k1_const_modinfo_scalar
         internal static ref readonly ModInv32ModInfo Constant => ref _const;
     }
 

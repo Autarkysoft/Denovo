@@ -550,33 +550,36 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public Scalar8x32 Inverse()
         {
 #if DEBUG
-            Debug.Assert(GetOverflow(this) == 0);
+            Debug.Assert(Verify());
             bool zero_in = IsZero;
 #endif
             ModInv32Signed30 s = new ModInv32Signed30(this);
             // secp256k1_modinv32(&s, &secp256k1_const_modinfo_scalar);
-            ModInv32.secp256k1_modinv32(ref s, ModInv32ModInfo.Constant);
+            ModInv32.Compute(ref s, ModInv32ModInfo.Constant);
             Scalar8x32 r = s.ToScalar8x32();
 #if DEBUG
-            Debug.Assert(GetOverflow(r) == 0);
+            Debug.Assert(r.Verify());
             Debug.Assert(r.IsZero == zero_in);
 #endif
-
             return r;
         }
 
+        /// <summary>
+        /// Returns the inverse of this scalar modulo the group order, without constant-time guarantee.
+        /// </summary>
+        /// <returns>Inverse</returns>
         public Scalar8x32 InverseVar()
         {
 #if DEBUG
-            Debug.Assert(GetOverflow(this) == 0);
+            Debug.Assert(Verify());
             bool zero_in = IsZero;
 #endif
             ModInv32Signed30 s = new ModInv32Signed30(this);
-            ModInv32.secp256k1_modinv32_var(ref s, ModInv32ModInfo.Constant);
+            ModInv32.ComputeVar(ref s, ModInv32ModInfo.Constant);
             Scalar8x32 r = s.ToScalar8x32();
 
 #if DEBUG
-            Debug.Assert(GetOverflow(r) == 0);
+            Debug.Assert(r.Verify());
             Debug.Assert(r.IsZero == zero_in);
 #endif
             return r;

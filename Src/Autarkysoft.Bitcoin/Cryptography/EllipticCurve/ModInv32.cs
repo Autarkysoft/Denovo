@@ -10,40 +10,50 @@ using System.Runtime.CompilerServices;
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
     // TODO: try replacing ModInv32Signed30 with a stackalloc uint[] and just pass the pointer to all methods
-    internal class ModInv32
+    /// <summary>
+    /// Implementation of fast constant-time modular inversion using 30-bit signed limbs.
+    /// </summary>
+    /// <remarks>
+    /// https://github.com/bitcoin-core/secp256k1/blob/1a81df826e2a24a1656fc28fc3076b62562216d9/src/modinv32_impl.h
+    /// </remarks>
+    public static class ModInv32
     {
 #if DEBUG
-        // Compute a*factor and put it in r. All but the top limb in r will be in range [0,2^30).
-        private static ModInv32Signed30 secp256k1_modinv32_mul_30(in ModInv32Signed30 a, int alen, int factor)
+        // Compute a*factor and return it. All but the top limb in result will be in range [0,2^30).
+        private static ModInv32Signed30 Mul30(in ModInv32Signed30 a, int alen, int factor)
         {
             const int M30 = (int)(uint.MaxValue >> 2);
             long c = 0;
-            int[] av = new int[9] { a.v0, a.v1, a.v2, a.v3, a.v4, a.v5, a.v6, a.v7, a.v8 };
+            int[] av = a.GetArray();
             int[] rv = new int[9];
             for (int i = 0; i < 8; i++)
             {
                 if (i < alen)
+                {
                     c += (long)av[i] * factor;
+                }
                 rv[i] = (int)c & M30;
                 c >>= 30;
             }
 
             if (8 < alen)
+            {
                 c += (long)av[8] * factor;
+            }
 
             Debug.Assert(c == (int)c);
 
             rv[8] = (int)c;
-            return new ModInv32Signed30(rv[0], rv[1], rv[2], rv[3], rv[4], rv[5], rv[6], rv[7], rv[8]);
+            return new ModInv32Signed30(rv);
         }
 
         // Return -1 for a<b*factor, 0 for a==b*factor, 1 for a>b*factor. A consists of alen limbs; b has 9.
-        static int secp256k1_modinv32_mul_cmp_30(in ModInv32Signed30 a, int alen, in ModInv32Signed30 b, int factor)
+        private static int MulCmp30(in ModInv32Signed30 a, int alen, in ModInv32Signed30 b, int factor)
         {
-            ModInv32Signed30 am = secp256k1_modinv32_mul_30(a, alen, 1); // Normalize all but the top limb of a.
-            ModInv32Signed30 bm = secp256k1_modinv32_mul_30(b, 9, factor);
-            int[] amv = new int[9] { am.v0, am.v1, am.v2, am.v3, am.v4, am.v5, am.v6, am.v7, am.v8 };
-            int[] bmv = new int[9] { bm.v0, bm.v1, bm.v2, bm.v3, bm.v4, bm.v5, bm.v6, bm.v7, bm.v8 };
+            ModInv32Signed30 am = Mul30(a, alen, 1); // Normalize all but the top limb of a.
+            ModInv32Signed30 bm = Mul30(b, 9, factor);
+            int[] amv = am.GetArray();
+            int[] bmv = bm.GetArray();
             for (int i = 0; i < 8; i++)
             {
                 // Verify that all but the top limb of a and b are normalized.
@@ -72,14 +82,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 #if DEBUG
             // Verify that all limbs are in range (-2^30,2^30).
-            int[] rv = new int[9] { r.v0, r.v1, r.v2, r.v3, r.v4, r.v5, r.v6, r.v7, r.v8 };
+            int[] rv = r.GetArray();
             for (int i = 0; i < 9; ++i)
             {
                 Debug.Assert(rv[i] >= -M30);
                 Debug.Assert(rv[i] <= M30);
             }
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(r, 9, modinfo.modulus, -2) > 0); // r > -2*modulus
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(r, 9, modinfo.modulus, 1) < 0);  // r < modulus
+            Debug.Assert(MulCmp30(r, 9, modinfo.modulus, -2) > 0); // r > -2*modulus
+            Debug.Assert(MulCmp30(r, 9, modinfo.modulus, 1) < 0);  // r < modulus
 #endif
 
             // In a first step, add the modulus if the input is negative, and then negate if requested.
@@ -139,6 +149,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             r7 += r6 >> 30; r6 &= M30;
             r8 += r7 >> 30; r7 &= M30;
 
+            ModInv32Signed30 result = new ModInv32Signed30(r0, r1, r2, r3, r4, r5, r6, r7, r8);
 #if DEBUG
             Debug.Assert(r0 >> 30 == 0);
             Debug.Assert(r1 >> 30 == 0);
@@ -149,10 +160,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Debug.Assert(r6 >> 30 == 0);
             Debug.Assert(r7 >> 30 == 0);
             Debug.Assert(r8 >> 30 == 0);
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(r, 9, modinfo.modulus, 0) >= 0); /* r >= 0 */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(r, 9, modinfo.modulus, 1) < 0); /* r < modulus */
+            Debug.Assert(MulCmp30(result, 9, modinfo.modulus, 0) >= 0); /* r >= 0 */
+            Debug.Assert(MulCmp30(result, 9, modinfo.modulus, 1) < 0); /* r < modulus */
 #endif
-            return new ModInv32Signed30(r0, r1, r2, r3, r4, r5, r6, r7, r8);
+            return result;
         }
 
 
@@ -165,7 +176,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // Return: final zeta
         // 
         // Implements the divsteps_n_matrix function from the explanation.
-        private static int secp256k1_modinv32_divsteps_30(int zeta, uint f0, uint g0, out secp256k1_modinv32_trans2x2 t)
+        private static int DivSteps30(int zeta, uint f0, uint g0, out secp256k1_modinv32_trans2x2 t)
         {
             // u,v,q,r are the elements of the transformation matrix being built up,
             // starting with the identity matrix. Semantically they are signed integers
@@ -173,7 +184,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // permits left shifting (which is UB for negative numbers). The range
             // being inside [-2^31,2^31) means that casting to signed works correctly.
             uint u = 1, v = 0, q = 0, r = 1;
-            uint c1, c2;
             uint mask1, mask2, f = f0, g = g0, x, y, z;
 
             for (int i = 0; i < 30; i++)
@@ -182,11 +192,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Debug.Assert((u * f0 + v * g0) == f << i);
                 Debug.Assert((q * f0 + r * g0) == g << i);
                 // Compute conditional masks for (zeta < 0) and for (g & 1).
-                // TODO: defining c1 and c2 are useless here
-                c1 = (uint)(zeta >> 31);
-                mask1 = c1;
-                c2 = g & 1;
-                mask2 = (uint)-c2;
+                mask1 = (uint)(zeta >> 31);
+                mask2 = (uint)-(g & 1);
                 // Compute x,y,z, conditionally negated versions of f,u,v.
                 x = (f ^ mask1) - mask1;
                 y = (u ^ mask1) - mask1;
@@ -409,53 +416,57 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        /* Compute (t/2^30) * [d, e] mod modulus, where t is a transition matrix for 30 divsteps.
-         *
-         * On input and output, d and e are in range (-2*modulus,modulus). All output limbs will be in range
-         * (-2^30,2^30).
-         *
-         * This implements the update_de function from the explanation.
-         */
-        internal static void secp256k1_modinv32_update_de_30(ref ModInv32Signed30 d, ref ModInv32Signed30 e, secp256k1_modinv32_trans2x2 t, ModInv32ModInfo modinfo)
+        /// <summary>
+        /// Compute (t/2^30) * [d, e] mod modulus, where t is a transition matrix for 30 divsteps.
+        /// 
+        /// On input and output, d and e are in range (-2*modulus,modulus). All output limbs will be
+        /// in range (-2^30,2^30).
+        /// 
+        /// This implements the update_de function from the explanation.
+        /// </summary>
+        /// <param name="d"></param>
+        /// <param name="e"></param>
+        /// <param name="t"></param>
+        /// <param name="modinfo"></param>
+        internal static void UpdateDE30(ref ModInv32Signed30 d, ref ModInv32Signed30 e, secp256k1_modinv32_trans2x2 t, in ModInv32ModInfo modinfo)
         {
             const int M30 = (int)(uint.MaxValue >> 2);
             int u = t.u, v = t.v, q = t.q, r = t.r;
             int di, ei, md, me, sd, se;
             long cd, ce;
-            int i;
 #if DEBUG
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(d, 9, modinfo.modulus, -2) > 0); /* d > -2*modulus */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(d, 9, modinfo.modulus, 1) < 0);  /* d <    modulus */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(e, 9, modinfo.modulus, -2) > 0); /* e > -2*modulus */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(e, 9, modinfo.modulus, 1) < 0);  /* e <    modulus */
-            Debug.Assert(Math.Abs(u) <= (M30 + 1 - Math.Abs(v))); /* |u|+|v| <= 2^30 */
-            Debug.Assert(Math.Abs(q) <= (M30 + 1 - Math.Abs(r))); /* |q|+|r| <= 2^30 */
+            Debug.Assert(MulCmp30(d, 9, modinfo.modulus, -2) > 0); // d > -2*modulus
+            Debug.Assert(MulCmp30(d, 9, modinfo.modulus, 1) < 0);  // d <    modulus
+            Debug.Assert(MulCmp30(e, 9, modinfo.modulus, -2) > 0); // e > -2*modulus
+            Debug.Assert(MulCmp30(e, 9, modinfo.modulus, 1) < 0);  // e <    modulus
+            Debug.Assert(Math.Abs(u) <= (M30 + 1 - Math.Abs(v))); // |u|+|v| <= 2^30
+            Debug.Assert(Math.Abs(q) <= (M30 + 1 - Math.Abs(r))); // |q|+|r| <= 2^30
 #endif
-            /* [md,me] start as zero; plus [u,q] if d is negative; plus [v,r] if e is negative. */
+            // [md,me] start as zero; plus [u,q] if d is negative; plus [v,r] if e is negative.
             sd = d.v8 >> 31;
             se = e.v8 >> 31;
             md = (u & sd) + (v & se);
             me = (q & sd) + (r & se);
-            /* Begin computing t*[d,e]. */
+            // Begin computing t*[d,e]
             di = d.v0;
             ei = e.v0;
             cd = (long)u * di + (long)v * ei;
             ce = (long)q * di + (long)r * ei;
-            /* Correct md,me so that t*[d,e]+modulus*[md,me] has 30 zero bottom bits. */
+            // Correct md,me so that t*[d,e]+modulus*[md,me] has 30 zero bottom bits.
             md -= (int)((modinfo.modulus_inv30 * (uint)cd + md) & M30);
             me -= (int)((modinfo.modulus_inv30 * (uint)ce + me) & M30);
-            /* Update the beginning of computation for t*[d,e]+modulus*[md,me] now md,me are known. */
+            // Update the beginning of computation for t*[d,e]+modulus*[md,me] now md,me are known.
             cd += (long)modinfo.modulus.v0 * md;
             ce += (long)modinfo.modulus.v0 * me;
-            /* Verify that the low 30 bits of the computation are indeed zero, and then throw them away. */
+            // Verify that the low 30 bits of the computation are indeed zero, and then throw them away.
             Debug.Assert(((int)cd & M30) == 0); cd >>= 30;
             Debug.Assert(((int)ce & M30) == 0); ce >>= 30;
-            /* Now iteratively compute limb i=1..8 of t*[d,e]+modulus*[md,me], and store them in output
-             * limb i-1 (shifting down by 30 bits). */
+            // Now iteratively compute limb i=1..8 of t*[d,e]+modulus*[md,me], and store them in output
+            // limb i-1 (shifting down by 30 bits).
             int[] dv = d.GetArray();
             int[] ev = e.GetArray();
             int[] modv = modinfo.modulus.GetArray();
-            for (i = 1; i < 9; ++i)
+            for (int i = 1; i < 9; ++i)
             {
                 di = dv[i];
                 ei = ev[i];
@@ -473,10 +484,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             d = new ModInv32Signed30(dv);
             e = new ModInv32Signed30(ev);
 #if DEBUG
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(d, 9, modinfo.modulus, -2) > 0); /* d > -2*modulus */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(d, 9, modinfo.modulus, 1) < 0);  /* d <    modulus */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(e, 9, modinfo.modulus, -2) > 0); /* e > -2*modulus */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(e, 9, modinfo.modulus, 1) < 0);  /* e <    modulus */
+            Debug.Assert(MulCmp30(d, 9, modinfo.modulus, -2) > 0); /* d > -2*modulus */
+            Debug.Assert(MulCmp30(d, 9, modinfo.modulus, 1) < 0);  /* d <    modulus */
+            Debug.Assert(MulCmp30(e, 9, modinfo.modulus, -2) > 0); /* e > -2*modulus */
+            Debug.Assert(MulCmp30(e, 9, modinfo.modulus, 1) < 0);  /* e <    modulus */
 #endif
         }
 
@@ -566,37 +577,44 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
 
-        /* Compute the inverse of x modulo modinfo->modulus, and replace x with it (constant time in x). */
-        internal static void secp256k1_modinv32(ref ModInv32Signed30 x, in ModInv32ModInfo modinfo)
+        /// <summary>
+        /// Replace x with its modular inverse mod modinfo->modulus. x must be in range [0, modulus).
+        /// If x is zero, the result will be zero as well. If not, the inverse must exist(i.e., the gcd of
+        /// x and modulus must be 1). These rules are automatically satisfied if the modulus is prime.
+        ///
+        /// On output, all of x's limbs will be in [0, 2^30).
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="modinfo"></param>
+        public static void Compute(ref ModInv32Signed30 x, in ModInv32ModInfo modinfo)
         {
-            /* Start with d=0, e=1, f=modulus, g=x, zeta=-1. */
+            // Start with d=0, e=1, f=modulus, g=x, zeta=-1
             ModInv32Signed30 d = ModInv32Signed30.Zero;
             ModInv32Signed30 e = ModInv32Signed30.One;
             ModInv32Signed30 f = modinfo.modulus;
             ModInv32Signed30 g = x;
-            int i;
-            int zeta = -1; /* zeta = -(delta+1/2); delta is initially 1/2. */
+            int zeta = -1; // zeta = -(delta+1/2); delta is initially 1/2
 
-            /* Do 20 iterations of 30 divsteps each = 600 divsteps. 590 suffices for 256-bit inputs. */
-            for (i = 0; i < 20; i++)
+            // Do 20 iterations of 30 divsteps each = 600 divsteps. 590 suffices for 256-bit inputs.
+            for (int i = 0; i < 20; i++)
             {
-                /* Compute transition matrix and new zeta after 30 divsteps. */
-                zeta = secp256k1_modinv32_divsteps_30(zeta, (uint)f.v0, (uint)g.v0, out secp256k1_modinv32_trans2x2 t);
-                /* Update d,e using that transition matrix. */
-                secp256k1_modinv32_update_de_30(ref d, ref e, t, modinfo);
+                // Compute transition matrix and new zeta after 30 divsteps.
+                zeta = DivSteps30(zeta, (uint)f.v0, (uint)g.v0, out secp256k1_modinv32_trans2x2 t);
+                // Update d,e using that transition matrix.
+                UpdateDE30(ref d, ref e, t, modinfo);
                 /* Update f,g using that transition matrix. */
 #if DEBUG
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, 9, modinfo.modulus, -1) > 0); /* f > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, 9, modinfo.modulus, 1) <= 0); /* f <= modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, 9, modinfo.modulus, -1) > 0); /* g > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, 9, modinfo.modulus, 1) < 0);  /* g <  modulus */
+                Debug.Assert(MulCmp30(f, 9, modinfo.modulus, -1) > 0); /* f > -modulus */
+                Debug.Assert(MulCmp30(f, 9, modinfo.modulus, 1) <= 0); /* f <= modulus */
+                Debug.Assert(MulCmp30(g, 9, modinfo.modulus, -1) > 0); /* g > -modulus */
+                Debug.Assert(MulCmp30(g, 9, modinfo.modulus, 1) < 0);  /* g <  modulus */
 #endif
                 secp256k1_modinv32_update_fg_30(ref f, ref g, t);
 #if DEBUG
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, 9, modinfo.modulus, -1) > 0); /* f > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, 9, modinfo.modulus, 1) <= 0); /* f <= modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, 9, modinfo.modulus, -1) > 0); /* g > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, 9, modinfo.modulus, 1) < 0);  /* g <  modulus */
+                Debug.Assert(MulCmp30(f, 9, modinfo.modulus, -1) > 0); /* f > -modulus */
+                Debug.Assert(MulCmp30(f, 9, modinfo.modulus, 1) <= 0); /* f <= modulus */
+                Debug.Assert(MulCmp30(g, 9, modinfo.modulus, -1) > 0); /* g > -modulus */
+                Debug.Assert(MulCmp30(g, 9, modinfo.modulus, 1) < 0);  /* g <  modulus */
 #endif
             }
 
@@ -605,24 +623,32 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
              * values i.e. +/- 1, and d now contains +/- the modular inverse. */
 #if DEBUG
             /* g == 0 */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, 9, ModInv32Signed30.One, 0) == 0);
+            Debug.Assert(MulCmp30(g, 9, ModInv32Signed30.One, 0) == 0);
             /* |f| == 1, or (x == 0 and d == 0 and |f|=modulus) */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, 9, ModInv32Signed30.One, -1) == 0 ||
-                         secp256k1_modinv32_mul_cmp_30(f, 9, ModInv32Signed30.One, 1) == 0 ||
-                         (secp256k1_modinv32_mul_cmp_30(x, 9, ModInv32Signed30.One, 0) == 0 &&
-                          secp256k1_modinv32_mul_cmp_30(d, 9, ModInv32Signed30.One, 0) == 0 &&
-                          (secp256k1_modinv32_mul_cmp_30(f, 9, modinfo.modulus, 1) == 0 ||
-                           secp256k1_modinv32_mul_cmp_30(f, 9, modinfo.modulus, -1) == 0)));
+            Debug.Assert(MulCmp30(f, 9, ModInv32Signed30.One, -1) == 0 ||
+                         MulCmp30(f, 9, ModInv32Signed30.One, 1) == 0 ||
+                         (MulCmp30(x, 9, ModInv32Signed30.One, 0) == 0 &&
+                          MulCmp30(d, 9, ModInv32Signed30.One, 0) == 0 &&
+                          (MulCmp30(f, 9, modinfo.modulus, 1) == 0 ||
+                           MulCmp30(f, 9, modinfo.modulus, -1) == 0)));
 #endif
 
             /* Optionally negate d, normalize to [0,modulus), and return it. */
-            secp256k1_modinv32_normalize_30(d, f.v8, modinfo);
-            x = d;
+            x = secp256k1_modinv32_normalize_30(d, f.v8, modinfo);
+
         }
 
 
-        /* Compute the inverse of x modulo modinfo->modulus, and replace x with it (variable time). */
-        public static void secp256k1_modinv32_var(ref ModInv32Signed30 x, ModInv32ModInfo modinfo)
+        /// <summary>
+        /// Replace x with its modular inverse mod modinfo->modulus. x must be in range [0, modulus).
+        /// If x is zero, the result will be zero as well. If not, the inverse must exist(i.e., the gcd of
+        /// x and modulus must be 1). These rules are automatically satisfied if the modulus is prime.
+        ///
+        /// On output, all of x's limbs will be in [0, 2^30).
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="modinfo"></param>
+        public static void ComputeVar(ref ModInv32Signed30 x, ModInv32ModInfo modinfo)
         {
             /* Start with d=0, e=1, f=modulus, g=x, eta=-1. */
             ModInv32Signed30 d = ModInv32Signed30.Zero;
@@ -643,13 +669,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 secp256k1_modinv32_trans2x2 t;
                 eta = secp256k1_modinv32_divsteps_30_var(eta, (uint)f.v0, (uint)g.v0, out t);
                 /* Update d,e using that transition matrix. */
-                secp256k1_modinv32_update_de_30(ref d, ref e, t, modinfo);
+                UpdateDE30(ref d, ref e, t, modinfo);
                 /* Update f,g using that transition matrix. */
 # if DEBUG
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, len, modinfo.modulus, -1) > 0); /* f > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, len, modinfo.modulus, 1) <= 0); /* f <= modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, len, modinfo.modulus, -1) > 0); /* g > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, len, modinfo.modulus, 1) < 0);  /* g <  modulus */
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, -1) > 0); /* f > -modulus */
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 1) <= 0); /* f <= modulus */
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, -1) > 0); /* g > -modulus */
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 1) < 0);  /* g <  modulus */
 #endif
                 secp256k1_modinv32_update_fg_30_var(len, ref f, ref g, t);
 
@@ -686,10 +712,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 g = new ModInv32Signed30(gv);
 #if DEBUG
                 Debug.Assert(++i < 25); /* We should never need more than 25*30 = 750 divsteps */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, len, modinfo.modulus, -1) > 0); /* f > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, len, modinfo.modulus, 1) <= 0); /* f <= modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, len, modinfo.modulus, -1) > 0); /* g > -modulus */
-                Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, len, modinfo.modulus, 1) < 0);  /* g <  modulus */
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, -1) > 0); /* f > -modulus */
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 1) <= 0); /* f <= modulus */
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, -1) > 0); /* g > -modulus */
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 1) < 0);  /* g <  modulus */
 #endif
             }
 
@@ -697,20 +723,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
              * the initial f, g values i.e. +/- 1, and d now contains +/- the modular inverse. */
 #if DEBUG
             /* g == 0 */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(g, len, ModInv32Signed30.One, 0) == 0);
+            Debug.Assert(MulCmp30(g, len, ModInv32Signed30.One, 0) == 0);
             /* |f| == 1, or (x == 0 and d == 0 and |f|=modulus) */
-            Debug.Assert(secp256k1_modinv32_mul_cmp_30(f, len, ModInv32Signed30.One, -1) == 0 ||
-                         secp256k1_modinv32_mul_cmp_30(f, len, ModInv32Signed30.One, 1) == 0 ||
-                         (secp256k1_modinv32_mul_cmp_30(x, 9, ModInv32Signed30.One, 0) == 0 &&
-                          secp256k1_modinv32_mul_cmp_30(d, 9, ModInv32Signed30.One, 0) == 0 &&
-                          (secp256k1_modinv32_mul_cmp_30(f, len, modinfo.modulus, 1) == 0 ||
-                           secp256k1_modinv32_mul_cmp_30(f, len, modinfo.modulus, -1) == 0)));
+            Debug.Assert(MulCmp30(f, len, ModInv32Signed30.One, -1) == 0 ||
+                         MulCmp30(f, len, ModInv32Signed30.One, 1) == 0 ||
+                         (MulCmp30(x, 9, ModInv32Signed30.One, 0) == 0 &&
+                          MulCmp30(d, 9, ModInv32Signed30.One, 0) == 0 &&
+                          (MulCmp30(f, len, modinfo.modulus, 1) == 0 ||
+                           MulCmp30(f, len, modinfo.modulus, -1) == 0)));
 #endif
 
             /* Optionally negate d, normalize to [0,modulus), and return it. */
             int[] tempArr = f.GetArray();
-            secp256k1_modinv32_normalize_30(d, tempArr[len - 1], modinfo);
-            x = d;
+            x = secp256k1_modinv32_normalize_30(d, tempArr[len - 1], modinfo);
         }
     }
 }
