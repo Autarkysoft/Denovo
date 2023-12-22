@@ -1481,31 +1481,21 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.True(z.Verify());
             Assert.Equal(r1, z);
 
-            // TODO: activate the inverse tests, our Inverse() currently has a bug
-
-            //if (!y.IsZero)
-            //{
-            //    //secp256k1_scalar_inverse(&zz, &y);
-            //    Scalar8x32 zz = y.Inverse();
-            //    //CHECK(!secp256k1_scalar_check_overflow(&zz));
-            //    Assert.True(zz.Verify());
-            //    //secp256k1_scalar_inverse_var(&zzv, &y);
-            //    Scalar8x32 zzv = y.InverseVar();
-            //    //CHECK(secp256k1_scalar_eq(&zzv, &zz));
-            //    Assert.Equal(zzv, zz);
-            //    //secp256k1_scalar_mul(&z, &z, &zz);
-            //    z = z.Multiply(zz);
-            //    //CHECK(!secp256k1_scalar_check_overflow(&z));
-            //    Assert.True(z.Verify());
-            //    //CHECK(secp256k1_scalar_eq(&x, &z));
-            //    Assert.Equal(x, z);
-            //    //secp256k1_scalar_mul(&zz, &zz, &y);
-            //    zz = zz.Multiply(y);
-            //    //CHECK(!secp256k1_scalar_check_overflow(&zz));
-            //    Assert.True(zz.Verify());
-            //    //CHECK(secp256k1_scalar_eq(&secp256k1_scalar_one, &zz));
-            //    Assert.Equal(Scalar8x32.One, zz);
-            //}
+            if (!y.IsZero)
+            {
+                Scalar8x32 zz = y.Inverse();
+                Assert.True(zz.Verify());
+                Scalar8x32 zzv = y.InverseVar();
+                Assert.Equal(zzv, zz);
+                // x*y*y' == x*1 == x  (y' represents inverse of y)
+                z = z.Multiply(zz);
+                Assert.True(z.Verify());
+                Assert.Equal(x, z);
+                // y'*y == 1
+                zz = zz.Multiply(y);
+                Assert.True(zz.Verify());
+                Assert.Equal(Scalar8x32.One, zz);
+            }
         }
 
         #endregion
