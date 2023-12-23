@@ -585,7 +585,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return r;
         }
 
-
+        /// <summary>
+        /// Use Inverse() instead
+        /// </summary>
+        /// <returns></returns>
+        [Obsolete("Use Inverse() instead.")]
         public Scalar8x32 Inverse_old()
         {
             /* First compute xN as x ^ (2^N - 1) for some values of N,
@@ -770,6 +774,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return t.Multiply(x6); /* 111111 */
         }
 
+        /// <summary>
+        /// Use InverseVar() instead.
+        /// </summary>
+        /// <returns></returns>
+        [Obsolete("Use InverseVar() instead.")]
         public Scalar8x32 InverseVar_old()
         {
             Debug.Assert(GetOverflow(this) == 0);
