@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
 using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
@@ -30,7 +31,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             v4 = a4; v5 = a5; v6 = a6; v7 = a7; v8 = a8;
         }
 
-        public ModInv32Signed30(int[] arr)
+        public ModInv32Signed30(ReadOnlySpan<int> arr)
         {
             Debug.Assert(arr.Length == 9);
             v0 = arr[0]; v1 = arr[1]; v2 = arr[2]; v3 = arr[3];

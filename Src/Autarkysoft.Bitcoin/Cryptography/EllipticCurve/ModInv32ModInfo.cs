@@ -23,16 +23,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         internal static ref readonly ModInv32ModInfo Constant => ref _const;
     }
 
-    internal class secp256k1_modinv32_trans2x2
+    internal class ModInv32Trans2x2
     {
-        internal secp256k1_modinv32_trans2x2(uint u, uint v, uint q, uint r)
+        internal ModInv32Trans2x2(uint u, uint v, uint q, uint r)
         {
             this.u = (int)u;
             this.v = (int)v;
             this.q = (int)q;
             this.r = (int)r;
         }
-        internal secp256k1_modinv32_trans2x2(int u, int v, int q, int r)
+        internal ModInv32Trans2x2(int u, int v, int q, int r)
         {
             this.u = u;
             this.v = v;
