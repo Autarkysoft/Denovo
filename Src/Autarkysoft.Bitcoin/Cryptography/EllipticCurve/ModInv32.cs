@@ -246,7 +246,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         //https://github.com/bitcoin-core/secp256k1/blob/1a81df826e2a24a1656fc28fc3076b62562216d9/src/util.h#L305
-        static readonly byte[] DeBruijn = new byte[32]
+        private static readonly byte[] DeBruijn = new byte[32]
         {
             0x00, 0x01, 0x02, 0x18, 0x03, 0x13, 0x06, 0x19, 0x16, 0x04, 0x14, 0x0A,
             0x10, 0x07, 0x0C, 0x1A, 0x1F, 0x17, 0x12, 0x05, 0x15, 0x09, 0x0F, 0x0B,
@@ -254,7 +254,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         };
         // Determine the number of trailing zero bits in a (non-zero) 32-bit x.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int Ctz32Var(uint x)
+        private static int Ctz32Var(uint x)
         {
             // TODO: dotnet 3.0+ have: BitOperations.TrailingZeroCount()
             Debug.Assert(x != 0);
@@ -272,7 +272,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // Return: final eta
         // 
         // Implements the divsteps_n_matrix_var function from the explanation.
-        static int DivSteps30Var(int eta, uint f0, uint g0, out ModInv32Trans2x2 t)
+        private static int DivSteps30Var(int eta, uint f0, uint g0, out ModInv32Trans2x2 t)
         {
             // Transformation matrix; see comments in DivSteps30().
             uint u = 1, v = 0, q = 0, r = 1;
@@ -343,7 +343,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Jacobi tracking requires knowing (f mod 8) rather than just (f mod 2).
         /// </summary>
         /// <remarks>
-        /// (*jacp & 1) is bitflipped if and only if the Jacobi symbol of (f | g) changes sign
+        /// (*jacp &#38; 1) is bitflipped if and only if the Jacobi symbol of (f | g) changes sign
         /// by applying the returned transformation matrix to it. The other bits of *jacp may
         /// change, but are meaningless.
         /// </remarks>
@@ -353,9 +353,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="t">transition matrix</param>
         /// <param name="jacp"></param>
         /// <returns>final eta</returns>
-        static int PosDivSteps30Var(int eta, uint f0, uint g0, ModInv32Trans2x2 t, ref int jacp)
+        private static int PosDivSteps30Var(int eta, uint f0, uint g0, out ModInv32Trans2x2 t, ref int jacp)
         {
-            /* Transformation matrix. */
+            // Transformation matrix.
             uint u = 1, v = 0, q = 0, r = 1;
             uint f = f0, g = g0, m;
             ushort w;
@@ -364,59 +364,62 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             while (true)
             {
-                /* Use a sentinel bit to count zeros only up to i. */
+                // Use a sentinel bit to count zeros only up to i.
                 zeros = Ctz32Var(g | (uint.MaxValue << i));
-                /* Perform zeros divsteps at once; they all just divide g by two. */
+                // Perform zeros divsteps at once; they all just divide g by two.
                 g >>= zeros;
                 u <<= zeros;
                 v <<= zeros;
                 eta -= zeros;
                 i -= zeros;
-                /* Update the bottom bit of jac: when dividing g by an odd power of 2,
-                 * if (f mod 8) is 3 or 5, the Jacobi symbol changes sign. */
+                // Update the bottom bit of jac: when dividing g by an odd power of 2,
+                // if (f mod 8) is 3 or 5, the Jacobi symbol changes sign.
                 jac ^= (int)(zeros & ((f >> 1) ^ (f >> 2)));
-                /* We're done once we've done 30 posdivsteps. */
-                if (i == 0) break;
+                // We're done once we've done 30 posdivsteps.
+                if (i == 0)
+                {
+                    break;
+                }
+
                 Debug.Assert((f & 1) == 1);
                 Debug.Assert((g & 1) == 1);
                 Debug.Assert((u * f0 + v * g0) == f << (30 - i));
                 Debug.Assert((q * f0 + r * g0) == g << (30 - i));
-                /* If eta is negative, negate it and replace f,g with g,f. */
+                // If eta is negative, negate it and replace f,g with g,f.
                 if (eta < 0)
                 {
                     uint tmp;
                     eta = -eta;
-                    /* Update bottom bit of jac: when swapping f and g, the Jacobi symbol changes sign
-                     * if both f and g are 3 mod 4. */
+                    // Update bottom bit of jac: when swapping f and g, the Jacobi symbol changes sign
+                    // if both f and g are 3 mod 4.
                     jac ^= (int)((f & g) >> 1);
                     tmp = f; f = g; g = tmp;
                     tmp = u; u = q; q = tmp;
                     tmp = v; v = r; r = tmp;
                 }
-                /* eta is now >= 0. In what follows we're going to cancel out the bottom bits of g. No more
-                 * than i can be cancelled out (as we'd be done before that point), and no more than eta+1
-                 * can be done as its sign will flip once that happens. */
+                // eta is now >= 0. In what follows we're going to cancel out the bottom bits of g. No more
+                // than i can be cancelled out (as we'd be done before that point), and no more than eta+1
+                // can be done as its sign will flip once that happens.
                 limit = (eta + 1) > i ? i : (eta + 1);
-                /* m is a mask for the bottom min(limit, 8) bits (our table only supports 8 bits). */
+                // m is a mask for the bottom min(limit, 8) bits (our table only supports 8 bits).
                 Debug.Assert(limit > 0 && limit <= 30);
                 m = (uint.MaxValue >> (32 - limit)) & 255U;
-                /* Find what multiple of f must be added to g to cancel its bottom min(limit, 8) bits. */
+                // Find what multiple of f must be added to g to cancel its bottom min(limit, 8) bits.
                 w = (ushort)((g * Inv256[(f >> 1) & 127]) & m);
-                /* Do so. */
+                // Do so.
                 g += f * w;
                 q += u * w;
                 r += v * w;
                 Debug.Assert((g & m) == 0);
             }
-            /* Return data in t and return value. */
-            t.u = (int)u;
-            t.v = (int)v;
-            t.q = (int)q;
-            t.r = (int)r;
-            /* The determinant of t must be a power of two. This guarantees that multiplication with t
-             * does not change the gcd of f and g, apart from adding a power-of-2 factor to it (which
-             * will be divided out again). As each divstep's individual matrix has determinant 2 or -2,
-             * the aggregate of 30 of them will have determinant 2^30 or -2^30. */
+
+            // Return data in t and return value.
+            t = new ModInv32Trans2x2(u, v, q, r);
+
+            // The determinant of t must be a power of two. This guarantees that multiplication with t
+            // does not change the gcd of f and g, apart from adding a power-of-2 factor to it (which
+            // will be divided out again). As each divstep's individual matrix has determinant 2 or -2,
+            // the aggregate of 30 of them will have determinant 2^30 or -2^30.
             Debug.Assert((long)t.u * t.r - (long)t.v * t.q == ((long)1) << 30 ||
                          (long)t.u * t.r - (long)t.v * t.q == -(((long)1) << 30));
             jacp = jac;
@@ -430,7 +433,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // in range (-2^30,2^30).
         // 
         // This implements the update_de function from the explanation.
-        internal static void UpdateDE30(ref ModInv32Signed30 d, ref ModInv32Signed30 e, ModInv32Trans2x2 t, in ModInv32ModInfo modinfo)
+        private static void UpdateDE30(ref ModInv32Signed30 d, ref ModInv32Signed30 e, ModInv32Trans2x2 t, in ModInv32ModInfo modinfo)
         {
             const int M30 = (int)(uint.MaxValue >> 2);
             int di, ei, md, me, sd, se;
@@ -496,7 +499,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // Compute (t/2^30) * [f, g], where t is a transition matrix for 30 divsteps.
         //
         // This implements the update_fg function from the explanation.
-        static void UpdateFG30(ref ModInv32Signed30 f, ref ModInv32Signed30 g, ModInv32Trans2x2 t)
+        private static void UpdateFG30(ref ModInv32Signed30 f, ref ModInv32Signed30 g, ModInv32Trans2x2 t)
         {
             const int M30 = (int)(uint.MaxValue >> 2);
             int fi, gi;
@@ -535,7 +538,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // Version that operates on a variable number of limbs in f and g.
         //
         // This implements the update_fg function from the explanation in modinv64_impl.h.
-        static void UpdateFG30Var(int len, ref ModInv32Signed30 f, ref ModInv32Signed30 g, ModInv32Trans2x2 t)
+        private static void UpdateFG30Var(int len, ref ModInv32Signed30 f, ref ModInv32Signed30 g, ModInv32Trans2x2 t)
         {
             const int M30 = (int)(uint.MaxValue >> 2);
             int fi, gi;
@@ -665,10 +668,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 UpdateDE30(ref d, ref e, t, modinfo);
                 // Update f,g using that transition matrix.
 # if DEBUG
-                Debug.Assert(MulCmp30(f, len, modinfo.modulus, -1) > 0); /* f > -modulus */
-                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 1) <= 0); /* f <= modulus */
-                Debug.Assert(MulCmp30(g, len, modinfo.modulus, -1) > 0); /* g > -modulus */
-                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 1) < 0);  /* g <  modulus */
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, -1) > 0); // f > -modulus
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 1) <= 0); // f <= modulus
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, -1) > 0); // g > -modulus
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 1) < 0);  // g <  modulus
 #endif
                 UpdateFG30Var(len, ref f, ref g, t);
 
@@ -684,7 +687,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                         cond |= gv[j];
                     }
                     // If so, we're done.
-                    if (cond == 0) break;
+                    if (cond == 0)
+                    {
+                        break;
+                    }
                 }
 
                 // Determine if len>1 and limb (len-1) of both f and g is 0 or -1.
@@ -698,7 +704,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 {
                     fv[len - 2] |= fn << 30;
                     gv[len - 2] |= gn << 30;
-                    --len;
+                    len--;
                 }
 
                 f = new ModInv32Signed30(fv);
@@ -729,6 +735,95 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // Optionally negate d, normalize to [0,modulus), and return it.
             int[] tempArr = f.GetArray();
             x = Normalize30(d, tempArr[len - 1], modinfo);
+        }
+
+
+        /// <summary>
+        /// Compute the Jacobi symbol for (x | modinfo->modulus). x must be coprime with modulus (and thus
+        /// cannot be 0, as modulus >= 3). All limbs of x must be non-negative. Returns 0 if the result
+        /// cannot be computed.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="modinfo"></param>
+        /// <returns></returns>
+        public static int Jacobi32MaybeVar(in ModInv32Signed30 x, in ModInv32ModInfo modinfo)
+        {
+            // Start with f=modulus, g=x, eta=-1.
+            ModInv32Signed30 f = modinfo.modulus;
+            ModInv32Signed30 g = x;
+            int len = 9;
+            // eta = -delta; delta is initially 1
+            int eta = -1;
+            int cond, fn, gn;
+            int jac = 0;
+
+            // The input limbs must all be non-negative.
+            Debug.Assert(g.v0 >= 0 && g.v1 >= 0 && g.v0 >= 0 && g.v3 >= 0 &&
+                         g.v4 >= 0 && g.v5 >= 0 && g.v6 >= 0 && g.v7 >= 0 && g.v8 >= 0);
+
+            // If x > 0, then if the loop below converges, it converges to f=g=gcd(x,modulus). Since we
+            // require that gcd(x,modulus)=1 and modulus>=3, x cannot be 0. Thus, we must reach f=1 (or
+            // time out).
+            Debug.Assert((g.v0 | g.v1 | g.v2 | g.v3 | g.v4 | g.v5 | g.v6 | g.v7 | g.v8) != 0);
+
+            const int JACOBI32_ITERATIONS =
+#if DEBUG
+                25;
+#else
+                50;
+#endif
+            for (int count = 0; count < JACOBI32_ITERATIONS; count++)
+            {
+                // Compute transition matrix and new eta after 30 posdivsteps.
+                eta = PosDivSteps30Var(eta, (uint)f.v0 | ((uint)f.v1 << 30), (uint)g.v0 | ((uint)g.v1 << 30), out ModInv32Trans2x2 t, ref jac);
+#if DEBUG
+                // Update f,g using that transition matrix.
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 0) > 0); // f > 0
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 1) <= 0); // f <= modulus
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 0) > 0); // g > 0
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 1) < 0);  // g < modulus
+#endif
+                UpdateFG30Var(len, ref f, ref g, t);
+
+                // If the bottom limb of f is 1, there is a chance that f=1.
+                int[] fv = f.GetArray();
+                int[] gv = g.GetArray();
+                if (f.v0 == 1)
+                {
+                    cond = 0;
+                    // Check if the other limbs are also 0.
+                    for (int j = 1; j < len; j++)
+                    {
+                        cond |= fv[j];
+                    }
+                    // If so, we're done. If f=1, the Jacobi symbol (g | f)=1.
+                    if (cond == 0)
+                    {
+                        return 1 - 2 * (jac & 1);
+                    }
+                }
+
+                // Determine if len>1 and limb (len-1) of both f and g is 0.
+                fn = fv[len - 1];
+                gn = gv[len - 1];
+                cond = (len - 2) >> 31;
+                cond |= fn;
+                cond |= gn;
+                // If so, reduce length.
+                if (cond == 0)
+                {
+                    len--;
+                }
+#if DEBUG
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 0) > 0); // f > 0
+                Debug.Assert(MulCmp30(f, len, modinfo.modulus, 1) <= 0); // f <= modulus
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 0) > 0); // g > 0
+                Debug.Assert(MulCmp30(g, len, modinfo.modulus, 1) < 0);  // g < modulus
+#endif
+            }
+
+            // The loop failed to converge to f=g after 1500 iterations. Return 0, indicating unknown result.
+            return 0;
         }
     }
 }
