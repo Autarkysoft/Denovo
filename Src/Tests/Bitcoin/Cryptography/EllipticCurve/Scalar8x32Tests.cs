@@ -457,12 +457,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         private const int Count = 64;
 
         // random_scalar_order_test
-        private static Scalar8x32 CreateRandom(Rand rng)
+        private static Scalar8x32 CreateRandom(TestRNG rng)
         {
             byte[] b32 = new byte[32];
             do
             {
-                rng.secp256k1_testrand256_test(b32);
+                rng.Rand256Test(b32);
                 Scalar8x32 result = new(b32, out bool overflow);
                 if (!overflow && !result.IsZero)
                 {
@@ -472,7 +472,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         // scalar_test(void)
-        private static unsafe void ScalarTest(Rand rng)
+        private static unsafe void ScalarTest(TestRNG rng)
         {
             // Set 's' to a random scalar, with value 'snum'.
             Scalar8x32 s = CreateRandom(rng);
@@ -509,7 +509,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 int i = 0;
                 while (i < 256)
                 {
-                    int now = (int)(rng.secp256k1_testrand_int(15) + 1);
+                    int now = (int)(rng.RandInt(15) + 1);
                     if (now + i > 256)
                     {
                         now = 256 - i;
@@ -534,7 +534,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             {
                 // Test add_bit
-                uint bit = (uint)rng.secp256k1_testrand_bits(8);
+                uint bit = (uint)rng.RandBits(8);
                 Scalar8x32 b = new(1);
                 Assert.True(b.IsOne);
                 for (int i = 0; i < bit; i++)
@@ -623,7 +623,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         [Fact]
         public void Libsecp256k1Tests() // run_scalar_tests
         {
-            Rand rng = new();
+            TestRNG rng = new();
             rng.Init(null);
 
             for (int i = 0; i < 128 * Count; i++)
