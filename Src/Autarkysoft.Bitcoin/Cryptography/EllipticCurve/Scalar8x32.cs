@@ -555,7 +555,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #endif
             ModInv32Signed30 s = new ModInv32Signed30(this);
             // secp256k1_modinv32(&s, &secp256k1_const_modinfo_scalar);
-            ModInv32.Compute(ref s, ModInv32ModInfo.Constant);
+            ModInv32.Compute(ref s, ModInv32ModInfo.ScalarConstant);
             Scalar8x32 r = s.ToScalar8x32();
 #if DEBUG
             Debug.Assert(r.Verify());
@@ -575,7 +575,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             bool zero_in = IsZero;
 #endif
             ModInv32Signed30 s = new ModInv32Signed30(this);
-            ModInv32.ComputeVar(ref s, ModInv32ModInfo.Constant);
+            ModInv32.ComputeVar(ref s, ModInv32ModInfo.ScalarConstant);
             Scalar8x32 r = s.ToScalar8x32();
 
 #if DEBUG
