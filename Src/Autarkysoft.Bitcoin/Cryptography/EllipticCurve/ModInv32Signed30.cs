@@ -25,6 +25,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             v8 = (int)(a.b7 >> 16);
         }
 
+        public ModInv32Signed30(in UInt256_10x26 a)
+        {
+            v0 = (int)((a.b0 | a.b1 << 26) & M30);
+            v1 = (int)((a.b1 >> 4 | a.b2 << 22) & M30);
+            v2 = (int)((a.b2 >> 8 | a.b3 << 18) & M30);
+            v3 = (int)((a.b3 >> 12 | a.b4 << 14) & M30);
+            v4 = (int)((a.b4 >> 16 | a.b5 << 10) & M30);
+            v5 = (int)((a.b5 >> 20 | a.b6 << 6) & M30);
+            v6 = (int)((a.b6 >> 24 | a.b7 << 2 | a.b8 << 28) & M30);
+            v7 = (int)((a.b8 >> 2 | a.b9 << 24) & M30);
+            v8 = (int)(a.b9 >> 6);
+        }
+
         public ModInv32Signed30(int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8)
         {
             v0 = a0; v1 = a1; v2 = a2; v3 = a3;
@@ -39,6 +52,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
         private const uint M30 = uint.MaxValue >> 2;
+        private const uint M26 = uint.MaxValue >> 6;
+
         public readonly int v0, v1, v2, v3, v4, v5, v6, v7, v8;
 
         public int[] GetArray()
@@ -85,6 +100,42 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Scalar8x32 result = new Scalar8x32(r0, r1, r2, r3, r4, r5, r6, r7);
             Debug.Assert(result.Verify());
             return result;
+        }
+
+        public UInt256_10x26 ToUInt256_10x26()
+        {
+            // The output from secp256k1_modinv32{_var} should be normalized to range [0,modulus), and
+            // have limbs in [0,2^30). The modulus is < 2^256, so the top limb must be below 2^(256-30*8).
+            Debug.Assert(v0 >> 30 == 0);
+            Debug.Assert(v1 >> 30 == 0);
+            Debug.Assert(v2 >> 30 == 0);
+            Debug.Assert(v3 >> 30 == 0);
+            Debug.Assert(v4 >> 30 == 0);
+            Debug.Assert(v5 >> 30 == 0);
+            Debug.Assert(v6 >> 30 == 0);
+            Debug.Assert(v7 >> 30 == 0);
+            Debug.Assert(v8 >> 16 == 0);
+
+            uint r0 = (uint)v0 & M26;
+            uint r1 = (uint)(v0 >> 26 | v1 << 4) & M26;
+            uint r2 = (uint)(v1 >> 22 | v2 << 8) & M26;
+            uint r3 = (uint)(v2 >> 18 | v3 << 12) & M26;
+            uint r4 = (uint)(v3 >> 14 | v4 << 16) & M26;
+            uint r5 = (uint)(v4 >> 10 | v5 << 20) & M26;
+            uint r6 = (uint)(v5 >> 6 | v6 << 24) & M26;
+            uint r7 = (uint)(v6 >> 2) & M26;
+            uint r8 = (uint)(v6 >> 28 | v7 << 2) & M26;
+            uint r9 = (uint)(v7 >> 24 | v8 << 6);
+
+#if DEBUG
+            int m = (r0 | r1 | r2 | r3 | r4 | r5 | r6 | r7 | r8 | r9) == 0 ? 0 : 1;
+#endif
+
+            return new UInt256_10x26(r0, r1, r2, r3, r4, r5, r6, r7, r8, r9
+#if DEBUG
+                , m, true
+#endif
+                );
         }
     }
 }
