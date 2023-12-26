@@ -138,9 +138,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         /// <param name="ba32">32-byte array</param>
         /// <param name="isValid"></param>
-        [Obsolete]
         public UInt256_10x26(ReadOnlySpan<byte> ba32, out bool isValid)
         {
+            // This is the same as secp256k1_fe_impl_set_b32_limit
             Debug.Assert(ba32.Length == 32);
 
             // 8 + 8 + 8 + 2
@@ -177,44 +177,66 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        public static UInt256_10x26 SetB32Mod(ReadOnlySpan<byte> ba32)
+        public UInt256_10x26(ReadOnlySpan<byte> ba32)
         {
+            // This is the same as secp256k1_fe_impl_set_b32_mod
             Debug.Assert(ba32.Length == 32);
 
             // 8 + 8 + 8 + 2
-            uint u0 = (uint)(ba32[31] | (ba32[30] << 8) | (ba32[29] << 16) | ((ba32[28] & 0b00000011) << 24));
+            b0 = (uint)(ba32[31] | (ba32[30] << 8) | (ba32[29] << 16) | ((ba32[28] & 0b00000011) << 24));
             // 6 + 8 + 8 + 4
-            uint u1 = (uint)((ba32[28] >> 2) | (ba32[27] << 6) | (ba32[26] << 14) | ((ba32[25] & 0b00001111) << 22));
+            b1 = (uint)((ba32[28] >> 2) | (ba32[27] << 6) | (ba32[26] << 14) | ((ba32[25] & 0b00001111) << 22));
             // 4 + 8 + 8 + 6
-            uint u2 = (uint)((ba32[25] >> 4) | (ba32[24] << 4) | (ba32[23] << 12) | ((ba32[22] & 0b00111111) << 20));
+            b2 = (uint)((ba32[25] >> 4) | (ba32[24] << 4) | (ba32[23] << 12) | ((ba32[22] & 0b00111111) << 20));
             // 2 + 8 + 8 + 8
-            uint u3 = (uint)((ba32[22] >> 6) | (ba32[21] << 2) | (ba32[20] << 10) | (ba32[19] << 18));
+            b3 = (uint)((ba32[22] >> 6) | (ba32[21] << 2) | (ba32[20] << 10) | (ba32[19] << 18));
             // 8 + 8 + 8 + 2
-            uint u4 = (uint)(ba32[18] | (ba32[17] << 8) | (ba32[16] << 16) | ((ba32[15] & 0b00000011) << 24));
+            b4 = (uint)(ba32[18] | (ba32[17] << 8) | (ba32[16] << 16) | ((ba32[15] & 0b00000011) << 24));
             // 6 + 8 + 8 + 4
-            uint u5 = (uint)((ba32[15] >> 2) | (ba32[14] << 6) | (ba32[13] << 14) | ((ba32[12] & 0b00001111) << 22));
+            b5 = (uint)((ba32[15] >> 2) | (ba32[14] << 6) | (ba32[13] << 14) | ((ba32[12] & 0b00001111) << 22));
             // 4 + 8 + 8 + 6
-            uint u6 = (uint)((ba32[12] >> 4) | (ba32[11] << 4) | (ba32[10] << 12) | ((ba32[9] & 0b00111111) << 20));
+            b6 = (uint)((ba32[12] >> 4) | (ba32[11] << 4) | (ba32[10] << 12) | ((ba32[9] & 0b00111111) << 20));
             // 2 + 8 + 8 + 8
-            uint u7 = (uint)((ba32[9] >> 6) | (ba32[8] << 2) | (ba32[7] << 10) | (ba32[6] << 18));
+            b7 = (uint)((ba32[9] >> 6) | (ba32[8] << 2) | (ba32[7] << 10) | (ba32[6] << 18));
             // 8 + 8 + 8 + 2
-            uint u8 = (uint)(ba32[5] | (ba32[4] << 8) | (ba32[3] << 16) | ((ba32[2] & 0b00000011) << 24));
+            b8 = (uint)(ba32[5] | (ba32[4] << 8) | (ba32[3] << 16) | ((ba32[2] & 0b00000011) << 24));
             // 6 + 8 + 8 (last item is only 22 bits)
-            uint u9 = (uint)((ba32[2] >> 2) | (ba32[1] << 6) | (ba32[0] << 14));
-
-            return new UInt256_10x26(u0, u1, u2, u3, u4, u5, u6, u7, u8, u9
+            b9 = (uint)((ba32[2] >> 2) | (ba32[1] << 6) | (ba32[0] << 14));
 #if DEBUG
-                , 1, false
+            magnitude = 1;
+            isNormalized = false;
 #endif
-                );
         }
 
-        public static UInt256_10x26 SetB32Limit(ReadOnlySpan<byte> ba32, out bool isValid)
-        {
-            UInt256_10x26 r = SetB32Mod(ba32);
-            isValid = !((r.b9 == 0x003FFFFFU) & ((r.b8 & r.b7 & r.b6 & r.b5 & r.b4 & r.b3 & r.b2) == 0x03FFFFFFU) &
-                        ((r.b1 + 0x40U + ((r.b0 + 0x03D1U) >> 26)) > 0x03FFFFFFU));
 
+        /// <summary>
+        /// Return a field element with magnitude m, normalized if (and only if) m==0.
+        /// The value is chosen so that it is likely to trigger edge cases related to
+        /// internal overflows.
+        /// </summary>
+        public static UInt256_10x26 GetBounds(uint m)
+        {
+            Debug.Assert(m >= 0);
+            Debug.Assert(m <= 32);
+
+            UInt256_10x26 r = new UInt256_10x26(
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x3FFFFFFU * 2 * m,
+                0x03FFFFFU * 2 * m
+#if DEBUG
+                , (int)m, m == 0
+#endif
+                );
+#if DEBUG
+            r.Verify();
+#endif
             return r;
         }
 
@@ -223,6 +245,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Bit chunks
         /// </summary>
         public readonly uint b0, b1, b2, b3, b4, b5, b6, b7, b8, b9;
+
 #if DEBUG
         /// <summary>
         /// Magnitude means:
@@ -1265,6 +1288,43 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Determine whether this is a square (modulo p).
+        /// </summary>
+        /// <returns></returns>
+        public bool IsSquareVar()
+        {
+#if DEBUG
+            Verify();
+#endif
+            bool ret;
+            UInt256_10x26 tmp = NormalizeVar();
+            // secp256k1_jacobi32_maybe_var cannot deal with input 0.
+            if (tmp.IsZero)
+            {
+                ret = true;
+            }
+
+            ModInv32Signed30 s = new ModInv32Signed30(tmp);
+            int jac = ModInv32.Jacobi32MaybeVar(s, ModInv32ModInfo.FeConstant);
+            if (jac == 0)
+            {
+                // secp256k1_jacobi32_maybe_var failed to compute the Jacobi symbol. Fall back
+                // to computing a square root. This should be extremely rare with random
+                // input (except in VERIFY mode, where a lower iteration count is used).
+                ret = Sqrt(out _);
+            }
+            else
+            {
+                ret = jac >= 0;
+            }
+#if DEBUG
+            tmp = NormalizeWeak();
+            Debug.Assert(ret == tmp.Sqrt(out _));
+#endif
+            return ret;
+        }
+
+        /// <summary>
         /// Returns square (x^2 or x*x) of this instance.
         /// </summary>
         /// <remarks>
@@ -1664,7 +1724,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public UInt256_10x26 InverseVariable_old()
         {
-            // TODO: complete these implementations
             return Inverse_old();
         }
 
@@ -1774,8 +1833,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 (r.b8 & mask0) | (a.b8 & mask1),
                 (r.b9 & mask0) | (a.b9 & mask1)
 #if DEBUG
-                , flag != 0 ? a.magnitude : r.magnitude,
-                flag != 0 ? a.isNormalized : r.isNormalized
+                , a.magnitude > r.magnitude ? a.magnitude : r.magnitude,
+                !a.isNormalized ? false : r.isNormalized
 #endif
                 );
         }
