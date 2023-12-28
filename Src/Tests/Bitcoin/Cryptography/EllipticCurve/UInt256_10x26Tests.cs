@@ -6,7 +6,6 @@
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
@@ -762,5 +761,569 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             UInt256_8x32 actual = a.ToUInt256_8x32();
             AssertEquality(actual, expected);
         }
+
+
+
+        #region https://github.com/bitcoin-core/secp256k1/blob/efe85c70a2e357e3605a8901a9662295bae1001f/src/tests.c#L2948-L3353
+
+        private const int COUNT = 64;
+
+        /// <summary>
+        /// secp256k1_memcmp_var
+        /// </summary>
+        private static int Libsecp256k1_CmpVar(ReadOnlySpan<ushort> p1, ReadOnlySpan<ushort> p2, int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                int diff = p1[i] - p2[i];
+                if (diff != 0)
+                {
+                    return diff;
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// secp256k1_memcmp_var
+        /// </summary>
+        private static uint Libsecp256k1_CmpVar(in UInt256_8x32 a, in UInt256_8x32 b)
+        {
+            ReadOnlySpan<uint> p1 = new uint[8] { a.b0, a.b1, a.b2, a.b3, a.b4, a.b5, a.b6, a.b7 };
+            ReadOnlySpan<uint> p2 = new uint[8] { b.b0, b.b1, b.b2, b.b3, b.b4, b.b5, b.b6, b.b7 };
+            for (int i = 0; i < p1.Length; i++)
+            {
+                uint diff = p1[i] - p2[i];
+                if (diff != 0)
+                {
+                    return diff;
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// random_fe_test
+        /// </summary>
+        private static UInt256_10x26 RandomFETest(TestRNG rng)
+        {
+            byte[] bin = new byte[32];
+            do
+            {
+                rng.Rand256Test(bin);
+                UInt256_10x26 x = new(bin, out bool isValid);
+                if (isValid)
+                {
+                    return x;
+                }
+            } while (true);
+        }
+
+        /// <summary>
+        /// random_fe
+        /// <para/> https://github.com/bitcoin-core/secp256k1/blob/efe85c70a2e357e3605a8901a9662295bae1001f/src/testutil.h
+        /// </summary>
+        private static UInt256_10x26 RandomFE(TestRNG rng)
+        {
+            byte[] bin = new byte[32];
+            do
+            {
+                rng.Rand256(bin);
+                UInt256_10x26 result = new(bin, out bool isValid);
+                if (isValid)
+                {
+                    return result;
+                }
+            } while (true);
+        }
+
+        /// <summary>
+        /// random_field_element_magnitude
+        /// </summary>
+        private static void RandomFEMagnitude(ref UInt256_10x26 fe, int m, TestRNG rng)
+        {
+            int n = (int)rng.RandInt((uint)(m + 1));
+            fe = fe.Normalize();
+            if (n == 0)
+            {
+                return;
+            }
+            UInt256_10x26 zero = UInt256_10x26.Zero.Negate(0);
+            zero = zero.Multiply((uint)(n - 1));
+            fe = fe.Add(zero);
+# if  DEBUG
+            Assert.True(fe.magnitude == n);
+#endif
+        }
+
+        /// <summary>
+        /// random_fe_magnitude
+        /// </summary>
+        private static void RandomFEMagnitude(ref UInt256_10x26 fe, TestRNG rng)
+        {
+            RandomFEMagnitude(ref fe, 8, rng);
+        }
+
+        /// <summary>
+        /// random_fe_non_zero
+        /// </summary>
+        private static UInt256_10x26 RandomFENonZero(TestRNG rng)
+        {
+            UInt256_10x26 result;
+            do
+            {
+                result = RandomFE(rng);
+            } while (result.IsZero);
+            return result;
+        }
+
+        /// <summary>
+        /// random_fe_non_square
+        /// </summary>
+        private static UInt256_10x26 RandomFENonSquare(TestRNG rng)
+        {
+            UInt256_10x26 ns = RandomFENonZero(rng);
+            if (ns.Sqrt(out _))
+            {
+                ns = ns.Negate(1);
+            }
+            return ns;
+        }
+
+        /// <summary>
+        /// check_fe_equal
+        /// </summary>
+        private static bool CheckFEEqual(in UInt256_10x26 a, in UInt256_10x26 b)
+        {
+            UInt256_10x26 an = a.NormalizeWeak();
+            return an.Equals(b);
+        }
+
+
+        [Fact]
+        public void Libsecp256k1_FieldConvertTest()
+        {
+            // run_field_convert
+            ReadOnlySpan<byte> b32 = new byte[32]
+            {
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+                0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29,
+                0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40
+            };
+            UInt256_8x32 fes = new(0x37383940U, 0x33343536U, 0x26272829U, 0x22232425U, 0x15161718U, 0x11121314U, 0x04050607U, 0x00010203U);
+            UInt256_10x26 fe = new(0x37383940U, 0x33343536U, 0x26272829U, 0x22232425U, 0x15161718U, 0x11121314U, 0x04050607U, 0x00010203U);
+
+            // Check conversions to fe
+            UInt256_10x26 fe2 = new(b32, out bool isValid);
+            Assert.True(isValid);
+            Assert.True(fe.Equals(fe2));
+            fe2 = fes.ToUInt256_10x26();
+            Assert.True(fe.Equals(fe2));
+            // Check conversion from fe
+            byte[] b322 = fe.ToByteArray();
+            Assert.Equal(b32, b322);
+            UInt256_8x32 fes2 = fe.ToUInt256_8x32();
+            Assert.True(fes.Equals(fes2));
+        }
+
+        [Fact]
+        public void Libsecp256k1_FieldBe32OverflowTest()
+        {
+            // run_field_be32_overflow
+            {
+                ReadOnlySpan<byte> zero_overflow = new byte[32]
+                {
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFC, 0x2F,
+                };
+                ReadOnlySpan<byte> zero = new byte[32];
+                UInt256_10x26 fe = new(zero_overflow, out bool isValid);
+                Assert.False(isValid);
+                fe = new(zero_overflow);
+                Assert.True(fe.IsZeroNormalized());
+                fe = fe.Normalize();
+                Assert.True(fe.IsZero);
+                byte[] actual = fe.ToByteArray();
+                Assert.Equal(zero, actual);
+            }
+
+            {
+                ReadOnlySpan<byte> one_overflow = new byte[32]
+                {
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFC, 0x30,
+                };
+                ReadOnlySpan<byte> one = new byte[32]
+                {
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+                };
+
+                UInt256_10x26 fe = new(one_overflow, out bool isValid);
+                Assert.False(isValid);
+                fe = new(one_overflow);
+                fe = fe.Normalize();
+                Assert.True(fe.CompareToVar(UInt256_10x26.One) == 0);
+                byte[] actual = fe.ToByteArray();
+                Assert.Equal(one, actual);
+            }
+
+            {
+                ReadOnlySpan<byte> ff_overflow = new byte[32]
+                {
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                };
+                ReadOnlySpan<byte> ff = new byte[32]
+                {
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x03, 0xD0,
+                };
+
+                UInt256_10x26 fe_ff = new(0x000003d0, 0x01, 0, 0, 0, 0, 0, 0);
+                UInt256_10x26 fe = new(ff_overflow, out bool isValid);
+                Assert.False(isValid);
+                fe = new(ff_overflow);
+                fe = fe.Normalize();
+                Assert.True(fe.CompareToVar(fe_ff) == 0);
+                byte[] actual = fe.ToByteArray();
+                Assert.Equal(ff, actual);
+            }
+        }
+
+        /// <summary>
+        /// Returns true if two field elements have the same representation.
+        /// <para/>fe_identical
+        /// </summary>
+        private static bool FEIdentical(in UInt256_10x26 a, in UInt256_10x26 b)
+        {
+            return a.b0 - b.b0 == 0 && a.b1 - b.b1 == 0 && a.b2 - b.b2 == 0 && a.b3 - b.b3 == 0 && a.b4 - b.b4 == 0 &&
+                   a.b5 - b.b5 == 0 && a.b6 - b.b6 == 0 && a.b7 - b.b7 == 0 && a.b8 - b.b8 == 0 && a.b9 - b.b9 == 0;
+        }
+
+
+        [Fact]
+        public void Libsecp256k1_FieldHalfTest()
+        {
+            // run_field_half
+
+            // Check magnitude 0 input
+            UInt256_10x26 t = UInt256_10x26.GetBounds(0);
+
+            t = t.Half();
+# if  DEBUG
+            Assert.True(t.magnitude == 1);
+            Assert.False(t.isNormalized);
+#endif
+            Assert.True(t.IsZeroNormalized());
+
+            // Check non-zero magnitudes in the supported range
+            for (uint m = 1; m < 32; m++)
+            {
+                // Check max-value input
+                t = UInt256_10x26.GetBounds(m);
+
+                UInt256_10x26 u = t.Half();
+#if DEBUG
+                Assert.True(u.magnitude == (m >> 1) + 1);
+                Assert.False(u.isNormalized);
+#endif
+                u = u.NormalizeWeak();
+                u = u.Add(u);
+                Assert.True(CheckFEEqual(t, u));
+
+                // Check worst-case input: ensure the LSB is 1 so that P will be added,
+                // which will also cause all carries to be 1, since all limbs that can
+                // generate a carry are initially even and all limbs of P are odd in
+                // every existing field implementation.
+                t = UInt256_10x26.GetBounds(m);
+                Assert.True(t.b0 > 0);
+                Assert.True((t.b0 & 1) == 0);
+                // --t.n[0]; our structs are immutable!
+                t = new(t.b0 - 1, t.b1, t.b2, t.b3, t.b4, t.b5, t.b6, t.b7, t.b8, t.b9
+#if DEBUG
+                    , t.magnitude, t.isNormalized
+#endif
+                    );
+
+                u = t.Half();
+# if DEBUG
+                Assert.True(u.magnitude == (m >> 1) + 1);
+                Assert.False(u.isNormalized);
+#endif
+                u = u.NormalizeWeak();
+                u = u.Add(u);
+                Assert.True(CheckFEEqual(t, u));
+            }
+        }
+
+
+        [Fact]
+        public void Libsecp256k1_FieldMiscTest()
+        {
+            // run_field_misc
+
+            TestRNG rng = new();
+            rng.Init(null);
+
+            UInt256_10x26 fe5 = new(5, 0, 0, 0, 0, 0, 0, 0);
+            for (int i = 0; i < 1000 * COUNT; i++)
+            {
+                UInt256_10x26 x = (i & 1) != 0 ? RandomFE(rng) : RandomFETest(rng);
+                UInt256_10x26 y = RandomFENonZero(rng);
+                uint v = (uint)rng.RandBits(15);
+                // Test that fe_add_int is equivalent to fe_set_int + fe_add.
+                UInt256_10x26 q = new(v); // q = v
+                UInt256_10x26 z = x; // z = x
+                z = z.Add(q); // z = x+v
+                q = x; // q = x
+                q = q.Add(v); // q = x+v
+                Assert.True(CheckFEEqual(q, z));
+                // Test the fe equality and comparison operations.
+                Assert.True(x.CompareToVar(x) == 0);
+                Assert.True(x.Equals(x));
+                z = x;
+                z = z.Add(y);
+                // Test fe conditional move; z is not normalized here.
+                q = x;
+                x = UInt256_10x26.CMov(x, z, 0);
+#if DEBUG
+                Assert.False(x.isNormalized);
+                Assert.True((x.magnitude == q.magnitude) || (x.magnitude == z.magnitude));
+                Assert.True((x.magnitude >= q.magnitude) && (x.magnitude >= z.magnitude));
+#endif
+                x = q;
+                x = UInt256_10x26.CMov(x, x, 1);
+                Assert.False(FEIdentical(x, z));
+                Assert.True(FEIdentical(x, q));
+                q = UInt256_10x26.CMov(q, z, 1);
+# if DEBUG
+                Assert.False(q.isNormalized);
+                Assert.True((q.magnitude == x.magnitude) || (q.magnitude == z.magnitude));
+                Assert.True((q.magnitude >= x.magnitude) && (q.magnitude >= z.magnitude));
+#endif
+                Assert.True(FEIdentical(q, z));
+                q = z;
+                x = x.NormalizeVar();
+                z = z.NormalizeVar();
+                Assert.False(x.Equals(z));
+                q = q.NormalizeVar();
+                q = UInt256_10x26.CMov(q, z, (uint)(i & 1));
+# if DEBUG
+                Assert.True(q.isNormalized && q.magnitude == 1);
+#endif
+                for (int j = 0; j < 6; j++)
+                {
+                    z = z.Negate(j + 1);
+                    q = q.NormalizeVar();
+                    q = UInt256_10x26.CMov(q, z, (uint)(j & 1));
+# if DEBUG
+                    Assert.True(!q.isNormalized && q.magnitude == z.magnitude);
+#endif
+                }
+                z = z.NormalizeVar();
+                // Test storage conversion and conditional moves.
+                UInt256_8x32 xs = x.ToUInt256_8x32();
+                UInt256_8x32 ys = y.ToUInt256_8x32();
+                UInt256_8x32 zs = z.ToUInt256_8x32();
+                zs = UInt256_8x32.CMov(zs, xs, 0);
+                zs = UInt256_8x32.CMov(zs, zs, 1);
+                Assert.True(Libsecp256k1_CmpVar(xs, zs) != 0);
+                ys = UInt256_8x32.CMov(ys, xs, 1);
+                Assert.True(Libsecp256k1_CmpVar(xs, ys) == 0);
+                x = xs.ToUInt256_10x26();
+                y = ys.ToUInt256_10x26();
+                z = zs.ToUInt256_10x26();
+                // Test that mul_int, mul, and add agree.
+                y = y.Add(x);
+                y = y.Add(x);
+                z = x;
+                z = z.Multiply(3);
+                Assert.True(CheckFEEqual(y, z));
+                y = y.Add(x);
+                z = z.Add(x);
+                Assert.True(CheckFEEqual(z, y));
+                z = x;
+                z = z.Multiply(5);
+                q = x.Multiply(fe5);
+                Assert.True(CheckFEEqual(z, q));
+                x = x.Negate(1);
+                z = z.Add(x);
+                q = q.Add(x);
+                Assert.True(CheckFEEqual(y, z));
+                Assert.True(CheckFEEqual(q, y));
+                // Check secp256k1_fe_half.
+                z = x;
+                z = z.Half();
+                z = z.Add(z);
+                Assert.True(CheckFEEqual(x, z));
+                z = z.Add(z);
+                z = z.Half();
+                Assert.True(CheckFEEqual(x, z));
+            }
+        }
+
+
+        /// <summary>
+        /// test_fe_mul
+        /// </summary>
+        private static void TestFEMul(in UInt256_10x26 a, in UInt256_10x26 b, bool use_sqr)
+        {
+            // Variables in LE 16x uint16_t format.
+            ushort[] a16 = new ushort[16];
+            ushort[] b16 = new ushort[16];
+            ushort[] c16 = new ushort[16];
+            // Field modulus in LE 16x uint16_t format
+            ReadOnlySpan<ushort> m16 = new ushort[16]
+            {
+                0xfc2f, 0xffff, 0xfffe, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+                0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+            };
+
+            // Compute C = A * B in fe format.
+            UInt256_10x26 c = use_sqr ? a.Sqr() : a.Multiply(b);
+
+            // Convert A, B, C into LE 16x uint16_t format.
+            UInt256_10x26 an = a;
+            UInt256_10x26 bn = b;
+            c = c.NormalizeVar();
+            an = an.NormalizeVar();
+            bn = bn.NormalizeVar();
+            // Variables in BE 32-byte format.
+            byte[] a32 = an.ToByteArray();
+            byte[] b32 = bn.ToByteArray();
+            byte[] c32 = c.ToByteArray();
+            for (int i = 0; i < 16; ++i)
+            {
+                a16[i] = (ushort)(a32[31 - 2 * i] + (a32[30 - 2 * i] << 8));
+                b16[i] = (ushort)(b32[31 - 2 * i] + (b32[30 - 2 * i] << 8));
+                c16[i] = (ushort)(c32[31 - 2 * i] + (c32[30 - 2 * i] << 8));
+            }
+            // Compute T = A * B in LE 16x uint16_t format.
+            Span<ushort> t16 = ModInv32Tests.MulMod256(a16, b16, m16);
+            // Compare
+            // 16 items length which is 32 byte
+            Assert.True(Libsecp256k1_CmpVar(t16, c16, 16) == 0);
+        }
+
+
+        [Fact]
+        public void Libsecp256k1_FEMulTest()
+        {
+            // run_fe_mul
+
+            TestRNG rng = new();
+            rng.Init(null);
+
+            for (int i = 0; i < 100 * COUNT; ++i)
+            {
+                UInt256_10x26 a = RandomFE(rng);
+                RandomFEMagnitude(ref a, rng);
+                UInt256_10x26 b = RandomFE(rng);
+                RandomFEMagnitude(ref b, rng);
+                UInt256_10x26 c = RandomFETest(rng);
+                RandomFEMagnitude(ref c, rng);
+                UInt256_10x26 d = RandomFETest(rng);
+                RandomFEMagnitude(ref d, rng);
+                TestFEMul(a, a, true);
+                TestFEMul(c, c, true);
+                TestFEMul(a, b, false);
+                TestFEMul(a, c, false);
+                TestFEMul(c, b, false);
+                TestFEMul(c, d, false);
+            }
+        }
+
+
+        [Fact]
+        public void Libsecp256k1_SqrTest()
+        {
+            // run_sqr
+
+            UInt256_10x26 x = new(1);
+            x = x.Negate(1);
+
+            for (int i = 1; i <= 512; ++i)
+            {
+                x = x.Multiply(2);
+                x = x.Normalize();
+                UInt256_10x26 s = x.Sqr();
+            }
+        }
+
+
+        /// <summary>
+        /// test_sqrt
+        /// </summary>
+        private static void TestSqrt(in UInt256_10x26 a, in UInt256_10x26? k)
+        {
+            bool v = a.Sqrt(out UInt256_10x26 r1);
+            Assert.True((v == false) == (k == null));
+
+            if (k != null)
+            {
+                // Check that the returned root is +/- the given known answer
+                UInt256_10x26 r2 = r1.Negate(1);
+                r1 = r1.Add(k.Value); r2 = r2.Add(k.Value);
+                r1 = r1.Normalize(); r2 = r2.Normalize();
+                Assert.True(r1.IsZero || r2.IsZero);
+            }
+        }
+
+        [Fact]
+        public void Libsecp256k1_SqrtTest()
+        {
+            // run_sqrt
+
+            TestRNG rng = new();
+            rng.Init(null);
+
+            // Check sqrt(0) is 0
+            UInt256_10x26 x = new(0);
+            UInt256_10x26 s = x.Sqr();
+            TestSqrt(s, x);
+
+            // Check sqrt of small squares (and their negatives)
+            for (uint i = 1; i <= 100; i++)
+            {
+                x = new(i);
+                s = x.Sqr();
+                TestSqrt(s, x);
+                UInt256_10x26 t = s.Negate(1);
+                TestSqrt(t, null);
+            }
+
+            // Consistency checks for large random values
+            for (int i = 0; i < 10; i++)
+            {
+                int j;
+                UInt256_10x26 ns = RandomFENonSquare(rng);
+                for (j = 0; j < COUNT; j++)
+                {
+                    x = RandomFE(rng);
+                    s = x.Sqr();
+                    Assert.True(s.IsSquareVar());
+                    TestSqrt(s, x);
+                    UInt256_10x26 t = s.Negate(1);
+                    Assert.False(t.IsSquareVar());
+                    TestSqrt(t, null);
+                    t = s.Multiply(ns);
+                    TestSqrt(t, null);
+                }
+            }
+        }
+
+        #endregion // libsecp256k1 tests
     }
 }
