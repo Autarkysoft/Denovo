@@ -1719,24 +1719,70 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// Place holder for the non-constant-time implementation
+        /// Compute the modular inverse of this field element.
+        /// </summary>
+        /// <returns>Modular inverse (normalized)</returns>
+        public UInt256_10x26 Inverse()
+        {
+#if DEBUG
+            bool input_is_zero = IsZeroNormalized();
+            Verify();
+#endif
+
+            UInt256_10x26 tmp = Normalize();
+            ModInv32Signed30 s = new ModInv32Signed30(tmp);
+            ModInv32.Compute(ref s, ModInv32ModInfo.FeConstant);
+            UInt256_10x26 r = s.ToUInt256_10x26();
+
+#if DEBUG
+            Debug.Assert(r.IsZeroNormalized() == input_is_zero);
+            r.Verify();
+#endif
+
+            return r;
+        }
+
+
+        /// <summary>
+        /// Compute the modular inverse of this field element, without constant-time guarantee.
+        /// </summary>
+        /// <returns>Modular inverse (normalized)</returns>
+        public UInt256_10x26 InverseVar()
+        {
+#if DEBUG
+            bool input_is_zero = IsZeroNormalized();
+            Verify();
+#endif
+
+            UInt256_10x26 tmp = NormalizeVar();
+            ModInv32Signed30 s = new ModInv32Signed30(tmp);
+            ModInv32.ComputeVar(ref s, ModInv32ModInfo.FeConstant);
+            UInt256_10x26 r = s.ToUInt256_10x26();
+
+#if DEBUG
+            Debug.Assert(r.IsZeroNormalized() == input_is_zero);
+            r.Verify();
+#endif
+
+            return r;
+        }
+
+
+        /// <summary>
+        /// Obsolete: Use InverseVar() instead.
         /// </summary>
         /// <returns></returns>
+        [Obsolete("Use InverseVar() instead.")]
         public UInt256_10x26 InverseVariable_old()
         {
             return Inverse_old();
         }
 
         /// <summary>
-        /// Returns the modular inverse of this instance.
-        /// Magnitude must be at most 8. The output magnitude will be 1.
+        /// Obsolete: Use Inverse() instead.
         /// </summary>
-        /// <remarks>
-        /// This method is constant-time.
-        /// 
-        /// This is the old method in secp256k1 library which will be replaced by the new one later
-        /// </remarks>
-        /// <returns>Modular inverse</returns>
+        /// <returns></returns>
+        [Obsolete("Use Inverse() instead.")]
         public UInt256_10x26 Inverse_old()
         {
             UInt256_10x26 x2, x3, x6, x9, x11, x22, x44, x88, x176, x220, x223, t1;
