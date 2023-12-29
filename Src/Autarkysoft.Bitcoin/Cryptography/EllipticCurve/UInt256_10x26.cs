@@ -262,7 +262,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Only works in DEBUG
         /// </summary>
-        private void Verify()
+        internal void Verify()
         {
             VerifyMagnitude(magnitude, 32);
             if (isNormalized)
@@ -295,7 +295,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
-        private static void VerifyMagnitude(int magnitude, int max)
+        internal static void VerifyMagnitude(int magnitude, int max)
         {
             Debug.Assert(max >= 0);
             Debug.Assert(max <= 32);
