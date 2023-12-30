@@ -805,7 +805,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_fe_test
         /// </summary>
-        private static UInt256_10x26 RandomFETest(TestRNG rng)
+        internal static UInt256_10x26 RandomFETest(TestRNG rng)
         {
             byte[] bin = new byte[32];
             do
@@ -1320,6 +1320,355 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                     TestSqrt(t, null);
                     t = s.Multiply(ns);
                     TestSqrt(t, null);
+                }
+            }
+        }
+
+
+        private static readonly UInt256_10x26 _m1 = new(0xFFFFFC2E, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF);
+        internal static ref readonly UInt256_10x26 Minus_One => ref _m1;
+
+
+        // These tests test the following identities:
+        //
+        // for x==0: 1/x == 0
+        // for x!=0: x*(1/x) == 1
+        // for x!=0 and x!=1: 1/(1/x - 1) + 1 == -1/(x-1)
+        private static void TestInverseField(in UInt256_10x26 x, int var, out UInt256_10x26 _out)
+        {
+            UInt256_10x26 l = var == 0 ? x.Inverse() : x.InverseVar();    // l = 1/x
+            _out = l;
+
+            UInt256_10x26 t = x;                            // t = x
+            if (t.IsZeroNormalizedVar())
+            {
+                Assert.True(l.IsZeroNormalized());
+                return;
+            }
+            t = x.Multiply(l);                              // t = x*(1/x)
+            t = t.Add(Minus_One);                           // t = x*(1/x)-1
+            Assert.True(t.IsZeroNormalized());              // x*(1/x)-1 == 0
+            UInt256_10x26 r = x;                            // r = x
+            r = r.Add(Minus_One);                           // r = x-1
+            if (r.IsZeroNormalizedVar())
+            {
+                return;
+            }
+            r = var == 0 ? r.Inverse() : r.InverseVar();    // r = 1/(x-1)
+            l = l.Add(Minus_One);                           // l = 1/x-1
+            l = var == 0 ? l.Inverse() : l.InverseVar();    // l = 1/(1/x-1)
+            l = l.Add(1);                                   // l = 1/(1/x-1)+1
+            l = l.Add(r);                                   // l = 1/(1/x-1)+1 + 1/(x-1)
+            Assert.True(l.IsZeroNormalizedVar());           // l == 0
+        }
+
+        public static IEnumerable<object[]> GetInvCases()
+        {
+            // Fixed test cases for field inverses: pairs of (x, 1/x) mod p.
+            yield return new object[]
+            {
+                // 0
+                new UInt256_10x26(0, 0, 0, 0, 0, 0, 0, 0),
+                new UInt256_10x26(0, 0, 0, 0, 0, 0, 0, 0)
+            };
+            yield return new object[]
+            {
+                // 1
+                new UInt256_10x26(1, 0, 0, 0, 0, 0, 0, 0),
+                new UInt256_10x26(1, 0, 0, 0, 0, 0, 0, 0)
+            };
+            yield return new object[]
+            {
+                // -1
+                new UInt256_10x26(0xfffffc2e, 0xfffffffe, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff),
+                new UInt256_10x26(0xfffffc2e, 0xfffffffe, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff)
+            };
+            yield return new object[]
+            {
+                // 2
+                new UInt256_10x26(2, 0, 0, 0, 0, 0, 0, 0),
+                new UInt256_10x26(0x7ffffe18, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x7fffffff)
+            };
+            yield return new object[]
+            {
+                // 2**128
+                new UInt256_10x26(0, 0, 0, 0, 1, 0, 0, 0),
+                new UInt256_10x26(0x434dd931, 0xffffffff, 0xffffffff, 0xffffffff, 0xd2253530, 0xd838091d, 0xdc24a059, 0xbcb223fe)
+            };
+            yield return new object[]
+            {
+                // Input known to need 637 divsteps
+                new UInt256_10x26(0x19199ec3, 0x7c11ca84, 0x06f3f996, 0x66885408, 0xdb8a1320, 0x0dcb632a, 0x6bee8a84, 0xe34e9c95),
+                new UInt256_10x26(0x19b618e5, 0x1aaadf92, 0x8a3f09fb, 0x870152b0, 0x2582ac0c, 0x9bccda44, 0x1c536828, 0xbd2cbd8f)
+            };
+            yield return new object[]
+            {
+                // Input known to need 567 divsteps starting with delta=1/2.
+                new UInt256_10x26(0xa7549bfc, 0x6672982b, 0x15985661, 0x0988e234, 0x2c21d619, 0x3e46357d, 0x636451c4, 0xf6bc3ba3),
+                new UInt256_10x26(0xfbb440ba, 0x389d87d4, 0xeef6d9d0, 0x73df6b75, 0xbd481425, 0x426c585f, 0x5547451e, 0xb024fdc7)
+            };
+            yield return new object[]
+            {
+                // Input known to need 566 divsteps starting with delta=1/2.
+                new UInt256_10x26(0x8d1063ae, 0x6f87d7a5, 0x29f9e618, 0x9a0a50aa, 0xe4865af7, 0x482dbc65, 0x2e3c1e2f, 0xb595d81b),
+                new UInt256_10x26(0xe5b908de, 0x059bd8ef, 0xce6eef86, 0xa0428a0b, 0x0b53afb5, 0x49918330, 0x5d5c74e1, 0xc983337c)
+            };
+            yield return new object[]
+            {
+                // Set of 10 inputs accessing all 128 entries in the modinv32 divsteps_var table
+                new UInt256_10x26(0x00000000, 0xfeff0100, 0x00000000, 0x00000000, 0x1f000000, 0xe0ff1f80, 0x00000000, 0x00000000),
+                new UInt256_10x26(0xd62e9e3d, 0x29eddf8c, 0x045e7fd7, 0x18c9e30c, 0xef70b893, 0x0b5e7a1b, 0x77e5049d, 0x9faf9316)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xccd31192, 0x6277c0d1, 0x32ba0a46, 0x6317c3ac, 0x53f889a4, 0x35688252, 0x511b2780, 0x621a538d),
+                new UInt256_10x26(0x6ae8bcff, 0x6a841a4c, 0xeaa66943, 0x34bda011, 0x9b394d8c, 0xe29e882e, 0x5eba856f, 0x38513b0c)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xffff0100, 0xffffffff, 0xfffcffff, 0xffffffff, 0x0000e0ff, 0x00000000, 0xf0ffff1f, 0x00000200),
+                new UInt256_10x26(0xedbf8b2f, 0x0484217c, 0xf048c5b6, 0x6c1e3519, 0x0c7591b7, 0x13e64343, 0x3640de9e, 0x5da42a52)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x9f2103e8, 0xa686a8ff, 0x9f26998d, 0x4ab46410, 0x4ea1281b, 0x7c52a2ee, 0x4b952621, 0xd1343ef9),
+                new UInt256_10x26(0xcb318bd1, 0xb0775aa3, 0x9ffab128, 0x6b7fb47d, 0xa47e0c46, 0x74e35b6d, 0x9a4619bf, 0x84044385)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xd2e4e440, 0xe926ba62, 0x5df22c6a, 0xbe621bdd, 0xd50d23a4, 0x210db37a, 0xc56a52be, 0xb27235d2),
+                new UInt256_10x26(0x53ae429b, 0x8d2775fe, 0xdca9b1bd, 0xb9ec9981, 0xd258ab3d, 0xa568469e, 0x483a9d3c, 0x67a26e54)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xffffffff, 0x000000e0, 0x3f00f00f, 0xffffffff, 0xffffff83, 0x00e0ffff, 0x00000000, 0x00000000),
+                new UInt256_10x26(0x5a6acef6, 0x00d0e615, 0xc763bcee, 0x8d357d7f, 0x076c9a45, 0xac94907d, 0x23bbfab0, 0x310e10f8)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x7f0000fe, 0xffff0100, 0x0fffffff, 0xffffffff, 0x0ff0ffff, 0xf80700c0, 0x001c0000, 0xfeff0300),
+                new UInt256_10x26(0x59269b0c, 0x1d527a71, 0x32f978d5, 0x530cf21f, 0x3453a370, 0x86f598b0, 0x0709168b, 0x28e2fdb4)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xd5574d2f, 0x85c66753, 0x54d3c453, 0xbb0b28e0, 0x85c14f87, 0x090bb273, 0x7bb98ef7, 0xc2591afa),
+                new UInt256_10x26(0x6113b503, 0xba4140ed, 0x5f63a058, 0x07ffb15c, 0x848a6dbb, 0x95e66fae, 0x70ce627c, 0xfdca70a2)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xc7d3e690, 0x8eec1060, 0x1cf5ad27, 0xc625828e, 0xeaeb452f, 0x411c047e, 0xedc7b5a3, 0xf5475db3),
+                new UInt256_10x26(0xaecb2c5a, 0x6aba7164, 0xde5eb88d, 0x2e9dec01, 0xec8cc2d8, 0xdc6a215e, 0xf963f4b9, 0x5eb756c0)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x00000000, 0xffffff7f, 0x00000000, 0xe0ff1f00, 0x01000000, 0xffffffff, 0x00f8ffff, 0x00000000),
+                new UInt256_10x26(0xbe110037, 0x7bfa444e, 0xf1125d81, 0x7dd28167, 0x1a7f02ca, 0xe54e88c2, 0x49b6157d, 0xe0d2e3d8)
+            };
+            yield return new object[]
+            {
+                // Selection of randomly generated inputs that reach high/low d/e values in various configurations.
+                new UInt256_10x26(0xffffe950, 0xe24d9be1, 0x09ab3b13, 0xc4109221, 0x54c46c67, 0x179c3e67, 0xd8c41f0f, 0x13cc08a4),
+                new UInt256_10x26(0x51008cd1, 0xe92c4441, 0x64767a2d, 0x966dd3d0, 0xcf6714f4, 0xcabd71e5, 0xd16abaa7, 0xb80c8006)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xc6e72057, 0x46f40993, 0x99fffc16, 0xf49ff938, 0x0602e24a, 0x3cc6ff71, 0x95efbca1, 0xaa6db990),
+                new UInt256_10x26(0xa5b93e06, 0x9ca482f9, 0xca1d731d, 0x9223f8a9, 0xe639e48c, 0x285f1d49, 0xb0c195e5, 0xd5d3dd69)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x2f67a058, 0x94449e1b, 0x0015f2e0, 0xa3b08108, 0x1781e3de, 0x9bdc4aee, 0xaeabffd8, 0x1c680eac),
+                new UInt256_10x26(0xc127444b, 0x32ed1719, 0x4b323393, 0xc5622590, 0x245c373d, 0x6510f475, 0x31254f29, 0x7f083f8d)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xb65b2f0a, 0x267cbc1a, 0x8b962707, 0x9ba6be96, 0x1a44a870, 0xc160d386, 0x012d83f8, 0x147d44b3),
+                new UInt256_10x26(0x6ed9087c, 0x0ca6cd33, 0x7a8aded1, 0xafadb458, 0xe51fbd36, 0x50a43002, 0x170aef1e, 0x555554ff)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x4000b98c, 0x916a3c37, 0x3b018013, 0xa1fbf3b2, 0x5384d107, 0xf9ca017c, 0x22f0fe61, 0x12423796),
+                new UInt256_10x26(0xfd19b6d7, 0xae38edb9, 0x95ec4589, 0x8ed1fbd2, 0x136c01f5, 0x1177e306, 0x08668f94, 0x20257700)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x3a9dcf21, 0xb5a17695, 0x08909a20, 0x39699b52, 0xdcd23619, 0x93ffa181, 0x9ab42cb4, 0xdcf2d030),
+                new UInt256_10x26(0x982b06b6, 0x2e7b12eb, 0xa40b6142, 0x29fe1e40, 0x63a0f51c, 0x4f37180d, 0xe211fb1f, 0x1f701dea)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xdfd5b600, 0x375308c5, 0xf902432e, 0xe32369ea, 0xca1c7d7f, 0xb35a55e6, 0xa6314ed3, 0x79a851f6),
+                new UInt256_10x26(0xafe4476a, 0xbd183d71, 0x7895dcbf, 0xa02c8549, 0x38cba42c, 0x9dabb737, 0xe6b43851, 0xcaae00c5)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x307196ec, 0x7fa27c9a, 0x28701870, 0xfb66bc7b, 0xdb8d37e2, 0x4fec6c6c, 0xcfc92bf1, 0xede78fdd),
+                new UInt256_10x26(0xa3418265, 0x88865427, 0x1de05422, 0x23ae7bed, 0x13e473f6, 0x2a760c64, 0x9a8b87a7, 0x68193a6c)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x3fc3e66c, 0x2711595d, 0x75138eae, 0x174df343, 0x89baf5ae, 0xa7617997, 0xb8f88e89, 0xa40b2079),
+                new UInt256_10x26(0x7fdd2655, 0x3389c93d, 0x6bbae0ed, 0x358c692b, 0x9d9c4576, 0xd4b87c37, 0x6d685267, 0x9f99c6a5)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x08a45696, 0x10a9be07, 0x15b2113a, 0xcefee074, 0x7f06e321, 0x72645cf1, 0xe98d9151, 0x7c74c6b6),
+                new UInt256_10x26(0xe227a8ee, 0x8364cc3b, 0xe15bb19e, 0x9ba0ac40, 0x12e655b7, 0x77f26f97, 0x898bc1e0, 0x8c919a88)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xee0e723e, 0xaec5f643, 0xec6eb99b, 0xb7a79e5b, 0xeb1069f4, 0xa1cec2b2, 0xdafa6d4a, 0x109ba1ce),
+                new UInt256_10x26(0x7ecb65cc, 0xa407fe1b, 0x6f057a4a, 0x7191401c, 0xdbe9f359, 0xe64f5a71, 0x4bb0bcf9, 0x93d13eb8)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xded36a78, 0x3dbe1e91, 0x74cbc4e0, 0xeeedd2d0, 0x90e23e06, 0xf61dd138, 0xec74a5c9, 0x3db076cd),
+                new UInt256_10x26(0xe660b107, 0x16545564, 0xcdd53010, 0xcb92ddbf, 0x02b5e9d5, 0x706c71df, 0x8e2a1e09, 0x3f07f966)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x4cf67b0d, 0x6bf7c0f8, 0xf7d2460c, 0x98b522fd, 0x4cdec153, 0x02ae35f7, 0xb4c4b82c, 0xe31c73ed),
+                new UInt256_10x26(0x1fe5b843, 0x59c50666, 0xefaba629, 0xdf0a7ffb, 0xa319cd31, 0x19af0ff6, 0x94e8b070, 0x4b8f1faf)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x12f99870, 0x79652ddb, 0xf552d50d, 0x16698897, 0xbbd85497, 0xc0e3e9f1, 0x83392ab6, 0x4c8b0e6e),
+                new UInt256_10x26(0x62da4bca, 0x438544c3, 0x5cc34424, 0xcf18e70a, 0xf24022ef, 0x17dc38d6, 0xd23b7949, 0x56d5101f)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x775417dc, 0xea2cbc90, 0xbc930358, 0x28888137, 0x7fccb178, 0x7dd5c611, 0x40cc35da, 0xb0e040e2),
+                new UInt256_10x26(0x7c7800cd, 0x900ae35d, 0xa9b44270, 0x68ed9155, 0x96e08d69, 0xab3ae576, 0x016dd7c8, 0xca37f0d4)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x667ddaef, 0x35055590, 0x862577ef, 0xbdf69178, 0x8e2105b2, 0x69724a9d, 0x7fbb0bae, 0x8a32ea49),
+                new UInt256_10x26(0x11768e96, 0x7341e08d, 0xf43645ea, 0x64f9f425, 0xdaef1ffc, 0x559c9d72, 0xc5e190f0, 0xd02d7ead)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xbfffbfc6, 0xb6998f0f, 0x85f9a2ce, 0xe242ab73, 0xbb0857a8, 0x579ebea6, 0x9abe289d, 0xa3592d98),
+                new UInt256_10x26(0x44b43ddc, 0x7fe3777a, 0xff525430, 0x589c35f4, 0x0039599e, 0x6aa46070, 0x32032efa, 0x093c1533)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x99b10709, 0x61b961e0, 0x97fb7c6a, 0x1e1bc9c9, 0xcce3fdd9, 0xcc98521a, 0x229e607b, 0x647178a3),
+                new UInt256_10x26(0xc8e2feb3, 0xa1fcf17e, 0xcb46d07a, 0x602ca683, 0xdaebd908, 0x96310e77, 0xd51ddf78, 0x98217c13)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xdcab5787, 0x5e3235d8, 0xc658227e, 0x1b95870d, 0xf5964958, 0x99464b4b, 0x73f98968, 0x7334627c),
+                new UInt256_10x26(0x98514307, 0x6cc5c74c, 0x2d088418, 0x07603b9b, 0xe51d495c, 0x40ae367a, 0xc7e9dd94, 0x000006fd)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x00005760, 0x335ed01a, 0x7a50825f, 0xc048637d, 0x605c3ad1, 0xa50dd1c5, 0x96c28938, 0x82e83876),
+                new UInt256_10x26(0xfec7f02d, 0xb4f9a3ea, 0xf3e16e80, 0x60b3e704, 0x5287d961, 0xf5607e2e, 0x9f2aa55e, 0xb0393f9f)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x771ae51d, 0xe76bb6bd, 0xae813529, 0xfe06297a, 0x3c1970a1, 0x98d24b58, 0x3ee6b8dc, 0xc97b6cec),
+                new UInt256_10x26(0x253a5db1, 0xfc34b364, 0x7bf80d0b, 0x79f48f79, 0xf6625419, 0x47ddeb06, 0xd407d097, 0x0507c702)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x0bb99bd3, 0x380bb19d, 0x7ce0dfac, 0x10e7d18b, 0x5c7a4bbb, 0x3cf1ad14, 0x77ea9bc4, 0xd559af63),
+                new UInt256_10x26(0xb0ec8b0b, 0xaa8754c8, 0x163356ca, 0xd2daa33a, 0xbbdc42fc, 0x34edfdb5, 0xb9b00d92, 0x00196119)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xcb29fce4, 0xda9c0afc, 0xbde52514, 0xca2d33b2, 0x0af8512a, 0x640519dc, 0x52918da0, 0x8ddfa3dc),
+                new UInt256_10x26(0x6ba35b02, 0x7b31e6aa, 0xf09def92, 0x62518ba8, 0xc23acce0, 0xcd54388b, 0x5cb69148, 0xb3e4878d)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x5194fb91, 0x546d41f9, 0xc05da837, 0x00ca112e, 0x0bfff996, 0x65285f2b, 0xe3049f0a, 0xf8207492),
+                new UInt256_10x26(0x611c5f95, 0x3b82ea41, 0x290d046e, 0x071441c7, 0x81419a5c, 0xf6469930, 0xa8ed4bbd, 0x7b7ee50b)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x3ec2926a, 0xfd4d3e07, 0xbd8828d7, 0xa4e39f5c, 0x5ce74db7, 0x823cb724, 0x5bcd3c6b, 0x050f7c80),
+                new UInt256_10x26(0xbdc3f59e, 0x1d5e91c6, 0xdea0b9db, 0x48fd61da, 0xee157117, 0x4764053d, 0xb0171314, 0x000d6730)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0xe67c62f9, 0xbd57087c, 0x3fc182a3, 0x088f6f0d, 0xb3cb3ac9, 0x23009263, 0x05d760cf, 0x3e3ea8eb),
+                new UInt256_10x26(0xdd511e8b, 0xebd833dd, 0x51043bf4, 0x49929305, 0xab1e4720, 0x4456aed6, 0xa29c1bf6, 0xbe988716)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x768be5cd, 0x301ac80a, 0x2f487ef6, 0xea0c1b5f, 0x142f4029, 0xa5959249, 0xa7fa6501, 0x6964d2a9),
+                new UInt256_10x26(0x2c0cb3c6, 0x9ec2f2ad, 0x0de2191c, 0xaffd7cb4, 0x3df95f8f, 0xed24d0b7, 0x07492543, 0x3918ffe4)
+            };
+            yield return new object[]
+            {
+                new UInt256_10x26(0x39877ccb, 0x95c4d156, 0xb95e91f3, 0x11b5b81c, 0xb5c7e4de, 0x2b42fd5e, 0xf6ddca57, 0x37c93520),
+                new UInt256_10x26(0x1a6bf956, 0xd728edef, 0xe12a6b1f, 0x077b0595, 0xac5262a8, 0x4c975b8b, 0x57eb71ee, 0x9a94b9b5)
+            };
+        }
+
+        [Theory]
+        [MemberData(nameof(GetInvCases))]
+        public void Libsecp256k1_InverseTest(in UInt256_10x26 a, in UInt256_10x26 b)
+        {
+            // run_inverse_tests
+
+            // Test fixed test cases through test_inverse_{scalar,field}, both ways.
+            for (int useVar = 0; useVar <= 1; useVar++)
+            {
+                TestInverseField(a, useVar, out UInt256_10x26 x_fe);
+                Assert.True(b.Equals(x_fe));
+                TestInverseField(b, useVar, out x_fe);
+                Assert.True(a.Equals(x_fe));
+            }
+        }
+
+
+        [Fact]
+        public void Libsecp256k1_InverseRandomTest()
+        {
+            // run_inverse_tests
+
+            UInt256_10x26 x_fe;
+            // Test inputs 0..999 and their respective negations.
+            byte[] b32 = new byte[32];
+            for (int i = 0; i < 1000; i++)
+            {
+                b32[31] = (byte)i;
+                b32[30] = (byte)(i >> 8);
+                x_fe = new(b32, out _);
+                for (int var = 0; var <= 1; ++var)
+                {
+                    TestInverseField(x_fe, var, out _);
+                }
+                x_fe = x_fe.Negate(1);
+                for (int var = 0; var <= 1; ++var)
+                {
+                    TestInverseField(x_fe, var, out _);
+                }
+            }
+
+            TestRNG rng = new();
+            rng.Init(null);
+            // test 128*count random inputs; half with testrand256_test, half with testrand256 */
+            for (int testrand = 0; testrand <= 1; ++testrand)
+            {
+                for (int i = 0; i < 64 * COUNT; ++i)
+                {
+                    if (testrand == 0)
+                    {
+                        rng.Rand256(b32);
+                    }
+                    else
+                    {
+                        rng.Rand256Test(b32);
+                    }
+
+                    x_fe = new(b32);
+                    for (int var = 0; var <= 1; ++var)
+                    {
+                        TestInverseField(x_fe, var, out _);
+                    }
                 }
             }
         }
