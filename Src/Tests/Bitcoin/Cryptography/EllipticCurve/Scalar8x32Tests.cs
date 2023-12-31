@@ -456,8 +456,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         private const int Count = 64;
 
-        // random_scalar_order_test
-        private static Scalar8x32 CreateRandom(TestRNG rng)
+        /// <summary>
+        /// random_scalar_order_test
+        /// </summary>
+        internal static Scalar8x32 CreateRandom(TestRNG rng)
         {
             byte[] b32 = new byte[32];
             do

@@ -840,7 +840,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_field_element_magnitude
         /// </summary>
-        private static void RandomFEMagnitude(ref UInt256_10x26 fe, int m, TestRNG rng)
+        internal static void RandomFEMagnitude(ref UInt256_10x26 fe, int m, TestRNG rng)
         {
             int n = (int)rng.RandInt((uint)(m + 1));
             fe = fe.Normalize();
@@ -859,7 +859,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_fe_magnitude
         /// </summary>
-        private static void RandomFEMagnitude(ref UInt256_10x26 fe, TestRNG rng)
+        internal static void RandomFEMagnitude(ref UInt256_10x26 fe, TestRNG rng)
         {
             RandomFEMagnitude(ref fe, 8, rng);
         }
@@ -867,7 +867,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_fe_non_zero
         /// </summary>
-        private static UInt256_10x26 RandomFENonZero(TestRNG rng)
+        internal static UInt256_10x26 RandomFENonZero(TestRNG rng)
         {
             UInt256_10x26 result;
             do
