@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
@@ -55,6 +56,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public readonly bool isInfinity;
 
+#if DEBUG
+        // Maximum allowed magnitudes for group element coordinates
+        // SECP256K1_GEJ_{X/y/z}_MAGNITUDE_MAX
+        // Any changes to these values should be reflected in the same hard-coded values in tests
+        private const int MaxXMagnitude = 4;
+        private const int MaxYMagnitude = 4;
+        private const int MaxZMagnitude = 1;
+
+        /// <summary>
+        /// Only works in DEBUG
+        /// </summary>
+        internal void Verify()
+        {
+            x.Verify();
+            y.Verify();
+            z.Verify();
+            UInt256_10x26.VerifyMagnitude(x.magnitude, MaxXMagnitude);
+            UInt256_10x26.VerifyMagnitude(y.magnitude, MaxYMagnitude);
+            UInt256_10x26.VerifyMagnitude(z.magnitude, MaxZMagnitude);
+        }
+#endif
 
         private static readonly PointJacobian _infinity = new PointJacobian(UInt256_10x26.Zero, UInt256_10x26.Zero, UInt256_10x26.Zero, true);
         /// <summary>
@@ -67,10 +89,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Adds the given point in jacobian coordinate to this instance.
         /// </summary>
         /// <param name="b">Point in jacobian coordinate</param>
-        /// <param name="rzr"></param>
+        /// <param name="rzr">sets rzr such that r.z == a.z * rzr (a cannot be infinity in that case)</param>
         /// <returns>Sum of two points</returns>
         public PointJacobian AddVar(in PointJacobian b, out UInt256_10x26 rzr)
         {
+            // secp256k1_gej_add_var
+#if DEBUG
+            Verify();
+            b.Verify();
+#endif
             if (isInfinity)
             {
                 rzr = UInt256_10x26.Zero;
@@ -119,7 +146,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             t += rx;
             UInt256_10x26 ry = (t * i) + (h3 * s1);
 
-            return new PointJacobian(rx, ry, rz, false);
+            PointJacobian res = new PointJacobian(rx, ry, rz, false);
+#if DEBUG
+            res.Verify();
+#endif
+            return res;
         }
 
 
@@ -131,19 +162,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </remarks>
         /// <param name="b">Point in affine coordinate (not infinity)</param>
         /// <returns></returns>
-        public PointJacobian Add(in Point b) => this + b;
-
-        /// <summary>
-        /// Computes sum of the two given points
-        /// </summary>
-        /// <remarks>
-        /// This method is constant-time
-        /// </remarks>
-        /// <param name="a">Point in jacobian coordinate</param>
-        /// <param name="b">Point in affine coordinate (not infinity)</param>
-        /// <returns></returns>
-        public static PointJacobian operator +(in PointJacobian a, in Point b)
+        public PointJacobian Add(in Point b)
         {
+            // secp256k1_gej_add_ge
+#if DEBUG
+            Verify();
+            b.Verify();
+            Debug.Assert(!b.isInfinity);
+#endif
             /* In:
              *    Eric Brier and Marc Joye, Weierstrass Elliptic Curves and Side-Channel Attacks.
              *    In D. Naccache and P. Paillier, Eds., Public Key Cryptography, vol. 2274 of Lecture Notes in Computer Science,
@@ -198,28 +224,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // Operations: 7 mul, 5 sqr, 24 add/cmov/half/mul_int/negate/normalize_weak/normalizes_to_zero
             UInt256_10x26 zz, u1, u2, s1, s2, t, tt, m, n, q, rr;
             UInt256_10x26 m_alt, rr_alt;
-            Debug.Assert(!b.isInfinity);
 
-            zz = a.z.Sqr();                 // z = Z1^2
-            u1 = a.x.NormalizeWeak();       // u1 = U1 = X1*Z2^2 (1)
-            u2 = b.x * zz;                  // u2 = U2 = X2*Z1^2 (1)
-            s1 = a.y.NormalizeWeak();       // s1 = S1 = Y1*Z2^3 (1)
-            s2 = b.y * zz;                  // s2 = Y2*Z1^2 (1)
-            s2 *= a.z;                      // s2 = S2 = Y2*Z1^3 (1)
-            t = u1 + u2;                    // t = T = U1+U2 (2)
-            m = s1 + s2;                    // m = M = S1+S2 (2)
-            rr = t.Sqr();                   // rr = T^2 (1)
-            m_alt = u2.Negate(1);           // Malt = -X2*Z1^2
-            tt = u1 * m_alt;                // tt = -U1*U2 (2)
-            rr += tt;                       // rr = R = T^2-U1*U2 (3)
-            /* If lambda = R/M = 0/0 we have a problem (except in the "trivial"
-             *  case that Z = z1z2 = 0, and this is special-cased later on). */
+            zz = z.Sqr();               // z = Z1^2
+            u1 = x.NormalizeWeak();     // u1 = U1 = X1*Z2^2 (1)
+            u2 = b.x * zz;              // u2 = U2 = X2*Z1^2 (1)
+            s1 = y.NormalizeWeak();     // s1 = S1 = Y1*Z2^3 (1)
+            s2 = b.y * zz;              // s2 = Y2*Z1^2 (1)
+            s2 *= z;                    // s2 = S2 = Y2*Z1^3 (1)
+            t = u1 + u2;                // t = T = U1+U2 (2)
+            m = s1 + s2;                // m = M = S1+S2 (2)
+            rr = t.Sqr();               // rr = T^2 (1)
+            m_alt = u2.Negate(1);       // Malt = -X2*Z1^2
+            tt = u1 * m_alt;            // tt = -U1*U2 (2)
+            rr += tt;                   // rr = R = T^2-U1*U2 (3)
+            // If lambda = R/M = 0/0 we have a problem (except in the "trivial"
+            // case that Z = z1z2 = 0, and this is special-cased later on).
             uint degenerate = m.IsZeroNormalized() & rr.IsZeroNormalized() ? 1U : 0U;
-            /* This only occurs when y1 == -y2 and x1^3 == x2^3, but x1 != x2.
-			 * This means either x1 == beta*x2 or beta*x1 == x2, where beta is
-			 * a nontrivial cube root of one. In either case, an alternate
-			 * non-indeterminate expression for lambda is (y1 - y2)/(x1 - x2),
-			 * so we set R/M equal to this. */
+            // This only occurs when y1 == -y2 and x1^3 == x2^3, but x1 != x2.
+            // This means either x1 == beta*x2 or beta*x1 == x2, where beta is
+            // a nontrivial cube root of one. In either case, an alternate
+            // non-indeterminate expression for lambda is (y1 - y2)/(x1 - x2),
+            // so we set R/M equal to this.
             rr_alt = s1 * 2U;               // rr = Y1*Z2^3 - Y2*Z1^3 (2)
             m_alt += u1;                    // Malt = X1*Z2^2 - X2*Z1^2
 
@@ -227,22 +252,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Debug.Assert(flag == (degenerate != 0 ? 0 : 1));
             rr_alt = UInt256_10x26.CMov(rr_alt, rr, flag);
             m_alt = UInt256_10x26.CMov(m_alt, m, flag);
-            /* Now Ralt / Malt = lambda and is guaranteed not to be 0/0.
-             * From here on out Ralt and Malt represent the numerator
-             * and denominator of lambda; R and M represent the explicit
-             * expressions x1^2 + x2^2 + x1x2 and y1 + y2. */
+            // Now Ralt / Malt = lambda and is guaranteed not to be 0/0.
+            // From here on out Ralt and Malt represent the numerator
+            // and denominator of lambda; R and M represent the explicit
+            // expressions x1^2 + x2^2 + x1x2 and y1 + y2.
             n = m_alt.Sqr();                // n = Malt^2 (1)
             q = t.Negate(2);                // q = -T (3)
             q *= n;                         // q = Q = T*Malt^2 (1)
-            /* These two lines use the observation that either M == Malt or M == 0,
-			 * so M^3 * Malt is either Malt^4 (which is computed by squaring), or
-			 * zero (which is "computed" by cmov). So the cost is one squaring
-			 * versus two multiplications. */
+
+            // These two lines use the observation that either M == Malt or M == 0,
+            // so M^3 * Malt is either Malt^4 (which is computed by squaring), or
+            // zero (which is "computed" by cmov). So the cost is one squaring
+            // versus two multiplications.
             n = n.Sqr();
             n = UInt256_10x26.CMov(n, m, degenerate); // n = M^3 * Malt (2)
             t = rr_alt.Sqr();                         // t = Ralt^2 (1)
-            UInt256_10x26 rz = a.z * m_alt;           // r->z = Z3 = Malt*Z (1)
-            bool infinity = rz.IsZeroNormalized() & !a.isInfinity;
+            UInt256_10x26 rz = z * m_alt;             // r->z = Z3 = Malt*Z (1)
+            bool infinity = rz.IsZeroNormalized() & !isInfinity;
 
             t += q;                                   // t = Ralt^2 + Q (2)
             UInt256_10x26 rx = t;                     // r->x = X3 = Ralt^2 + Q (2)
@@ -254,12 +280,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             ry = ry.Half();                           // r->y = Y3 = -(Ralt*(2*X3 + Q) + M^3*Malt)/2 (3)
 
             // In case a.infinity == 1, replace r with (b.x, b.y, 1).
-            flag = a.isInfinity ? 1U : 0U;
+            flag = isInfinity ? 1U : 0U;
             rx = UInt256_10x26.CMov(rx, b.x, flag);
             ry = UInt256_10x26.CMov(ry, b.y, flag);
             rz = UInt256_10x26.CMov(rz, UInt256_10x26.One, flag);
 
-            return new PointJacobian(rx, ry, rz, infinity);
+            PointJacobian res = new PointJacobian(rx, ry, rz, infinity);
+#if DEBUG
+            res.Verify();
+#endif
+            return res;
         }
 
 
@@ -274,6 +304,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Sum of two points</returns>
         public PointJacobian AddVar(in Point b, out UInt256_10x26 rzr)
         {
+            // secp256k1_gej_add_ge_var
+#if DEBUG
+            Verify();
+            b.Verify();
+#endif
             if (isInfinity)
             {
                 rzr = UInt256_10x26.Zero;
@@ -326,7 +361,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             h3 *= s1;
             ry += h3;
 
-            return new PointJacobian(rx, ry, rz, false);
+            PointJacobian res = new PointJacobian(rx, ry, rz, false);
+
+#if DEBUG
+            res.Verify();
+            rzr.Verify();
+#endif
+            return res;
         }
 
 
@@ -341,6 +382,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public PointJacobian AddZInvVar(in Point b, in UInt256_10x26 bzinv)
         {
+            // secp256k1_gej_add_zinv_var
+#if DEBUG
+            Verify();
+            b.Verify();
+            bzinv.Verify();
+#endif
             UInt256_10x26 rx, ry;
             if (isInfinity)
             {
@@ -348,7 +395,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 UInt256_10x26 bzinv3 = bzinv2 * bzinv;
                 rx = b.x * bzinv2;
                 ry = b.y * bzinv3;
-                return new PointJacobian(rx, ry, UInt256_10x26.One, b.isInfinity);
+                PointJacobian r = new PointJacobian(rx, ry, UInt256_10x26.One, b.isInfinity);
+#if DEBUG
+                r.Verify();
+#endif
+                return r;
             }
             if (b.isInfinity)
             {
@@ -400,16 +451,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             t += rx;
             ry = (t * i) + (h3 * s1);
 
-            return new PointJacobian(rx, ry, rz, false);
+            PointJacobian res = new PointJacobian(rx, ry, rz, false);
+#if DEBUG
+            res.Verify();
+#endif
+            return res;
         }
 
 
         /// <summary>
         /// Returns double of this instance
         /// </summary>
-        /// <returns>Double</returns>
+        /// <returns>Double result</returns>
         public PointJacobian Double()
         {
+#if DEBUG
+            Verify();
+#endif
             // Formula used:
             //   L = (3/2) * X1^2
             //   S = Y1^2
@@ -427,34 +485,42 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 t = s.Negate(1);// T = -S (2)
             t *= x;                       // T = -X1*S (1)
             UInt256_10x26 rx = l.Sqr();   // X3 = L^2 (1)
-            rx += t;                      // X3 = L^2 + T (2)
-            rx += t;                      // X3 = L^2 + 2*T (3)
+            //rx += t;                      // X3 = L^2 + T (2)
+            //rx += t;                      // X3 = L^2 + 2*T (3)
+            rx = UInt256_10x26.Add(rx, t, t);
             s = s.Sqr();                  // S' = S^2 (1)
             t += rx;                      // T' = X3 + T (4)
             UInt256_10x26 ry = t * l;     // Y3 = L*(X3 + T) (1)
             ry += s;                      // Y3 = L*(X3 + T) + S^2 (2)
             ry = ry.Negate(2);            // Y3 = -(L*(X3 + T) + S^2) (3)
 
-            return new PointJacobian(rx, ry, rz, isInfinity);
+            PointJacobian result = new PointJacobian(rx, ry, rz, isInfinity);
+#if DEBUG
+            result.Verify();
+#endif
+            return result;
         }
+
 
         /// <summary>
         /// Returns double of this instance
         /// </summary>
-        /// <param name="rzr"></param>
-        /// <returns>Double</returns>
+        /// <param name="rzr">sets this such that r.z == a.z * rzr (where infinity means an implicit z = 0)</param>
+        /// <returns>Double result</returns>
         public PointJacobian DoubleVar(out UInt256_10x26 rzr)
         {
-            /* For secp256k1, 2Q is infinity if and only if Q is infinity. This is because if 2Q = infinity,
-             *  Q must equal -Q, or that Q.y == -(Q.y), or Q.y is 0. For a point on y^2 = x^3 + 7 to have
-             *  y=0, x^3 must be -7 mod p. However, -7 has no cube root mod p.
-             *
-             *  Having said this, if this function receives a point on a sextic twist, e.g. by
-             *  a fault attack, it is possible for y to be 0. This happens for y^2 = x^3 + 6,
-             *  since -6 does have a cube root mod p. For this point, this function will not set
-             *  the infinity flag even though the point doubles to infinity, and the result
-             *  point will be gibberish (z = 0 but infinity = 0).
-             */
+#if DEBUG
+            Verify();
+#endif
+            // For secp256k1, 2Q is infinity if and only if Q is infinity. This is because if 2Q = infinity,
+            // Q must equal -Q, or that Q.y == -(Q.y), or Q.y is 0. For a point on y^2 = x^3 + 7 to have
+            // y=0, x^3 must be -7 mod p. However, -7 has no cube root mod p.
+            //
+            // Having said this, if this function receives a point on a sextic twist, e.g. by
+            // a fault attack, it is possible for y to be 0. This happens for y^2 = x^3 + 6,
+            // since -6 does have a cube root mod p. For this point, this function will not set
+            // the infinity flag even though the point doubles to infinity, and the result
+            // point will be gibberish (z = 0 but infinity = 0).
             if (isInfinity)
             {
                 rzr = UInt256_10x26.One;
@@ -463,6 +529,48 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             rzr = y.NormalizeWeak();
             return Double();
+        }
+
+
+        /// <summary>
+        /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
+        /// Constant-time
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="a"></param>
+        /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
+        /// <returns>Result</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PointJacobian CMov(in PointJacobian r, in PointJacobian a, uint flag)
+        {
+            UInt256_10x26 rx = UInt256_10x26.CMov(r.x, a.x, flag);
+            UInt256_10x26 ry = UInt256_10x26.CMov(r.y, a.y, flag);
+            UInt256_10x26 rz = UInt256_10x26.CMov(r.z, a.z, flag);
+            // TODO: can the following be simplified?
+            bool inf = r.isInfinity ^ (r.isInfinity ^ a.isInfinity) & (flag == 1);
+
+            return new PointJacobian(rx, ry, rz, inf);
+        }
+
+        /// <summary>
+        /// Rescale this jacobian point by <paramref name="s"/> which must be non-zero. Constant-time
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public PointJacobian Rescale(in UInt256_10x26 s)
+        {
+#if DEBUG
+            s.Verify();
+            Debug.Assert(!s.IsZeroNormalizedVar());
+#endif
+            // Operations: 4 mul, 1 sqr
+            UInt256_10x26 zz = s.Sqr();
+            UInt256_10x26 rx = x.Multiply(zz);  // r->x *= s^2
+            UInt256_10x26 ry = y.Multiply(zz);
+            ry = y.Multiply(s);                 // r->y *= s^3
+            UInt256_10x26 rz = z.Multiply(s);   // r->z *= s
+
+            return new PointJacobian(rx, ry, rz, isInfinity);
         }
 
 
@@ -479,7 +587,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// Converts this instance to <see cref="Point"/>
+        /// Converts this instance to a <see cref="Point"/>.
         /// </summary>
         /// <remarks>
         /// This method is constant-time
@@ -487,7 +595,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Result</returns>
         public Point ToPoint()
         {
-            UInt256_10x26 rz = z.Inverse_old();
+            UInt256_10x26 rz = z.Inverse();
             UInt256_10x26 z2 = rz.Sqr();
             UInt256_10x26 z3 = rz * z2;
             UInt256_10x26 rx = x * z2;
@@ -496,7 +604,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// Converts this instance to <see cref="Point"/>
+        /// Converts this instance to a <see cref="Point"/> without constant-time guarantee.
         /// </summary>
         /// <remarks>
         /// This method is not constant-time
@@ -509,7 +617,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return Point.Infinity;
             }
 
-            UInt256_10x26 rz = z.InverseVariable_old();
+            UInt256_10x26 rz = z.InverseVar();
             UInt256_10x26 z2 = rz.Sqr();
             UInt256_10x26 z3 = rz * z2;
             UInt256_10x26 rx = x * z2;
@@ -520,8 +628,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         internal Point ToPointZInv(in UInt256_10x26 zi)
         {
+#if DEBUG
+            zi.Verify();
             Debug.Assert(!isInfinity);
-
+#endif
             UInt256_10x26 zi2 = zi.Sqr();
             UInt256_10x26 zi3 = zi2 * zi;
             UInt256_10x26 rx = x * zi2;
@@ -531,19 +641,45 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Returns if the two points in jacobina coordinates are equal.
+        /// </summary>
+        /// <param name="other">Other point to compare</param>
+        /// <returns>True if the two points are equal; otherwise false.</returns>
+        public bool EqualsVar(in PointJacobian other)
+        {
+            PointJacobian tmp = Negate();
+            tmp = tmp.AddVar(other, out _);
+            return tmp.isInfinity;
+        }
+
+        /// <summary>
+        /// Returns if this instance is equal to the given point in affine coordinates.
+        /// </summary>
+        /// <param name="other">Other point to compare</param>
+        /// <returns>True if the two points are equal; otherwise false.</returns>
+        public bool EqualsVar(in Point other)
+        {
+            PointJacobian tmp = Negate();
+            tmp = tmp.AddVar(other, out _);
+            return tmp.isInfinity;
+        }
+
+        /// <summary>
         /// Returns if the x coordinate of this instance is equal to the given x value.
         /// </summary>
         /// <remarks>
         /// This method is not constant-time
         /// </remarks>
-        /// <param name="x">x coordinate</param>
+        /// <param name="x">x coordinate (magnitude must not exceed 31)</param>
         /// <returns>True if x coordinates were equal; otherwise false.</returns>
-        public bool EqualsXVar(in UInt256_10x26 x)
+        public bool EqualsVar(in UInt256_10x26 x)
         {
+#if DEBUG
+            x.Verify();
             Debug.Assert(!isInfinity);
+#endif
             UInt256_10x26 r = z.Sqr() * x;
-            UInt256_10x26 r2 = x.NormalizeWeak();
-            return r.EqualsVar(r2);
+            return r.Equals(this.x);
         }
     }
 }

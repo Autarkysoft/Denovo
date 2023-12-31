@@ -4,20 +4,13 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
+using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class PointTests
     {
-        internal static void AssertEquality(in Point expected, in Point actual)
-        {
-            UInt256_10x26Tests.AssertEquality(expected.x, actual.x);
-            UInt256_10x26Tests.AssertEquality(expected.y, actual.y);
-        }
-
-
         public static IEnumerable<object[]> GetCtorCases()
         {
             yield return new object[]
@@ -67,30 +60,5 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.True(Point.Infinity.y.IsZero);
         }
 
-
-        public static IEnumerable<object[]> GetCreateTests()
-        {
-            UInt256_10x26 x1 = new(Helper.HexToBytes("01a8897cfa429fe49a4dc45e61a49ea3a3f174e655d040233957b9c9d59403cc"), out bool b);
-            Assert.True(b);
-            UInt256_10x26 x2 = new(Helper.HexToBytes("7d3d7adc755c2dffc7f75cc89b370f67385132ff101e1730686643a388d60f06"), out b);
-            Assert.True(b);
-            UInt256_10x26 y2Odd = new(Helper.HexToBytes("07bca1494689a0d39577808c86d5ca3a9d7d45621f99743d85b4e43ef107ab35"), out b);
-            Assert.True(b);
-            UInt256_10x26 y2Even = new(Helper.HexToBytes("f8435eb6b9765f2c6a887f73792a35c56282ba9de0668bc27a4b1bc00ef850fa"), out b);
-            Assert.True(b);
-
-            yield return new object[] { x1, true, false, Point.Infinity };
-            yield return new object[] { x1, false, false, Point.Infinity };
-            yield return new object[] { x2, true, true, new Point(x2, y2Odd) };
-            yield return new object[] { x2, false, true, new Point(x2, y2Even) };
-        }
-        [Theory]
-        [MemberData(nameof(GetCreateTests))]
-        public void TryCreateVarTest(in UInt256_10x26 x, bool odd, bool expB, in Point expected)
-        {
-            bool actB = Point.TryCreateVar(x, odd, out Point actual);
-            Assert.Equal(expB, actB);
-            AssertEquality(expected, actual);
-        }
     }
 }

@@ -30,6 +30,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="infinity">Is point at infinity</param>
         public Point(in UInt256_10x26 x26, in UInt256_10x26 y26, bool infinity)
         {
+#if DEBUG
+            x26.Verify();
+            y26.Verify();
+#endif
             x = x26;
             y = y26;
             isInfinity = infinity;
@@ -72,6 +76,26 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public readonly bool isInfinity;
 
+#if DEBUG
+        // Maximum allowed magnitudes for group element coordinates
+        // SECP256K1_GE_{X/Y}_MAGNITUDE_MAX
+        // Any changes to these values should be reflected in the same hard-coded values in tests
+        private const int MaxXMagnitude = 4;
+        private const int MaxYMagnitude = 3;
+
+        /// <summary>
+        /// Only works in DEBUG
+        /// </summary>
+        internal void Verify()
+        {
+            x.Verify();
+            y.Verify();
+            UInt256_10x26.VerifyMagnitude(x.magnitude, MaxXMagnitude);
+            UInt256_10x26.VerifyMagnitude(y.magnitude, MaxYMagnitude);
+        }
+#endif
+
+        private const uint CurveB = 7;
         /// <summary>
         /// First byte used in even 33-byte compressed public key encoding
         /// </summary>
@@ -201,26 +225,43 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return true;
         }
 
+
         /// <summary>
-        /// Returns if this instance is valid (on curve) and is not the point at infinity
+        /// Creates a new instance of <see cref="Point"/> from the given x coordinate.
+        /// Return value indicates success.
         /// </summary>
         /// <remarks>
-        /// This method is not constant-time
+        /// This method is not constant-time.
         /// </remarks>
-        /// <returns></returns>
-        public bool IsValidVar()
+        /// <param name="x">X coordinate</param>
+        /// <param name="odd">Is y coordinate odd</param>
+        /// <param name="result">Result</param>
+        /// <returns>True if y was found; otherwise false.</returns>
+        public static bool TryCreateVar(in UInt256_10x26 x, bool odd, out Point result)
         {
-            if (isInfinity)
+            // secp256k1_ge_set_xo_var
+#if DEBUG
+            x.Verify();
+#endif
+            // y^2 = x^3 + 7
+            UInt256_10x26 right = (x.Sqr() * x) + CurveB;
+            if (!right.Sqrt(out UInt256_10x26 y))
             {
+                result = Infinity;
                 return false;
             }
 
-            // y^2 = x^3 + 7
-            UInt256_10x26 left = y.Sqr();
-            // TODO: create a constant for curve.b=7
-            UInt256_10x26 right = (x.Sqr() * x) + 7;
-            right = right.NormalizeWeak();
-            return right.EqualsVar(left);
+            UInt256_10x26 ry = y.NormalizeVar();
+            if (ry.IsOdd != odd)
+            {
+                ry = ry.Negate(1);
+            }
+
+            result = new Point(x, ry, false);
+#if DEBUG
+            result.Verify();
+#endif
+            return true;
         }
 
 
@@ -244,13 +285,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="len"></param>
         /// <param name="a"></param>
         /// <param name="zr"></param>
-        public static void SetGlobalZ(int len, Point[] a, UInt256_10x26[] zr)
+        public static void SetGlobalZ(int len, Span<Point> a, ReadOnlySpan<UInt256_10x26> zr)
         {
-            int i = len - 1;
             UInt256_10x26 zs;
-
+#if DEBUG
+            for (int i = 0; i < len; i++)
+            {
+                a[i].Verify();
+                zr[i].Verify();
+            }
+#endif
             if (len > 0)
             {
+                int i = len - 1;
                 // Ensure all y values are in weak normal form for fast negation of points
                 a[i] = new Point(a[i].x, a[i].y.NormalizeWeak(), a[i].isInfinity);
                 zs = zr[i];
@@ -263,43 +310,149 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                         zs *= zr[i];
                     }
                     i--;
-                    PointJacobian tmpa = new PointJacobian(a[i].x, a[i].y, UInt256_10x26.Zero, false);
-                    a[i] = tmpa.ToPointZInv(zs);
+                    a[i] = a[i].ToPointZInv(zs);
                 }
             }
+#if DEBUG
+            for (int i = 0; i < len; i++)
+            {
+                a[i].Verify();
+            }
+#endif
         }
 
 
         /// <summary>
-        /// Creates a new instance of <see cref="Point"/> from the given x coordinate.
-        /// Return value indicates success.
+        /// Converts all <paramref name="r"/> to <see cref="Point"/>s converted from given <see cref="PointJacobian"/>
+        /// array.
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="a"></param>
+        public static void SetAllPointsToJacobianVar(Span<Point> r, ReadOnlySpan<PointJacobian> a)
+        {
+            Debug.Assert(r.Length <= a.Length);
+
+            int i;
+            int lastI = int.MaxValue;
+#if DEBUG
+            for (i = 0; i < r.Length; i++)
+            {
+                a[i].Verify();
+            }
+#endif
+            for (i = 0; i < r.Length; i++)
+            {
+                if (a[i].isInfinity)
+                {
+                    r[i] = Infinity;
+                }
+                else
+                {
+                    // Use destination's x coordinates as scratch space
+                    if (lastI == int.MaxValue)
+                    {
+                        r[i] = new Point(a[i].z, r[i].y, r[i].isInfinity);
+                    }
+                    else
+                    {
+                        UInt256_10x26 rx = r[lastI].x * a[i].z;
+                        r[i] = new Point(rx, r[i].y, r[i].isInfinity);
+                    }
+                    lastI = i;
+                }
+            }
+            if (lastI == int.MaxValue)
+            {
+                return;
+            }
+            UInt256_10x26 u = r[lastI].x.InverseVar();
+
+            i = lastI;
+            while (i > 0)
+            {
+                i--;
+                if (!a[i].isInfinity)
+                {
+                    UInt256_10x26 rx = r[i].x * u;
+                    r[lastI] = new Point(rx, r[lastI].y, r[lastI].isInfinity);
+                    u *= a[lastI].z;
+                    lastI = i;
+                }
+            }
+            Debug.Assert(!a[lastI].isInfinity);
+            r[lastI] = new Point(u, r[lastI].y, r[lastI].isInfinity);
+
+            for (i = 0; i < r.Length; i++)
+            {
+                if (!a[i].isInfinity)
+                {
+                    r[i] = a[i].ToPointZInv(r[i].x);
+                }
+            }
+#if DEBUG
+            for (i = 0; i < r.Length; i++)
+            {
+                r[i].Verify();
+            }
+#endif
+        }
+
+
+        /// <summary>
+        /// Return whether <paramref name="x"/> is a valid X coordinate on the curve.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        public static bool IsOnCurveVar(in UInt256_10x26 x)
+        {
+            UInt256_10x26 c = x.Sqr();
+            c = c.Multiply(x);
+            c = c.Add(CurveB);
+            return c.IsSquareVar();
+        }
+
+        /// <summary>
+        /// Returns whether fraction xn/xd is a valid X coordinate on the curve (xd != 0).
+        /// </summary>
+        /// <param name="xn"></param>
+        /// <param name="xd">Must not be zero</param>
+        /// <returns></returns>
+        public static bool IsFracOnCurve(in UInt256_10x26 xn, in UInt256_10x26 xd)
+        {
+            // We want to determine whether (xn/xd) is on the curve.
+            // (xn/xd)^3 + 7 is square <=> xd*xn^3 + 7*xd^4 is square (multiplying by xd^4, a square).
+            Debug.Assert(!xd.IsZeroNormalizedVar());
+
+            UInt256_10x26 r = xd * xn;      // r = xd*xn
+            UInt256_10x26 t = xn.Sqr();     // t = xn^2
+            r = r.Multiply(t);              // r = xd*xn^3
+            t = xd.Sqr();                   // t = xd^2
+            t = t.Sqr();                    // t = xd^4
+            // TODO: pointless check since we don't have the EXHAUSTIVE_TEST_ORDER
+            Debug.Assert(CurveB <= 31);
+            t = t.Multiply(CurveB);         // t = 7*xd^4
+            r = r.Add(t);                   // r = xd*xn^3 + 7*xd^4
+            return r.IsSquareVar();
+        }
+
+        /// <summary>
+        /// Returns if this instance is valid (on curve) and is not the point at infinity
         /// </summary>
         /// <remarks>
-        /// This method is not constant-time.
+        /// This method is not constant-time
         /// </remarks>
-        /// <param name="x">X coordinate</param>
-        /// <param name="odd">Is y coordinate odd</param>
-        /// <param name="result">Result</param>
-        /// <returns>True if y was found; otherwise false.</returns>
-        public static bool TryCreateVar(in UInt256_10x26 x, bool odd, out Point result)
+        /// <returns></returns>
+        public bool IsValidVar()
         {
-            // y^2 = x^3 + 7
-            // TODO: create a constant for curve.b=7
-            UInt256_10x26 right = (x.Sqr() * x) + 7;
-            if (!right.Sqrt(out UInt256_10x26 y))
+            if (isInfinity)
             {
-                result = Infinity;
                 return false;
             }
 
-            UInt256_10x26 ry = y.NormalizeVar();
-            if (ry.IsOdd != odd)
-            {
-                ry = ry.Negate(1).NormalizeVar();
-            }
-
-            result = new Point(x, ry, false);
-            return true;
+            // y^2 = x^3 + 7
+            UInt256_10x26 left = y.Sqr();
+            UInt256_10x26 right = (x.Sqr() * x) + CurveB;
+            return right.Equals(left);
         }
 
 
@@ -312,6 +465,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 yNorm = y.NormalizeWeak();
             UInt256_10x26 yNeg = yNorm.Negate(1);
             return new Point(x, yNeg, isInfinity);
+        }
+
+        /// <summary>
+        /// Return lambda times this instance, where lambda is chosen in a way such that this is very fast.
+        /// </summary>
+        /// <returns></returns>
+        public Point MulLambda()
+        {
+#if DEBUG
+            Verify();
+#endif
+            var rx = x.Multiply(UInt256_10x26.Beta);
+            var r = new Point(rx, y, isInfinity);
+#if DEBUG
+            r.Verify();
+#endif
+            return r;
         }
 
 
@@ -343,67 +513,17 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        /// <summary>
-        /// Converts all <see cref="PointJacobian"/>s in <paramref name="a"/> to <see cref="Point"/>s and
-        /// sets <paramref name="r"/> items.
-        /// </summary>
-        /// <param name="r"></param>
-        /// <param name="a"></param>
-        /// <param name="len"></param>
-        public static void SetAllPointsToJacobianVar(Span<Point> r, ReadOnlySpan<PointJacobian> a, int len)
+        internal Point ToPointZInv(in UInt256_10x26 zi)
         {
-            int i;
-            int lastI = int.MaxValue;
-
-            for (i = 0; i < len; i++)
-            {
-                if (a[i].isInfinity)
-                {
-                    r[i] = Infinity;
-                }
-                else
-                {
-                    // Use destination's x coordinates as scratch space
-                    if (lastI == int.MaxValue)
-                    {
-                        r[i] = new Point(a[i].z, r[i].y, r[i].isInfinity);
-                    }
-                    else
-                    {
-                        UInt256_10x26 rx = r[lastI].x * a[i].z;
-                        r[i] = new Point(rx, r[i].y, r[i].isInfinity);
-                    }
-                    lastI = i;
-                }
-            }
-            if (lastI == int.MaxValue)
-            {
-                return;
-            }
-            UInt256_10x26 u = r[lastI].x.InverseVariable_old();
-
-            i = lastI;
-            while (i > 0)
-            {
-                i--;
-                if (!a[i].isInfinity)
-                {
-                    UInt256_10x26 rx = r[i].x * u;
-                    r[lastI] = new Point(rx, r[lastI].y, r[lastI].isInfinity);
-                    u *= a[lastI].z;
-                    lastI = i;
-                }
-            }
-            Debug.Assert(!a[lastI].isInfinity);
-            r[lastI] = new Point(u, r[lastI].y, r[lastI].isInfinity);
-
-            for (i = 0; i < len; i++)
-            {
-                if (!a[i].isInfinity)
-                {
-                    r[i] = a[i].ToPointZInv(r[i].x);
-                }
-            }
+#if DEBUG
+            zi.Verify();
+            Debug.Assert(!isInfinity);
+#endif
+            UInt256_10x26 zi2 = zi.Sqr();
+            UInt256_10x26 zi3 = zi2 * zi;
+            UInt256_10x26 rx = x * zi2;
+            UInt256_10x26 ry = y * zi3;
+            return new Point(rx, ry, isInfinity);
         }
 
 
@@ -421,6 +541,39 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             Debug.Assert(!isInfinity);
             return new PointStorage(x, y);
+        }
+
+
+        /// <summary>
+        /// Returns if the given group element (affine) is equal to this instance
+        /// in variable time.
+        /// </summary>
+        /// <param name="other">Other point to use</param>
+        /// <returns>True if the two points are equal; otherwise false.</returns>
+        public bool EqualsVar(in Point other)
+        {
+            if (isInfinity != other.isInfinity)
+            {
+                return false;
+            }
+            if (isInfinity)
+            {
+                return true;
+            }
+
+            UInt256_10x26 tmp = x.NormalizeWeak();
+            if (!tmp.Equals(other.x))
+            {
+                return false;
+            }
+
+            tmp = y.NormalizeWeak();
+            if (!tmp.Equals(other.y))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

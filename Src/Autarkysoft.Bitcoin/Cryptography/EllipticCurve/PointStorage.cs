@@ -50,6 +50,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         /// <summary>
         /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
+        /// Constant-time
         /// </summary>
         /// <param name="r"></param>
         /// <param name="a"></param>

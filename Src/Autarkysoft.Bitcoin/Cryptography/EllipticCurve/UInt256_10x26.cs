@@ -1887,25 +1887,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// Rescale a jacobian point by b (this instance) which must be non-zero.
-        /// </summary>
-        /// <remarks>
-        /// This method is constant-time.
-        /// </remarks>
-        /// <param name="r">Result</param>
-        public void Rescale(ref PointJacobian r)
-        {
-            Debug.Assert(!IsZero);
-            // Operations: 4 mul, 1 sqr
-            UInt256_10x26 zz = Sqr(1);
-            UInt256_10x26 x = r.x.Multiply(zz);                 // r->x *= s^2
-            UInt256_10x26 y = r.y.Multiply(zz).Multiply(this);  // r->y *= s^3
-            UInt256_10x26 z = r.z.Multiply(this);               // r->z *= s
-            r = new PointJacobian(x, y, z);
-        }
-
-
-        /// <summary>
         /// Converts this instance to <see cref="UInt256_8x32"/>.
         /// Assumes the instance is normalized.
         /// </summary>

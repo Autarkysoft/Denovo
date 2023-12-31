@@ -259,7 +259,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
                     Z = Z.NormalizeVar();
 #endif
-                    Z.Rescale(ref tmp);
+                    tmp = tmp.Rescale(Z);
                 }
 
                 int index = no * TableSizeWindowA;
@@ -576,7 +576,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             //
             //  Thus, we can avoid the inversion, but we have to check both cases separately.
             //  secp256k1_gej_eq_x implements the (xr * pr.z^2 mod p == pr.x) test.
-            if (pr.EqualsXVar(xr))
+            if (pr.EqualsVar(xr))
             {
                 // xr * pr.z^2 mod p == pr.x, so the signature is valid.
                 return true;
@@ -588,7 +588,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             xr += UInt256_10x26.N;
-            if (pr.EqualsXVar(xr))
+            if (pr.EqualsVar(xr))
             {
                 // (xr + n) * pr.z^2 mod p == pr.x, so the signature is valid.
                 return true;

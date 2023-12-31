@@ -74,7 +74,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                     numsBase = numsBase.AddVar(numsGJ, out _);
                 }
             }
-            Point.SetAllPointsToJacobianVar(prec, preJ, 1024);
+            Point.SetAllPointsToJacobianVar(prec, preJ);
 
             for (int j = 0; j < 64; j++)
             {
