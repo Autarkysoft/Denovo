@@ -444,6 +444,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public bool IsValidVar()
         {
+#if DEBUG
+            Verify();
+#endif
             if (isInfinity)
             {
                 return false;
@@ -462,9 +465,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>-P</returns>
         public Point Negate()
         {
+#if DEBUG
+            Verify();
+#endif
             UInt256_10x26 yNorm = y.NormalizeWeak();
             UInt256_10x26 yNeg = yNorm.Negate(1);
-            return new Point(x, yNeg, isInfinity);
+            Point result = new Point(x, yNeg, isInfinity);
+#if DEBUG
+            result.Verify();
+#endif
+            return result;
         }
 
         /// <summary>
@@ -476,8 +486,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             Verify();
 #endif
-            var rx = x.Multiply(UInt256_10x26.Beta);
-            var r = new Point(rx, y, isInfinity);
+            UInt256_10x26 rx = x.Multiply(UInt256_10x26.Beta);
+            Point r = new Point(rx, y, isInfinity);
 #if DEBUG
             r.Verify();
 #endif
@@ -516,6 +526,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         internal Point ToPointZInv(in UInt256_10x26 zi)
         {
 #if DEBUG
+            Verify();
             zi.Verify();
             Debug.Assert(!isInfinity);
 #endif
@@ -523,14 +534,25 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 zi3 = zi2 * zi;
             UInt256_10x26 rx = x * zi2;
             UInt256_10x26 ry = y * zi3;
-            return new Point(rx, ry, isInfinity);
+            Point result = new Point(rx, ry, isInfinity);
+#if DEBUG
+            result.Verify();
+#endif
+            return result;
         }
 
 
         /// <summary>
         /// Converts this instance in affine coordinates to point in jacobian coordinates
         /// </summary>
-        public PointJacobian ToPointJacobian() => new PointJacobian(x, y, UInt256_10x26.One, isInfinity);
+        public PointJacobian ToPointJacobian()
+        {
+            PointJacobian result = new PointJacobian(x, y, UInt256_10x26.One, isInfinity);
+#if DEBUG
+            result.Verify();
+#endif
+            return result;
+        }
 
         /// <summary>
         /// Converts this instance to a <see cref="PointStorage"/>.
@@ -539,7 +561,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Result</returns>
         public PointStorage ToStorage()
         {
+#if DEBUG
+            Verify();
             Debug.Assert(!isInfinity);
+#endif
             return new PointStorage(x, y);
         }
 
@@ -552,6 +577,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if the two points are equal; otherwise false.</returns>
         public bool EqualsVar(in Point other)
         {
+#if DEBUG
+            Verify();
+            other.Verify();
+#endif
             if (isInfinity != other.isInfinity)
             {
                 return false;

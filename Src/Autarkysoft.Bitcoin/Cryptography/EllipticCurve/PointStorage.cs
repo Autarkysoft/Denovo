@@ -45,7 +45,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Converts this instance to a <see cref="Point"/>.
         /// </summary>
         /// <returns>Result</returns>
-        public Point ToPoint() => new Point(x.ToUInt256_10x26(), y.ToUInt256_10x26(), false);
+        public Point ToPoint()
+        {
+            Point result = new Point(x.ToUInt256_10x26(), y.ToUInt256_10x26(), false);
+#if DEBUG
+            result.Verify();
+#endif
+            return result;
+        }
 
 
         /// <summary>
