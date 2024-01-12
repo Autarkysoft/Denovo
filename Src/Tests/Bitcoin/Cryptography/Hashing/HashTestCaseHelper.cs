@@ -38,12 +38,9 @@ namespace Tests.Bitcoin.Cryptography.Hashing
 
         public static byte[] GetAMillionA()
         {
-            byte[] message = new byte[1_000_000];
-            for (int i = 0; i < message.Length; i++)
-            {
-                message[i] = (byte)'a';
-            }
-            return message;
+            Span<byte> message = new byte[1_000_000];
+            message.Fill((byte)'a');
+            return message.ToArray();
         }
 
 
