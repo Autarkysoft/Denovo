@@ -455,7 +455,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // y^2 = x^3 + 7
             UInt256_10x26 left = y.Sqr();
             UInt256_10x26 right = (x.Sqr() * x) + CurveB;
-            return right.Equals(left);
+            return left.Equals(right);
         }
 
 
