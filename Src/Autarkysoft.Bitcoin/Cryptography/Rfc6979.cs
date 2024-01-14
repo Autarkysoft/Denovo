@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Numerics;
@@ -23,30 +24,17 @@ namespace Autarkysoft.Bitcoin.Cryptography
         /// </summary>
         public Rfc6979()
         {
-            // Curve.N
-            order = BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007908834671663");
-            HmacK = new HmacSha256();
-        }
-
-        /// <summary>
-        /// Initializes a new instance of <see cref="Rfc6979"/> with the given order used only for testing.
-        /// </summary>
-        /// <param name="order">Order of the test curve</param>
-        public Rfc6979(BigInteger order)
-        {
-            this.order = order;
             HmacK = new HmacSha256();
         }
 
 
 
         private const int QLen = 256;
-        private readonly BigInteger order;
         private HmacSha256 HmacK;
 
 
 
-        private BigInteger BitsToInt(byte[] ba)
+        private static BigInteger BitsToInt(byte[] ba)
         {
             BigInteger big = ba.ToBigInt(true, true);
             int vLen = ba.Length * 8;
@@ -81,11 +69,12 @@ namespace Autarkysoft.Bitcoin.Cryptography
             byte[] k = new byte[32];
 
             // d. 
-            // K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
+            // K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
             int entLen = extraEntropy is null ? 0 : extraEntropy.Length;
             // 97 = 32 + 1 + 32 + 32
             byte[] bytesToHash = new byte[97 + entLen];
-            byte[] dataBa = (data.ToBigInt(true, true) % order).ToByteArray(true, true);
+            Scalar8x32 sc = new Scalar8x32(data, out _);
+            byte[] dataBa = sc.ToByteArray();
 
             Buffer.BlockCopy(v, 0, bytesToHash, 0, 32);
             // Set item at index 32 to 0x00
@@ -101,7 +90,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
             // e.
             v = HmacK.ComputeHash(v, k);
 
-            // f. 
+            // f. K = HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1))
             Buffer.BlockCopy(v, 0, bytesToHash, 0, 32);
             // Set item at index 33 to 0x01 this time
             bytesToHash[32] = 0x01;
@@ -118,10 +107,10 @@ namespace Autarkysoft.Bitcoin.Cryptography
                 v = HmacK.ComputeHash(v, k);
 
                 // h.3.
-                BigInteger kTemp = BitsToInt(v);
-                if (kTemp != 0 && kTemp < order)
+                Scalar8x32 temp = new Scalar8x32(v, out bool of);
+                if (!temp.IsZero && !of)
                 {
-                    return kTemp;
+                    return new BigInteger(v, isUnsigned: true, isBigEndian: true);
                 }
                 else
                 {
