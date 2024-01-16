@@ -1,5 +1,11 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.25.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.26.0.0...master)
+
+### Release 0.26.0 (2024-01-15)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.25.0.0...B0.26.0.0)
+* Lots of code improvements, bug fixes, additional debug verification, code cleanup, optimization and tests in ECC
+* Some more methods are marked obsolete that will be removed in future releases
+* RFC-6979 is changed to allow reusing to generate consecutive nonce generation (upto 40% faster)
 
 ### Release 0.25.0 (2023-10-15)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.24.0.0...B0.25.0.0)
