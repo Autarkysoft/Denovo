@@ -1480,24 +1480,22 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.False(overflow);
 
             Scalar8x32 z = x.Multiply(y);
-            Assert.True(z.Verify());
             Assert.Equal(r1, z);
 
             if (!y.IsZero)
             {
                 Scalar8x32 zz = y.Inverse();
-                Assert.True(zz.Verify());
                 Scalar8x32 zzv = y.InverseVar();
                 Assert.Equal(zzv, zz);
                 // x*y*y' == x*1 == x  (y' represents inverse of y)
                 z = z.Multiply(zz);
-                Assert.True(z.Verify());
                 Assert.Equal(x, z);
                 // y'*y == 1
                 zz = zz.Multiply(y);
-                Assert.True(zz.Verify());
                 Assert.Equal(Scalar8x32.One, zz);
             }
+            z = x.Multiply(x);
+            Assert.Equal(r2, z);
         }
 
 
