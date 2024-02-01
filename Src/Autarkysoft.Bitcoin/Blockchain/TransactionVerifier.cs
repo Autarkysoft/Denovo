@@ -42,6 +42,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             this.consensus = consensus;
 
             calc = new Calc();
+            dsa = new DSA();
             scrSer = new ScriptSerializer();
             hash160 = new Ripemd160Sha256();
             sha256 = new Sha256();
