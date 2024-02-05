@@ -8,35 +8,49 @@ using System.Diagnostics;
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
+    /// <summary>
+    /// Context object used to store randomization data for enhanced protection against side-channel leakage.
+    /// </summary>
     public class Context
     {
-        private Context()
+        /// <summary>
+        /// Instantiate a new instance of <see cref="Context"/> with default values.
+        /// </summary>
+        public Context()
         {
+            // secp256k1_context_create() -> secp256k1_ecmult_gen_context_build -> secp256k1_ecmult_gen_blind(ctx, NULL)
+            // When seed is NULL, reset the initial point and blinding value.
+            initial = Point.G.ToPointJacobian().Negate();
+            blind = Scalar8x32.One;
         }
 
         // Blinding values used when computing (n-b)G + bG.
-        Scalar8x32 blind; /* -b */
-        PointJacobian initial;/* bG */
+        Scalar8x32 blind; // -b
+        PointJacobian initial;// bG
 
         private const int ECMULT_GEN_PREC_BITS = 4;
         private static int ECMULT_GEN_PREC_N(int bits) => (256 / bits);
         private static int ECMULT_GEN_PREC_G(int bits) => (1 << bits);
 
 
-        public static Context Create()
+        /// <summary>
+        /// Randomizes this context to provide enhanced protection against side-channel leakage.
+        /// </summary>
+        /// <remarks>
+        /// It is highly recommended to call this method after instantiation and before using it in
+        /// computations involving secret keys like signing and public key generation. It is possible
+        /// to call this method more than once, and doing so before every few computations involving
+        /// secret keys is recommended as a defense-in-depth measure.
+        /// </remarks>
+        /// <param name="seed32">a 32-byte random seed</param>
+        public void Randomize(ReadOnlySpan<byte> seed32)
         {
-            Context ctx = new Context();
-            secp256k1_ecmult_gen_blind(ctx, null);
-            return ctx;
+            GenBlind(this, seed32);
         }
 
-        public void secp256k1_context_randomize(byte[] seed32)
-        {
-            secp256k1_ecmult_gen_blind(this, seed32);
-        }
 
-
-        private static void secp256k1_ecmult_gen_blind(Context ctx, ReadOnlySpan<byte> seed32)
+        // secp256k1_ecmult_gen_blind
+        private static void GenBlind(Context ctx, ReadOnlySpan<byte> seed32)
         {
             if (seed32 == null)
             {
@@ -71,7 +85,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             nonce32.Clear();
 
             // The random projection in ctx->initial ensures that gb will have a random projection.
-            secp256k1_ecmult_gen(ctx, out PointJacobian gb, b);
+            EcMultGen(ctx, out PointJacobian gb, b);
             ctx.blind = b.Negate();
             ctx.initial = gb;
             b = Scalar8x32.Zero;
@@ -91,8 +105,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // None of the resulting prec group elements have a known scalar, and neither do any of
         // the intermediate sums while computing a*G.
         // The prec values are stored in secp256k1_ecmult_gen_prec_table[i][n_i] = n_i * (PREC_G)^i * G + U_i.
-        static unsafe void secp256k1_ecmult_gen(Context ctx, out PointJacobian r, in Scalar8x32 gn)
+        private static unsafe void EcMultGen(Context ctx, out PointJacobian r, in Scalar8x32 gn)
         {
+            // secp256k1_ecmult_gen
             int bits = ECMULT_GEN_PREC_BITS;
             int g = ECMULT_GEN_PREC_G(bits);
             int n = ECMULT_GEN_PREC_N(bits);
