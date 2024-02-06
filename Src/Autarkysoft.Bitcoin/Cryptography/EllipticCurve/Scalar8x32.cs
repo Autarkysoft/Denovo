@@ -297,6 +297,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Creates a new instance of <see cref="Scalar8x32"/> using the given big-endian array
+        /// and reduces the result modulo curve order (n). 
+        /// Return value indicates validity of the result as a private key.
+        /// </summary>
+        /// <param name="data">Array to use</param>
+        /// <param name="res">Scalar</param>
+        /// <returns>True if value was non-zero and smaller than curve order; otherwise false</returns>
+        public static bool TrySetPrivateKey(ReadOnlySpan<byte> data, out Scalar8x32 res)
+        {
+            // secp256k1_scalar_set_b32_seckey
+            res = new Scalar8x32(data, out bool overflow);
+            Debug.Assert(res.Verify());
+            return !overflow && !res.IsZero;
+        }
+
+
+        /// <summary>
         /// Multiply a scalar with the multiplicative inverse of 2
         /// </summary>
         /// <returns></returns>

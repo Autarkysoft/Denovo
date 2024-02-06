@@ -473,6 +473,32 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             } while (true);
         }
 
+        /// <summary>
+        /// random_scalar_order
+        /// </summary>
+        private static Scalar8x32 RandomScalarOrder(TestRNG rng)
+        {
+            do
+            {
+                byte[] b32 = new byte[32];
+                rng.Rand256(b32);
+                Scalar8x32 num = new(b32, out bool overflow);
+                if (!overflow && !num.IsZero)
+                {
+                    return num;
+                }
+            } while (true);
+        }
+
+        /// <summary>
+        /// random_scalar_order_b32
+        /// </summary>
+        private static byte[] RandomScalarOrderB32(TestRNG rng)
+        {
+            Scalar8x32 num = RandomScalarOrder(rng);
+            return num.ToByteArray();
+        }
+
         // scalar_test(void)
         private static unsafe void ScalarTest(TestRNG rng)
         {
@@ -622,6 +648,27 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
+
+        // run_scalar_set_b32_seckey_tests
+        private static void SetB32SeckeyTests(TestRNG rng)
+        {
+            // Usually set_b32 and set_b32_seckey give the same result
+            Span<byte> b32 = RandomScalarOrderB32(rng);
+
+            Scalar8x32 s1 = new(b32, out _);
+            bool b = Scalar8x32.TrySetPrivateKey(b32, out Scalar8x32 s2);
+            Assert.True(b);
+            Assert.True(s1.Equals(s2));
+
+            b32.Clear(); // b32.Fill(0);
+            b = Scalar8x32.TrySetPrivateKey(b32, out _);
+            Assert.False(b);
+
+            b32.Fill(0xff);
+            b = Scalar8x32.TrySetPrivateKey(b32, out _);
+            Assert.False(b);
+        }
+
         [Fact]
         public void Libsecp256k1Tests() // run_scalar_tests
         {
@@ -631,6 +678,11 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             for (int i = 0; i < 128 * Count; i++)
             {
                 ScalarTest(rng);
+            }
+
+            for (int i = 0; i < Count; i++)
+            {
+                SetB32SeckeyTests(rng);
             }
 
             // Check that the scalar constants secp256k1_scalar_zero and
