@@ -10,6 +10,7 @@ using System;
 
 namespace Denovo
 {
+    [Obsolete]
     public class ViewLocator : IDataTemplate
     {
         public bool SupportsRecycling => false;

@@ -3,10 +3,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
+        x:CompileBindings="True"
+        x:DataType="vm:MainWindowViewModel"
         x:Class="Denovo.Views.MainWindow"
         FontSize="14"
-        Height="690"
-        Width="700"
+        Height="690" Width="700"
         Title="MainWindow">
 
   <Design.DataContext>
@@ -59,7 +60,7 @@
                 </StackPanel>
                 <TextBlock Text="{Binding NodeStatus.StartHeight}"/>
                 <TextBlock Text="{Binding NodeStatus.UserAgent}"/>
-                <TextBlock Text="{Binding NodeStatus.Violation}"/>
+                <!--<TextBlock Text="{Binding NodeStatus.Violation}"/>-->
               </StackPanel>
             </DataTemplate>
           </ListBox.ItemTemplate>
@@ -73,8 +74,8 @@
     </Grid>
 
     <Grid ColumnDefinitions="200,*" Background="GhostWhite" Margin="0,5,0,0" Grid.Row="2">
-      <TextBlock Text="{Binding State}" Margin="3" Grid.Column="0"/>
-      <ProgressBar Value="{Binding Progress}" Margin="3" Grid.Column="1"/>
+      <!--<TextBlock Text="{Binding State}" Margin="3" Grid.Column="0"/>-->
+      <!--<ProgressBar Value="{Binding Progress}" Margin="3" Grid.Column="1"/>-->
     </Grid>
   </Grid>
 </Window>
