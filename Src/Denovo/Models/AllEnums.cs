@@ -13,6 +13,21 @@ namespace Denovo.Models
         SpvElectrum
     }
 
+    public enum MessageBoxResult
+    {
+        Ok,
+        Cancel,
+        Yes,
+        No
+    }
+
+    public enum MessageBoxType
+    {
+        Ok,
+        OkCancel,
+        YesNo,
+    }
+
     public enum PeerDiscoveryOption
     {
         DNS,
