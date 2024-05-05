@@ -87,7 +87,6 @@
       <Setter Property="Margin" Value="3"/>
       <Setter Property="MinHeight" Value="20"/>
       <Setter Property="Padding" Value="5,3,5,5"/>
-      <Setter Property="UseFloatingWatermark" Value="True"/>
       <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
     <Style Selector="TextBox /template/ Border">
