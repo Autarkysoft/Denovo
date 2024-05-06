@@ -176,6 +176,43 @@ namespace Autarkysoft.Bitcoin
         /// https://github.com/bitcoin/bitcoin/blob/81d5af42f4dba5b68a597536cad7f61894dc22a3/src/net_processing.cpp#L71-L72
         /// </remarks>
         public const int MaxLocatorCount = 101;
+
+        /// <summary>
+        /// Returns a list of DNS seeds used for initial peer discovery on MainNet.
+        /// </summary>
+        /// <returns>List of MainNet DNS seeds</returns>
+        public static string[] GetMainNetDnsSeeds()
+        {
+            // https://github.com/bitcoin/bitcoin/blob/00ac1b963d08f2779d2197edcdb1e76392993378/src/kernel/chainparams.cpp#L134-L142
+            return new string[]
+            {
+                "seed.bitcoin.sipa.be", // Pieter Wuille, only supports x1, x5, x9, and xd
+                "dnsseed.bluematt.me", // Matt Corallo, only supports x9
+                "dnsseed.bitcoin.dashjr-list-of-p2p-nodes.us", // Luke Dashjr
+                "seed.bitcoinstats.com", // Christian Decker, supports x1 - xf
+                "seed.bitcoin.jonasschnelli.ch", // Jonas Schnelli, only supports x1, x5, x9, and xd
+                "seed.btc.petertodd.net", // Peter Todd, only supports x1, x5, x9, and xd
+                "seed.bitcoin.sprovoost.nl", // Sjors Provoost
+                "dnsseed.emzy.de", // Stephan Oeste
+                "seed.bitcoin.wiz.biz", // Jason Maurice
+            };
+        }
+
+        /// <summary>
+        /// Returns a list of DNS seeds used for initial peer discovery on TestNet.
+        /// </summary>
+        /// <returns>List of TestNet DNS seeds</returns>
+        public static string[] GetTestNetDnsSeeds()
+        {
+            // https://github.com/bitcoin/bitcoin/blob/00ac1b963d08f2779d2197edcdb1e76392993378/src/kernel/chainparams.cpp#L245-L248
+            return new string[]
+            {
+                "testnet-seed.bitcoin.jonasschnelli.ch",
+                "seed.tbtc.petertodd.net",
+                "seed.testnet.bitcoin.sprovoost.nl",
+                "testnet-seed.bluematt.me", // Just a static list of stable node(s), only supports x9
+            };
+        }
     }
 
 
