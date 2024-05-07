@@ -73,7 +73,7 @@ namespace Denovo.ViewModels
         {
             settings = new(SelectedNetwork, 4, null)
             {
-                DnsSeeds = SelectedNetwork == NetworkType.MainNet ? Configuration.DnsMain : Configuration.DnsTest,
+                DnsSeeds = SelectedNetwork == NetworkType.MainNet ? Constants.GetMainNetDnsSeeds() : Constants.GetTestNetDnsSeeds(),
                 UserAgent = "/Satoshi:0.22.0/",
             };
             client = new(settings);

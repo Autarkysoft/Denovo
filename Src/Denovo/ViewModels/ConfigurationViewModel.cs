@@ -9,7 +9,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Denovo.Models;
 using Denovo.MVVM;
-using Denovo.Services;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -18,15 +17,17 @@ namespace Denovo.ViewModels
     public class ConfigurationViewModel : VmWithSizeBase
     {
         // This will make designer happy
-        public ConfigurationViewModel() : base(500, 600)
+        public ConfigurationViewModel() : this(new Configuration(NetworkType.MainNet))
         {
-            Config = new Configuration(NetworkType.MainNet);
         }
 
         public ConfigurationViewModel(Configuration config) : base(500, 600)
         {
             Config = config;
             Config.PropertyChanged += Config_PropertyChanged;
+
+            ClientTypes = EnumHelper.GetAllEnumValues<ClientType>();
+            PeerDiscoveryOptions = EnumHelper.GetAllEnumValues<PeerDiscoveryOption>();
         }
 
 
@@ -50,8 +51,8 @@ namespace Denovo.ViewModels
         }
 
         public Configuration Config { get; set; }
-        public IEnumerable<ClientType> ClientTypes { get; } = EnumHelper.GetAllEnumValues<ClientType>();
-        public IEnumerable<PeerDiscoveryOption> PeerDiscoveryOptions { get; } = EnumHelper.GetAllEnumValues<PeerDiscoveryOption>();
+        public IEnumerable<ClientType> ClientTypes { get; }
+        public IEnumerable<PeerDiscoveryOption> PeerDiscoveryOptions { get; }
 
         private string _desc;
         public string Desc

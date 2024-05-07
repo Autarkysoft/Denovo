@@ -25,7 +25,7 @@ namespace Denovo.ViewModels
             AllNodes = new NodePool(5);
             MinimalClientSettings clientSettings = new(NetworkType.TestNet, 5, AllNodes)
             {
-                DnsSeeds = Configuration.DnsTest,
+                DnsSeeds = Constants.GetTestNetDnsSeeds(),
                 UserAgent = "/Satoshi:0.22.0/",
             };
             client = new MinimalClient(clientSettings);
@@ -114,7 +114,7 @@ namespace Denovo.ViewModels
 
             IBlock result = await miner.Start(prvBlock, BlockHeight, tokenSource.Token);
 
-            if (!(result is null))
+            if (result is not null)
             {
                 FastStream stream = new();
                 result.Serialize(stream);

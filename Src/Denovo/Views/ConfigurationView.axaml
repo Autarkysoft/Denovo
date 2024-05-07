@@ -38,6 +38,7 @@
         </Grid>
       </TabItem>-->
 
+
       <TabItem Header="Paths">
         <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,auto">
           <TextBlock Text="Blockchain path:"
@@ -56,6 +57,7 @@
           <Button Content="Browse..." Margin="5" Grid.Column="2" Grid.Row="1"/>
         </Grid>
       </TabItem>
+
 
       <TabItem Header="Connection">
         <StackPanel Margin="5" Spacing="3">

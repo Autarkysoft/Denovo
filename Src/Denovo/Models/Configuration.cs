@@ -98,33 +98,12 @@ namespace Denovo.Models
         }
 
 
-        public static readonly string[] DnsMain = new string[]
-        {
-            "seed.bitcoin.sipa.be", // Pieter Wuille, only supports x1, x5, x9, and xd
-            "dnsseed.bluematt.me", // Matt Corallo, only supports x9
-            "dnsseed.bitcoin.dashjr.org", // Luke Dashjr
-            "seed.bitcoinstats.com", // Christian Decker, supports x1 - xf
-            "seed.bitcoin.jonasschnelli.ch", // Jonas Schnelli, only supports x1, x5, x9, and xd
-            "seed.btc.petertodd.org", // Peter Todd, only supports x1, x5, x9, and xd
-            "seed.bitcoin.sprovoost.nl", // Sjors Provoost
-            "dnsseed.emzy.de", // Stephan Oeste
-            "seed.bitcoin.wiz.biz", // Jason Maurice
-        };
-
-        public static readonly string[] DnsTest = new string[]
-        {
-            "testnet-seed.bitcoin.jonasschnelli.ch",
-            "seed.tbtc.petertodd.org",
-            "seed.testnet.bitcoin.sprovoost.nl",
-            "testnet-seed.bluematt.me",
-        };
-
         private string GetDnsList()
         {
             return Network switch
             {
-                NetworkType.MainNet => string.Join(Environment.NewLine, DnsMain),
-                NetworkType.TestNet => string.Join(Environment.NewLine, DnsTest),
+                NetworkType.MainNet => string.Join(Environment.NewLine, Constants.GetMainNetDnsSeeds()),
+                NetworkType.TestNet => string.Join(Environment.NewLine, Constants.GetTestNetDnsSeeds()),
                 NetworkType.RegTest => "Not defined.",
                 _ => "Not defined."
             };
