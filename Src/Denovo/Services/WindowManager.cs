@@ -6,6 +6,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Denovo.Models;
 using Denovo.ViewModels;
 using System.Threading.Tasks;
 
@@ -14,6 +15,7 @@ namespace Denovo.Services
     public interface IWindowManager
     {
         Task ShowDialog(VmWithSizeBase vm);
+        Task<MessageBoxResult> ShowMessageBox(MessageBoxType mbType, string message);
     }
 
 
@@ -35,6 +37,25 @@ namespace Denovo.Services
 
             var lf = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
             return win.ShowDialog(lf.MainWindow);
+        }
+
+        public async Task<MessageBoxResult> ShowMessageBox(MessageBoxType mbType, string message)
+        {
+            MessageBoxViewModel vm = new(mbType, message);
+            Window win = new()
+            {
+                Content = vm,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                Title = "Warning!",
+            };
+            vm.CLoseEvent += (s, e) => win.Close();
+
+            var lf = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
+            await win.ShowDialog(lf.MainWindow);
+
+            return vm.Result;
         }
     }
 }
