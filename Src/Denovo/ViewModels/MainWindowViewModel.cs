@@ -8,6 +8,7 @@ using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Avalonia.Input.Platform;
+using Avalonia.Platform.Storage;
 using Denovo.Models;
 using Denovo.MVVM;
 using Denovo.Services;
@@ -56,6 +57,7 @@ namespace Denovo.ViewModels
         public NodePool AllNodes { get; set; }
 
         public IClipboard Clipboard { get; set; }
+        public IStorageProvider StorageProvider { get; set; }
         public IWindowManager WinMan { get; set; }
         public IDenovoFileManager FileMan { get; set; }
         public bool IsInitialized { get; }
@@ -112,7 +114,10 @@ namespace Denovo.ViewModels
                 config = new Configuration(Network) { IsDefault = true };
             }
 
-            ConfigurationViewModel vm = new(config);
+            ConfigurationViewModel vm = new(config)
+            {
+                StorageProvider = StorageProvider
+            };
             await WinMan.ShowDialog(vm);
 
             if (vm.IsChanged)
@@ -214,7 +219,7 @@ namespace Denovo.ViewModels
         public bool CanDisconnect() => SelectedNode != null;
         public void Disconnect()
         {
-            if (!(SelectedNode is null))
+            if (SelectedNode is not null)
             {
                 AllNodes.Remove(SelectedNode);
             }

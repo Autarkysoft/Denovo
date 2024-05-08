@@ -57,6 +57,7 @@ namespace Denovo
                     DataContext = vm
                 };
                 vm.Clipboard = desktop.MainWindow.Clipboard;
+                vm.StorageProvider = desktop.MainWindow.StorageProvider;
             }
 
             base.OnFrameworkInitializationCompleted();

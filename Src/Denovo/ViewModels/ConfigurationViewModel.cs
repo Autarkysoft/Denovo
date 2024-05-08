@@ -4,13 +4,12 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using Denovo.Models;
 using Denovo.MVVM;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 
 namespace Denovo.ViewModels
 {
@@ -77,16 +76,19 @@ namespace Denovo.ViewModels
         }
 
         public bool IsChanged { get; private set; }
-
+        public IStorageProvider StorageProvider { get; set; }
 
         public async void SetBlockchainDir()
         {
-            var open = new OpenFolderDialog();
-            var lf = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
-            string dir = await open.ShowAsync(lf.MainWindow);
-            if (!string.IsNullOrEmpty(dir))
+            FolderPickerOpenOptions opts = new()
             {
-                Config.BlockchainPath = dir;
+                AllowMultiple = false,
+                Title = "Blockchain directory"
+            };
+            IReadOnlyList<IStorageFolder> dir = await StorageProvider.OpenFolderPickerAsync(opts);
+            if (dir != null && dir.Count > 0)
+            {
+                Config.BlockchainPath= dir.ElementAt(0).Path.LocalPath;
             }
         }
 
