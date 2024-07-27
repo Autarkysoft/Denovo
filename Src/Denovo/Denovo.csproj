@@ -14,9 +14,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.10" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.0.10" />
-    <PackageReference Include="Avalonia.Themes.Simple" Version="11.0.10" />
+    <PackageReference Include="Avalonia" Version="11.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.1.1" />
+    <PackageReference Include="Avalonia.Themes.Simple" Version="11.1.1" />
   </ItemGroup>
 
   <ItemGroup>
