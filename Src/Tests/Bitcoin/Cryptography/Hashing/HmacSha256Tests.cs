@@ -7,7 +7,6 @@ using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.Hashing
 {
@@ -28,7 +27,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             byte[] expectedKey = sysHmac.Key;
 
             // Set key in constructor:
-            using (HmacSha256 hmac = new HmacSha256(key))
+            using (HmacSha256 hmac = new(key))
             {
                 Assert.Equal(expectedKey, hmac.Key);
                 if (!isKeyHashed)
@@ -44,7 +43,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             }
 
             // Set key using the property:
-            using (HmacSha256 hmac = new HmacSha256())
+            using (HmacSha256 hmac = new())
             {
                 Assert.Null(hmac.Key);
                 hmac.Key = key;
@@ -66,7 +65,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         {
             Assert.Throws<ArgumentNullException>(() => new HmacSha256(null));
 
-            HmacSha256 hmac = new HmacSha256();
+            HmacSha256 hmac = new();
             Assert.Throws<ArgumentNullException>(() => hmac.Key = null);
         }
 
@@ -74,7 +73,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_ExceptionTest()
         {
-            HmacSha256 hmac = new HmacSha256();
+            HmacSha256 hmac = new();
 
             Exception ex = Assert.Throws<ArgumentNullException>(() => hmac.ComputeHash(null));
             Assert.Contains("Data can not be null", ex.Message);
@@ -93,7 +92,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ComputeHash_WithKey_ExceptionTest()
         {
-            HmacSha256 hmac = new HmacSha256();
+            HmacSha256 hmac = new();
 
             Exception ex = Assert.Throws<ArgumentNullException>(() => hmac.ComputeHash(null, new byte[1]));
             Assert.Contains("Data can not be null", ex.Message);
@@ -115,7 +114,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             using var sysHmac = new System.Security.Cryptography.HMACSHA256(key);
             byte[] expected = sysHmac.ComputeHash(data);
 
-            using HmacSha256 hmac = new HmacSha256(key);
+            using HmacSha256 hmac = new(key);
             byte[] actual = hmac.ComputeHash(data);
             Assert.Equal(expected, actual);
         }
@@ -129,7 +128,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             using var sysHmac = new System.Security.Cryptography.HMACSHA256(key);
             byte[] expected = sysHmac.ComputeHash(data);
 
-            using HmacSha256 hmac = new HmacSha256();
+            using HmacSha256 hmac = new();
             byte[] actual = hmac.ComputeHash(data, key);
             Assert.Equal(expected, actual);
         }
@@ -138,7 +137,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         public static TheoryData GetHmacSha_Rfc_Cases()
         {
             // Test cases are taken from https://tools.ietf.org/html/rfc4231
-            TheoryData<byte[], byte[], byte[]> result = new TheoryData<byte[], byte[], byte[]>();
+            TheoryData<byte[], byte[], byte[]> result = new();
             foreach (var item in Helper.ReadResource<JArray>("HmacShaRfcTestData"))
             {
                 byte[] msgBytes = Helper.HexToBytes(item["Message"].ToString());
@@ -155,7 +154,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Rfc_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_rfc_Test(byte[] msg, byte[] key, byte[] expected)
         {
-            using HmacSha256 hmac = new HmacSha256();
+            using HmacSha256 hmac = new();
             byte[] actual = hmac.ComputeHash(msg, key);
             Assert.Equal(expected, actual);
         }
@@ -164,7 +163,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Rfc_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_rfc_CtorKey_Test(byte[] msg, byte[] key, byte[] expected)
         {
-            using HmacSha256 hmac = new HmacSha256(key);
+            using HmacSha256 hmac = new(key);
             byte[] actual = hmac.ComputeHash(msg);
             Assert.Equal(expected, actual);
         }
@@ -174,7 +173,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Nist_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NIST_Test(byte[] msg, byte[] key, byte[] expected, int len, bool truncate)
         {
-            using HmacSha256 hmac = new HmacSha256();
+            using HmacSha256 hmac = new();
             byte[] actual = hmac.ComputeHash(msg, key);
             if (truncate)
             {
@@ -189,7 +188,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Nist_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NIST_CtorKey_Test(byte[] msg, byte[] key, byte[] expected, int len, bool truncate)
         {
-            using HmacSha256 hmac = new HmacSha256(key);
+            using HmacSha256 hmac = new(key);
             byte[] actual = hmac.ComputeHash(msg);
             if (truncate)
             {
@@ -201,7 +200,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
 
-        public static TheoryData GetReuseCases()
+        public static TheoryData<byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte[], byte[]> GetReuseCases()
         {
             byte[] key1 = Helper.HexToBytes("27d94d0e34b0066e29f23c9a6597cfe77a1df7e27f2740914c9a44e49c6a7b12");
             byte[] data1_1 = Helper.HexToBytes("24344356060cde62834b9a1e6143f89fac4485eb8993e8a811226f74e670fbf4");
@@ -229,7 +228,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         public void ComputeHash_CtorKey_ReuseTest(byte[] key1, byte[] data1_1, byte[] exp1_1, byte[] data1_2, byte[] exp1_2,
             byte[] key2, byte[] data2_1, byte[] exp2_1, byte[] data2_2, byte[] exp2_2)
         {
-            using HmacSha256 hmac = new HmacSha256(key1);
+            using HmacSha256 hmac = new(key1);
             byte[] actual1_1 = hmac.ComputeHash(data1_1);
             Assert.Equal(exp1_1, actual1_1);
 
@@ -250,7 +249,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         public void ComputeHash_Reuse_Test(byte[] key1, byte[] data1_1, byte[] exp1_1, byte[] data1_2, byte[] exp1_2,
             byte[] key2, byte[] data2_1, byte[] exp2_1, byte[] data2_2, byte[] exp2_2)
         {
-            using HmacSha256 hmac = new HmacSha256();
+            using HmacSha256 hmac = new();
             byte[] actual1_1 = hmac.ComputeHash(data1_1, key1);
             Assert.Equal(exp1_1, actual1_1);
 
