@@ -52,6 +52,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 case NetworkType.MainNet:
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+                    AllowMinDifficultyBlocks = false;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 170060;
@@ -64,6 +65,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     break;
                 case NetworkType.TestNet:
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+                    AllowMinDifficultyBlocks = true;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 1718436;
@@ -76,6 +78,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     break;
                 case NetworkType.RegTest:
                     PowLimit = Digest256.ParseHex("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+                    AllowMinDifficultyBlocks = true;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 150;
                     bip16 = 0;
@@ -189,6 +192,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
         /// <inheritdoc/>
         public int MinBlockVersion => minBlkVer;
+
+        /// <inheritdoc/>
+        public bool AllowMinDifficultyBlocks { get; }
 
         /// <inheritdoc/>
         public Digest256 PowLimit { get; }

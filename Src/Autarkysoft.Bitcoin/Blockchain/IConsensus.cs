@@ -91,6 +91,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         int MinBlockVersion { get; }
 
         /// <summary>
+        /// Allows fall back to minimum difficulty in TestNet
+        /// </summary>
+        bool AllowMinDifficultyBlocks { get; }
+
+        /// <summary>
         /// Proof of work limit
         /// </summary>
         Digest256 PowLimit { get; }

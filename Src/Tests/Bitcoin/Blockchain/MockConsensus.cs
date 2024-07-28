@@ -155,6 +155,18 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
+
+        internal bool? _allowMinDiff;
+        public bool AllowMinDifficultyBlocks
+        {
+            get
+            {
+                Assert.True(_allowMinDiff.HasValue, UnexpectedCall);
+                return _allowMinDiff.Value;
+            }
+        }
+
+
         internal Digest256? _powLimit;
         public Digest256 PowLimit
         {

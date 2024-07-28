@@ -143,7 +143,7 @@ namespace Denovo.Models
         }
 
         public int MinBlockVersion => backup.MinBlockVersion;
-
+        public bool AllowMinDifficultyBlocks => backup.AllowMinDifficultyBlocks;
         public Digest256 PowLimit => backup.PowLimit;
 
         public IBlock GetGenesisBlock() => backup.GetGenesisBlock();
