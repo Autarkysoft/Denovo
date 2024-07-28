@@ -44,7 +44,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// Returns the next difficulty target based on the best stored chain.
         /// </summary>
         /// <returns>Next difficulty target</returns>
-        Target GetNextTarget();
+        Target GetNextTarget(in BlockHeader hdr);
 
         /// <summary>
         /// Processes all the blocks that this peer received in its <see cref="INodeStatus.DownloadedBlocks"/>

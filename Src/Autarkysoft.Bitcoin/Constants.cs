@@ -3,6 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System.ComponentModel;
+
 namespace Autarkysoft.Bitcoin
 {
     /// <summary>
@@ -227,6 +229,10 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public struct Seconds
         {
+            /// <summary>
+            /// 20 minutes in seconds
+            /// </summary>
+            public const int TwentyMin = 20 * 60;
             /// <summary>
             /// One day or 24 hours in seconds
             /// </summary>

@@ -214,12 +214,36 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
         /// <inheritdoc/>
-        public Target GetNextTarget()
+        public Target GetNextTarget(in BlockHeader hdr)
         {
-            // TODO: difficulty calculation is different for testnet
             int height = headerList.Count;
             if (height % Constants.DifficultyAdjustmentInterval != 0)
             {
+                if (Consensus.AllowMinDifficultyBlocks)
+                {
+                    // Special difficulty rule for testnet:
+                    // If the new block's timestamp is more than 2* 10 minutes
+                    // then allow mining of a min-difficulty block.
+                    if (hdr.BlockTime > headerList[^1].BlockTime + TimeConstants.Seconds.TwentyMin)
+                    {
+                        var temp = new BigInteger(Consensus.PowLimit.ToByteArray());
+                        return new Target(temp);
+                    }
+                    else
+                    {
+                        var temp = new BigInteger(Consensus.PowLimit.ToByteArray());
+                        Target min = new Target(temp);
+
+                        // Return the last non-special-min-difficulty-rules-block
+                        height--;
+                        while (height > 0 && height % Constants.DifficultyAdjustmentInterval != 0 && headerList[height].NBits == min)
+                        {
+                            height--;
+                        }
+                        return headerList[height].NBits;
+                    }
+                }
+
                 return headerList[^1].NBits;
             }
             else
@@ -564,7 +588,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     int count = 0;
                     for (int i = arrIndex; i < headers.Length; i++)
                     {
-                        if (ProcessHeader(headers[i], headerList[^1], headerList.Count, GetNextTarget()))
+                        if (ProcessHeader(headers[i], headerList[^1], headerList.Count, GetNextTarget(headers[i])))
                         {
                             headerList.Add(headers[i]);
                             count++;

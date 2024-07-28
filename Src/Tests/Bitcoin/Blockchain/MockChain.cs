@@ -11,7 +11,6 @@ using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
@@ -55,7 +54,7 @@ namespace Tests.Bitcoin.Blockchain
         public Digest256 Tip => _tip;
 
         internal Target? targetToReturn;
-        public Target GetNextTarget()
+        public Target GetNextTarget(in BlockHeader hdr)
         {
             Assert.True(targetToReturn.HasValue, UnexpectedCall);
             return targetToReturn.Value;
