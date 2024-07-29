@@ -189,7 +189,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         /// <inheritdoc/>
-        public Target GetNextTarget(BlockHeader first, BlockHeader last)
+        public Target GetNextTarget(in BlockHeader first, in BlockHeader last)
         {
             uint timeDiff = last.BlockTime - first.BlockTime;
             if (timeDiff < Constants.PowTargetTimespan / 4)
@@ -529,7 +529,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             return times[times.Count / 2];
         }
 
-        private bool ProcessHeader(BlockHeader header, BlockHeader prvHeader, int height, Target nextTarget)
+        private bool ProcessHeader(in BlockHeader header, in BlockHeader prvHeader, int height, Target nextTarget)
         {
             Consensus.BlockHeight = height;
             return header.PreviousBlockHeaderHash.Equals(prvHeader.Hash) &&
