@@ -40,7 +40,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <inheritdoc/>
         public override Message GetVersionMsg()
         {
-            return GetVersionMsg(new NetworkAddress(fullSettings.Services, nodeStatus.IP, nodeStatus.Port), fullSettings.Blockchain.Height);
+            return GetVersionMsg(new NetworkAddress(0, nodeStatus.IP, nodeStatus.Port), fullSettings.Blockchain.Height);
         }
 
         private Message[] GetSettingsMessages(Message extraMsg)
