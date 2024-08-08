@@ -22,13 +22,25 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// </summary>
         int Height { get; }
         /// <summary>
+        /// Returns number of headers (should be higher than or equal to <see cref="Height"/>)
+        /// </summary>
+        int HeaderCount { get; }
+        /// <summary>
         /// Hash of the last block in the chain
         /// </summary>
         Digest256 Tip { get; }
         /// <summary>
+        /// Returns last header
+        /// </summary>
+        BlockHeader LastHeader { get; }
+        /// <summary>
         /// Gets or sets the current blockchain state
         /// </summary>
         public BlockchainState State { get; set; }
+        /// <summary>
+        /// An event to be raised when a new block header is received (useful for UI updates, miner, etc).
+        /// </summary>
+        event EventHandler NewHeaderEvent;
         /// <summary>
         /// An event to be raised when the initial header sync is over (signals start of adding new nodes, 
         /// downloading missing blocks, etc).

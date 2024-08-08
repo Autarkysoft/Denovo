@@ -115,6 +115,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public IClientTime Time { get; }
         /// <inheritdoc/>
         public int Height { get; private set; }
+        /// <inheritdoc/>
+        public int HeaderCount => headerList.Count;
 
         private BlockchainState _state = BlockchainState.None;
         /// <inheritdoc/>
@@ -141,6 +143,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         public Digest256 Tip { get; private set; }
 
+        /// <inheritdoc/>
+        public BlockHeader LastHeader => headerList[^1];
+
+        /// <inheritdoc/>
+        public event EventHandler NewHeaderEvent;
         /// <inheritdoc/>
         public event EventHandler HeaderSyncEndEvent;
         /// <inheritdoc/>
@@ -597,11 +604,19 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             AppendHeadrs(headers.AsSpan().Slice(arrIndex, count).ToArray(), count);
                             nodeStatus.AddBigViolation();
+                            if (count != 0)
+                            {
+                                NewHeaderEvent?.Invoke(this, EventArgs.Empty);
+                            }
                             return false;
                         }
                     }
 
                     AppendHeadrs(headers.AsSpan()[arrIndex..].ToArray(), count);
+                    if (count != 0)
+                    {
+                        NewHeaderEvent?.Invoke(this, EventArgs.Empty);
+                    }
 
                     return true;
                 }

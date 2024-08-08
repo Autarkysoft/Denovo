@@ -37,6 +37,7 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
+        public event EventHandler NewHeaderEvent;
         public event EventHandler HeaderSyncEndEvent;
         public event EventHandler BlockSyncEndEvent;
 
@@ -50,8 +51,21 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
+        internal int _hdrCount = -1;
+        public int HeaderCount
+        {
+            get
+            {
+                Assert.True(_hdrCount != -1, UnexpectedCall);
+                return _hdrCount;
+            }
+        }
+
         internal Digest256 _tip;
         public Digest256 Tip => _tip;
+
+        internal BlockHeader _lastHdr;
+        public BlockHeader LastHeader => _lastHdr;
 
         internal Target? targetToReturn;
         public Target GetNextTarget(in BlockHeader hdr)
