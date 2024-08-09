@@ -29,7 +29,7 @@ namespace Denovo.MVVM
 
         public void RaiseCanExecuteChanged() => CanExecuteChanged(this, EventArgs.Empty);
 
-        public bool CanExecute(object parameter) => !(CanExecuteMethod is null) && CanExecuteMethod();
+        public bool CanExecute(object parameter) => CanExecuteMethod is null || CanExecuteMethod();
 
         public void Execute(object parameter) => ExecuteMethod?.Invoke();
     }
