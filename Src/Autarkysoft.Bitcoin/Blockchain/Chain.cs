@@ -41,19 +41,20 @@ namespace Autarkysoft.Bitcoin.Blockchain
             Time = t ?? new ClientTime();
 
             network = netType;
-            // TODO: find a better initial capacity
-            headerList = new List<BlockHeader>(1_000_000);
+
             // Read Headers:
-            byte[] hadba = FileMan.ReadData(HeadersFile);
-            if (hadba is null || hadba.Length % BlockHeader.Size != 0)
+            byte[] hdrba = FileMan.ReadData(HeadersFile);
+            if (hdrba is null || hdrba.Length == 0 || hdrba.Length % BlockHeader.Size != 0)
             {
+                headerList = new List<BlockHeader>(1_000_000);
                 // File doesn't exist or is corrupted
                 ResetHeaders();
             }
             else
             {
-                int count = hadba.Length / BlockHeader.Size;
-                var stream = new FastStreamReader(hadba);
+                int count = hdrba.Length / BlockHeader.Size;
+                headerList = new List<BlockHeader>(count + 144);
+                var stream = new FastStreamReader(hdrba);
                 for (int i = 0; i < count; i++)
                 {
                     if (BlockHeader.TryDeserialize(stream, out BlockHeader res, out _))
