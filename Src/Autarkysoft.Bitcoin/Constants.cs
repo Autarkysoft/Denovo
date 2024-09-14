@@ -114,9 +114,13 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const ushort MainNetPort = 8333;
         /// <summary>
-        /// Default test network port
+        /// Default test network v3 port
         /// </summary>
         public const ushort TestNetPort = 18333;
+        /// <summary>
+        /// Default test network v4 port
+        /// </summary>
+        public const ushort TestNet4Port = 48333;
         /// <summary>
         /// Default regtest network port
         /// </summary>
@@ -126,9 +130,13 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         public const string MainNetMagic = "f9beb4d9";
         /// <summary>
-        /// 4 byte "magic" value used in P2P message headers for test-net
+        /// 4 byte "magic" value used in P2P message headers for test-net v3
         /// </summary>
         public const string TestNetMagic = "0b110907";
+        /// <summary>
+        /// 4 byte "magic" value used in P2P message headers for test-net v4
+        /// </summary>
+        public const string TestNet4Magic = "1c163f28";
         /// <summary>
         /// 4 byte "magic" value used in P2P message headers for reg-test
         /// </summary>
@@ -201,7 +209,7 @@ namespace Autarkysoft.Bitcoin
         }
 
         /// <summary>
-        /// Returns a list of DNS seeds used for initial peer discovery on TestNet.
+        /// Returns a list of DNS seeds used for initial peer discovery on TestNet v3.
         /// </summary>
         /// <returns>List of TestNet DNS seeds</returns>
         public static string[] GetTestNetDnsSeeds()
@@ -213,6 +221,20 @@ namespace Autarkysoft.Bitcoin
                 "seed.tbtc.petertodd.net",
                 "seed.testnet.bitcoin.sprovoost.nl",
                 "testnet-seed.bluematt.me", // Just a static list of stable node(s), only supports x9
+            };
+        }
+
+        /// <summary>
+        /// Returns a list of DNS seeds used for initial peer discovery on TestNet.
+        /// </summary>
+        /// <returns>List of TestNet DNS seeds</returns>
+        public static string[] GetTestNet4DnsSeeds()
+        {
+            // https://github.com/bitcoin/bitcoin/blob/00ac1b963d08f2779d2197edcdb1e76392993378/src/kernel/chainparams.cpp#L245-L248
+            return new string[]
+            {
+                "seed.testnet4.bitcoin.sprovoost.nl", // Sjors Provoost
+                "seed.testnet4.wiz.biz", // Jason Maurice
             };
         }
     }

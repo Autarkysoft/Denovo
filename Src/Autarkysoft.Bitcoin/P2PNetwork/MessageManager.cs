@@ -39,6 +39,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             {
                 NetworkType.MainNet => Base16.Decode(Constants.MainNetMagic),
                 NetworkType.TestNet => Base16.Decode(Constants.TestNetMagic),
+                NetworkType.TestNet4 => Base16.Decode(Constants.TestNet4Magic),
                 NetworkType.RegTest => Base16.Decode(Constants.RegTestMagic),
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert())
             };

@@ -47,7 +47,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <param name="netType">Network type</param>
         public Consensus(int height, NetworkType netType)
         {
-            // https://github.com/bitcoin/bitcoin/blob/544709763e1f45148d1926831e07ff03487673ee/src/chainparams.cpp
+            // https://github.com/bitcoin/bitcoin/blob/349632e022da22a457a85650360b5be41fa500dc/src/kernel/chainparams.cpp
             switch (netType)
             {
                 case NetworkType.MainNet:
@@ -76,13 +76,26 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     seg = 834624;
                     tap = 2064268;
                     break;
+                case NetworkType.TestNet4:
+                    PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+                    AllowMinDifficultyBlocks = true;
+                    MaxSigOpCount = 80000;
+                    HalvingInterval = 210000;
+                    bip16 = 1;
+                    bip34 = 1;
+                    bip65 = 1;
+                    bip66 = 1;
+                    bip112 = 1;
+                    seg = 1;
+                    tap = 1;
+                    break;
                 case NetworkType.RegTest:
                     PowLimit = Digest256.ParseHex("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 150;
                     bip16 = 0;
-                    bip34 = 500;
+                    bip34 = 1;
                     bip65 = 1351;
                     bip66 = 1251;
                     bip112 = 432;
@@ -206,9 +219,28 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 NetworkType.MainNet => CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50_0000_0000),
                 NetworkType.TestNet => CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50_0000_0000),
+                NetworkType.TestNet4 => CreateTestNet4GenesisBlock(1714777860, 393743547, 0x1d00ffff, 1, 50_0000_0000),
                 NetworkType.RegTest => CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, 50_0000_0000),
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
+        }
+
+        private Block CreateTestNet4GenesisBlock(uint time, uint nonce, Target nbits, int version, ulong reward)
+        {
+            string timestamp = "03/May/2024 000000000000000000001ebd58c244970b3aa9d783bb001011fbe8ea8e98e00e";
+            byte[] tsBytes = Encoding.UTF8.GetBytes(timestamp);
+            byte[] sigData = new byte[9 + tsBytes.Length];
+            Buffer.BlockCopy(Base16.Decode("04ffff001d01044c4c"), 0, sigData, 0, 9);
+            Buffer.BlockCopy(tsBytes, 0, sigData, 9, tsBytes.Length);
+            var sigScr = new SignatureScript(sigData);
+            
+            var pubOps = new IOperation[]
+            {
+                new PushDataOp(new byte[33]),
+                new CheckSigOp()
+            };
+            var pubScr = new PubkeyScript(pubOps);
+            return CreateGenesisBlock(version, time, nbits, nonce, 1, sigScr, reward, pubScr);
         }
 
         /// <inheritdoc/>

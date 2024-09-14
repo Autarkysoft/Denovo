@@ -42,6 +42,7 @@ namespace Autarkysoft.Bitcoin.Clients
             {
                 NetworkType.MainNet => Constants.MainNetPort,
                 NetworkType.TestNet => Constants.TestNetPort,
+                NetworkType.TestNet4 => Constants.TestNet4Port,
                 NetworkType.RegTest => Constants.RegTestPort,
                 _ => throw new ArgumentException("Undefined network"),
             };
@@ -85,6 +86,7 @@ namespace Autarkysoft.Bitcoin.Clients
             set => _ua = value ?? string.Empty;
         }
 
+        // TODO: make this readonly?
         /// <inheritdoc/>
         public NetworkType Network { get; set; }
         /// <inheritdoc/>

@@ -29,6 +29,7 @@ namespace Denovo.Models
             {
                 NetworkType.MainNet => Constants.MainNetPort,
                 NetworkType.TestNet => Constants.TestNetPort,
+                NetworkType.TestNet4 => Constants.TestNet4Port,
                 NetworkType.RegTest => Constants.RegTestPort,
                 _ => throw new ArgumentException("Undefined network type.")
             };
@@ -104,6 +105,7 @@ namespace Denovo.Models
             {
                 NetworkType.MainNet => string.Join(Environment.NewLine, Constants.GetMainNetDnsSeeds()),
                 NetworkType.TestNet => string.Join(Environment.NewLine, Constants.GetTestNetDnsSeeds()),
+                NetworkType.TestNet4 => string.Join(Environment.NewLine, Constants.GetTestNet4DnsSeeds()),
                 NetworkType.RegTest => "Not defined.",
                 _ => "Not defined."
             };

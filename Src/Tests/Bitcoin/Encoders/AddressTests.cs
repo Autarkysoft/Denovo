@@ -33,22 +33,22 @@ namespace Tests.Bitcoin.Encoders
             yield return new object[] { " ", NetworkType.MainNet, AddressType.Invalid };
             yield return new object[] { P2pkh_main, NetworkType.MainNet, AddressType.P2PKH };
             yield return new object[] { P2pkh_main, NetworkType.TestNet, AddressType.Unknown };
-            yield return new object[] { P2pkh_main, NetworkType.RegTest, AddressType.P2PKH };
+            yield return new object[] { P2pkh_test, NetworkType.RegTest, AddressType.P2PKH };
             yield return new object[] { "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhe1", NetworkType.MainNet, AddressType.Unknown };
 
             yield return new object[] { P2pkh_test, NetworkType.MainNet, AddressType.Unknown };
             yield return new object[] { P2pkh_test, NetworkType.TestNet, AddressType.P2PKH };
-            yield return new object[] { P2pkh_test, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { P2pkh_main, NetworkType.RegTest, AddressType.Unknown };
             yield return new object[] { "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRf1", NetworkType.TestNet, AddressType.Unknown };
 
             yield return new object[] { P2sh_main, NetworkType.MainNet, AddressType.P2SH };
             yield return new object[] { P2sh_main, NetworkType.TestNet, AddressType.Unknown };
-            yield return new object[] { P2sh_main, NetworkType.RegTest, AddressType.P2SH };
+            yield return new object[] { P2sh_test, NetworkType.RegTest, AddressType.P2SH };
             yield return new object[] { "3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQ1", NetworkType.MainNet, AddressType.Unknown };
 
             yield return new object[] { P2sh_test, NetworkType.MainNet, AddressType.Unknown };
             yield return new object[] { P2sh_test, NetworkType.TestNet, AddressType.P2SH };
-            yield return new object[] { P2sh_test, NetworkType.RegTest, AddressType.Unknown };
+            yield return new object[] { P2sh_main, NetworkType.RegTest, AddressType.Unknown };
             yield return new object[] { "2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1V1", NetworkType.TestNet, AddressType.Unknown };
 
             yield return new object[] { P2wpkh_main, NetworkType.MainNet, AddressType.P2WPKH };
@@ -207,8 +207,8 @@ namespace Tests.Bitcoin.Encoders
         {
             yield return new object[] { KeyHelper.Pub1, true, NetworkType.MainNet, KeyHelper.Pub1CompAddr };
             yield return new object[] { KeyHelper.Pub1, false, NetworkType.MainNet, KeyHelper.Pub1UnCompAddr };
-            yield return new object[] { KeyHelper.Pub1, true, NetworkType.RegTest, KeyHelper.Pub1CompAddr };
-            yield return new object[] { KeyHelper.Pub1, false, NetworkType.RegTest, KeyHelper.Pub1UnCompAddr };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.RegTest, "miYt1MwSMJbKF7LbRohHEfm4vAZnPCKArd" };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.RegTest, "mxD3KcWE9qwhv8hwXma75XDoYqrvHfxHtF" };
             yield return new object[] { KeyHelper.Pub1, true, NetworkType.TestNet, "miYt1MwSMJbKF7LbRohHEfm4vAZnPCKArd" };
             yield return new object[] { KeyHelper.Pub1, false, NetworkType.TestNet, "mxD3KcWE9qwhv8hwXma75XDoYqrvHfxHtF" };
 
@@ -251,7 +251,7 @@ namespace Tests.Bitcoin.Encoders
             {
                 new MockSerializableRedeemScript(new byte[] { 1, 2, 3 }, 255),
                 NetworkType.RegTest,
-                "3Fte5yfJErKGBSVMHpf93sdF6RmtSbTmL1"
+                "2N7Sr9ibKrJpcPE7txxH1fpcWJmz4FdhJiU"
             };
         }
         [Theory]
@@ -301,8 +301,8 @@ namespace Tests.Bitcoin.Encoders
         {
             yield return new object[] { KeyHelper.Pub1, true, NetworkType.MainNet, KeyHelper.Pub1NestedSegwit };
             yield return new object[] { KeyHelper.Pub1, false, NetworkType.MainNet, KeyHelper.Pub1NestedSegwitUncomp };
-            yield return new object[] { KeyHelper.Pub1, true, NetworkType.RegTest, KeyHelper.Pub1NestedSegwit };
-            yield return new object[] { KeyHelper.Pub1, false, NetworkType.RegTest, KeyHelper.Pub1NestedSegwitUncomp };
+            yield return new object[] { KeyHelper.Pub1, true, NetworkType.RegTest, "2N1UvtAhuV4nYsqVznNuYTPU2R9ajf49xaV" };
+            yield return new object[] { KeyHelper.Pub1, false, NetworkType.RegTest, "2N6t2wK9J7Yi8NZgCV1nXHFKGFLK4xyDkQe" };
             yield return new object[] { KeyHelper.Pub1, true, NetworkType.TestNet, "2N1UvtAhuV4nYsqVznNuYTPU2R9ajf49xaV" };
             yield return new object[] { KeyHelper.Pub1, false, NetworkType.TestNet, "2N6t2wK9J7Yi8NZgCV1nXHFKGFLK4xyDkQe" };
             yield return new object[] { KeyHelper.Pub2, true, NetworkType.MainNet, KeyHelper.Pub2NestedSegwit };

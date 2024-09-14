@@ -83,6 +83,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             {
                 NetworkType.MainNet => MainNetByte,
                 NetworkType.TestNet => TestNetByte,
+                NetworkType.TestNet4 => TestNetByte, // TODO: should this be different?
                 NetworkType.RegTest => RegTestByte,
                 _ => throw new ArgumentException("Network type is not defined."),
             };

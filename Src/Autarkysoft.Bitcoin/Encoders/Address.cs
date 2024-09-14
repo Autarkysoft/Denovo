@@ -18,14 +18,17 @@ namespace Autarkysoft.Bitcoin.Encoders
     {
         private const byte P2pkhVerMainNet = 0;
         private const byte P2pkhVerTestNet = 111;
-        private const byte P2pkhVerRegTest = 0;
+        private const byte P2pkhVerTestNet4 = 111;
+        private const byte P2pkhVerRegTest = 111;
 
         private const byte P2shVerMainNet = 5;
         private const byte P2shVerTestNet = 196;
-        private const byte P2shVerRegTest = 5;
+        private const byte P2shVerTestNet4 = 196;
+        private const byte P2shVerRegTest = 196;
 
         private const string HrpMainNet = "bc";
         private const string HrpTestNet = "tb";
+        private const string HrpTestNet4 = "tb";
         private const string HrpRegTest = "bcrt";
 
 
@@ -55,6 +58,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                 {
                     if ((netType == NetworkType.MainNet && decoded[0] == P2pkhVerMainNet) ||
                         (netType == NetworkType.TestNet && decoded[0] == P2pkhVerTestNet) ||
+                        (netType == NetworkType.TestNet4 && decoded[0] == P2pkhVerTestNet4) ||
                         (netType == NetworkType.RegTest && decoded[0] == P2pkhVerRegTest))
                     {
                         data = decoded.SubArray(1);
@@ -62,6 +66,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                     }
                     else if ((netType == NetworkType.MainNet && decoded[0] == P2shVerMainNet) ||
                              (netType == NetworkType.TestNet && decoded[0] == P2shVerTestNet) ||
+                             (netType == NetworkType.TestNet4 && decoded[0] == P2shVerTestNet4) ||
                              (netType == NetworkType.RegTest && decoded[0] == P2shVerRegTest))
                     {
                         data = decoded.SubArray(1);
@@ -79,6 +84,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                         TransactionVerifier.IsNotZero20(decoded) &&
                         ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
                          (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                         (netType == NetworkType.TestNet4 && hrp == HrpTestNet4) ||
                          (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
                         data = decoded;
@@ -88,6 +94,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                             TransactionVerifier.IsNotZero32(decoded) &&
                             ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
                              (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                             (netType == NetworkType.TestNet4 && hrp == HrpTestNet4) ||
                              (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                     {
                         data = decoded;
@@ -127,6 +134,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                         if (TransactionVerifier.IsNotZero32(decoded) &&
                             ((netType == NetworkType.MainNet && hrp == HrpMainNet) ||
                              (netType == NetworkType.TestNet && hrp == HrpTestNet) ||
+                             (netType == NetworkType.TestNet4 && hrp == HrpTestNet4) ||
                              (netType == NetworkType.RegTest && hrp == HrpRegTest)))
                         {
                             data = decoded;
@@ -174,6 +182,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             {
                 NetworkType.MainNet => P2pkhVerMainNet,
                 NetworkType.TestNet => P2pkhVerTestNet,
+                NetworkType.TestNet4 => P2pkhVerTestNet4,
                 NetworkType.RegTest => P2pkhVerRegTest,
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert())
             };
@@ -202,6 +211,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             {
                 NetworkType.MainNet => P2shVerMainNet,
                 NetworkType.TestNet => P2shVerTestNet,
+                NetworkType.TestNet4 => P2shVerTestNet4,
                 NetworkType.RegTest => P2shVerRegTest,
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert())
             };
@@ -231,6 +241,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             {
                 NetworkType.MainNet => HrpMainNet,
                 NetworkType.TestNet => HrpTestNet,
+                NetworkType.TestNet4 => HrpTestNet4,
                 NetworkType.RegTest => HrpRegTest,
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
@@ -259,8 +270,11 @@ namespace Autarkysoft.Bitcoin.Encoders
         /// <returns>The resulting address</returns>
         public static string GetP2sh_P2wpkh(in Point pubk, bool useCompressed = true, NetworkType netType = NetworkType.MainNet)
         {
-            if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
+            if (netType != NetworkType.MainNet && netType != NetworkType.TestNet &&
+                netType != NetworkType.TestNet4 && netType != NetworkType.RegTest)
+            {
                 throw new ArgumentException(Errors.InvalidNetwork.Convert());
+            }
 
             var rdm = new RedeemScript();
             rdm.SetToP2SH_P2WPKH(pubk, useCompressed);
@@ -285,6 +299,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             {
                 NetworkType.MainNet => HrpMainNet,
                 NetworkType.TestNet => HrpTestNet,
+                NetworkType.TestNet4 => HrpTestNet4,
                 NetworkType.RegTest => HrpRegTest,
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
@@ -311,8 +326,11 @@ namespace Autarkysoft.Bitcoin.Encoders
         {
             if (script is null)
                 throw new ArgumentNullException(nameof(script), "Script can not be null.");
-            if (netType != NetworkType.MainNet && netType != NetworkType.TestNet && netType != NetworkType.RegTest)
+            if (netType != NetworkType.MainNet && netType != NetworkType.TestNet &&
+                netType != NetworkType.TestNet4 && netType != NetworkType.RegTest)
+            {
                 throw new ArgumentException(Errors.InvalidNetwork.Convert());
+            }
 
             RedeemScript rdm = new RedeemScript();
             rdm.SetToP2SH_P2WSH(script);
@@ -342,6 +360,7 @@ namespace Autarkysoft.Bitcoin.Encoders
             {
                 NetworkType.MainNet => HrpMainNet,
                 NetworkType.TestNet => HrpTestNet,
+                NetworkType.TestNet4 => HrpTestNet4,
                 NetworkType.RegTest => HrpRegTest,
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),
             };
@@ -388,6 +407,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                         if (decoded.Length == 21 &&
                             (decoded[0] == P2pkhVerMainNet ||
                              decoded[0] == P2pkhVerTestNet ||
+                             decoded[0] == P2pkhVerTestNet4 ||
                              decoded[0] == P2pkhVerRegTest))
                         {
                             hash = decoded.SubArray(1);
@@ -402,6 +422,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                         if (decoded.Length == 21 &&
                             (decoded[0] == P2shVerMainNet ||
                              decoded[0] == P2shVerTestNet ||
+                             decoded[0] == P2shVerTestNet4 ||
                              decoded[0] == P2shVerRegTest))
                         {
                             hash = decoded.SubArray(1);
@@ -414,7 +435,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                     if (Bech32.TryDecode(address, Bech32.Mode.B32, out decoded, out byte witVer, out string hrp))
                     {
                         if (witVer == 0 && decoded.Length == 20 &&
-                            (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpRegTest))
+                            (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpTestNet4 || hrp == HrpRegTest))
                         {
                             if (!TransactionVerifier.IsNotZero20(decoded))
                             {
@@ -431,7 +452,7 @@ namespace Autarkysoft.Bitcoin.Encoders
                     if (Bech32.TryDecode(address, Bech32.Mode.B32, out decoded, out witVer, out hrp))
                     {
                         if (witVer == 0 && decoded.Length == 32 &&
-                            (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpRegTest))
+                            (hrp == HrpMainNet || hrp == HrpTestNet || hrp == HrpTestNet4 || hrp == HrpRegTest))
                         {
                             if (!TransactionVerifier.IsNotZero32(decoded))
                             {

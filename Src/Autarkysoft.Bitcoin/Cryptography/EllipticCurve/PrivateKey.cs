@@ -141,6 +141,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         private const int KeyByteSize = 32;
         private const byte MainNetByte = 128;
         private const byte TestNetByte = 239;
+        private const byte TestNet4Byte = 239;
         private const byte RegTestByte = 239;
         private const byte CompressedByte = 1;
         // Don't rename, used by tests with reflection.
@@ -177,6 +178,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             {
                 NetworkType.MainNet => MainNetByte,
                 NetworkType.TestNet => TestNetByte,
+                NetworkType.TestNet4 => TestNet4Byte,
                 NetworkType.RegTest => RegTestByte,
                 _ => throw new ArgumentException("Network type is not defined!"),
             };

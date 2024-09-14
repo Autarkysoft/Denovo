@@ -39,6 +39,10 @@ namespace Denovo
                                     {
                                         network = NetworkType.TestNet;
                                     }
+                                    else if (value == "testnet4")
+                                    {
+                                        network = NetworkType.TestNet4;
+                                    }
                                     else if (value == "regtest")
                                     {
                                         network = NetworkType.RegTest;

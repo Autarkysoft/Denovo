@@ -15,9 +15,13 @@ namespace Autarkysoft.Bitcoin
         /// </summary>
         MainNet,
         /// <summary>
-        /// The test network
+        /// The test network (v3)
         /// </summary>
         TestNet,
+        /// <summary>
+        /// The test network (v4)
+        /// </summary>
+        TestNet4,
         /// <summary>
         /// The alternate network for testing
         /// </summary>

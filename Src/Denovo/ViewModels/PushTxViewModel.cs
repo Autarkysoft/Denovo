@@ -9,7 +9,6 @@ using Autarkysoft.Bitcoin.Clients;
 using Autarkysoft.Bitcoin.Encoders;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
-using Denovo.Models;
 using Denovo.MVVM;
 using System;
 using System.Diagnostics;
@@ -23,7 +22,7 @@ namespace Denovo.ViewModels
             ConnectCommand = new BindableCommand(Connect, () => !IsConnected);
             PushCommand = new BindableCommand(Push, () => IsConnected);
 
-            NetworkList = new NetworkType[] { NetworkType.MainNet, NetworkType.TestNet };
+            NetworkList = new NetworkType[] { NetworkType.MainNet, NetworkType.TestNet, NetworkType.TestNet4 };
         }
 
 
@@ -73,9 +72,27 @@ namespace Denovo.ViewModels
         {
             settings = new(SelectedNetwork, 4, null)
             {
-                DnsSeeds = SelectedNetwork == NetworkType.MainNet ? Constants.GetMainNetDnsSeeds() : Constants.GetTestNetDnsSeeds(),
                 UserAgent = "/Satoshi:0.22.0/",
             };
+
+            if (SelectedNetwork == NetworkType.MainNet)
+            {
+                settings.DnsSeeds = Constants.GetMainNetDnsSeeds();
+            }
+            else if (SelectedNetwork == NetworkType.TestNet)
+            {
+                settings.DnsSeeds = Constants.GetTestNetDnsSeeds();
+            }
+            else if (SelectedNetwork == NetworkType.TestNet4)
+            {
+                settings.DnsSeeds = Constants.GetTestNet4DnsSeeds();
+            }
+            else
+            {
+                Result = "Network is not defined.";
+                return;
+            }
+
             client = new(settings);
             client.Start();
             IsConnected = true;
