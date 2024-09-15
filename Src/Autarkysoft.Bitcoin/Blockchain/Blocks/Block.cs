@@ -80,7 +80,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
         /// <inheritdoc/>
         public BlockHeader Header { get; set; }
 
-        private ITransaction[] _txs = new ITransaction[0];
+        private ITransaction[] _txs = Array.Empty<ITransaction>();
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException"/>
         public ITransaction[] TransactionList
