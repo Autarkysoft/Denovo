@@ -7,7 +7,6 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
@@ -74,7 +73,7 @@ namespace Tests.Bitcoin.Blockchain
         internal BlockHeader[] expHeaders;
         internal Target[] expTargets;
         internal bool[] verifyHeaderResults;
-        public bool VerifyHeader(BlockHeader header, Target expectedTarget)
+        public bool VerifyHeader(in BlockHeader header, Target expectedTarget)
         {
             Assert.True(hdrIndex < expHeaders.Length, Helper.UnexpectedCall);
             Assert.Equal(expHeaders[hdrIndex].Hash, header.Hash);
