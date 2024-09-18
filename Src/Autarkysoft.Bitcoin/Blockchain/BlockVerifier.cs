@@ -43,7 +43,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
 
         /// <inheritdoc/>
-        public bool VerifyHeader(BlockHeader header, Target expectedTarget)
+        public bool VerifyHeader(in BlockHeader header, Target expectedTarget)
         {
             Digest256 tar = header.NBits.ToDigest256();
             return header.Version >= consensus.MinBlockVersion &&

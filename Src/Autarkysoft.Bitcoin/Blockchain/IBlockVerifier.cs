@@ -22,11 +22,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// The target that this header must have (calculated considering difficulty adjustment)
         /// </param>
         /// <returns>True if the given block header was valid; otherwise false.</returns>
-        bool VerifyHeader(BlockHeader header, Target expectedTarget);
+        bool VerifyHeader(in BlockHeader header, Target expectedTarget);
 
         /// <summary>
         /// Verifies validity of the given block. Return value indicates succcess.
-        /// <para/>Header has to be verified before using <see cref="VerifyHeader(BlockHeader, Target)"/> method.
+        /// <para/>Header has to be verified before using <see cref="VerifyHeader(in BlockHeader, Target)"/> method.
         /// <para/><see cref="IConsensus"/> dependency has to be updated by the caller before calling this method.
         /// </summary>
         /// <param name="block">Block to use</param>
