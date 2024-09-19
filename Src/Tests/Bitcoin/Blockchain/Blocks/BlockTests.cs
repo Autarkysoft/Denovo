@@ -11,7 +11,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Blocks
 {
@@ -27,16 +26,6 @@ namespace Tests.Bitcoin.Blockchain.Blocks
 
             Assert.Equal(expHdr, blk.Header);
             Assert.Same(expTxs, blk.TransactionList);
-            Assert.Equal(-1, blk.Height);
-        }
-
-        [Fact]
-        public void Constructor_HeightTest()
-        {
-            Block blk = new();
-            Assert.Equal(-1, blk.Height);
-            blk.Height = 10;
-            Assert.Equal(10, blk.Height);
         }
 
         [Fact]

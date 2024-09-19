@@ -37,9 +37,6 @@ namespace Autarkysoft.Bitcoin.Blockchain.Blocks
 
 
         /// <inheritdoc/>
-        public int Height { get; set; } = -1;
-
-        /// <inheritdoc/>
         public int TotalSize
         {
             get
