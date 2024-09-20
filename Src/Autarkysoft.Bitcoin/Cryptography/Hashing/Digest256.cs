@@ -30,7 +30,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="ba32">Byte array to use</param>
-        public Digest256(Span<byte> ba32)
+        public Digest256(ReadOnlySpan<byte> ba32)
         {
             if (ba32 == null)
                 throw new ArgumentNullException(nameof(ba32));
@@ -70,7 +70,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="u8">UInt32 array</param>
-        public Digest256(Span<uint> u8)
+        public Digest256(ReadOnlySpan<uint> u8)
         {
             if (u8 == null)
                 throw new ArgumentNullException(nameof(u8));
