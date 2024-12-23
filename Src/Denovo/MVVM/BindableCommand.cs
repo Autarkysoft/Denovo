@@ -14,7 +14,7 @@ namespace Denovo.MVVM
         {
         }
 
-        public BindableCommand(Action executeMethod, Func<bool> canExecuteMethod)
+        public BindableCommand(Action executeMethod, Func<bool>? canExecuteMethod)
         {
             ExecuteMethod = executeMethod;
             CanExecuteMethod = canExecuteMethod;
@@ -22,16 +22,16 @@ namespace Denovo.MVVM
 
 
         private readonly Action ExecuteMethod;
-        private readonly Func<bool> CanExecuteMethod;
+        private readonly Func<bool>? CanExecuteMethod;
 
-        public event EventHandler CanExecuteChanged = delegate { };
+        public event EventHandler? CanExecuteChanged;
 
 
-        public void RaiseCanExecuteChanged() => CanExecuteChanged(this, EventArgs.Empty);
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 
-        public bool CanExecute(object parameter) => CanExecuteMethod is null || CanExecuteMethod();
+        public bool CanExecute(object? parameter) => CanExecuteMethod is null || CanExecuteMethod();
 
-        public void Execute(object parameter) => ExecuteMethod?.Invoke();
+        public void Execute(object? parameter) => ExecuteMethod?.Invoke();
     }
 
 
@@ -41,7 +41,7 @@ namespace Denovo.MVVM
         {
         }
 
-        public BindableCommand(Action<T> executeMethod, Func<bool> canExecuteMethod)
+        public BindableCommand(Action<T> executeMethod, Func<bool>? canExecuteMethod)
         {
             ExecuteMethod = executeMethod;
             CanExecuteMethod = canExecuteMethod;
@@ -49,15 +49,15 @@ namespace Denovo.MVVM
 
 
         private readonly Action<T> ExecuteMethod;
-        private readonly Func<bool> CanExecuteMethod;
+        private readonly Func<bool>? CanExecuteMethod;
 
-        public event EventHandler CanExecuteChanged = delegate { };
+        public event EventHandler? CanExecuteChanged;
 
 
-        public void RaiseCanExecuteChanged() => CanExecuteChanged(this, EventArgs.Empty);
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 
-        public bool CanExecute(object parameter) => !(CanExecuteMethod is null) && CanExecuteMethod();
+        public bool CanExecute(object? parameter) => CanExecuteMethod is null || CanExecuteMethod();
 
-        public void Execute(object parameter) => ExecuteMethod?.Invoke((T)parameter);
+        public void Execute(object? parameter) => ExecuteMethod?.Invoke((T)parameter);
     }
 }
