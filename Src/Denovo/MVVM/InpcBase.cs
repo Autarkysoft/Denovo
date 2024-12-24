@@ -31,11 +31,13 @@ namespace Denovo.MVVM
 
                     foreach (string dependence in dependsAttr.DependentProps)
                     {
-                        if (!PropertyDependencyMap.ContainsKey(dependence))
+                        if (!PropertyDependencyMap.TryGetValue(dependence, out List<string>? value))
                         {
-                            PropertyDependencyMap.Add(dependence, new List<string>());
+                            value = new List<string>();
+                            PropertyDependencyMap.Add(dependence, value);
                         }
-                        PropertyDependencyMap[dependence].Add(property.Name);
+
+                        value.Add(property.Name);
                     }
                 }
             }
@@ -48,7 +50,7 @@ namespace Denovo.MVVM
         /// <summary>
         /// The PropertyChanged Event to raise to any UI object
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
 
         /// <summary>
@@ -58,17 +60,16 @@ namespace Denovo.MVVM
         /// <param name="propertyName">The Name of the property that is changing.</param>
         protected void RaisePropertyChanged(string propertyName)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
+            if (PropertyChanged is not null)
             {
-                handler(this, new PropertyChangedEventArgs(propertyName));
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
                 // Also raise the PropertyChanged event for dependant properties.
-                if (PropertyDependencyMap.ContainsKey(propertyName))
+                if (PropertyDependencyMap.TryGetValue(propertyName, out List<string>? value))
                 {
-                    foreach (string p in PropertyDependencyMap[propertyName])
+                    foreach (string p in value)
                     {
-                        handler(this, new PropertyChangedEventArgs(p));
+                        PropertyChanged.Invoke(this, new PropertyChangedEventArgs(p));
                     }
                 }
             }
@@ -86,9 +87,9 @@ namespace Denovo.MVVM
         /// The Name of the property that is changing. If it was null, the name is resolved at runtime automatically.
         /// </param>
         /// <returns>Retruns true if the value was changed, false if otherwise.</returns>
-        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
-            if (EqualityComparer<T>.Default.Equals(field, value))
+            if (EqualityComparer<T>.Default.Equals(field, value) || propertyName is null)
             {
                 return false;
             }
