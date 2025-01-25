@@ -81,6 +81,25 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="BIP0032Path"/> based on the given
+        /// Electrum mnemonic type.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when given an undefined mnemonic type enum</exception>
+        /// <param name="mnType">Electrum mnemonic type</param>
+        public BIP0032Path(ElectrumMnemonic.MnemonicType mnType)
+        {
+            Indexes = mnType switch
+            {
+                ElectrumMnemonic.MnemonicType.Undefined => new uint[0], // m/
+                ElectrumMnemonic.MnemonicType.Standard => new uint[1], // m/0/
+                ElectrumMnemonic.MnemonicType.SegWit => new uint[2] { 0 + HardenedIndex, 0 }, // m/0'/0/
+                ElectrumMnemonic.MnemonicType.Legacy2Fa => new uint[2] { 1 + HardenedIndex, 0 }, // m/1'/0/
+                ElectrumMnemonic.MnemonicType.SegWit2Fa => new uint[2] { 1 + HardenedIndex, 0 }, // m/1'/0/
+                _ => throw new ArgumentException("Undefined Electrum mnemonic type."),
+            };
+        }
+
 
 
         /// <summary>

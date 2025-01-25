@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin.ImprovementProposals;
 using System;
-using Xunit;
 
 namespace Tests.Bitcoin.ImprovementProposals
 {
@@ -17,14 +16,14 @@ namespace Tests.Bitcoin.ImprovementProposals
         public void Constructor_FromUIntsTest()
         {
             uint[] uints = { 0x80000000, 1, 0x80000000 + 2, 2 };
-            BIP0032Path path = new BIP0032Path(uints);
+            BIP0032Path path = new(uints);
             Assert.Equal(uints, path.Indexes);
         }
 
         [Fact]
         public void Constructor_FromUInts_NullTest()
         {
-            BIP0032Path path = new BIP0032Path();
+            BIP0032Path path = new();
             Assert.Empty(path.Indexes);
         }
 
@@ -45,7 +44,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData("m/5/", new uint[1] { 5 })]
         public void Constructor_FromStringTest(string toUse, uint[] expected)
         {
-            var path = new BIP0032Path(toUse);
+            BIP0032Path path = new(toUse);
             Assert.Equal(expected, path.Indexes);
         }
 
@@ -53,7 +52,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
-        public void Constructor_FromString_NullExceptionTest(string path)
+        public void Constructor_FromString_NullExceptionTest(string? path)
         {
             Assert.Throws<ArgumentNullException>(() => new BIP0032Path(path));
         }
@@ -85,6 +84,27 @@ namespace Tests.Bitcoin.ImprovementProposals
         }
 
         [Theory]
+        [InlineData(ElectrumMnemonic.MnemonicType.Undefined, new uint[0])]
+        [InlineData(ElectrumMnemonic.MnemonicType.Standard, new uint[1] { 0 })]
+        [InlineData(ElectrumMnemonic.MnemonicType.SegWit, new uint[2] { Hard, 0 })]
+        [InlineData(ElectrumMnemonic.MnemonicType.Legacy2Fa, new uint[2] { 1 + Hard, 0 })]
+        [InlineData(ElectrumMnemonic.MnemonicType.SegWit2Fa, new uint[2] { 1 + Hard, 0 })]
+        public void Constructor_FromElectrumMnTypeTest(ElectrumMnemonic.MnemonicType mnType, uint[] expected)
+        {
+            BIP0032Path path = new(mnType);
+            Assert.Equal(expected, path.Indexes);
+        }
+
+        [Fact]
+        public void Constructor_FromElectrumMnType_ExcetionTest()
+        {
+            ElectrumMnemonic.MnemonicType invalidType = (ElectrumMnemonic.MnemonicType)1000;
+            Exception ex = Assert.Throws<ArgumentException>(() => new BIP0032Path(invalidType));
+            Assert.Contains("Undefined Electrum mnemonic type.", ex.Message);
+        }
+
+
+        [Theory]
         [InlineData(BIP0032Path.CoinType.Bitcoin, 0 + Hard, false, "m/44'/0'/0'/0")]
         [InlineData(BIP0032Path.CoinType.Bitcoin, 0 + Hard, true, "m/44'/0'/0'/1")]
         [InlineData(BIP0032Path.CoinType.Bitcoin, 1 + Hard, false, "m/44'/0'/1'/0")]
@@ -97,7 +117,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData((BIP0032Path.CoinType)(1000 + Hard), 1 + Hard, true, "m/44'/1000'/1'/1")]
         public void CreateBip44Test(BIP0032Path.CoinType ct, uint account, bool isChange, string expected)
         {
-            var path = BIP0032Path.CreateBip44(ct, account, isChange);
+            BIP0032Path path = BIP0032Path.CreateBip44(ct, account, isChange);
             string actual = path.ToString();
             Assert.Equal(expected, actual);
         }
@@ -115,7 +135,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData((BIP0032Path.CoinType)(1000 + Hard), 1 + Hard, true, "m/49'/1000'/1'/1")]
         public void CreateBip49Test(BIP0032Path.CoinType ct, uint account, bool isChange, string expected)
         {
-            var path = BIP0032Path.CreateBip49(ct, account, isChange);
+            BIP0032Path path = BIP0032Path.CreateBip49(ct, account, isChange);
             string actual = path.ToString();
             Assert.Equal(expected, actual);
         }
@@ -123,7 +143,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void AddTest()
         {
-            var path = new BIP0032Path(1, 0x12345678, 3);
+            BIP0032Path path = new(1, 0x12345678, 3);
             Assert.Equal(new uint[] { 1, 0x12345678, 3 }, path.Indexes);
 
             path.Add(5);
@@ -140,7 +160,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData(new uint[] { Hard, 1, Hard + 2, 2 }, "m/0'/1/2'/2")]
         public void ToStringTest(uint[] toUse, string expected)
         {
-            var path = new BIP0032Path(toUse);
+            BIP0032Path path = new(toUse);
             string actual = path.ToString();
             Assert.Equal(expected, actual);
         }
