@@ -57,7 +57,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// Size of the entropy which determines number of words in final mnemonic.
         /// Size must be 16, 20, 24, 28 or 32 which results in 12, 15, 18, 21, and 24 words respectively.
         /// </param>
-        /// <param name="wl">[Defaultvalue = <see cref="WordLists.English"/> Word list to use</param>
+        /// <param name="wl">[Defaultvalue = <see cref="WordLists.English"/>] Word list to use</param>
         /// <param name="passPhrase">
         /// [Default value = null] Optional passphrase to use for computing <see cref="BIP0032"/> entropy
         /// </param>
@@ -85,7 +85,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="FormatException"/>
         /// <param name="mnemonic">Mnemonic (should be 12, 15, 18, 21 or 24 words)</param>
-        /// <param name="wl">[Defaultvalue = <see cref="WordLists.English"/> Word list to use</param>
+        /// <param name="wl">[Defaultvalue = <see cref="WordLists.English"/>] Word list to use</param>
         /// <param name="passPhrase">
         /// [Default value = null] Optional passphrase to use for computing <see cref="BIP0032"/> entropy
         /// </param>
@@ -95,96 +95,16 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(mnemonic), "Seed can not be null or empty!");
             allWords = GetAllWords(wl);
 
-            string[] words = mnemonic.Normalize(NormalizationForm.FormKD)
-                                     .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (!words.All(x => allWords.Contains(x)))
+            if (!IsValid(mnemonic, allWords, out wordIndexes, out string error))
             {
-                throw new ArgumentException("Seed has invalid words.", nameof(mnemonic));
-            }
-            if (!allowedWordLengths.Contains(words.Length))
-            {
-                throw new FormatException("Invalid seed length. It should be ∈{12, 15, 18, 21, 24}");
-            }
-
-            wordIndexes = new uint[words.Length];
-            for (int i = 0; i < words.Length; i++)
-            {
-                wordIndexes[i] = (uint)Array.IndexOf(allWords, words[i]);
-            }
-
-            // Compute and check checksum
-            int MS = words.Length;
-            int ENTCS = MS * 11;
-            int CS = ENTCS % 32;
-            int ENT = ENTCS - CS;
-
-            byte[] entropy = new byte[ENT / 8];
-
-            int itemIndex = 0;
-            int bitIndex = 0;
-            // Number of bits in a word
-            int toTake = 8;
-            // Indexes are held in a UInt32 but they are only 11 bits
-            int maxBits = 11;
-            for (int i = 0; i < entropy.Length; i++)
-            {
-                if (bitIndex + toTake <= maxBits)
+                if (error.Contains("length") || error.Contains("checksum"))
                 {
-                    // All 8 bits are in one item
-
-                    // To take 8 bits (*) out of 00000000 00000000 00000xx* *******x:
-                    // 1. Shift right to get rid of extra bits on right, then cast to byte to get rid of the rest
-                    // >> maxBits - toTake - bitIndex
-                    entropy[i] = (byte)(wordIndexes[itemIndex] >> (3 - bitIndex));
+                    throw new FormatException(error);
                 }
                 else
                 {
-                    // Only a part of 8 bits are in this item, the rest is in the next.
-                    // Since items are only 32 bits there is no other possibility (8<32)
-
-                    // To take 8 bits(*) out of [00000000 00000000 00000xxx xxxx****] [00000000 00000000 00000*** *xxxxxxx]:
-                    // Take first item at itemIndex [00000000 00000000 00000xxx xxxx****]: 
-                    //    * At most 7 bits and at least 1 bit should be taken
-                    // 1. Shift left [00000000 00000000 0xxxxxxx ****0000] (<< 8 - (maxBits - bitIndex)) 8-max+bi
-                    // 2. Zero the rest of the bits (& (00000000 00000000 00000000 11111111))
-
-                    // Take next item at itemIndex+1 [00000000 00000000 00000*** *xxxxxxx]
-                    // 3. Shift right [00000000 00000000 00000000 0000****]
-                    // number of bits already taken = maxBits - bitIndex
-                    // nuber of bits to take = toTake - (maxBits - bitIndex)
-                    // Number of bits on the right to get rid of= maxBits - (toTake - (maxBits - bitIndex))
-                    // 4. Add two values to each other using bitwise OR [****0000] | [0000****]
-                    entropy[i] = (byte)(((wordIndexes[itemIndex] << (bitIndex - 3)) & 0xff) |
-                                         (wordIndexes[itemIndex + 1] >> (14 - bitIndex)));
+                    throw new ArgumentException(error);
                 }
-
-                bitIndex += toTake;
-                if (bitIndex >= maxBits)
-                {
-                    bitIndex -= maxBits;
-                    itemIndex++;
-                }
-            }
-
-            // Compute and compare checksum:
-            // CS is at most 8 bits and it is the remaining bits from the loop above and it is only from last item
-            // [00000000 00000000 00000xxx xxxx****]
-            // We already know the number of bits here: CS
-            // A simple & does the work
-            uint mask = (1U << CS) - 1;
-            byte expectedChecksum = (byte)(wordIndexes[itemIndex] & mask);
-
-            // Checksum is the "first" CS bits of hash: [****xxxx]
-            using Sha256 hash = new Sha256();
-            byte[] hashOfEntropy = hash.ComputeHash(entropy);
-            byte actualChecksum = (byte)(hashOfEntropy[0] >> (8 - CS));
-
-            if (expectedChecksum != actualChecksum)
-            {
-                Array.Clear(wordIndexes, 0, wordIndexes.Length);
-                wordIndexes = null;
-
-                throw new FormatException("Wrong checksum.");
             }
 
             SetBip32(passPhrase);
@@ -292,6 +212,137 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                     bitIndex -= maxBits;
                     itemIndex++;
                 }
+            }
+        }
+
+
+        private static bool IsValid(string mnemonic, string[] allWords, out uint[] wordIndexes, out string error)
+        {
+            string[] words = mnemonic.Normalize(NormalizationForm.FormKD)
+                                     .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (!words.All(x => allWords.Contains(x)))
+            {
+                error = "Seed has invalid words.";
+                wordIndexes = Array.Empty<uint>();
+                return false;
+            }
+            if (!allowedWordLengths.Contains(words.Length))
+            {
+                error = "Invalid seed length. It should be ∈{12, 15, 18, 21, 24}";
+                wordIndexes = Array.Empty<uint>();
+                return false;
+            }
+
+            wordIndexes = new uint[words.Length];
+            for (int i = 0; i < words.Length; i++)
+            {
+                wordIndexes[i] = (uint)Array.IndexOf(allWords, words[i]);
+            }
+
+            // Compute and check checksum
+            int MS = words.Length;
+            int ENTCS = MS * 11;
+            int CS = ENTCS % 32;
+            int ENT = ENTCS - CS;
+
+            byte[] entropy = new byte[ENT / 8];
+
+            int itemIndex = 0;
+            int bitIndex = 0;
+            // Number of bits in a word
+            int toTake = 8;
+            // Indexes are held in a UInt32 but they are only 11 bits
+            int maxBits = 11;
+            for (int i = 0; i < entropy.Length; i++)
+            {
+                if (bitIndex + toTake <= maxBits)
+                {
+                    // All 8 bits are in one item
+
+                    // To take 8 bits (*) out of 00000000 00000000 00000xx* *******x:
+                    // 1. Shift right to get rid of extra bits on right, then cast to byte to get rid of the rest
+                    // >> maxBits - toTake - bitIndex
+                    entropy[i] = (byte)(wordIndexes[itemIndex] >> (3 - bitIndex));
+                }
+                else
+                {
+                    // Only a part of 8 bits are in this item, the rest is in the next.
+                    // Since items are only 32 bits there is no other possibility (8<32)
+
+                    // To take 8 bits(*) out of [00000000 00000000 00000xxx xxxx****] [00000000 00000000 00000*** *xxxxxxx]:
+                    // Take first item at itemIndex [00000000 00000000 00000xxx xxxx****]: 
+                    //    * At most 7 bits and at least 1 bit should be taken
+                    // 1. Shift left [00000000 00000000 0xxxxxxx ****0000] (<< 8 - (maxBits - bitIndex)) 8-max+bi
+                    // 2. Zero the rest of the bits (& (00000000 00000000 00000000 11111111))
+
+                    // Take next item at itemIndex+1 [00000000 00000000 00000*** *xxxxxxx]
+                    // 3. Shift right [00000000 00000000 00000000 0000****]
+                    // number of bits already taken = maxBits - bitIndex
+                    // nuber of bits to take = toTake - (maxBits - bitIndex)
+                    // Number of bits on the right to get rid of= maxBits - (toTake - (maxBits - bitIndex))
+                    // 4. Add two values to each other using bitwise OR [****0000] | [0000****]
+                    entropy[i] = (byte)(((wordIndexes[itemIndex] << (bitIndex - 3)) & 0xff) |
+                                         (wordIndexes[itemIndex + 1] >> (14 - bitIndex)));
+                }
+
+                bitIndex += toTake;
+                if (bitIndex >= maxBits)
+                {
+                    bitIndex -= maxBits;
+                    itemIndex++;
+                }
+            }
+
+            // Compute and compare checksum:
+            // CS is at most 8 bits and it is the remaining bits from the loop above and it is only from last item
+            // [00000000 00000000 00000xxx xxxx****]
+            // We already know the number of bits here: CS
+            // A simple & does the work
+            uint mask = (1U << CS) - 1;
+            byte expectedChecksum = (byte)(wordIndexes[itemIndex] & mask);
+
+            // Checksum is the "first" CS bits of hash: [****xxxx]
+            using Sha256 hash = new Sha256();
+            byte[] hashOfEntropy = hash.ComputeHash(entropy);
+            byte actualChecksum = (byte)(hashOfEntropy[0] >> (8 - CS));
+
+            if (expectedChecksum != actualChecksum)
+            {
+                Array.Clear(wordIndexes, 0, wordIndexes.Length);
+                wordIndexes = null;
+
+                error = "Wrong checksum.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns if the given words are a valid BIP-39 mnemonic.
+        /// </summary>
+        /// <param name="mnemonic">Mnemonic</param>
+        /// <param name="wl">[Defaultvalue = <see cref="WordLists.English"/>] Word list to use</param>
+        /// <param name="error">Error message (empty string if valid).</param>
+        /// <returns>True if the given words were a valid valid BIP-39 mnemonic; otherwise false.</returns>
+        public static bool IsValid(string mnemonic, WordLists wl, out string error)
+        {
+            if (string.IsNullOrWhiteSpace(mnemonic))
+            {
+                error = "Input can not be null or empty.";
+                return false;
+            }
+
+            try
+            {
+                string[] allWords = GetAllWords(wl);
+                return IsValid(mnemonic, allWords, out _, out error);
+            }
+            catch (Exception ex)
+            {
+                error = $"Invalid word-list: {ex.Message}";
+                return false;
             }
         }
 

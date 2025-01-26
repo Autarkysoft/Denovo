@@ -9,7 +9,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Xunit;
 
 namespace Tests.Bitcoin.ImprovementProposals
 {
@@ -20,7 +19,7 @@ namespace Tests.Bitcoin.ImprovementProposals
             // Test cases are from:
             // https://github.com/trezor/python-mnemonic/blob/eb8a010da91fefac2d43cb8ede834ed90b62601f/vectors.json
             JArray jarr = Helper.ReadResource<JArray>("BIP0039TestData");
-            foreach (var item in jarr)
+            foreach (JToken item in jarr)
             {
                 byte[] ent = Helper.HexToBytes(item[0].ToString());
                 string words = item[1].ToString();
@@ -48,7 +47,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Constructor_FromBytes_NullExceptionTest()
         {
-            byte[] nba = null;
+            byte[]? nba = null;
             Assert.Throws<ArgumentNullException>(() => new BIP0039(nba));
         }
 
@@ -76,7 +75,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Constructor_FromRngTest()
         {
-            var rng = new MockRng("bfdf93686a31cd55fc5c1b8fd290fe39");
+            MockRng rng = new("bfdf93686a31cd55fc5c1b8fd290fe39");
             using BIP0039 bip = new(rng, 16);
 
             string actual = bip.ToMnemonic();
@@ -88,7 +87,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Constructor_FromRng_NullExceptionTest()
         {
-            IRandomNumberGenerator nrng = null;
+            IRandomNumberGenerator? nrng = null;
             Assert.Throws<ArgumentNullException>(() => new BIP0039(nrng, 16));
         }
 
@@ -99,7 +98,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData(33)]
         public void Constructor_FromRng_OutOfRangeExceptionTest(int entLen)
         {
-            var rng = new MockRng(Array.Empty<byte>());
+            MockRng rng = new(Array.Empty<byte>());
             Assert.Throws<ArgumentOutOfRangeException>(() => new BIP0039(rng, entLen));
         }
 
@@ -121,7 +120,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
-        public void Constructor_FromString_NullExceptionTest(string mnemonic)
+        public void Constructor_FromString_NullExceptionTest(string? mnemonic)
         {
             Assert.Throws<ArgumentNullException>(() => new BIP0039(mnemonic));
         }
@@ -166,12 +165,27 @@ namespace Tests.Bitcoin.ImprovementProposals
             Assert.Equal(expected, actual);
         }
 
+        [Theory]
+        [InlineData(null, BIP0039.WordLists.English, false, "Input can not be null or empty.")]
+        [InlineData("", BIP0039.WordLists.English, false, "Input can not be null or empty.")]
+        [InlineData(" ", BIP0039.WordLists.English, false, "Input can not be null or empty.")]
+        [InlineData("ozone", (BIP0039.WordLists)100, false, "Invalid word-list")]
+        [InlineData("ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic", BIP0039.WordLists.English, true, "")]
+        [InlineData("ozone drill grab fiber curtain grace pudding thank cruise eight eight eight", BIP0039.WordLists.English, false, "Wrong checksum.")]
+        public void IsValidTest(string? mnemonic, BIP0039.WordLists wl, bool expected, string expErr)
+        {
+            bool actual = BIP0039.IsValid(mnemonic, wl, out string error);
+
+            Assert.Equal(expected, actual);
+            Assert.Contains(expErr, error);
+        }
+
         public static IEnumerable<object[]> GetJapEntropyCases(bool includeEntropy)
         {
             // Test cases are from: 
             // https://github.com/bip32JP/bip32JP.github.io/blob/0d1ac71933458f08a56d6ab44dd0f251158cc865/test_JP_BIP39.json
             JArray jarr = Helper.ReadResource<JArray>("BIP0039JapTestData");
-            foreach (var item in jarr)
+            foreach (JToken item in jarr)
             {
                 byte[] ent = Helper.HexToBytes(item["entropy"].ToString());
                 string words = item["mnemonic"].ToString();
