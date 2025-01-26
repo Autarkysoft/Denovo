@@ -46,7 +46,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             MnType = mnType;
             allWords = BIP0039.GetAllWords(wl);
-            SetWordsFromEntropy(entropy);
+            SetWordsFromEntropy(entropy, wl);
             SetBip32(passPhrase);
         }
 
@@ -77,7 +77,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             byte[] entropy = new byte[EntropyByteLen];
             rng.GetBytes(entropy);
-            SetWordsFromEntropy(entropy);
+            SetWordsFromEntropy(entropy, wl);
             SetBip32(passPhrase);
         }
 
@@ -165,7 +165,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             SegWit2Fa
         }
 
-        private void SetWordsFromEntropy(byte[] entropy)
+        private void SetWordsFromEntropy(byte[] entropy, BIP0039.WordLists wl)
         {
             while (true)
             {
@@ -187,19 +187,9 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 };
 
                 string normalized = Normalize(ToMnemonic());
-                if (IsOld(normalized))
+                if (IsOld(normalized) || BIP0039.IsValid(normalized, wl, out _))
                 {
                     continue;
-                }
-
-                // TODO: add a new method in BIP0039 to check if the mneomonic is valid
-                try
-                {
-                    using BIP0039 temp = new BIP0039(normalized);
-                    continue;
-                }
-                catch (Exception)
-                {
                 }
 
                 if (GetMnemonicType(normalized) == MnType)
