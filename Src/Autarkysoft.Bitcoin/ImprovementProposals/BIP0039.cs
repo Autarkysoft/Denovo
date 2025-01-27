@@ -323,14 +323,14 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// Returns if the given words are a valid BIP-39 mnemonic.
         /// </summary>
         /// <param name="mnemonic">Mnemonic</param>
-        /// <param name="wl">[Defaultvalue = <see cref="WordLists.English"/>] Word list to use</param>
+        /// <param name="wl">Word-list to use</param>
         /// <param name="error">Error message (empty string if valid).</param>
         /// <returns>True if the given words were a valid valid BIP-39 mnemonic; otherwise false.</returns>
         public static bool IsValid(string mnemonic, WordLists wl, out string error)
         {
             if (string.IsNullOrWhiteSpace(mnemonic))
             {
-                error = "Input can not be null or empty.";
+                error = "Mnemonic string can not be null or empty.";
                 return false;
             }
 

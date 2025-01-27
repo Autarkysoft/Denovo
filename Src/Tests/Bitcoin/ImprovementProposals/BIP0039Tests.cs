@@ -166,9 +166,9 @@ namespace Tests.Bitcoin.ImprovementProposals
         }
 
         [Theory]
-        [InlineData(null, BIP0039.WordLists.English, false, "Input can not be null or empty.")]
-        [InlineData("", BIP0039.WordLists.English, false, "Input can not be null or empty.")]
-        [InlineData(" ", BIP0039.WordLists.English, false, "Input can not be null or empty.")]
+        [InlineData(null, BIP0039.WordLists.English, false, "Mnemonic string can not be null or empty.")]
+        [InlineData("", BIP0039.WordLists.English, false, "Mnemonic string can not be null or empty.")]
+        [InlineData(" ", BIP0039.WordLists.English, false, "Mnemonic string can not be null or empty.")]
         [InlineData("ozone", (BIP0039.WordLists)100, false, "Invalid word-list")]
         [InlineData("ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic", BIP0039.WordLists.English, true, "")]
         [InlineData("ozone drill grab fiber curtain grace pudding thank cruise eight eight eight", BIP0039.WordLists.English, false, "Wrong checksum.")]
