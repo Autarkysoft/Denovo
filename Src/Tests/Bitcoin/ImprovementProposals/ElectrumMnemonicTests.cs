@@ -8,7 +8,6 @@ using Autarkysoft.Bitcoin.ImprovementProposals;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Xunit;
 
 namespace Tests.Bitcoin.ImprovementProposals
 {
@@ -113,15 +112,15 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Theory]
         [MemberData(nameof(GetCtorByteCases))]
         public void ConstructorTest(BIP0039.WordLists wl, string mnemonic, byte[] entropy,
-                                               ElectrumMnemonic.MnemonicType mnType, string pass, byte[] bip32Seed)
+                                    ElectrumMnemonic.MnemonicType mnType, string pass, byte[] bip32Seed)
         {
-            using var elmn = new ElectrumMnemonic(mnemonic, wl, pass);
+            using ElectrumMnemonic elmn = new(mnemonic, wl, pass);
             Assert.Equal(mnType, elmn.MnType);
             Assert.Equal(mnemonic, elmn.ToMnemonic());
 
             if (entropy != null)
             {
-                using var fromEntropy = new ElectrumMnemonic(entropy, mnType, wl, pass);
+                using ElectrumMnemonic fromEntropy = new(entropy, mnType, wl, pass);
                 Assert.Equal(mnType, fromEntropy.MnType);
                 Assert.Equal(mnemonic, fromEntropy.ToMnemonic());
             }
@@ -138,7 +137,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         public void Constructor_FromByte_IncrementTest()
         {
             byte[] ent = Helper.HexToBytes("0a0fecede9bf8a975eb6b4ef75bb799f00");
-            using var elmn = new ElectrumMnemonic(ent, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
+            using ElectrumMnemonic elmn = new(ent, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
 
             string actual = elmn.ToMnemonic();
             string expected = "almíbar tibio superar vencer hacha peatón príncipe matar consejo polen vehículo odisea";
@@ -149,8 +148,8 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Constructor_FromRngTest()
         {
-            var rng = new MockRng(BigInteger.Parse("3423992296655289706780599506247192518735").ToByteArray(true, true));
-            using var elmn = new ElectrumMnemonic(rng, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
+            MockRng rng = new(BigInteger.Parse("3423992296655289706780599506247192518735").ToByteArray(true, true));
+            using ElectrumMnemonic elmn = new(rng, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
 
             string actual = elmn.ToMnemonic();
             string expected = "almíbar tibio superar vencer hacha peatón príncipe matar consejo polen vehículo odisea";
@@ -161,12 +160,12 @@ namespace Tests.Bitcoin.ImprovementProposals
         [Fact]
         public void Constructor_ExceptionTest()
         {
-            byte[] nba = null;
-            string nstr = null;
-            IRandomNumberGenerator nrng = null;
-            var mnt = ElectrumMnemonic.MnemonicType.Standard;
-            var mntBad1 = ElectrumMnemonic.MnemonicType.Undefined;
-            var mntBad2 = (ElectrumMnemonic.MnemonicType)100;
+            byte[]? nba = null;
+            string? nstr = null;
+            IRandomNumberGenerator? nrng = null;
+            ElectrumMnemonic.MnemonicType mnt = ElectrumMnemonic.MnemonicType.Standard;
+            ElectrumMnemonic.MnemonicType mntBad1 = ElectrumMnemonic.MnemonicType.Undefined;
+            ElectrumMnemonic.MnemonicType mntBad2 = (ElectrumMnemonic.MnemonicType)100;
 
             Assert.Throws<ArgumentNullException>(() => new ElectrumMnemonic(nstr));
             Assert.Throws<ArgumentNullException>(() => new ElectrumMnemonic(" "));
@@ -193,7 +192,7 @@ namespace Tests.Bitcoin.ImprovementProposals
         public void ToMnemonic_DisoisedExceptionTest()
         {
             byte[] ent = Helper.HexToBytes("0a0fecede9bf8a975eb6b4ef75bb799f00");
-            var elmn = new ElectrumMnemonic(ent, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
+            ElectrumMnemonic elmn = new(ent, ElectrumMnemonic.MnemonicType.Standard, BIP0039.WordLists.Spanish);
             elmn.Dispose();
 
             Assert.Throws<ObjectDisposedException>(() => elmn.ToMnemonic());
@@ -234,6 +233,21 @@ namespace Tests.Bitcoin.ImprovementProposals
         {
             bool actual = ElectrumMnemonic.IsOld(m);
             Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(null, BIP0039.WordLists.English, false, "Mnemonic string can not be null or empty.")]
+        [InlineData("", BIP0039.WordLists.English, false, "Mnemonic string can not be null or empty.")]
+        [InlineData(" ", BIP0039.WordLists.English, false, "Mnemonic string can not be null or empty.")]
+        [InlineData("ozone", (BIP0039.WordLists)100, false, "Invalid word-list")]
+        [InlineData("wild father tree among universe such mobile favorite target dynamic credit identify", BIP0039.WordLists.English, true, "")]
+        [InlineData("wild father tree among universe such mobile favorite target dynamic credit credit", BIP0039.WordLists.English, false, "Invalid mnemonic (undefined version).")]
+        public void IsValidTest(string? mnemonic, BIP0039.WordLists wl, bool expected, string expErr)
+        {
+            bool actual = ElectrumMnemonic.IsValid(mnemonic, wl, out string error);
+
+            Assert.Equal(expected, actual);
+            Assert.Contains(expErr, error);
         }
     }
 }

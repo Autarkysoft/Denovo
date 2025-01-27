@@ -19,6 +19,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
     /// <summary>
     /// Mnemonic code for generating deterministic keys as defined by Electrum. Inherits from <see cref="BIP0032"/>.
     /// <para/> https://github.com/spesmilo/electrum/blob/392a648de5f6edf2e06620763bf0685854d0d56d/electrum/mnemonic.py
+    /// <para/> This is a limited implementation supporting the default way of generating seed phrases using Electrum client
     /// </summary>
     public class ElectrumMnemonic : BIP0032
     {
@@ -30,7 +31,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="entropy">Entropy to use (must be 17 bytes or 132 bits)</param>
         /// <param name="mnType">Type of the mnemonic to create (anything but <see cref="MnemonicType.Undefined"/>)</param>
-        /// <param name="wl">[Defaultvalue = <see cref="BIP0039.WordLists.English"/> Word list to use</param>
+        /// <param name="wl">[Defaultvalue = <see cref="BIP0039.WordLists.English"/>] Word list to use</param>
         /// <param name="passPhrase">
         /// [Default value = null] Optional passphrase to use for computing <see cref="BIP0032"/> entropy
         /// </param>
@@ -60,7 +61,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="rng">Random number generator to use</param>
         /// <param name="mnType">Type of the mnemonic to create (anything but <see cref="MnemonicType.Undefined"/>)</param>
-        /// <param name="wl">[Defaultvalue = <see cref="BIP0039.WordLists.English"/> Word list to use</param>
+        /// <param name="wl">[Defaultvalue = <see cref="BIP0039.WordLists.English"/>] Word list to use</param>
         /// <param name="passPhrase">
         /// [Default value = null] Optional passphrase to use for computing <see cref="BIP0032"/> entropy
         /// </param>
@@ -89,7 +90,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="FormatException"/>
         /// <param name="mnemonic">Mnemonic (should be 12 words)</param>
-        /// <param name="wl">[Defaultvalue = <see cref="BIP0039.WordLists.English"/> Word list to use</param>
+        /// <param name="wl">[Defaultvalue = <see cref="BIP0039.WordLists.English"/>] Word list to use</param>
         /// <param name="passPhrase">
         /// [Default value = null] Optional passphrase to use for computing <see cref="BIP0032"/> entropy
         /// </param>
@@ -99,28 +100,12 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 throw new ArgumentNullException(nameof(mnemonic), "Seed can not be null or empty!");
             allWords = BIP0039.GetAllWords(wl);
 
-            string[] words = mnemonic.Normalize(NormalizationForm.FormKD)
-                                     .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (words.Length != WordLen)
+            if (!IsValid(mnemonic, allWords, out wordIndexes, out MnemonicType mt, out string error))
             {
-                throw new FormatException("Invalid seed length. It should be 12.");
-            }
-            if (!words.All(x => allWords.Contains(x)))
-            {
-                throw new FormatException("Mnemonic has invalid words.");
+                throw new FormatException(error);
             }
 
-            wordIndexes = new int[words.Length];
-            for (int i = 0; i < words.Length; i++)
-            {
-                wordIndexes[i] = Array.IndexOf(allWords, words[i]);
-            }
-
-            MnType = GetMnemonicType(Normalize(ToMnemonic()));
-            if (MnType == MnemonicType.Undefined)
-            {
-                throw new FormatException("Invalid mnemonic (undefined version).");
-            }
+            MnType = mt;
 
             SetBip32(passPhrase);
         }
@@ -289,7 +274,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             return temp.ToString();
         }
 
-        private MnemonicType GetMnemonicType(string normalizedMn)
+        private static MnemonicType GetMnemonicType(string normalizedMn)
         {
             using HmacSha512 hmac = new HmacSha512(Encoding.UTF8.GetBytes("Seed version"));
             byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(normalizedMn));
@@ -398,6 +383,72 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         {
             ReadOnlySpan<string> allWords = GetOldWordList();
             return IsOld(Normalize(mnemonic), allWords);
+        }
+
+        private static bool IsValid(string mnemonic, string[] allWords, out int[] wordIndexes, out MnemonicType mnType, out string error)
+        {
+            string[] words = mnemonic.Normalize(NormalizationForm.FormKD)
+                                     .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length != WordLen)
+            {
+                error = "Invalid seed length. It should be 12.";
+                wordIndexes = null;
+                mnType = MnemonicType.Undefined;
+                return false;
+            }
+            if (!words.All(x => allWords.Contains(x)))
+            {
+                error = "Mnemonic has invalid words.";
+                wordIndexes = null;
+                mnType = MnemonicType.Undefined;
+                return false;
+            }
+
+            wordIndexes = new int[words.Length];
+            for (int i = 0; i < words.Length; i++)
+            {
+                wordIndexes[i] = Array.IndexOf(allWords, words[i]);
+            }
+
+            string temp = string.Join(' ', wordIndexes.Select(x => allWords[x]));
+
+            mnType = GetMnemonicType(Normalize(temp));
+            if (mnType == MnemonicType.Undefined)
+            {
+                error = "Invalid mnemonic (undefined version).";
+                wordIndexes = null;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns if the given words are a valid Electrum mnemonic.
+        /// </summary>
+        /// <param name="mnemonic">Mnemonic</param>
+        /// <param name="wl">Word-list to use</param>
+        /// <param name="error">Error message (empty string if valid).</param>
+        /// <returns>True if the given words were a valid valid Electrum mnemonic; otherwise false.</returns>
+        public static bool IsValid(string mnemonic, BIP0039.WordLists wl, out string error)
+        {
+            if (string.IsNullOrWhiteSpace(mnemonic))
+            {
+                error = "Mnemonic string can not be null or empty.";
+                return false;
+            }
+
+            try
+            {
+                string[] allWords = GetAllWords(wl);
+                return IsValid(mnemonic, allWords, out _, out _, out error);
+            }
+            catch (Exception ex)
+            {
+                error = $"Invalid word-list: {ex.Message}";
+                return false;
+            }
         }
 
         private void SetBip32(string passPhrase)
