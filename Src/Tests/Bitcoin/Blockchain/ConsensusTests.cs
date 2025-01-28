@@ -152,6 +152,7 @@ namespace Tests.Bitcoin.Blockchain
         [Theory]
         [InlineData(NetworkType.MainNet, "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")]
         [InlineData(NetworkType.TestNet, "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")]
+        [InlineData(NetworkType.TestNet4, "00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043")]
         [InlineData(NetworkType.RegTest, "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")]
         public void GetGenesisBlockTest(NetworkType net, string expectedID)
         {
@@ -159,7 +160,10 @@ namespace Tests.Bitcoin.Blockchain
             IBlock genesis = cs.GetGenesisBlock();
 
             string actualID = genesis.GetBlockID();
-            Digest256 expectedMerkle = new(Helper.HexToBytes("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b", true));
+            // MainNet, TestNet3 and RegTest have similar merkle roots while TestNet4 has a differnt one
+            Digest256 expectedMerkle = net == NetworkType.TestNet4 ? 
+                new(Helper.HexToBytes("7aa0a7ae1e223414cb807e40cd57e667b718e42aaf9306db9102fe28912b7b4e", true)) :
+                new(Helper.HexToBytes("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b", true));
 
             Assert.Equal(expectedID, actualID);
             Assert.Equal(expectedMerkle, genesis.Header.MerkleRootHash);
