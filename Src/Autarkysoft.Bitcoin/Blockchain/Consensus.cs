@@ -51,6 +51,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             switch (netType)
             {
                 case NetworkType.MainNet:
+                    IsBip94 = false;
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = false;
                     MaxSigOpCount = 80000;
@@ -64,6 +65,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     tap = 709632;
                     break;
                 case NetworkType.TestNet:
+                    IsBip94 = false;
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
                     MaxSigOpCount = 80000;
@@ -77,6 +79,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     tap = 2064268;
                     break;
                 case NetworkType.TestNet4:
+                    IsBip94 = true;
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
                     MaxSigOpCount = 80000;
@@ -90,6 +93,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     tap = 1;
                     break;
                 case NetworkType.RegTest:
+                    IsBip94 = false;
                     PowLimit = Digest256.ParseHex("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
                     MaxSigOpCount = 80000;
@@ -171,6 +175,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return 50_0000_0000UL >> halvings;
             }
         }
+
+        /// <inheritdoc/>
+        public bool IsBip94 { get; }
 
         /// <inheritdoc/>
         // Only 1 block on MainNet and 1 block on TestNet violate P2SH validation rule (before it activates)

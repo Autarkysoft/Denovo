@@ -50,6 +50,13 @@ namespace Denovo.Models
 
         public ulong BlockReward => backup.BlockReward;
 
+        private bool _bip94;
+        public bool IsBip94
+        {
+            get => _bip94;
+            set => SetField(ref _bip94, value);
+        }
+
         private bool _bip16;
         public bool IsBip16Enabled
         {

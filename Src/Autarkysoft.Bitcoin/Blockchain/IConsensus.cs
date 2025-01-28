@@ -37,6 +37,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         ulong BlockReward { get; }
 
         /// <summary>
+        /// Returns if BIP-94 (defined for TestNet v.4) is active on this <see cref="NetworkType"/>
+        /// </summary>
+        bool IsBip94 { get; }
+
+        /// <summary>
         /// Returns if BIP-16 (P2SH scrips) is enabled
         /// </summary>
         bool IsBip16Enabled { get; }
