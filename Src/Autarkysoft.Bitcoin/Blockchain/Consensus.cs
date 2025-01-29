@@ -54,6 +54,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     IsBip94 = false;
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = false;
+                    NoPowRetarget = false;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 170060;
@@ -68,6 +69,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     IsBip94 = false;
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
+                    NoPowRetarget = false;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 1718436;
@@ -82,6 +84,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     IsBip94 = true;
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
+                    NoPowRetarget = false;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 210000;
                     bip16 = 1;
@@ -96,6 +99,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     IsBip94 = false;
                     PowLimit = Digest256.ParseHex("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
+                    NoPowRetarget = true;
                     MaxSigOpCount = 80000;
                     HalvingInterval = 150;
                     bip16 = 0;
@@ -217,6 +221,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public bool AllowMinDifficultyBlocks { get; }
 
         /// <inheritdoc/>
+        public bool NoPowRetarget { get; }
+
+        /// <inheritdoc/>
         public Digest256 PowLimit { get; }
 
         /// <inheritdoc/>
@@ -240,7 +247,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             Buffer.BlockCopy(Base16.Decode("04ffff001d01044c4c"), 0, sigData, 0, 9);
             Buffer.BlockCopy(tsBytes, 0, sigData, 9, tsBytes.Length);
             var sigScr = new SignatureScript(sigData);
-            
+
             var pubOps = new IOperation[]
             {
                 new PushDataOp(new byte[33]),

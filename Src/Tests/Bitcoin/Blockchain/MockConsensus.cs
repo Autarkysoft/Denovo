@@ -6,7 +6,6 @@
 using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
@@ -176,6 +175,17 @@ namespace Tests.Bitcoin.Blockchain
         }
 
 
+        internal bool? _noPowRetarget;
+        public bool NoPowRetarget
+        {
+            get
+            {
+                Assert.True(_noPowRetarget.HasValue, UnexpectedCall);
+                return _noPowRetarget.Value;
+            }
+        }
+
+
         internal Digest256? _powLimit;
         public Digest256 PowLimit
         {
@@ -186,10 +196,10 @@ namespace Tests.Bitcoin.Blockchain
             }
         }
 
-        internal IBlock _genesis;
+        internal IBlock? _genesis;
         public IBlock GetGenesisBlock()
         {
-            Assert.NotNull(_genesis);
+            Assert.True(_genesis is not null, UnexpectedCall);
             return _genesis;
         }
 

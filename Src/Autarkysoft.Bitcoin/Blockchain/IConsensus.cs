@@ -101,6 +101,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
         bool AllowMinDifficultyBlocks { get; }
 
         /// <summary>
+        /// Don't change PoW target and always mine at the same difficulty
+        /// (used for <see cref="NetworkType.RegTest"/>)
+        /// </summary>
+        bool NoPowRetarget { get; }
+
+        /// <summary>
         /// Proof of work limit
         /// </summary>
         Digest256 PowLimit { get; }
