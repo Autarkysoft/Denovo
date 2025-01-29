@@ -8,7 +8,6 @@ using Autarkysoft.Bitcoin.Blockchain;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
@@ -150,6 +149,28 @@ namespace Tests.Bitcoin.Blockchain
         }
 
         [Theory]
+        [InlineData(NetworkType.MainNet, false)]
+        [InlineData(NetworkType.TestNet, true)]
+        [InlineData(NetworkType.TestNet4, true)]
+        [InlineData(NetworkType.RegTest, true)]
+        public void AllowMinDifficultyBlocksTest(NetworkType net, bool expected)
+        {
+            Consensus cs = new(net);
+            Assert.Equal(expected, cs.AllowMinDifficultyBlocks);
+        }
+
+        [Theory]
+        [InlineData(NetworkType.MainNet, false)]
+        [InlineData(NetworkType.TestNet, false)]
+        [InlineData(NetworkType.TestNet4, false)]
+        [InlineData(NetworkType.RegTest, true)]
+        public void NoPowRetargetTest(NetworkType net, bool expected)
+        {
+            Consensus cs = new(net);
+            Assert.Equal(expected, cs.NoPowRetarget);
+        }
+
+        [Theory]
         [InlineData(NetworkType.MainNet, "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")]
         [InlineData(NetworkType.TestNet, "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")]
         [InlineData(NetworkType.TestNet4, "00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043")]
@@ -161,7 +182,7 @@ namespace Tests.Bitcoin.Blockchain
 
             string actualID = genesis.GetBlockID();
             // MainNet, TestNet3 and RegTest have similar merkle roots while TestNet4 has a differnt one
-            Digest256 expectedMerkle = net == NetworkType.TestNet4 ? 
+            Digest256 expectedMerkle = net == NetworkType.TestNet4 ?
                 new(Helper.HexToBytes("7aa0a7ae1e223414cb807e40cd57e667b718e42aaf9306db9102fe28912b7b4e", true)) :
                 new(Helper.HexToBytes("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b", true));
 
