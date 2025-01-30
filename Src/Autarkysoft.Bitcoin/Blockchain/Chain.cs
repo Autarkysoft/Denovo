@@ -199,6 +199,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// <inheritdoc/>
         public Target GetNextTarget(in BlockHeader first, in BlockHeader last)
         {
+            if (Consensus.NoPowRetarget)
+            {
+                return last.NBits;
+            }
+
             uint timeDiff = last.BlockTime - first.BlockTime;
             if (timeDiff < Constants.PowTargetTimespan / 4)
             {
@@ -210,7 +215,9 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
 
             // TODO: try changing Digest256 to handle calculations
-            BigInteger newTar = last.NBits.ToBigInt();
+
+            // Special difficulty rule for Testnet4
+            BigInteger newTar = Consensus.IsBip94 ? first.NBits.ToBigInt() : last.NBits.ToBigInt();
             newTar *= timeDiff;
             newTar /= Constants.PowTargetTimespan;
             if (newTar > new BigInteger(Consensus.PowLimit.ToByteArray()))
