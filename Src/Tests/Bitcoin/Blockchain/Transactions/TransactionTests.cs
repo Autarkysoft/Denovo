@@ -140,7 +140,7 @@ namespace Tests.Bitcoin.Blockchain.Transactions
         [MemberData(nameof(GetSignCases), TxCaseType.FinalSignedTx)]
         public void Key_SignTxTest(string wif, ITransaction tx, ITransaction prvTx, SigHashType sht, int[] indexes, byte[] expSer)
         {
-            using PrivateKey key = new(wif, NetworkType.TestNet);
+            using PrivateKey key = new(wif, NetworkType.TestNet3);
             for (int i = 0; i < indexes.Length; i++)
             {
                 key.Sign(dsa, calc, tx, prvTx, indexes[i], sht);

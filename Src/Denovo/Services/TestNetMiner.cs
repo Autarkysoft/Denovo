@@ -34,7 +34,7 @@ namespace Denovo.Services
             // and IBlockchain.GetTarget() to mine at the correct difficulty.
             // For now it is a good way of mining any transaction that won't propagate in TestNet by bitcoin core clients.
 
-            Consensus consensus = new(height, NetworkType.TestNet);
+            Consensus consensus = new(height, NetworkType.TestNet3);
             string cbText = "Mined using Denovo v0.1.0";
             // A weak key used only for testing
             using PrivateKey key = new(new Sha256().ComputeHash(Encoding.UTF8.GetBytes(cbText)));

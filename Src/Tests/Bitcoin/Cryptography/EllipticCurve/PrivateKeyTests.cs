@@ -183,9 +183,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         {
             using PrivateKey keyW = new(wif, NetworkType.MainNet);
             using PrivateKey keyWC = new(wifC, NetworkType.MainNet);
-            using PrivateKey keyWT = new(wifT, NetworkType.TestNet);
-            using PrivateKey keyWTC = new(wifTC, NetworkType.TestNet);
-            // RegTest and TestNet are the same
+            using PrivateKey keyWT = new(wifT, NetworkType.TestNet3);
+            using PrivateKey keyWTC = new(wifTC, NetworkType.TestNet3);
+            // RegTest and TestNet3 are the same
             using PrivateKey keyWRT = new(wifT, NetworkType.RegTest);
 
             Assert.Equal(expected, keyW.ToBytes());
@@ -219,12 +219,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         [Theory]
         [InlineData("5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAbuatmU", NetworkType.MainNet)] // 0
         [InlineData("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73Nd2Mcv1", NetworkType.MainNet)] // 0
-        [InlineData("91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbgwi1C2GD", NetworkType.TestNet)] // 0
-        [InlineData("cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN87J7g8rY9t", NetworkType.TestNet)] // 0
+        [InlineData("91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbgwi1C2GD", NetworkType.TestNet3)] // 0
+        [InlineData("cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN87J7g8rY9t", NetworkType.TestNet3)] // 0
         [InlineData("5Km2kuu7vtFDPpxywn4u3NLpbr5jKpTB3jsuDU2KYEqetwr388P", NetworkType.MainNet)] // max value + 1
         [InlineData("L5oLkpV3aqBjhki6LmvChTCV6odsp4SXM6FfU2Gppt5kFqRzExJJ", NetworkType.MainNet)] // max value + 1
-        [InlineData("93XfLeifX7KMMtUGa7xouxtnFWSSUyzNPgjrJ6Npsyahfwcd8gd", NetworkType.TestNet)] // max value + 1
-        [InlineData("cWALDjUu1tszsCBMjBjL4mhYj2wHUWYDR8Q8aSjLKzjkWaXMLRaY", NetworkType.TestNet)] // max value + 1
+        [InlineData("93XfLeifX7KMMtUGa7xouxtnFWSSUyzNPgjrJ6Npsyahfwcd8gd", NetworkType.TestNet3)] // max value + 1
+        [InlineData("cWALDjUu1tszsCBMjBjL4mhYj2wHUWYDR8Q8aSjLKzjkWaXMLRaY", NetworkType.TestNet3)] // max value + 1
         public void Constructor_WIF_OutOfRangeException_Test(string wif, NetworkType netType)
         {
             Exception ex = Assert.Throws<ArgumentOutOfRangeException>(() => new PrivateKey(wif, netType));
@@ -302,9 +302,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             using PrivateKey prvKey = new(bytesToUse);
             Assert.Equal(wif, prvKey.ToWif(false, NetworkType.MainNet));
             Assert.Equal(wifC, prvKey.ToWif(true, NetworkType.MainNet));
-            Assert.Equal(wifT, prvKey.ToWif(false, NetworkType.TestNet));
-            Assert.Equal(wifTC, prvKey.ToWif(true, NetworkType.TestNet));
-            // RegTest is the same as TestNet
+            Assert.Equal(wifT, prvKey.ToWif(false, NetworkType.TestNet3));
+            Assert.Equal(wifTC, prvKey.ToWif(true, NetworkType.TestNet3));
+            // RegTest is the same as TestNet3
             Assert.Equal(wifTC, prvKey.ToWif(true, NetworkType.RegTest));
         }
 

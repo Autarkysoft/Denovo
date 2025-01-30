@@ -41,7 +41,7 @@ namespace Autarkysoft.Bitcoin.Clients
             DefaultPort = Network switch
             {
                 NetworkType.MainNet => Constants.MainNetPort,
-                NetworkType.TestNet => Constants.TestNetPort,
+                NetworkType.TestNet3 => Constants.TestNet3Port,
                 NetworkType.TestNet4 => Constants.TestNet4Port,
                 NetworkType.RegTest => Constants.RegTestPort,
                 _ => throw new ArgumentException("Undefined network"),

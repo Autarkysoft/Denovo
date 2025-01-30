@@ -37,7 +37,7 @@ namespace Tests.Bitcoin.P2PNetwork
             };
             var cs = new MockClientSettings()
             {
-                _netType = NetworkType.TestNet,
+                _netType = NetworkType.TestNet3,
                 _rng = new MockNonceRng(RngReturnValue)
             };
             var rep = new ReplyManager(ns, cs);
@@ -66,7 +66,7 @@ namespace Tests.Bitcoin.P2PNetwork
                 _time = new MockClientTime() { _now = 456 },
                 _ua = "foo",
                 _relay = true,
-                _netType = NetworkType.TestNet,
+                _netType = NetworkType.TestNet3,
                 _bchain = new MockChain() { _height = 12345 },
                 _rng = new MockNonceRng(RngReturnValue)
             };

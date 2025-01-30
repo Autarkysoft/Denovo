@@ -31,8 +31,8 @@ namespace Tests.Bitcoin.P2PNetwork
         [Fact]
         public void GetPingMsgTest()
         {
-            MockClientSettings cs = new() { _netType = NetworkType.TestNet, _buffLen = 10 };
-            Message expectedPing = new(new PingPayload(1), NetworkType.TestNet);
+            MockClientSettings cs = new() { _netType = NetworkType.TestNet3, _buffLen = 10 };
+            Message expectedPing = new(new PingPayload(1), NetworkType.TestNet3);
             MockReplyManager repMan = new() { pingMsg = expectedPing };
             MessageManager man = new(cs, repMan, new NodeStatus());
 

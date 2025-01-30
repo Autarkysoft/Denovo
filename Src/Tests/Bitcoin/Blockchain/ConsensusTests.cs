@@ -150,7 +150,7 @@ namespace Tests.Bitcoin.Blockchain
 
         [Theory]
         [InlineData(NetworkType.MainNet, false)]
-        [InlineData(NetworkType.TestNet, true)]
+        [InlineData(NetworkType.TestNet3, true)]
         [InlineData(NetworkType.TestNet4, true)]
         [InlineData(NetworkType.RegTest, true)]
         public void AllowMinDifficultyBlocksTest(NetworkType net, bool expected)
@@ -161,7 +161,7 @@ namespace Tests.Bitcoin.Blockchain
 
         [Theory]
         [InlineData(NetworkType.MainNet, false)]
-        [InlineData(NetworkType.TestNet, false)]
+        [InlineData(NetworkType.TestNet3, false)]
         [InlineData(NetworkType.TestNet4, false)]
         [InlineData(NetworkType.RegTest, true)]
         public void NoPowRetargetTest(NetworkType net, bool expected)
@@ -172,7 +172,7 @@ namespace Tests.Bitcoin.Blockchain
 
         [Theory]
         [InlineData(NetworkType.MainNet, "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")]
-        [InlineData(NetworkType.TestNet, "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")]
+        [InlineData(NetworkType.TestNet3, "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")]
         [InlineData(NetworkType.TestNet4, "00000000da84f2bafbbc53dee25a72ae507ff4914b867c565be350b0da8bf043")]
         [InlineData(NetworkType.RegTest, "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")]
         public void GetGenesisBlockTest(NetworkType net, string expectedID)

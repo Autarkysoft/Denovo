@@ -15,9 +15,8 @@ using System.Text;
 namespace Autarkysoft.Bitcoin.Blockchain
 {
     /// <summary>
-    /// Implementation of consensus rules for <see cref="NetworkType.MainNet"/>, <see cref="NetworkType.TestNet"/> and 
-    /// <see cref="NetworkType.RegTest"/>.
-    /// Implements <see cref="IConsensus"/>.
+    /// Implementation of consensus rules for various <see cref="NetworkType"/>s.
+    /// <para/>Implements <see cref="IConsensus"/>.
     /// </summary>
     public class Consensus : IConsensus
     {
@@ -37,12 +36,12 @@ namespace Autarkysoft.Bitcoin.Blockchain
         }
 
         /// <summary>
-        /// Initializes a new instance of <see cref="Consensus"/> using the <see cref="NetworkType"/>.
+        /// Initializes a new instance of <see cref="Consensus"/> using the given block height and <see cref="NetworkType"/>.
         /// </summary>
         /// <exception cref="ArgumentException"/>
         /// <param name="height">
         /// Block height to use for setting the consens rules (can be set to zero and changed later using the
-        /// <see cref="BlockHeight"/> property). It has to change based on block height.
+        /// <see cref="BlockHeight"/> property). Some rules change based on it.
         /// </param>
         /// <param name="netType">Network type</param>
         public Consensus(int height, NetworkType netType)
@@ -65,7 +64,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     seg = 481824;
                     tap = 709632;
                     break;
-                case NetworkType.TestNet:
+                case NetworkType.TestNet3:
                     IsBip94 = false;
                     PowLimit = Digest256.ParseHex("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
                     AllowMinDifficultyBlocks = true;
@@ -184,7 +183,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         public bool IsBip94 { get; }
 
         /// <inheritdoc/>
-        // Only 1 block on MainNet and 1 block on TestNet violate P2SH validation rule (before it activates)
+        // Only 1 block on MainNet and 1 block on TestNet3 violate P2SH validation rule (before it activates)
         // the rest either don't have any or BIP-16 is already activated.
         public bool IsBip16Enabled => BlockHeight != bip16;
 
@@ -232,7 +231,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             return network switch
             {
                 NetworkType.MainNet => CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50_0000_0000),
-                NetworkType.TestNet => CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50_0000_0000),
+                NetworkType.TestNet3 => CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50_0000_0000),
                 NetworkType.TestNet4 => CreateTestNet4GenesisBlock(1714777860, 393743547, 0x1d00ffff, 1, 50_0000_0000),
                 NetworkType.RegTest => CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, 50_0000_0000),
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert()),

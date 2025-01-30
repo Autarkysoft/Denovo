@@ -65,9 +65,9 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [InlineData("3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX", "a9148f55563b9a19f321c211e9b9f38cdf686ea0784587", NetworkType.MainNet)]
         [InlineData("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "0014751e76e8199196d454941c45d1b3a323f1433bd6", NetworkType.MainNet)]
         [InlineData("bc1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7q59qg86", "002025fd43197330d6e961ab0421247d24394c3f8e3864ef86328e8976e3756453bc", NetworkType.MainNet)]
-        [InlineData("2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc", "a9144e9f39ca4688ff102128ea4ccda34105324305b087", NetworkType.TestNet)]
-        [InlineData("tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx", "0014751e76e8199196d454941c45d1b3a323f1433bd6", NetworkType.TestNet)]
-        [InlineData("tb1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7qrdk8a4", "002025fd43197330d6e961ab0421247d24394c3f8e3864ef86328e8976e3756453bc", NetworkType.TestNet)]
+        [InlineData("2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc", "a9144e9f39ca4688ff102128ea4ccda34105324305b087", NetworkType.TestNet3)]
+        [InlineData("tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx", "0014751e76e8199196d454941c45d1b3a323f1433bd6", NetworkType.TestNet3)]
+        [InlineData("tb1qyh75xxtnxrtwjcdtqssjglfy89xrlr3cvnhcvv5w39mwxaty2w7qrdk8a4", "002025fd43197330d6e961ab0421247d24394c3f8e3864ef86328e8976e3756453bc", NetworkType.TestNet3)]
         [InlineData("bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0", "512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", NetworkType.MainNet)]
         public void Constructor_FromAddressTest(string addr, string hex, NetworkType net)
         {
@@ -124,7 +124,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts
         [Fact]
         public void TryDeserialize_LargeScriptTest()
         {
-            // TestNet TxId= 88bac1e84c235aa0418345bf430fb43b336875974b6e87dc958de196f9222c35
+            // TestNet3 TxId= 88bac1e84c235aa0418345bf430fb43b336875974b6e87dc958de196f9222c35
             byte[] expected = Helper.HexToBytes("4d1127").ConcatFast(Helper.GetBytes(10001)).AppendToEnd((byte)OP.DROP);
             byte[] veryLongData = Helper.HexToBytes("fd1527").ConcatFast(expected);
             PubkeyScript scr = new();

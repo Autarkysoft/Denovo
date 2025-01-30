@@ -38,7 +38,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             magicBytes = netType switch
             {
                 NetworkType.MainNet => Base16.Decode(Constants.MainNetMagic),
-                NetworkType.TestNet => Base16.Decode(Constants.TestNetMagic),
+                NetworkType.TestNet3 => Base16.Decode(Constants.TestNet3Magic),
                 NetworkType.TestNet4 => Base16.Decode(Constants.TestNet4Magic),
                 NetworkType.RegTest => Base16.Decode(Constants.RegTestMagic),
                 _ => throw new ArgumentException(Errors.InvalidNetwork.Convert())

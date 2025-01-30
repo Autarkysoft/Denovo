@@ -361,7 +361,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
                 Helper.HexToBytes("73499f5bfa0338e3683100e993f496a93352fee3bcd0f7fe5b161a4393aa241a")
             };
 
-            // The following blocks are found on TestNet and are mined using Denovo each with a custom witness commitment
+            // The following blocks are found on TestNet3 and are mined using Denovo each with a custom witness commitment
             yield return new object[]
             {
                  new ITransaction[1] // block #1836793 on testnet
@@ -575,7 +575,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [Fact]
         public void Block894090_Test()
         {
-            // This is the biggest bitcoin block to this date (2022-02-23) and is on TestNet
+            // This is the biggest bitcoin block to this date (2022-02-23) and is on TestNet3
             string hex = Helper.ReadResource("Block894090", "txt");
             Block block = new();
             FastStreamReader stream = new(Helper.HexToBytes(hex));

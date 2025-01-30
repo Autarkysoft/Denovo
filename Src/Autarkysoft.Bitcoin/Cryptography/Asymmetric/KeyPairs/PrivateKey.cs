@@ -180,7 +180,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
             return netType switch
             {
                 NetworkType.MainNet => MainNetByte,
-                NetworkType.TestNet => TestNetByte,
+                NetworkType.TestNet3 => TestNetByte,
                 NetworkType.RegTest => RegTestByte,
                 _ => throw new ArgumentException("Network type is not defined!"),
             };

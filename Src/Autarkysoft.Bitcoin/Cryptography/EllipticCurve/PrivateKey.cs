@@ -177,7 +177,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return netType switch
             {
                 NetworkType.MainNet => MainNetByte,
-                NetworkType.TestNet => TestNetByte,
+                NetworkType.TestNet3 => TestNetByte,
                 NetworkType.TestNet4 => TestNet4Byte,
                 NetworkType.RegTest => RegTestByte,
                 _ => throw new ArgumentException("Network type is not defined!"),

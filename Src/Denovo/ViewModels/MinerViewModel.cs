@@ -23,9 +23,9 @@ namespace Denovo.ViewModels
         public MinerViewModel() : base(650, 650)
         {
             AllNodes = new NodePool(5);
-            MinimalClientSettings clientSettings = new(NetworkType.TestNet, 5, AllNodes)
+            MinimalClientSettings clientSettings = new(NetworkType.TestNet3, 5, AllNodes)
             {
-                DnsSeeds = Constants.GetTestNetDnsSeeds(),
+                DnsSeeds = Constants.GetTestNet3DnsSeeds(),
                 UserAgent = "/Satoshi:0.22.0/",
             };
             client = new MinimalClient(clientSettings);
@@ -120,7 +120,7 @@ namespace Denovo.ViewModels
                 result.Serialize(stream);
                 BlockHex = stream.ToByteArray().ToBase16();
 
-                Message msg = new(new BlockPayload(result), NetworkType.TestNet);
+                Message msg = new(new BlockPayload(result), NetworkType.TestNet3);
 
                 client.Send(msg);
             }

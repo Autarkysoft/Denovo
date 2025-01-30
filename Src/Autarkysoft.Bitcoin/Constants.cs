@@ -116,7 +116,7 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// Default test network v3 port
         /// </summary>
-        public const ushort TestNetPort = 18333;
+        public const ushort TestNet3Port = 18333;
         /// <summary>
         /// Default test network v4 port
         /// </summary>
@@ -132,7 +132,7 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// 4 byte "magic" value used in P2P message headers for test-net v3
         /// </summary>
-        public const string TestNetMagic = "0b110907";
+        public const string TestNet3Magic = "0b110907";
         /// <summary>
         /// 4 byte "magic" value used in P2P message headers for test-net v4
         /// </summary>
@@ -211,8 +211,8 @@ namespace Autarkysoft.Bitcoin
         /// <summary>
         /// Returns a list of DNS seeds used for initial peer discovery on TestNet v3.
         /// </summary>
-        /// <returns>List of TestNet DNS seeds</returns>
-        public static string[] GetTestNetDnsSeeds()
+        /// <returns>List of TestNet3 DNS seeds</returns>
+        public static string[] GetTestNet3DnsSeeds()
         {
             // https://github.com/bitcoin/bitcoin/blob/00ac1b963d08f2779d2197edcdb1e76392993378/src/kernel/chainparams.cpp#L245-L248
             return new string[]

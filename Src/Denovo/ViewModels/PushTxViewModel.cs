@@ -22,7 +22,7 @@ namespace Denovo.ViewModels
             ConnectCommand = new BindableCommand(Connect, () => !IsConnected);
             PushCommand = new BindableCommand(Push, () => IsConnected);
 
-            NetworkList = new NetworkType[] { NetworkType.MainNet, NetworkType.TestNet, NetworkType.TestNet4 };
+            NetworkList = new NetworkType[] { NetworkType.MainNet, NetworkType.TestNet3, NetworkType.TestNet4 };
         }
 
 
@@ -79,9 +79,9 @@ namespace Denovo.ViewModels
             {
                 settings.DnsSeeds = Constants.GetMainNetDnsSeeds();
             }
-            else if (SelectedNetwork == NetworkType.TestNet)
+            else if (SelectedNetwork == NetworkType.TestNet3)
             {
-                settings.DnsSeeds = Constants.GetTestNetDnsSeeds();
+                settings.DnsSeeds = Constants.GetTestNet3DnsSeeds();
             }
             else if (SelectedNetwork == NetworkType.TestNet4)
             {

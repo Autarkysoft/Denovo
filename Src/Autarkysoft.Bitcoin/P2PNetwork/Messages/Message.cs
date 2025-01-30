@@ -29,7 +29,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork.Messages
                 // https://github.com/bitcoin/bitcoin/blob/349632e022da22a457a85650360b5be41fa500dc/src/kernel/chainparams.cpp#L128-L131
                 // (pchMessageStart)
                 NetworkType.MainNet => new byte[] { 0xf9, 0xbe, 0xb4, 0xd9 },
-                NetworkType.TestNet => new byte[] { 0x0b, 0x11, 0x09, 0x07 },
+                NetworkType.TestNet3 => new byte[] { 0x0b, 0x11, 0x09, 0x07 },
                 NetworkType.TestNet4 => new byte[] { 0x1c, 0x16, 0x3f, 0x28 },
                 NetworkType.RegTest => new byte[] { 0xfa, 0xbf, 0xb5, 0xda },
                 _ => throw new ArgumentException("Invalid network type.")

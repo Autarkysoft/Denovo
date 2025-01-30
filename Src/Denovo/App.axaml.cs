@@ -9,6 +9,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Denovo.ViewModels;
 using Denovo.Views;
+using System.Diagnostics;
 
 namespace Denovo
 {
@@ -24,7 +25,7 @@ namespace Denovo
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 NetworkType network = NetworkType.MainNet;
-                if (desktop.Args.Length > 1)
+                if (desktop.Args?.Length > 1)
                 {
                     for (int i = 0; i < desktop.Args.Length; i++)
                     {
@@ -32,12 +33,12 @@ namespace Denovo
                         {
                             if (desktop.Args[i].StartsWith('-'))
                             {
-                                if (desktop.Args[i] == "-n" || desktop.Args[i] == "-network")
+                                if (desktop.Args[i] is "-n" or "-network")
                                 {
                                     string value = desktop.Args[i + 1].ToLower();
-                                    if (value == "testnet")
+                                    if (value is "testnet" or "testnet3")
                                     {
-                                        network = NetworkType.TestNet;
+                                        network = NetworkType.TestNet3;
                                     }
                                     else if (value == "testnet4")
                                     {
@@ -60,6 +61,10 @@ namespace Denovo
                 {
                     DataContext = vm
                 };
+
+                Debug.Assert(desktop.MainWindow is not null);
+                Debug.Assert(desktop.MainWindow.Clipboard is not null);
+
                 vm.Clipboard = desktop.MainWindow.Clipboard;
                 vm.StorageProvider = desktop.MainWindow.StorageProvider;
             }

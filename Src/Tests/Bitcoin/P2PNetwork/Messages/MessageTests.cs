@@ -8,7 +8,6 @@ using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork.Messages
 {
@@ -20,8 +19,11 @@ namespace Tests.Bitcoin.P2PNetwork.Messages
             Message msg = new(NetworkType.MainNet);
             Helper.ComparePrivateField(msg, "networkMagic", Helper.HexToBytes(Constants.MainNetMagic));
 
-            msg = new Message(NetworkType.TestNet);
-            Helper.ComparePrivateField(msg, "networkMagic", Helper.HexToBytes(Constants.TestNetMagic));
+            msg = new Message(NetworkType.TestNet3);
+            Helper.ComparePrivateField(msg, "networkMagic", Helper.HexToBytes(Constants.TestNet3Magic));
+
+            msg = new Message(NetworkType.TestNet4);
+            Helper.ComparePrivateField(msg, "networkMagic", Helper.HexToBytes(Constants.TestNet4Magic));
 
             msg = new Message(NetworkType.RegTest);
             Helper.ComparePrivateField(msg, "networkMagic", Helper.HexToBytes(Constants.RegTestMagic));

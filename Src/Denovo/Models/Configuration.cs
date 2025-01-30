@@ -28,7 +28,7 @@ namespace Denovo.Models
             ListenPort = network switch
             {
                 NetworkType.MainNet => Constants.MainNetPort,
-                NetworkType.TestNet => Constants.TestNetPort,
+                NetworkType.TestNet3 => Constants.TestNet3Port,
                 NetworkType.TestNet4 => Constants.TestNet4Port,
                 NetworkType.RegTest => Constants.RegTestPort,
                 _ => throw new ArgumentException("Undefined network type.")
@@ -104,7 +104,7 @@ namespace Denovo.Models
             return Network switch
             {
                 NetworkType.MainNet => string.Join(Environment.NewLine, Constants.GetMainNetDnsSeeds()),
-                NetworkType.TestNet => string.Join(Environment.NewLine, Constants.GetTestNetDnsSeeds()),
+                NetworkType.TestNet3 => string.Join(Environment.NewLine, Constants.GetTestNet3DnsSeeds()),
                 NetworkType.TestNet4 => string.Join(Environment.NewLine, Constants.GetTestNet4DnsSeeds()),
                 NetworkType.RegTest => "Not defined.",
                 _ => "Not defined."
