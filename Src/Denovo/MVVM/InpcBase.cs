@@ -24,20 +24,18 @@ namespace Denovo.MVVM
             {
                 foreach (DependsOnPropertyAttribute dependsAttr in property.GetCustomAttributes<DependsOnPropertyAttribute>())
                 {
-                    if (dependsAttr == null)
+                    if (dependsAttr is not null)
                     {
-                        continue;
-                    }
-
-                    foreach (string dependence in dependsAttr.DependentProps)
-                    {
-                        if (!PropertyDependencyMap.TryGetValue(dependence, out List<string>? value))
+                        foreach (string dependence in dependsAttr.DependentProps)
                         {
-                            value = new List<string>();
-                            PropertyDependencyMap.Add(dependence, value);
-                        }
+                            if (!PropertyDependencyMap.TryGetValue(dependence, out List<string>? value))
+                            {
+                                value = new List<string>();
+                                PropertyDependencyMap.Add(dependence, value);
+                            }
 
-                        value.Add(property.Name);
+                            value.Add(property.Name);
+                        }
                     }
                 }
             }
