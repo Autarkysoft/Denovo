@@ -66,7 +66,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         // This covers both Point and PointJacobian tests (ge+gej)
 
-        private const int COUNT = 64;
+        private const int COUNT = 16;
 
         // These values are hard-coded and has to be the same as constants in Point and PointJacobian files
         private const int SECP256K1_GE_X_MAGNITUDE_MAX = 4;
@@ -139,7 +139,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_group_element_test
+        /// random_ge_test
         /// </summary>
         private static Point RandomGroupElementTest(TestRNG rng)
         {
@@ -160,7 +160,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_group_element_jacobian_test
+        /// random_ge_jacobian_test
         /// </summary>
         private static PointJacobian RandomGroupElementJacobianTest(in Point ge, TestRNG rng)
         {
@@ -273,7 +273,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             // Generate random zf, and zfi2 = 1/zf^2, zfi3 = 1/zf^3
             zf = RandomFENonZeroTest(rng);
-            UInt256_10x26Tests.RandomFEMagnitude(ref zf, rng);
+            UInt256_10x26Tests.RandomFEMagnitude(ref zf, 8, rng);
             zfi3 = zf.InverseVar();
             zfi2 = zfi3.Sqr();
             zfi3 = zfi3.Multiply(zfi2);

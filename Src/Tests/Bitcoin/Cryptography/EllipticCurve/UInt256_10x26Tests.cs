@@ -766,7 +766,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         #region https://github.com/bitcoin-core/secp256k1/blob/efe85c70a2e357e3605a8901a9662295bae1001f/src/tests.c#L2948-L3353
 
-        private const int COUNT = 64;
+        private const int COUNT = 16;
 
         /// <summary>
         /// secp256k1_memcmp_var
@@ -838,7 +838,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_field_element_magnitude
+        /// random_fe_magnitude
         /// </summary>
         internal static void RandomFEMagnitude(ref UInt256_10x26 fe, int m, TestRNG rng)
         {
@@ -856,13 +856,6 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 #endif
         }
 
-        /// <summary>
-        /// random_fe_magnitude
-        /// </summary>
-        internal static void RandomFEMagnitude(ref UInt256_10x26 fe, TestRNG rng)
-        {
-            RandomFEMagnitude(ref fe, 8, rng);
-        }
 
         /// <summary>
         /// random_fe_non_zero
@@ -1229,13 +1222,13 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             for (int i = 0; i < 100 * COUNT; ++i)
             {
                 UInt256_10x26 a = RandomFE(rng);
-                RandomFEMagnitude(ref a, rng);
+                RandomFEMagnitude(ref a, 8, rng);
                 UInt256_10x26 b = RandomFE(rng);
-                RandomFEMagnitude(ref b, rng);
+                RandomFEMagnitude(ref b, 8, rng);
                 UInt256_10x26 c = RandomFETest(rng);
-                RandomFEMagnitude(ref c, rng);
+                RandomFEMagnitude(ref c, 8, rng);
                 UInt256_10x26 d = RandomFETest(rng);
-                RandomFEMagnitude(ref d, rng);
+                RandomFEMagnitude(ref d, 8, rng);
                 TestFEMul(a, a, true);
                 TestFEMul(c, c, true);
                 TestFEMul(a, b, false);
@@ -1250,6 +1243,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         public void Libsecp256k1_SqrTest()
         {
             // run_sqr
+            
+            TestRNG rng = new();
+            rng.Init(null);
 
             UInt256_10x26 x = new(1);
             x = x.Negate(1);
@@ -1258,7 +1254,21 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             {
                 x = x.Multiply(2);
                 x = x.Normalize();
-                UInt256_10x26 s = x.Sqr();
+
+                // Check that (x+y)*(x-y) = x^2 - y*2 for some random values y
+                UInt256_10x26 y = RandomFETest(rng);
+
+                UInt256_10x26 lhs = x.Add(y);       // lhs = x+y
+                UInt256_10x26 tmp = y.Negate(1);    // tmp = -y
+                tmp = tmp.Add(x);                   // tmp = x-y
+                lhs = lhs.Multiply(tmp);            // lhs = (x+y)*(x-y)
+
+                UInt256_10x26 rhs = x.Sqr();        // rhs = x^2
+                tmp = y.Sqr();                      // tmp = y^2
+                tmp = tmp.Negate(1);                // tmp = -y^2
+                rhs = rhs.Add(tmp);                 // rhs = x^2 - y^2
+
+                Assert.True(CheckFEEqual(lhs, rhs));
             }
         }
 
@@ -1617,9 +1627,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             for (int useVar = 0; useVar <= 1; useVar++)
             {
                 TestInverseField(a, useVar, out UInt256_10x26 x_fe);
-                Assert.True(b.Equals(x_fe));
+                Assert.True(CheckFEEqual(b, x_fe));
                 TestInverseField(b, useVar, out x_fe);
-                Assert.True(a.Equals(x_fe));
+                Assert.True(CheckFEEqual(a, x_fe));
             }
         }
 

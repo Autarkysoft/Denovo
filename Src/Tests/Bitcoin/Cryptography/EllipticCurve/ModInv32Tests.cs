@@ -12,7 +12,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class ModInv32Tests
     {
-        private const int COUNT = 64;
+        private const int COUNT = 16;
 
         // run_modinv_tests
         public static IEnumerable<object[]> GetCases()

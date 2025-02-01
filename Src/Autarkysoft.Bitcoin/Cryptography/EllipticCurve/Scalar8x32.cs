@@ -535,18 +535,38 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        /// <summary>
+        /// Access bits (1 &#60; <paramref name="count"/> &#60;= 32) from a scalar.
+        /// All requested bits must belong to the same 32-bit limb.
+        /// </summary>
+        /// <param name="pt"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
         public static unsafe uint GetBits(uint* pt, int offset, int count)
         {
             Debug.Assert(GetOverflow(pt) == 0);
+            Debug.Assert(count > 0 && count <= 32);
             Debug.Assert((offset + count - 1) >> 5 == offset >> 5);
-            return (pt[offset >> 5] >> (offset & 0x1F)) & ((1U << count) - 1);
+
+            return (pt[offset >> 5] >> (offset & 0x1F)) & (0xFFFFFFFF >> (32 - count));
         }
 
+        /// <summary>
+        /// Access bits (1 &#60; <paramref name="count"/> &#60;= 32) from a scalar.
+        /// <paramref name="offset"/> + <paramref name="count"/> must be &#60; 256.
+        /// Not constant time in offset and count.
+        /// </summary>
+        /// <param name="pt"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
         public static unsafe uint GetBitsVar(uint* pt, int offset, int count)
         {
             Debug.Assert(GetOverflow(pt) == 0);
-            Debug.Assert(count < 32);
+            Debug.Assert(count > 0 && count <= 32);
             Debug.Assert(offset + count <= 256);
+
             if ((offset + count - 1) >> 5 == offset >> 5)
             {
                 return GetBits(pt, offset, count);
@@ -555,7 +575,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             {
                 Debug.Assert((offset >> 5) + 1 < 8);
                 return ((pt[offset >> 5] >> (offset & 0x1F)) | (pt[(offset >> 5) + 1] << (32 - (offset & 0x1F)))) &
-                       ((1U << count) - 1);
+                       (0xFFFFFFFF >> (32 - count));
             }
         }
 

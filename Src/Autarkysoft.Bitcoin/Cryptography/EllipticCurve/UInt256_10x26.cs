@@ -938,6 +938,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Multiplies this instance with the other <see cref="UInt256_10x26"/> value.
         /// </summary>
         /// <remarks>
+        /// Magnitude of each value must be below 8.
         /// Result's magnitude is 1 but is not normalized.
         /// </remarks>
         /// <param name="other">Other value</param>

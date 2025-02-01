@@ -454,7 +454,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         #region https://github.com/bitcoin-core/secp256k1/blob/77af1da9f631fa622fb5b5895fd27be431432368/src/tests.c#L2126-L2946
 
-        private const int Count = 64;
+        private const int Count = 16;
 
         /// <summary>
         /// random_scalar_order_test

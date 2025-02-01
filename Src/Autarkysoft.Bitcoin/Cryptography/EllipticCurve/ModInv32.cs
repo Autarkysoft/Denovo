@@ -622,13 +622,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             // g == 0
             Debug.Assert(MulCmp30(g, 9, ModInv32Signed30.One, 0) == 0);
-            // |f| == 1, or (x == 0 and d == 0 and |f|=modulus)
+            // |f| == 1, or (x == 0 and d == 0 and f == modulus)
             Debug.Assert(MulCmp30(f, 9, ModInv32Signed30.One, -1) == 0 ||
                          MulCmp30(f, 9, ModInv32Signed30.One, 1) == 0 ||
                          (MulCmp30(x, 9, ModInv32Signed30.One, 0) == 0 &&
                           MulCmp30(d, 9, ModInv32Signed30.One, 0) == 0 &&
-                          (MulCmp30(f, 9, modinfo.modulus, 1) == 0 ||
-                           MulCmp30(f, 9, modinfo.modulus, -1) == 0)));
+                          MulCmp30(f, 9, modinfo.modulus, 1) == 0));
 #endif
 
             // Optionally negate d, normalize to [0,modulus), and return it.
@@ -723,13 +722,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             // g == 0
             Debug.Assert(MulCmp30(g, len, ModInv32Signed30.One, 0) == 0);
-            // |f| == 1, or (x == 0 and d == 0 and |f|=modulus)
+            // |f| == 1, or (x == 0 and d == 0 and f == modulus)
             Debug.Assert(MulCmp30(f, len, ModInv32Signed30.One, -1) == 0 ||
                          MulCmp30(f, len, ModInv32Signed30.One, 1) == 0 ||
                          (MulCmp30(x, 9, ModInv32Signed30.One, 0) == 0 &&
                           MulCmp30(d, 9, ModInv32Signed30.One, 0) == 0 &&
-                          (MulCmp30(f, len, modinfo.modulus, 1) == 0 ||
-                           MulCmp30(f, len, modinfo.modulus, -1) == 0)));
+                          MulCmp30(f, len, modinfo.modulus, 1) == 0));
 #endif
 
             // Optionally negate d, normalize to [0,modulus), and return it.
