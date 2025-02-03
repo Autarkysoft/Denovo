@@ -108,11 +108,7 @@ namespace Denovo.ViewModels
 
         public async void OpenConfig()
         {
-            Configuration config = FileMan.ReadConfig();
-            if (config is null)
-            {
-                config = new Configuration(Network) { IsDefault = true };
-            }
+            Configuration config = FileMan.ReadConfig() ?? new Configuration(Network) { IsDefault = true };
 
             ConfigurationViewModel vm = new(config)
             {
@@ -133,10 +129,10 @@ namespace Denovo.ViewModels
 
         public async void OpenMiner()
         {
-            // TODO: A better way is to make the following VM disposable
-            MinerViewModel vm = new();
+            MinerViewModel vm = new(Clipboard, FileMan.ReadConfig());
             await WinMan.ShowDialog(vm);
             vm.StopMining();
+            vm.Dispose();
         }
 
         public async void OpenEcies()

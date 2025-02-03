@@ -10,8 +10,10 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
-using Autarkysoft.Bitcoin.Encoders;
+using Denovo.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,68 +29,73 @@ namespace Denovo.Services
 
         private readonly Miner miner;
 
-        public async Task<IBlock> Start(IBlock prev, int height, CancellationToken token)
+        public async Task<IBlock?> Start(BlockHeader prvHdr, IConsensus consensus, IEnumerable<TxWithFeeModel> txs, CancellationToken token)
         {
             // Certain things are hard-coded here because this tool is meant for testing.
             // Eventually it will use IWallet.NextAddress() to get a new address to mine to from the wallet instance
             // and IBlockchain.GetTarget() to mine at the correct difficulty.
             // For now it is a good way of mining any transaction that won't propagate in TestNet by bitcoin core clients.
 
-            Consensus consensus = new(height, NetworkType.TestNet3);
-            string cbText = "Mined using Denovo v0.1.0";
+            string cbText = "Mined using Denovo v0.8.0 + Bitcoin.Net v0.27.0";
             // A weak key used only for testing
             using PrivateKey key = new(new Sha256().ComputeHash(Encoding.UTF8.GetBytes(cbText)));
             PubkeyScript pkScr = new();
             pkScr.SetToP2WPKH(key.ToPublicKey(new Calc()));
 
-            byte[] commitment = null;
 
-            //var tx1 = new Transaction();
-            //tx1.TryDeserialize(new FastStreamReader(Base16.Decode("")), out _);
+            Block block = new()
+            {
+                TransactionList = new Transaction[1 + txs.Count()]
+            };
 
             ulong fee = 0;
+            int i = 1;
+            bool hasWitness = false;
+            foreach (TxWithFeeModel item in txs)
+            {
+                if (item.Tx.WitnessList is not null && item.Tx.WitnessList.Length != 0)
+                {
+                    hasWitness = true;
+                }
+                fee += item.Fee;
+                block.TransactionList[i++] = item.Tx;
+            }
 
             Transaction coinbase = new()
             {
                 Version = 1,
-                TxInList = new TxIn[]
-                {
-                    new TxIn(Digest256.Zero, uint.MaxValue, new SignatureScript(height, Encoding.UTF8.GetBytes($"{cbText} by Coding Enthusiast")), uint.MaxValue)
-                },
-                TxOutList = new TxOut[]
-                {
-                    new TxOut(consensus.BlockReward + fee, pkScr),
-                    new TxOut(0, new PubkeyScript())
-                },
-                LockTime = new LockTime(height)
+                TxInList =
+                [
+                    new TxIn(Digest256.Zero, uint.MaxValue, new SignatureScript(consensus.BlockHeight, Encoding.UTF8.GetBytes($"{cbText} by Coding Enthusiast")), uint.MaxValue)
+                ],
+                // Outputs are set below
+                LockTime = new LockTime(consensus.BlockHeight)
             };
 
 
-            ((PubkeyScript)coinbase.TxOutList[1].PubScript).SetToReturn(Encoding.UTF8.GetBytes("Testing Mining View Model."));
-
-
-            Block block = new()
+            if (block.TransactionList.Length > 1 && hasWitness)
             {
-                TransactionList = new Transaction[] { coinbase }
-            };
+                byte[] commitment = new byte[32];
+                coinbase.WitnessList =
+                [
+                    new Witness([commitment])
+                ];
 
-            if (block.TransactionList.Length > 1 && commitment != null)
-            {
-                coinbase.WitnessList = new Witness[1]
-                {
-                    new Witness(new byte[][]{ commitment })
-                };
-
-                TxOut[] temp = new TxOut[coinbase.TxOutList.Length + 1];
-                Array.Copy(coinbase.TxOutList, 0, temp, 0, coinbase.TxOutList.Length);
-                temp[^1] = new TxOut();
+                coinbase.TxOutList = new TxOut[2];
+                coinbase.TxOutList[^1] = new TxOut();
 
                 // This has to be down here after tx1, tx2,... are set and merkle root is computable
                 Digest256 root = block.ComputeWitnessMerkleRoot(commitment);
                 coinbase.TxOutList[^1].PubScript.SetToWitnessCommitment(root.ToByteArray());
             }
-            uint t = (uint)UnixTimeStamp.TimeToEpoch(DateTime.UtcNow.AddMinutes(22));
-            block.Header = new(prev.Header.Version, prev.Header.Hash, block.ComputeMerkleRoot(), t, 0x1d00ffffU, 0);
+
+            coinbase.TxOutList[0] = new TxOut(consensus.BlockReward + fee, pkScr);
+
+            block.TransactionList[0] = coinbase;
+
+            Random rng = new();
+            uint t = prvHdr.BlockTime + TimeConstants.Seconds.TwentyMin + (uint)rng.Next(2, 10);
+            block.Header = new(consensus.MinBlockVersion, prvHdr.Hash, block.ComputeMerkleRoot(), t, 0x1d00ffffU, 0);
 
             bool success = await miner.Mine(block, token, 3);
 
