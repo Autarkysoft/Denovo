@@ -5,6 +5,7 @@
 
 using Avalonia.Controls;
 using Denovo.ViewModels;
+using System;
 
 namespace Denovo.Views
 {
@@ -16,7 +17,7 @@ namespace Denovo.Views
             Opened += MainWindow_Opened;
         }
 
-        private void MainWindow_Opened(object sender, System.EventArgs e)
+        private void MainWindow_Opened(object? sender, EventArgs e)
         {
             // Previewer doesn't have datacontext and vm will be null, checking like this prevents an exception being thrown
             if (DataContext is MainWindowViewModel vm && !vm.IsInitialized)
