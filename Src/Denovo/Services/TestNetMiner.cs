@@ -29,7 +29,8 @@ namespace Denovo.Services
 
         private readonly Miner miner;
 
-        public async Task<IBlock?> Start(BlockHeader prvHdr, IConsensus consensus, IEnumerable<TxWithFeeModel> txs, CancellationToken token)
+        public async Task<IBlock?> Start(BlockHeader prvHdr, IConsensus consensus, IEnumerable<TxWithFeeModel> txs,
+                                         int maxDegreeOfParallelism, CancellationToken token)
         {
             // Certain things are hard-coded here because this tool is meant for testing.
             // Eventually it will use IWallet.NextAddress() to get a new address to mine to from the wallet instance
@@ -97,7 +98,7 @@ namespace Denovo.Services
             uint t = prvHdr.BlockTime + TimeConstants.Seconds.TwentyMin + (uint)rng.Next(2, 10);
             block.Header = new(consensus.MinBlockVersion, prvHdr.Hash, block.ComputeMerkleRoot(), t, 0x1d00ffffU, 0);
 
-            bool success = await miner.Mine(block, token, 3);
+            bool success = await miner.Mine(block, token, maxDegreeOfParallelism);
 
             return success ? block : null;
         }

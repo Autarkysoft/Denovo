@@ -3,7 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Denovo.ViewModels;assembly=Denovo"
-             mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="550"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="550"
              x:CompileBindings="True"
              x:DataType="vm:MinerViewModel"
              x:Class="Denovo.Views.MinerView"
@@ -14,7 +14,8 @@
   </Design.DataContext>
 
   <Grid RowDefinitions="auto,auto,auto,auto,auto,auto,auto,100">
-    <Grid ColumnDefinitions="auto,auto,*" Grid.Row="0">
+    <Grid ColumnDefinitions="auto,auto,auto,auto,auto"
+          Grid.Row="0">
       <ToggleSwitch OnContent="TestNet3"
                     OffContent="TestNet4"
                     IsChecked="{Binding IsTestNet3}"
@@ -24,6 +25,16 @@
               Command="{Binding StartClientCommand}"
               Margin="3"
               Grid.Column="1"/>
+      <TextBlock Text="Core Count:"
+                 VerticalAlignment="Center"
+                 Margin="3"
+                 Grid.Column="2"/>
+      <NumericUpDown Value="{Binding CoreCount}"
+                     IsEnabled="{Binding !IsMining}"
+                     Minimum="1"
+                     Margin="3"
+                     Width="60"
+                     Grid.Column="3"/>
     </Grid>
 
     <Grid ColumnDefinitions="*,auto,auto" Grid.Row="1">

@@ -34,6 +34,8 @@ namespace Denovo.ViewModels
 
         public MinerViewModel(IClipboard cb, Configuration config) : base(650, 650)
         {
+            CoreCount = Environment.ProcessorCount;
+
             clipboard = cb;
             this.config = config;
 
@@ -122,6 +124,21 @@ namespace Denovo.ViewModels
                     StartMiningCommand.RaiseCanExecuteChanged();
                     StopMiningCommand.RaiseCanExecuteChanged();
                 }
+            }
+        }
+
+        private int _coreCount;
+        public int CoreCount
+        {
+            get => _coreCount;
+            set
+            {
+                if (value < 1)
+                {
+                    value = 1;
+                }
+
+                SetField(ref _coreCount, value);
             }
         }
 
@@ -315,7 +332,7 @@ namespace Denovo.ViewModels
             tokenSource?.Dispose();
             tokenSource = new CancellationTokenSource();
 
-            IBlock? result = await miner.Start(client.Settings.Blockchain.LastHeader, consensus, TxList, tokenSource.Token);
+            IBlock? result = await miner.Start(client.Settings.Blockchain.LastHeader, consensus, TxList, CoreCount, tokenSource.Token);
 
             if (result is not null)
             {
