@@ -23,7 +23,7 @@ using System.Threading;
 
 namespace Denovo.ViewModels
 {
-    public class MinerViewModel : VmWithSizeBase, IDisposable
+    public sealed class MinerViewModel : VmWithSizeBase, IDisposable
     {
         /// <summary>
         /// Make designer happy
