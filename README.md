@@ -72,6 +72,7 @@ are in separate classes. Currently:
   [65](https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki "OP_CheckLocktimeVerify"), 
   [66](https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki "Strict DER signatures"), 
   [68](https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki "Relative lock-time using consensus-enforced sequence numbers"), 
+  [94](https://github.com/bitcoin/bips/blob/master/bip-0094.mediawiki "Testnet 4"), 
   [112](https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki "OP_CheckSequenceVerify"), 
   [130](https://github.com/bitcoin/bips/blob/master/bip-0130.mediawiki "Sendheaders message"), 
   [133](https://github.com/bitcoin/bips/blob/master/bip-0133.mediawiki "Feefilter message"), 
