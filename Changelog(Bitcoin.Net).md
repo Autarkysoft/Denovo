@@ -1,5 +1,23 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.26.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.27.0.0...master)
+
+### Release 0.27.0 (2025-02-08)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.26.0.0...B0.27.0.0)
+* Intruducd a new SPV clint (can sync headers for now, fetching history and UTXOs need more work)
+* Add new properties to (I)Chain to let the user get header count, header tip and be notified of new blocks
+* PoW rules are updated for TestNet3 and RegTest
+* Introduced TestNet4 (BIP-94)
+* [BreakingChange] Everything containing `TestNet` including `NetworkType` is renamed to `TestNet3` for clarity
+* DNS seeds are now part of the Constants
+* Add some new and useful methods to mnemonic and path related classes
+* Some bug fixes and code improvements
+
+**Denovo 0.8.0**
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.22.0.0...B0.27.0.0)
+* Upgrade dotnet to 8.0 and Avalonia UI to 11.x and of course the new Bitcoin.Net
+* Significantly improve TestNet miner to handle both v3 and v4 networks and allow user to set CPU core count and enter transactions to be included in the block being mined
+* Introduce a MessageBox
+* Some code improvement and cleanup
 
 ### Release 0.26.0 (2024-01-15)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.25.0.0...B0.26.0.0)
