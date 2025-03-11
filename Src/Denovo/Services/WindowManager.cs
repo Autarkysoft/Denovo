@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Denovo.Models;
 using Denovo.ViewModels;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Denovo.Services
@@ -35,7 +36,10 @@ namespace Denovo.Services
 
             vm.CLoseEvent += (s, e) => win.Close();
 
-            var lf = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
+            var lf = (IClassicDesktopStyleApplicationLifetime?)Application.Current?.ApplicationLifetime;
+            Debug.Assert(lf is not null);
+            Debug.Assert(lf.MainWindow is not null);
+
             return win.ShowDialog(lf.MainWindow);
         }
 

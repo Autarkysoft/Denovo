@@ -13,8 +13,8 @@ namespace Denovo.ViewModels
     /// </summary>
     public abstract class ViewModelBase : InpcBase
     {
-        public event EventHandler CLoseEvent;
+        public event EventHandler? CLoseEvent;
 
-        public void RaiseCloseEvent() => CLoseEvent?.Invoke(this, null);
+        public void RaiseCloseEvent() => CLoseEvent?.Invoke(this, EventArgs.Empty);
     }
 }
