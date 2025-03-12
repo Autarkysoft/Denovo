@@ -15,8 +15,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
     /// <summary>
     /// A non-cryptographic RNG used only for test infrastructure
     /// <para/>xoshiro PRNG https://prng.di.unimi.it/
-    /// <para/>https://github.com/bitcoin-core/secp256k1/blob/77af1da9f631fa622fb5b5895fd27be431432368/src/testrand.h
-    /// <para/>https://github.com/bitcoin-core/secp256k1/blob/77af1da9f631fa622fb5b5895fd27be431432368/src/testrand_impl.h
+    /// <para/>https://github.com/bitcoin-core/secp256k1/blob/4ba1ba2af953b7d124db9b80b34568e5c4a2d48a/src/testrand.h
+    /// <para/>https://github.com/bitcoin-core/secp256k1/blob/4ba1ba2af953b7d124db9b80b34568e5c4a2d48a/src/testrand_impl.h
     /// </summary>
     public class TestRNG
     {
@@ -25,7 +25,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Seed the pseudorandom number generator for testing
         /// </summary>
-        /// <remarks>secp256k1_testrand_seed</remarks>
+        /// <remarks>testrand_seed</remarks>
         private void Seed(byte[] seed16)
         {
             Assert.Equal(16, seed16.Length);
@@ -41,7 +41,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 ulong s = 0;
                 for (int j = 0; j < 8; ++j)
                 {
-                    s = (s << 8) | out32[8 * i + j];
+                    s = (s << 8) | out32[(8 * i) + j];
                 }
                 state[i] = s;
             }
@@ -53,8 +53,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Generate a pseudorandom number in the range [0..2**64-1].
         /// </summary>
-        /// <remarks>secp256k1_testrand64</remarks>
-        public ulong Rand64()
+        /// <remarks>testrand64</remarks>
+        internal ulong Rand64()
         {
             // Test-only Xoshiro256++ RNG. See https://prng.di.unimi.it/
             ulong result = ROTL(state[0] + state[3], 23) + state[0];
@@ -71,9 +71,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Generate a pseudorandom number in the range [0..2**bits-1].
         /// </summary>
-        /// <remarks>secp256k1_testrand_bits</remarks>
+        /// <remarks>testrand_bits</remarks>
         /// <param name="bits">Bits must be 1 or more</param>
-        public ulong RandBits(int bits)
+        internal ulong RandBits(int bits)
         {
             return bits == 0 ? 0 : Rand64() >> (64 - bits);
         }
@@ -81,8 +81,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Generate a pseudorandom number in the range [0..2**32-1]
         /// </summary>
-        /// <remarks>secp256k1_testrand32</remarks>
-        public uint Rand32()
+        /// <remarks>testrand32</remarks>
+        internal uint Rand32()
         {
             return (uint)(Rand64() >> 32);
         }
@@ -90,13 +90,13 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Generate a pseudorandom number in the range [0..range-1]
         /// </summary>
-        /// <remarks>secp256k1_testrand_int</remarks>
-        public uint RandInt(uint range)
+        /// <remarks>testrand_int</remarks>
+        internal uint RandInt(uint range)
         {
             uint mask = 0;
             uint range_copy;
             // Reduce range by 1, changing its meaning to "maximum value".
-            Assert.True(range != 0);
+            Assert.NotEqual(0u, range);
             range -= 1;
             // Count the number of bits in range.
             range_copy = range;
@@ -119,10 +119,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Generate a pseudorandom 32-byte array.
         /// </summary>
-        /// <remarks>secp256k1_testrand256</remarks>
-        public void Rand256(Span<byte> b32)
+        /// <remarks>testrand256</remarks>
+        internal void Rand256(Span<byte> b32)
         {
-            Assert.True(b32.Length == 32);
+            Assert.Equal(32, b32.Length);
             for (int i = 0; i < b32.Length; i += 8)
             {
                 ulong val = Rand64();
@@ -140,14 +140,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Generate pseudorandom bytes with long sequences of zero and one bits.
         /// </summary>
-        /// <remarks>secp256k1_testrand_bytes_test</remarks>
-        public void RandBytesTest(Span<byte> bytes, int len)
+        /// <remarks>testrand_bytes_test</remarks>
+        internal void RandBytesTest(Span<byte> bytes, int len)
         {
-            for (int i = 0; i < len; i++)
-            {
-                bytes[i] = 0;
-            }
-
+            bytes.Slice(0, len).Clear();
             int bits = 0;
             while (bits < len * 8)
             {
@@ -165,29 +161,29 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Generate a pseudorandom 32-byte array with long sequences of zero and one bits.
         /// </summary>
-        /// <remarks>secp256k1_testrand256_test</remarks>
-        public void Rand256Test(Span<byte> b32)
+        /// <remarks>testrand256_test</remarks>
+        internal void Rand256Test(Span<byte> b32)
         {
-            Assert.True(b32.Length == 32);
+            Assert.Equal(32, b32.Length);
             RandBytesTest(b32, 32);
         }
 
-        public void Rand256Test(Span<ushort> arr16)
+        internal void Rand256Test(Span<ushort> arr16)
         {
-            Assert.True(arr16.Length == 16);
+            Assert.Equal(16, arr16.Length);
             byte[] b32 = new byte[32];
             RandBytesTest(b32, 32);
             for (int i = 0, j = 0; i < b32.Length && j < arr16.Length; i += 2, j++)
             {
-                arr16[j] = (ushort)(b32[i] | b32[i + 1] << 8);
+                arr16[j] = (ushort)(b32[i] | (b32[i + 1] << 8));
             }
         }
 
         /// <summary>
         /// Flip a single random bit in a byte array
         /// </summary>
-        /// <remarks>secp256k1_testrand_flip</remarks>
-        public void RandFlip(Span<byte> b, uint len)
+        /// <remarks>testrand_flip</remarks>
+        internal void RandFlip(Span<byte> b, uint len)
         {
             b[(int)RandInt(len)] ^= (byte)(1 << (int)RandBits(3));
         }
@@ -196,8 +192,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initialize the test RNG using (hex encoded) array up to 16 bytes, or randomly if hexseed is NULL.
         /// </summary>
-        /// <remarks>secp256k1_testrand_init</remarks>
-        public void Init(string hexseed)
+        /// <remarks>testrand_init</remarks>
+        internal void Init(string? hexseed)
         {
             byte[] seed16 = new byte[16];
             if (!string.IsNullOrEmpty(hexseed))
@@ -221,13 +217,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-
-        public void RunXoshiro256ppTests()
+        internal void RunXoshiro256ppTests()
         {
             // Sanity check that we run before the actual seeding.
             for (int i = 0; i < state.Length; i++)
             {
-                Assert.True(state[i] == 0);
+                Assert.Equal(0ul, state[i]);
             }
             byte[] buf32 = new byte[32];
             byte[] seed16 = "CHICKEN!CHICKEN!"u8.ToArray();
