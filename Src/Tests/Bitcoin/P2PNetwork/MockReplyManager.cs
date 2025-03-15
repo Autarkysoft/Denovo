@@ -40,9 +40,9 @@ namespace Tests.Bitcoin.P2PNetwork
         public byte[][]? toReceiveBytes;
         public Message[][]? toReply;
 
-        public Message[] GetReply(Message msg)
+        public Message[]? GetReply(Message msg)
         {
-            if (toReceive == null || toReceiveBytes == null || toReply == null || index >= toReceive.Length)
+            if (toReceive == null || toReceiveBytes == null || index >= toReceive.Length)
             {
                 Assert.Fail("Unexpected message was received.");
             }
@@ -59,7 +59,6 @@ namespace Tests.Bitcoin.P2PNetwork
 
             Message[]? reply = toReply?[index];
             index++;
-            Assert.NotNull(reply);
             return reply;
         }
     }
