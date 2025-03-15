@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Tests.Bitcoin.Blockchain;
-using Xunit;
 
 namespace Tests.BitcoinCore
 {
@@ -103,7 +102,7 @@ namespace Tests.BitcoinCore
                 //}
                 else
                 {
-                    Assert.True(false, $"Undefined flag was found in test case: {flag}.");
+                    Assert.Fail($"Undefined flag was found in test case: {flag}.");
                 }
             }
 
@@ -133,7 +132,7 @@ namespace Tests.BitcoinCore
                         arr1[1].Type != JTokenType.String ||
                         arr1[2].Type != JTokenType.String)
                     {
-                        Assert.True(false, $"Bad test found: {arr1}");
+                        Assert.Fail($"Bad test found: {arr1}");
                     }
 
                     if (arr1[1].ToString() == "01000000010001000000000000000000000000000000000000000000000000000000000000000000006d483045022027deccc14aa6668e78a8c9da3484fbcd4f9dcc9bb7d1b85146314b21b9ae4d86022100d0b43dece8cfb07348de0ca8bc5b86276fa88f7f2138381128b7c36ab2e42264012321029bb13463ddd5d2cc05da6e84e37536cb9525703cfd8f43afdb414988987a92f6acffffffff020040075af075070001510001000000000000015100000000")
@@ -179,7 +178,7 @@ namespace Tests.BitcoinCore
                         }
 
                         // Any other error and this test case is considered broken:
-                        Assert.True(false, $"{error}{Environment.NewLine}{arr1[1]}");
+                        Assert.Fail($"{error}{Environment.NewLine}{arr1[1]}");
                     }
 
                     ulong totalSpent = (ulong)tx.TxOutList.Sum(x => (long)x.Amount);
@@ -202,7 +201,7 @@ namespace Tests.BitcoinCore
                             }
                             else
                             {
-                                Assert.True(false, "A new coinbase test vector is detected");
+                                Assert.Fail("A new coinbase test vector is detected");
                             }
 
                             break;

@@ -10,7 +10,6 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
@@ -64,7 +63,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             if (sigOps == -1)
             {
-                Assert.True(false, "SigOP count must be set first.");
+                Assert.Fail("SigOP count must be set first.");
             }
             return sigOps;
         }
@@ -199,7 +198,7 @@ namespace Tests.Bitcoin.Blockchain
 
             if (!stream.TryReadByteArray(bytesToRead, out _))
             {
-                Assert.True(false, "Stream doesn't have enough bytes.");
+                Assert.Fail("Stream doesn't have enough bytes.");
             }
 
             error = retError ? Errors.ForTesting : Errors.None;

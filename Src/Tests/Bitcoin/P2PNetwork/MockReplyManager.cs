@@ -3,54 +3,52 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.P2PNetwork;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages;
 using Autarkysoft.Bitcoin.P2PNetwork.Messages.MessagePayloads;
 using System;
 using System.Text;
-using Xunit;
 
 namespace Tests.Bitcoin.P2PNetwork
 {
     public class MockReplyManager : IReplyManager
     {
-        internal Message pingMsg;
+        internal Message? pingMsg;
         public Message GetPingMsg()
         {
             if (pingMsg is null)
             {
-                Assert.True(false, "Ping message to return must be set first.");
+                Assert.Fail("Ping message to return must be set first.");
             }
             return pingMsg;
         }
 
 
-        internal Message verMessage;
+        internal Message? verMessage;
         public Message GetVersionMsg()
         {
             if (verMessage is null)
             {
-                Assert.True(false, "Version message to return must be set first.");
+                Assert.Fail("Version message to return must be set first.");
             }
             return verMessage;
         }
 
 
         private int index;
-        public PayloadType[] toReceive;
-        public byte[][] toReceiveBytes;
-        public Message[][] toReply;
+        public PayloadType[]? toReceive;
+        public byte[][]? toReceiveBytes;
+        public Message[][]? toReply;
 
         public Message[] GetReply(Message msg)
         {
-            if (toReceive == null || toReceiveBytes == null || index >= toReceive.Length)
+            if (toReceive == null || toReceiveBytes == null || toReply == null || index >= toReceive.Length)
             {
-                Assert.True(false, "Unexpected message was received.");
+                Assert.Fail("Unexpected message was received.");
             }
             if (toReceive.Length != toReceiveBytes.Length)
             {
-                Assert.True(false, "Expected payload type and bytes are incorrectly set.");
+                Assert.Fail("Expected payload type and bytes are incorrectly set.");
             }
             
             byte[] expPl = new byte[12];
@@ -59,8 +57,9 @@ namespace Tests.Bitcoin.P2PNetwork
             Assert.Equal(expPl, msg.PayloadName);
             Assert.Equal(toReceiveBytes[index], msg.PayloadData);
 
-            Message[] reply = toReply?[index];
+            Message[]? reply = toReply?[index];
             index++;
+            Assert.NotNull(reply);
             return reply;
         }
     }

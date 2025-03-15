@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Tests.Bitcoin.Blockchain;
-using Xunit;
 
 namespace Tests.BitcoinCore
 {
@@ -103,7 +102,7 @@ namespace Tests.BitcoinCore
                 //}
                 else
                 {
-                    Assert.True(false, $"Undefined flag was found in test case: {flag}.");
+                    Assert.Fail($"Undefined flag was found in test case: {flag}.");
                 }
             }
 
@@ -138,7 +137,7 @@ namespace Tests.BitcoinCore
                 // Catch any script that is written badly and is not caught and parsed here
                 else
                 {
-                    Assert.True(false, item);
+                    Assert.Fail(item);
                 }
             }
             return new PubkeyScript(stream.ToByteArray());
@@ -167,7 +166,7 @@ namespace Tests.BitcoinCore
                         arr1[1].Type != JTokenType.String ||
                         arr1[2].Type != JTokenType.String)
                     {
-                        Assert.True(false, $"Bad test found: {arr1}");
+                        Assert.Fail($"Bad test found: {arr1}");
                     }
 
                     MockConsensus consensus = GetConsensus(arr1[2].ToString(), MockHeight);
@@ -175,7 +174,7 @@ namespace Tests.BitcoinCore
                     Transaction tx = new();
                     if (!tx.TryDeserialize(new FastStreamReader(Helper.HexToBytes(arr1[1].ToString())), out Errors error))
                     {
-                        Assert.True(false, error.Convert());
+                        Assert.Fail(error.Convert());
                     }
 
                     ulong totalSpent = (ulong)tx.TxOutList.Sum(x => (long)x.Amount);
@@ -199,7 +198,7 @@ namespace Tests.BitcoinCore
                             }
                             else
                             {
-                                Assert.True(false, "A new coinbase test vector is detected");
+                                Assert.Fail("A new coinbase test vector is detected");
                             }
 
                             break;

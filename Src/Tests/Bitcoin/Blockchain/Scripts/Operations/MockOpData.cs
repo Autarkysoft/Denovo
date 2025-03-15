@@ -8,7 +8,6 @@ using Autarkysoft.Bitcoin.Blockchain.Scripts.Operations;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Scripts.Operations
 {
@@ -41,7 +40,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             if (expectedSig is null || expectedSigBa is null)
             {
-                Assert.True(false, "Expected signature and/or public key must be set first.");
+                Assert.Fail("Expected signature and/or public key must be set first.");
             }
 
             Assert.Equal(expectedSig.R, sig.R);
@@ -60,7 +59,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             if (expectedSigs is null || expectedPubkeys is null)
             {
-                Assert.True(false, "Expected signature list and/or public key list must be set first.");
+                Assert.Fail("Expected signature list and/or public key list must be set first.");
             }
 
             Assert.Equal(expectedSigs, sigs);
@@ -149,8 +148,8 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (_opCountToReturn < 0)
                 {
-                    Assert.True(false, $"Unexpected call to OpCount.Get() was detected " +
-                                       $"({nameof(_opCountToReturn)} field is not set).");
+                    Assert.Fail($"Unexpected call to OpCount.Get() was detected " +
+                                $"({nameof(_opCountToReturn)} field is not set).");
                 }
                 return _opCountToReturn;
             }
@@ -165,11 +164,11 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         {
             if (currentCallIndex + 1 > totalFuncCall)
             {
-                Assert.True(false, $"An extra {funcName} call was made.");
+                Assert.Fail($"An extra {funcName} call was made.");
             }
             if (funcOrder[currentCallIndex] != funcName)
             {
-                Assert.True(false, $"{funcName} was called instead of {funcOrder[currentCallIndex]}.");
+                Assert.Fail($"{funcName} was called instead of {funcOrder[currentCallIndex]}.");
             }
 
             currentCallIndex++;
@@ -184,7 +183,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (_itemCount == -1)
                 {
-                    Assert.True(false, "Item count was not set by test case but the method being tested called its get().");
+                    Assert.Fail("Item count was not set by test case but the method being tested called its get().");
                 }
 
                 return _itemCount;
@@ -198,7 +197,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             {
                 if (_altItemCount == -1)
                 {
-                    Assert.True(false, "Alt item count was not set by test case but the method being tested called its get().");
+                    Assert.Fail("Alt item count was not set by test case but the method being tested called its get().");
                 }
 
                 return _altItemCount;
@@ -218,7 +217,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.AltPop);
             if (altPopData == null || altPopDataIndex > altPopData.Length - 1)
             {
-                Assert.True(false, "Unexpected alt data pop request was made.");
+                Assert.Fail("Unexpected alt data pop request was made.");
             }
 
             return altPopData[altPopData.Length - ++altPopDataIndex];
@@ -232,7 +231,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.AltPush);
             if (altPushData == null || altPushDataIndex > altPushData.Length - 1)
             {
-                Assert.True(false, "Unexpected data was pushed to stack.");
+                Assert.Fail("Unexpected data was pushed to stack.");
             }
             else
             {
@@ -248,7 +247,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.Insert);
             if (insertData == null || !insertData.ContainsKey(index))
             {
-                Assert.True(false, "Unexpected data was inserted in stack.");
+                Assert.Fail("Unexpected data was inserted in stack.");
             }
             else
             {
@@ -262,7 +261,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.InsertMulti);
             if (insertMultiData == null || !insertMultiData.ContainsKey(index))
             {
-                Assert.True(false, "Unexpected multiple data was inserted in stack.");
+                Assert.Fail("Unexpected multiple data was inserted in stack.");
             }
             else
             {
@@ -278,7 +277,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.Peek);
             if (peekData == null || peekDataIndex > peekData.Length - 1)
             {
-                Assert.True(false, "Unexpected data peek request was made.");
+                Assert.Fail("Unexpected data peek request was made.");
             }
 
             return peekData[peekData.Length - ++peekDataIndex];
@@ -292,7 +291,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.PeekCount);
             if (peekCountData == null || peekCountDataIndex > peekCountData.Length - 1)
             {
-                Assert.True(false, "Unexpected data peek count request was made.");
+                Assert.Fail("Unexpected data peek count request was made.");
             }
 
             byte[][] result = peekCountData[peekCountDataIndex++];
@@ -307,7 +306,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.PeekIndex);
             if (peekIndexData == null || !peekIndexData.ContainsKey(index))
             {
-                Assert.True(false, "Unexpected peek index data request was made.");
+                Assert.Fail("Unexpected peek index data request was made.");
             }
 
             return peekIndexData[index];
@@ -321,7 +320,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.Pop);
             if (popData == null || popDataIndex > popData.Length - 1)
             {
-                Assert.True(false, "Unexpected data pop request was made.");
+                Assert.Fail("Unexpected data pop request was made.");
             }
 
             return popData[popData.Length - ++popDataIndex];
@@ -335,7 +334,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.PopCount);
             if (popCountData == null || popCountDataIndex > popCountData.Length - 1)
             {
-                Assert.True(false, "Unexpected data pop count request was made.");
+                Assert.Fail("Unexpected data pop count request was made.");
             }
 
             byte[][] result = popCountData[popCountDataIndex++];
@@ -350,7 +349,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.PopIndex);
             if (popIndexData == null || !popIndexData.ContainsKey(index))
             {
-                Assert.True(false, "Unexpected data pop index request was made.");
+                Assert.Fail("Unexpected data pop index request was made.");
             }
 
             return popIndexData[index];
@@ -363,7 +362,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.PushBool);
             if (pushBool == null)
             {
-                Assert.True(false, "Unexpected bool was pushed to stack.");
+                Assert.Fail("Unexpected bool was pushed to stack.");
             }
             else
             {
@@ -379,7 +378,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.Push);
             if (pushData == null || pushDataIndex > pushData.Length - 1)
             {
-                Assert.True(false, "Unexpected data was pushed to stack.");
+                Assert.Fail("Unexpected data was pushed to stack.");
             }
             else
             {
@@ -396,7 +395,7 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
             CheckCall(FuncCallName.PushMulti);
             if (pushMultiData == null || pushMultiDataIndex > pushMultiData.Length - 1)
             {
-                Assert.True(false, "Unexpected multi data was pushed to stack.");
+                Assert.Fail("Unexpected multi data was pushed to stack.");
             }
             else
             {

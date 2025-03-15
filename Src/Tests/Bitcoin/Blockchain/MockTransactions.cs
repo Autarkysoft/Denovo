@@ -10,7 +10,6 @@ using Autarkysoft.Bitcoin.Blockchain.Transactions;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
-using Xunit;
 
 namespace Tests.Bitcoin.Blockchain
 {
@@ -78,7 +77,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             if (!TxHash.HasValue)
             {
-                Assert.True(false, "Mock transaction doesn't have any tx hash set.");
+                Assert.Fail("Mock transaction doesn't have any tx hash set.");
             }
             return TxHash.Value;
         }
@@ -87,7 +86,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             if (TxHash == null)
             {
-                Assert.True(false, "Mock transaction doesn't have any tx hash set.");
+                Assert.Fail("Mock transaction doesn't have any tx hash set.");
             }
             return TxHash.ToString()[2..];
         }
@@ -114,7 +113,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             if (!WTxHash.HasValue)
             {
-                Assert.True(false, "Mock transaction doesn't have any wtx hash set.");
+                Assert.Fail("Mock transaction doesn't have any wtx hash set.");
             }
             return WTxHash.Value;
         }
@@ -123,7 +122,7 @@ namespace Tests.Bitcoin.Blockchain
         {
             if (WTxHash == null)
             {
-                Assert.True(false, "Mock transaction doesn't have any wtx hash set.");
+                Assert.Fail("Mock transaction doesn't have any wtx hash set.");
             }
             return WTxHash.ToString()[2..];
         }
@@ -197,7 +196,7 @@ namespace Tests.Bitcoin.Blockchain
 
             if (!stream.TryReadByteArray(bytesToRead, out _))
             {
-                Assert.True(false, "Stream doesn't have enough bytes.");
+                Assert.Fail("Stream doesn't have enough bytes.");
             }
 
             error = retError ? Errors.ForTesting : Errors.None;
@@ -223,7 +222,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 if (_tins == null)
                 {
-                    Assert.True(false, "TxIn array was not set.");
+                    Assert.Fail("TxIn array was not set.");
                 }
                 return _tins;
             }
@@ -239,7 +238,7 @@ namespace Tests.Bitcoin.Blockchain
             {
                 if (_touts == null)
                 {
-                    Assert.True(false, "TxOut array was not set.");
+                    Assert.Fail("TxOut array was not set.");
                 }
                 return _touts;
             }
