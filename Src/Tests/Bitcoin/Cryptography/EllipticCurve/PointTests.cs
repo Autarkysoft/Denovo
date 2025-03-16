@@ -411,14 +411,14 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 Assert.True(Point.IsOnCurveVar(ge[i].x));
                 // And the same holds after random rescaling.
                 n = zf.Multiply(ge[i].x);
-                Assert.True(Point.IsFracOnCurve(n, zf));
+                Assert.True(Point.IsFracOnCurveVar(n, zf));
             }
 
             // Test correspondence of secp256k1_ge_x{,_frac}_on_curve_var with ge_set_xo.
             {
                 UInt256_10x26 n = zf.Multiply(r);
                 bool ret_on_curve = Point.IsOnCurveVar(r);
-                bool ret_frac_on_curve = Point.IsFracOnCurve(n, zf);
+                bool ret_frac_on_curve = Point.IsFracOnCurveVar(n, zf);
                 bool ret_set_xo = Point.TryCreateVar(r, false, out Point q);
                 Assert.True(ret_on_curve == ret_frac_on_curve);
                 Assert.True(ret_on_curve == ret_set_xo);
