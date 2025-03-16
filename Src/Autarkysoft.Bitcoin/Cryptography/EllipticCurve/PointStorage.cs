@@ -47,6 +47,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Result</returns>
         public Point ToPoint()
         {
+            // secp256k1_ge_from_storage
             Point result = new Point(x.ToUInt256_10x26(), y.ToUInt256_10x26(), false);
 #if DEBUG
             result.Verify();
@@ -66,6 +67,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PointStorage CMov(in PointStorage r, in PointStorage a, uint flag)
         {
+            // secp256k1_ge_storage_cmov
             UInt256_8x32 rx = UInt256_8x32.CMov(r.x, a.x, flag);
             UInt256_8x32 ry = UInt256_8x32.CMov(r.y, a.y, flag);
             return new PointStorage(rx, ry);

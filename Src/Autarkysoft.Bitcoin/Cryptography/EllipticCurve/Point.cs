@@ -9,12 +9,13 @@ using System.Diagnostics;
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 {
     /// <summary>
-    /// Elliptic curve point in Affine coordinates
+    /// Elliptic curve point (group element) in Affine coordinates
     /// </summary>
     public readonly struct Point
     {
         /// <summary>
-        /// Initializes a new instance of <see cref="Point"/> using the given parameters.
+        /// Initializes a new instance of <see cref="Point"/> using the given parameters
+        /// with <see cref="isInfinity"/> set to false.
         /// </summary>
         /// <param name="x26">x coordinate</param>
         /// <param name="y26">y coordinate</param>
@@ -37,10 +38,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             x = x26;
             y = y26;
             isInfinity = infinity;
+#if DEBUG
+            Verify();
+#endif
         }
 
         /// <summary>
-        /// Initializes a new instance of <see cref="Point"/> using the given parameters.
+        /// Initializes a new instance of <see cref="Point"/> using the given parameters
+        /// with <see cref="isInfinity"/> set to false.
         /// </summary>
         /// <param name="x0">x0</param>
         /// <param name="x1">x1</param>
@@ -64,6 +69,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             x = new UInt256_10x26(x0, x1, x2, x3, x4, x5, x6, x7);
             y = new UInt256_10x26(y0, y1, y2, y3, y4, y5, y6, y7);
             isInfinity = false;
+#if DEBUG
+            Verify();
+#endif
         }
 
 
@@ -216,18 +224,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 result = Infinity;
                 return false;
             }
-            if (!TryCreateVar(x, false, out result))
-            {
-                result = Infinity;
-                return false;
+            return TryCreateVar(x, false, out result);
             }
-
-            return true;
-        }
 
 
         /// <summary>
-        /// Creates a new instance of <see cref="Point"/> from the given x coordinate.
+        /// Creates a new instance of <see cref="Point"/> from the given x coordinate and oddness of y.
         /// Return value indicates success.
         /// </summary>
         /// <remarks>
@@ -266,6 +268,30 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
+        /// Set result to the affine coordinates of Jacobian point (a.x, a.y, 1/zi).
+        /// </summary>
+        /// <param name="zi"></param>
+        /// <returns></returns>
+        internal Point ToPointZInv(in UInt256_10x26 zi)
+        {
+            // secp256k1_ge_set_ge_zinv
+#if DEBUG
+            Verify();
+            zi.Verify();
+            Debug.Assert(!isInfinity);
+#endif
+            UInt256_10x26 zi2 = zi.Sqr();
+            UInt256_10x26 zi3 = zi2 * zi;
+            UInt256_10x26 rx = x * zi2;
+            UInt256_10x26 ry = y * zi3;
+            Point result = new Point(rx, ry, isInfinity);
+#if DEBUG
+            result.Verify();
+#endif
+            return result;
+        }
+
+        /// <summary>
         /// Bring a batch of inputs to the same global z "denominator", based on ratios between
         /// (omitted) z coordinates of adjacent elements.
         /// 
@@ -285,10 +311,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="len"></param>
         /// <param name="a"></param>
         /// <param name="zr"></param>
-        public static void SetGlobalZ(int len, Span<Point> a, ReadOnlySpan<UInt256_10x26> zr)
+        public static void TableSetGlobalZ(int len, Span<Point> a, ReadOnlySpan<UInt256_10x26> zr)
         {
-            UInt256_10x26 zs;
+            // secp256k1_ge_table_set_globalz
 #if DEBUG
+            Debug.Assert(a.Length >= len);
+            Debug.Assert(zr.Length >= len);
+
             for (int i = 0; i < len; i++)
             {
                 a[i].Verify();
@@ -300,7 +329,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 int i = len - 1;
                 // Ensure all y values are in weak normal form for fast negation of points
                 a[i] = new Point(a[i].x, a[i].y.NormalizeWeak(), a[i].isInfinity);
-                zs = zr[i];
+                UInt256_10x26 zs = zr[i];
 
                 // Work our way backwards, using the z-ratios to scale the x/y values.
                 while (i > 0)
@@ -401,24 +430,34 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Return whether <paramref name="x"/> is a valid X coordinate on the curve.
         /// </summary>
-        /// <param name="x"></param>
-        /// <returns></returns>
+        /// <remarks>
+        /// This method is not constant-time
+        /// </remarks>
+        /// <param name="x">x coordinate</param>
+        /// <returns>True if x is a valid coordinate on curve; otherwise false.</returns>
         public static bool IsOnCurveVar(in UInt256_10x26 x)
         {
+            // secp256k1_ge_x_on_curve_var
+
+            // y^2 = x^3 + 7
             UInt256_10x26 c = x.Sqr();
-            c = c.Multiply(x);
-            c = c.Add(CurveB);
+            c = c.Multiply(x) + CurveB;
             return c.IsSquareVar();
         }
 
         /// <summary>
         /// Returns whether fraction xn/xd is a valid X coordinate on the curve (xd != 0).
         /// </summary>
+        /// <remarks>
+        /// This method is not constant-time
+        /// </remarks>
         /// <param name="xn"></param>
         /// <param name="xd">Must not be zero</param>
         /// <returns></returns>
-        public static bool IsFracOnCurve(in UInt256_10x26 xn, in UInt256_10x26 xd)
+        public static bool IsFracOnCurveVar(in UInt256_10x26 xn, in UInt256_10x26 xd)
         {
+            // secp256k1_ge_x_frac_on_curve_var
+
             // We want to determine whether (xn/xd) is on the curve.
             // (xn/xd)^3 + 7 is square <=> xd*xn^3 + 7*xd^4 is square (multiplying by xd^4, a square).
             Debug.Assert(!xd.IsZeroNormalizedVar());
@@ -441,9 +480,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <remarks>
         /// This method is not constant-time
         /// </remarks>
-        /// <returns></returns>
+        /// <returns>True if this <see cref="Point"/> is valid (on curve) and not the point at infinity;
+        /// otherwise false.</returns>
         public bool IsValidVar()
         {
+            // secp256k1_ge_is_valid_var
 #if DEBUG
             Verify();
 #endif
@@ -465,6 +506,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>-P</returns>
         public Point Negate()
         {
+            // secp256k1_ge_neg
 #if DEBUG
             Verify();
 #endif
@@ -480,9 +522,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Return lambda times this instance, where lambda is chosen in a way such that this is very fast.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Result</returns>
         public Point MulLambda()
         {
+            // secp256k1_ge_mul_lambda
 #if DEBUG
             Verify();
 #endif
@@ -523,30 +566,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        internal Point ToPointZInv(in UInt256_10x26 zi)
-        {
-#if DEBUG
-            Verify();
-            zi.Verify();
-            Debug.Assert(!isInfinity);
-#endif
-            UInt256_10x26 zi2 = zi.Sqr();
-            UInt256_10x26 zi3 = zi2 * zi;
-            UInt256_10x26 rx = x * zi2;
-            UInt256_10x26 ry = y * zi3;
-            Point result = new Point(rx, ry, isInfinity);
-#if DEBUG
-            result.Verify();
-#endif
-            return result;
-        }
-
-
         /// <summary>
         /// Converts this instance in affine coordinates to point in jacobian coordinates
         /// </summary>
+        /// <returns>Result in jacobian coordinates</returns>
         public PointJacobian ToPointJacobian()
         {
+            // secp256k1_gej_set_ge
+#if DEBUG
+            Verify();
+#endif
             PointJacobian result = new PointJacobian(x, y, UInt256_10x26.One, isInfinity);
 #if DEBUG
             result.Verify();
@@ -561,6 +590,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>Result</returns>
         public PointStorage ToStorage()
         {
+            // secp256k1_ge_to_storage
 #if DEBUG
             Verify();
             Debug.Assert(!isInfinity);
@@ -573,10 +603,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Returns if the given group element (affine) is equal to this instance
         /// in variable time.
         /// </summary>
+        /// <remarks>
+        /// This method is not constant-time.
+        /// </remarks>
         /// <param name="other">Other point to use</param>
         /// <returns>True if the two points are equal; otherwise false.</returns>
         public bool EqualsVar(in Point other)
         {
+            // secp256k1_ge_eq_var
 #if DEBUG
             Verify();
             other.Verify();
@@ -597,12 +631,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             tmp = y.NormalizeWeak();
-            if (!tmp.Equals(other.y))
-            {
-                return false;
-            }
-
-            return true;
+            return tmp.Equals(other.y);
         }
     }
 }

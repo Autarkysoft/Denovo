@@ -273,7 +273,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             // Bring them to the same Z denominator.
-            Point.SetGlobalZ(TableSizeWindowA * no, state.preA, state.aux);
+            Point.TableSetGlobalZ(TableSizeWindowA * no, state.preA, state.aux);
 
             for (int np = 0; np < no; np++)
             {
