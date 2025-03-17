@@ -599,7 +599,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 zz = s.Sqr();
             UInt256_10x26 rx = x.Multiply(zz);  // r->x *= s^2
             UInt256_10x26 ry = y.Multiply(zz);
-            ry = y.Multiply(s);                 // r->y *= s^3
+            ry = ry.Multiply(s);                // r->y *= s^3
             UInt256_10x26 rz = z.Multiply(s);   // r->z *= s
 
             PointJacobian result = new PointJacobian(rx, ry, rz, isInfinity);
