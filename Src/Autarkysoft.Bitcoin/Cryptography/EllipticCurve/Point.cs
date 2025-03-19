@@ -74,6 +74,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #endif
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="Point"/> using the given byte array.
+        /// </summary>
+        /// <param name="buffer64">Buffer to use (must be 64 bytes long)</param>
+        public Point(ReadOnlySpan<byte> buffer64)
+        {
+            // secp256k1_ge_from_bytes
+            // secp256k1_ge_from_bytes_ext
+            Debug.Assert(buffer64.Length == 64);
+            x = new UInt256_10x26(buffer64.Slice(0, 32));
+            y = new UInt256_10x26(buffer64.Slice(32, 32));
+            isInfinity = x.IsZero && y.IsZero;
+#if DEBUG
+            Verify();
+#endif
+        }
+
 
         /// <summary>
         /// Coordinates
@@ -96,6 +113,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         internal void Verify()
         {
+            // secp256k1_ge_verify
             x.Verify();
             y.Verify();
             UInt256_10x26.VerifyMagnitude(x.magnitude, MaxXMagnitude);
@@ -563,6 +581,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 yNorm.WriteToSpan(result[33..]);
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Converts this instance to a fixed 64-byte array
+        /// </summary>
+        /// <param name="buffer">Buffer to write to (assumes the size is 64 bytes)</param>
+        public void ToByteArray(Span<byte> buffer)
+        {
+            // secp256k1_ge_to_bytes
+            // secp256k1_ge_to_bytes_ext
+            Debug.Assert(buffer.Length == 64);
+            Debug.Assert(!isInfinity || (isInfinity && x.IsZero && y.IsZero));
+
+            // secp256k1_ge_to_storage
+            // memcpy(buf, &s, 64);
+            x.Normalize().WriteToSpan(buffer);
+            y.Normalize().WriteToSpan(buffer.Slice(32));
         }
 
 
