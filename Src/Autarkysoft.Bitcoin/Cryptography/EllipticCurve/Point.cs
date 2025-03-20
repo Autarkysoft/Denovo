@@ -243,7 +243,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
             return TryCreateVar(x, false, out result);
-            }
+        }
 
 
         /// <summary>
@@ -368,15 +368,76 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #endif
         }
 
+        /// <summary>
+        /// Converts all the given <see cref="PointJacobian"/>s in <paramref name="a"/> to <see cref="Point"/>s
+        /// and copy the results into <paramref name="r"/>.
+        /// <para/>None of the group elements in <paramref name="a"/> may be infinity.
+        /// </summary>
+        /// <remarks>
+        /// This method is constant-time
+        /// </remarks>
+        /// <param name="r">Results</param>
+        /// <param name="a"><see cref="PointJacobian"/>s to convert</param>
+        public static void SetAllPointsToJacobian(Span<Point> r, ReadOnlySpan<PointJacobian> a)
+        {
+            // secp256k1_ge_set_all_gej
+            Debug.Assert(r.Length <= a.Length);
+
+#if DEBUG
+            for (int i = 0; i < r.Length; i++)
+            {
+                a[i].Verify();
+                Debug.Assert(!a[i].isInfinity);
+            }
+#endif
+            if (r.Length == 0)
+            {
+                return;
+            }
+
+            // Use destination's x coordinates as scratch space
+            r[0] = new Point(a[0].z, r[0].y, false);
+            for (int i = 1; i < r.Length; i++)
+            {
+                UInt256_10x26 rx = r[i - 1].x * a[i].z;
+                r[i] = new Point(rx, r[i].y, false);
+            }
+            UInt256_10x26 u = r[^1].x.Inverse();
+
+            for (int i = r.Length - 1; i > 0; i--)
+            {
+                UInt256_10x26 rx = r[i - 1].x * u;
+                r[i] = new Point(rx, r[i].y, false);
+                u *= a[i].z;
+            }
+            r[0] = new Point(u, r[0].y, false);
+
+
+            for (int i = 0; i < r.Length; i++)
+            {
+                r[i] = a[i].ToPointZInv(r[i].x);
+            }
+#if DEBUG
+            for (int i = 0; i < r.Length; i++)
+            {
+                r[i].Verify();
+            }
+#endif
+        }
+
 
         /// <summary>
-        /// Converts all <paramref name="r"/> to <see cref="Point"/>s converted from given <see cref="PointJacobian"/>
-        /// array.
+        /// Converts all the given <see cref="PointJacobian"/>s in <paramref name="a"/> to <see cref="Point"/>s
+        /// and copy the results into <paramref name="r"/>.
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="a"></param>
+        /// <remarks>
+        /// This method is not constant-time
+        /// </remarks>
+        /// <param name="r">Results</param>
+        /// <param name="a"><see cref="PointJacobian"/>s to convert</param>
         public static void SetAllPointsToJacobianVar(Span<Point> r, ReadOnlySpan<PointJacobian> a)
         {
+            // secp256k1_ge_set_all_gej_var
             Debug.Assert(r.Length <= a.Length);
 
             int i;
