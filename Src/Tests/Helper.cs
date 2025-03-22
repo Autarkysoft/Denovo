@@ -11,7 +11,6 @@ using System.IO;
 using System.Numerics;
 using System.Reflection;
 using System.Security.Cryptography;
-using Xunit;
 
 namespace Tests
 {
@@ -28,16 +27,16 @@ namespace Tests
 
         public static void ComparePrivateField<InstanceType, FieldType>(InstanceType instance, string fieldName, FieldType expected)
         {
-            FieldInfo fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo? fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             if (fi is null)
             {
-                Assert.True(false, "The private field was not found.");
+                Assert.Fail("The private field was not found.");
             }
 
-            object fieldVal = fi.GetValue(instance);
+            object? fieldVal = fi.GetValue(instance);
             if (fieldVal is null)
             {
-                Assert.True(false, "The private field value was null.");
+                Assert.Fail("The private field value was null.");
             }
             else if (fieldVal is FieldType actual)
             {
@@ -45,18 +44,18 @@ namespace Tests
             }
             else
             {
-                Assert.True(false, $"Field value is not the same type as expected.{Environment.NewLine}" +
-                    $"Actual type: {fieldVal.GetType()}{Environment.NewLine}" +
-                    $"Expected type: {expected.GetType()}");
+                Assert.Fail($"Field value is not the same type as expected.{Environment.NewLine}" +
+                            $"Actual type: {fieldVal.GetType()}{Environment.NewLine}" +
+                            $"Expected type: {expected.GetType()}");
             }
         }
 
         public static void SetPrivateField<InstanceType, FieldType>(InstanceType instance, string fieldName, FieldType toSet)
         {
-            FieldInfo fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo? fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             if (fi is null)
             {
-                Assert.True(false, "The private field was not found.");
+                Assert.Fail("The private field was not found.");
             }
 
             fi.SetValue(instance, toSet);
@@ -64,11 +63,11 @@ namespace Tests
 
         public static void SetReadonlyProperty<InstanceType, FieldType>(InstanceType instance, string fieldName, FieldType toSet)
         {
-            FieldInfo fi = typeof(InstanceType).GetField($"<{fieldName}>k__BackingField",
+            FieldInfo? fi = typeof(InstanceType).GetField($"<{fieldName}>k__BackingField",
                                                          BindingFlags.NonPublic | BindingFlags.Instance);
             if (fi is null)
             {
-                Assert.True(false, "The backing private field was not found.");
+                Assert.Fail("The backing private field was not found.");
             }
 
             fi.SetValue(instance, toSet);
@@ -76,16 +75,16 @@ namespace Tests
 
         public static void CheckNullPrivateField<InstanceType>(InstanceType instance, string fieldName)
         {
-            FieldInfo fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo? fi = typeof(InstanceType).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             if (fi is null)
             {
-                Assert.True(false, "The private field was not found.");
+                Assert.Fail("The private field was not found.");
             }
 
-            object fieldVal = fi.GetValue(instance);
-            if (!(fieldVal is null))
+            object? fieldVal = fi.GetValue(instance);
+            if (fieldVal is not null)
             {
-                Assert.True(false, "The private field value is not null.");
+                Assert.Fail("The private field value is not null.");
             }
         }
 
@@ -143,16 +142,13 @@ namespace Tests
 
 
         /// <summary>
-        /// Returns random bytes using <see cref="Random"/>
+        /// Returns random bytes using <see cref="RandomNumberGenerator"/>
         /// </summary>
         /// <param name="length"></param>
         /// <returns></returns>
         internal static byte[] CreateRandomBytes(int length)
         {
-            byte[] result = new byte[length];
-            using RNGCryptoServiceProvider rng = new();
-            rng.GetBytes(result);
-            return result;
+            return RandomNumberGenerator.GetBytes(length);
         }
 
 
@@ -240,14 +236,14 @@ namespace Tests
         public static Stream ReadResourceAsStream(string resourceName, string fileExtention = "json")
         {
             Assembly asm = Assembly.GetExecutingAssembly();
-            Stream stream = asm.GetManifestResourceStream($"Tests.TestData.{resourceName}.{fileExtention}");
-            if (!(stream is null))
+            Stream? stream = asm.GetManifestResourceStream($"Tests.TestData.{resourceName}.{fileExtention}");
+            if (stream is not null)
             {
                 return stream;
             }
             else
             {
-                Assert.True(false, "File was not found among resources!");
+                Assert.Fail("File was not found among resources!");
                 return null;
             }
         }
@@ -280,7 +276,9 @@ namespace Tests
         public static T ReadResource<T>(string resourceName, string fileExtention = "json")
         {
             string read = ReadResource(resourceName, fileExtention);
-            return JsonConvert.DeserializeObject<T>(read, jSetting);
+            T? res = JsonConvert.DeserializeObject<T>(read, jSetting);
+            Assert.NotNull(res);
+            return res;
         }
     }
 }
