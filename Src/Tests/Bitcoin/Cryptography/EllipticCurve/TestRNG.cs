@@ -168,6 +168,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             RandBytesTest(b32, 32);
         }
 
+        /// <summary>
+        /// Same as <see cref="Rand256Test(Span{byte})"/> to generate a ushort[].
+        /// </summary>
+        /// <remarks>testrand256_test</remarks>
         internal void Rand256Test(Span<ushort> arr16)
         {
             Assert.Equal(16, arr16.Length);
