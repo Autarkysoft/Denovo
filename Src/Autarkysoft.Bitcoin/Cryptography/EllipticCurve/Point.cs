@@ -83,8 +83,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // secp256k1_ge_from_bytes
             // secp256k1_ge_from_bytes_ext
             Debug.Assert(buffer64.Length == 64);
-            x = new UInt256_10x26(buffer64.Slice(0, 32));
-            y = new UInt256_10x26(buffer64.Slice(32, 32));
+            x = new UInt256_10x26(buffer64.Slice(0, 32), out _);
+            y = new UInt256_10x26(buffer64.Slice(32, 32), out _);
             isInfinity = x.IsZero && y.IsZero;
 #if DEBUG
             Verify();

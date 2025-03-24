@@ -139,7 +139,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_ge_test
+        /// testutil_random_ge_test
         /// </summary>
         private static Point RandomGroupElementTest(TestRNG rng)
         {
@@ -228,7 +228,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             UInt256_10x26 zfi2, zfi3;
 
             gej[0] = PointJacobian.Infinity;
-            ge[0] = gej[0].ToPointVar();
+            ge[0] = Point.Infinity;
             for (int i = 0; i < runs; i++)
             {
                 Point g = RandomGroupElementTest(rng);
@@ -379,9 +379,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                     int swap = (int)(i + rng.RandInt((uint)(4 * runs + 1 - i)));
                     if (swap != i)
                     {
-                        PointJacobian t = gej_shuffled[i];
-                        gej_shuffled[i] = gej_shuffled[swap];
-                        gej_shuffled[swap] = t;
+                        (gej_shuffled[swap], gej_shuffled[i]) = (gej_shuffled[i], gej_shuffled[swap]);
                     }
                 }
                 for (int i = 0; i < 4 * runs + 1; i++)
@@ -393,15 +391,38 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             // Test batch gej -> ge conversion without known z ratios.
             {
-                //secp256k1_ge* ge_set_all = (secp256k1_ge*)checked_malloc(&CTX->error_callback, (4 * runs + 1) * sizeof(secp256k1_ge));
+                //secp256k1_ge *ge_set_all_var = (secp256k1_ge *)checked_malloc(&CTX->error_callback, (4 * runs + 1) * sizeof(secp256k1_ge));
+                //secp256k1_ge* ge_set_all = (secp256k1_ge *)checked_malloc(&CTX->error_callback, (4 * runs + 1) * sizeof(secp256k1_ge));
                 Span<Point> ge_set_all = new Point[4 * runs + 1];
-                Point.SetAllPointsToJacobianVar(ge_set_all, gej);
+                Span<Point> ge_set_all_var = new Point[4 * runs + 1];
+                Point.SetAllPointsToJacobianVar(ge_set_all_var, gej);
                 for (int i = 0; i < 4 * runs + 1; i++)
                 {
                     UInt256_10x26 s = UInt256_10x26Tests.RandomFENonZero(rng);
                     gej[i] = gej[i].Rescale(s);
-                    Assert.True(gej[i].EqualsVar(ge_set_all[i]));
+                    Assert.True(gej[i].EqualsVar(ge_set_all_var[i]));
                 }
+
+                // Skip infinity at &gej[0].
+                Point.SetAllPointsToJacobian(ge_set_all.Slice(1), gej.Slice(1));
+                for (int i = 1; i < 4 * runs + 1; i++)
+                {
+                    UInt256_10x26 s = UInt256_10x26Tests.RandomFENonZero(rng);
+                    gej[i] = gej[i].Rescale(s);
+                    Assert.True(gej[i].EqualsVar(ge_set_all[i]));
+                    Assert.True(ge_set_all_var[i].EqualsVar(ge_set_all[i]));
+                }
+
+                // Test with an array of length 1.
+                Point.SetAllPointsToJacobianVar(ge_set_all_var.Slice(1, 1), gej.Slice(1, 1));
+                Point.SetAllPointsToJacobian(ge_set_all.Slice(1, 1), gej.Slice(1, 1));
+                Assert.True(gej[1].EqualsVar(ge_set_all_var[1]));
+                Assert.True(gej[1].EqualsVar(ge_set_all[1]));
+                Assert.True(ge_set_all_var[1].EqualsVar(ge_set_all[1]));
+
+                // Test with an array of length 0.
+                Point.SetAllPointsToJacobianVar(ge_set_all_var.Slice(1, 0), gej.Slice(1, 0));
+                Point.SetAllPointsToJacobian(ge_set_all.Slice(1, 0), gej.Slice(1, 0));
             }
 
             // Test that all elements have X coordinates on the curve.
@@ -551,6 +572,31 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.True(sumj.EqualsVar(res));
         }
 
+        private static void TestGeBytes(TestRNG rng)
+        {
+            for (int i = 0; i < COUNT + 1; i++)
+            {
+                Span<byte> buf = new byte[64];
+                Point p, q;
+
+                if (i == 0)
+                {
+                    p = Point.Infinity;
+                }
+                else
+                {
+                    p = RandomGroupElementTest(rng);
+                }
+
+                // Note that unlike libsecp256k1 we don't have 2 methods to convert to bytes
+                // secp256k1_ge_to/from_bytes and secp256k1_ge_to/from_bytes_ext are the same
+                // since we handle infinity differently
+                p.ToByteArray(buf);
+                q = new Point(buf);
+                Assert.True(p.EqualsVar(q));
+            }
+        }
+
         [Fact]
         public void Libsecp256k1_GETest()
         {
@@ -565,6 +611,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
             TestAddNegYDiffX();
             TestIntializedInf(rng);
+            TestGeBytes(rng);
         }
 
         // test_gej_cmov
