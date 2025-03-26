@@ -62,7 +62,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
 
 
-        #region https://github.com/bitcoin-core/secp256k1/blob/efe85c70a2e357e3605a8901a9662295bae1001f/src/tests.c#L3667-L4068 + L4102-L4144
+        #region https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/tests.c#L3626-L4079 + L4113-L4155
 
         // This covers both Point and PointJacobian tests (ge+gej)
 
@@ -126,7 +126,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_fe_non_zero_test
+        /// testutil_random_fe_non_zero_test
         /// </summary>
         private static UInt256_10x26 RandomFENonZeroTest(TestRNG rng)
         {
@@ -160,7 +160,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_ge_jacobian_test
+        /// testutil_random_ge_jacobian_test
         /// </summary>
         private static PointJacobian RandomGroupElementJacobianTest(in Point ge, TestRNG rng)
         {
@@ -174,7 +174,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_gej_test
+        /// testutil_random_gej_test
         /// </summary>
         private static PointJacobian RandomGejTest(TestRNG rng)
         {
@@ -619,9 +619,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         {
             PointJacobian t = a;
             t = PointJacobian.CMov(t, b, 0);
-            Assert.True(Gej_XYZ_EqualsGej(t, a) == 1);
+            Assert.Equal(1, Gej_XYZ_EqualsGej(t, a));
             t = PointJacobian.CMov(t, b, 1);
-            Assert.True(Gej_XYZ_EqualsGej(t, b) == 1);
+            Assert.Equal(1, Gej_XYZ_EqualsGej(t, b));
         }
 
         [Fact]

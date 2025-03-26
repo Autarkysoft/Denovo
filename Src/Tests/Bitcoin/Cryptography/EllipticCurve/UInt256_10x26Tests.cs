@@ -803,7 +803,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// random_fe_test
+        /// testutil_random_fe_test
         /// </summary>
         internal static UInt256_10x26 RandomFETest(TestRNG rng)
         {
