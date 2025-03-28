@@ -425,7 +425,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
             byte v = (byte)((r.IsHigh ? 2 : 0) | (rp.y.Normalize().IsOdd ? 1 : 0));
 
-            Scalar8x32 s = k.Inverse_old().Multiply(e.Add(r.Multiply(key), out _));
+            Scalar8x32 s = k.Inverse().Multiply(e.Add(r.Multiply(key), out _));
 
             if (s.IsZero)
             {
@@ -514,7 +514,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
             Debug.Assert(!sig.S.IsHigh);
 
-            Scalar8x32 invMod = sig.S.InverseVar_old();
+            Scalar8x32 invMod = sig.S.InverseVar();
             Scalar8x32 u1 = hash.Multiply(invMod);
             Scalar8x32 u2 = sig.R.Multiply(invMod);
 
@@ -526,7 +526,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             UInt256_10x26 temp = new UInt256_10x26(sig.R.b0, sig.R.b1, sig.R.b2, sig.R.b3, sig.R.b4, sig.R.b5, sig.R.b6, sig.R.b7);
-            return Rxy.x.EqualsVar(temp);
+            return Rxy.x.Equals(temp);
         }
 
 
@@ -549,7 +549,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 }
             }
 
-            Scalar8x32 sn = sig.S.InverseVar_old();
+            Scalar8x32 sn = sig.S.InverseVar();
             Scalar8x32 u1 = sn.Multiply(hash);
             Scalar8x32 u2 = sn.Multiply(sig.R);
             PointJacobian pubkeyj = pubkey.ToPointJacobian();
@@ -616,7 +616,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             PointJacobian rj = calc.MultiplyByG(sig.S).AddVar(Multiply(e, pubkey), out _);
             Point r = rj.ToPointVar();
 
-            return !r.isInfinity && !r.y.NormalizeVar().IsOdd && sig.R.EqualsVar(r.x);
+            return !r.isInfinity && !r.y.NormalizeVar().IsOdd && sig.R.Equals(r.x);
         }
     }
 }
