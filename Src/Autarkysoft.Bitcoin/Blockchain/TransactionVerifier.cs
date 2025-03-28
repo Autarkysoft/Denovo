@@ -402,7 +402,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
             PointJacobian Q = calc.MultiplyByG(tweak).AddVar(p, out _);
             bool parity = (control[0] & 1) == 0 ? false : true;
-            return !Q.isInfinity && q.x.EqualsVar(Q.x.NormalizeVar()) && parity == Q.y.NormalizeVar().IsOdd;
+            return !Q.isInfinity && q.x.Equals(Q.x.NormalizeVar()) && parity == Q.y.NormalizeVar().IsOdd;
         }
 
 

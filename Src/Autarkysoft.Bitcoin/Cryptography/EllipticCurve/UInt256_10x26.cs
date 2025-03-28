@@ -2024,22 +2024,5 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             na += b;
             return na.IsZeroNormalized();
         }
-
-        /// <summary>
-        /// Returns if the given <see cref="UInt256_10x26"/> is equal to this instance.
-        /// </summary>
-        /// <remarks>
-        /// This method is not constant time.
-        /// Magnitude should be 1
-        /// </remarks>
-        /// <param name="b">Other <see cref="UInt256_10x26"/> to compare to</param>
-        /// <returns>True if the two instances are equal; otherwise false.</returns>
-        [Obsolete("Removed from libsecp256k1")]
-        public bool EqualsVar(in UInt256_10x26 b)
-        {
-            UInt256_10x26 na = Negate(1);
-            na += b;
-            return na.IsZeroNormalizedVar();
-        }
     }
 }

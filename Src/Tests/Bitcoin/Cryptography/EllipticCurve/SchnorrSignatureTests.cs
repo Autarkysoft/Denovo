@@ -95,7 +95,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             Assert.True(b, error.Convert());
             Assert.Equal(Errors.None, error);
-            Assert.True(expR.EqualsVar(sig.R));
+            Assert.True(expR.Equals(sig.R));
             Assert.Equal(expS, sig.S);
             Assert.Equal(expSH, sig.SigHash);
         }
