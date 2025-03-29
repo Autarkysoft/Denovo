@@ -116,7 +116,7 @@ namespace Tests.Bitcoin
             Assert.Equal(FileManCallName.WriteBlock, callNames[index]);
 
             bool eq = ReferenceEquals(expBlocks[blockIndex], block) ||
-                      expBlocks[blockIndex].Header.Hash.Equals(block.Header.Hash);
+                      expBlocks[blockIndex].Header.Hash == block.Header.Hash;
             Assert.True(eq, "Given block is not as expected.");
 
             index++;

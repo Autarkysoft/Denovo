@@ -306,7 +306,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         int h = int.MaxValue;
                         for (int i = 0; i < failedBlockHashes.Count; i++)
                         {
-                            int j = headerList.FindIndex(x => x.Hash.Equals(failedBlockHashes[i][0]));
+                            int j = headerList.FindIndex(x => x.Hash == failedBlockHashes[i][0]);
                             Debug.Assert(j > 0);
                             if (j < h)
                             {
@@ -355,14 +355,14 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 int max = peerBlocksQueue.Count;
                 while (index < max)
                 {
-                    if (peerBlocksQueue[index].DownloadedBlocks[0].Header.PreviousBlockHeaderHash.Equals(Tip))
+                    if (peerBlocksQueue[index].DownloadedBlocks[0].Header.PreviousBlockHeaderHash == Tip)
                     {
                         INodeStatus peer = peerBlocksQueue[index];
                         Debug.Assert(peer.InvsToGet.Count == peer.DownloadedBlocks.Count);
                         for (int i = 0; i < peer.DownloadedBlocks.Count; i++)
                         {
                             IBlock block = peer.DownloadedBlocks[i];
-                            Debug.Assert(peer.InvsToGet[i].Hash.Equals(block.Header.Hash));
+                            Debug.Assert(peer.InvsToGet[i].Hash == block.Header.Hash);
 
                             Consensus.BlockHeight = Height + 1;
                             if (BlockVer.Verify(block, out string error))
@@ -416,7 +416,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 Digest256 blockHash = block.Header.Hash;
 
-                if (blockHash.Equals(nodeStatus.InvsToGet[0].Hash))
+                if (blockHash == nodeStatus.InvsToGet[0].Hash)
                 {
                     // Peer has to return blocks in the order that we asked for
                     nodeStatus.InvsToGet.RemoveAt(0);
@@ -430,7 +430,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     //       3.1. Ignore if tip is far behind the last header or couldn't connect
                     //       3.2. Add to queue otherwie
 
-                    int index = nodeStatus.InvsToGet.FindIndex(x => blockHash.Equals(x.Hash));
+                    int index = nodeStatus.InvsToGet.FindIndex(x => blockHash == x.Hash);
                     if (index < 0)
                     {
                         // Try to find this block's height
@@ -439,7 +439,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                         {
                             for (int i = headerList.Count - 1; i >= 0; i--)
                             {
-                                if (headerList[i].Hash.Equals(block.Header.PreviousBlockHeaderHash))
+                                if (headerList[i].Hash == block.Header.PreviousBlockHeaderHash)
                                 {
                                     h = i + 1;
                                     break;
@@ -494,7 +494,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             int max = queue.Count;
             while (index < max)
             {
-                if (block.Header.PreviousBlockHeaderHash.Equals(Tip))
+                if (block.Header.PreviousBlockHeaderHash == Tip)
                 {
                     ProcessAndSaveBlock(block);
                     queue.RemoveAt(index);
@@ -547,7 +547,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
         private bool ProcessHeader(in BlockHeader header, in BlockHeader prvHeader, int height, Target nextTarget)
         {
             Consensus.BlockHeight = height;
-            return header.PreviousBlockHeaderHash.Equals(prvHeader.Hash) &&
+            return header.PreviousBlockHeaderHash == prvHeader.Hash &&
                    header.BlockTime > GetMedianTimePast(height - 1) &&
                    header.BlockTime <= Time.Now + Constants.MaxFutureBlockTime &&
                    BlockVer.VerifyHeader(header, nextTarget);
@@ -561,7 +561,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             {
                 // Find index of the block that the first header in the array references
                 // TODO: benchmark this versus using a simple loop
-                int lstIndex = headerList.FindLastIndex(x => headers[0].PreviousBlockHeaderHash.Equals(x.Hash));
+                int lstIndex = headerList.FindLastIndex(x => headers[0].PreviousBlockHeaderHash == x.Hash);
 
                 int arrIndex = 0;
                 if (lstIndex < 0)
@@ -578,7 +578,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     // We had A B C D1 the headers are B C D2
                     for (lstIndex++; lstIndex < headerList.Count && arrIndex < headers.Length; lstIndex++, arrIndex++)
                     {
-                        if (!headerList[lstIndex].Hash.Equals(headers[arrIndex].Hash))
+                        if (headerList[lstIndex].Hash != headers[arrIndex].Hash)
                         {
                             // TODO: we have to store these fork blocks somewhere to handle them later
                             //       possibly in INodeStatus with a boolean indicating there are blocks on another
@@ -688,7 +688,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 int index = -1;
                 if (hashesToCompare.Length == 0)
                 {
-                    index = headerList.FindIndex(x => stopHash.Equals(x.Hash));
+                    index = headerList.FindIndex(x => stopHash == x.Hash);
                     if (index < 0)
                     {
                         return null;
@@ -699,7 +699,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                     // hash order is from biggest height to the lowest
                     foreach (Digest256 item in hashesToCompare)
                     {
-                        index = headerList.FindIndex(x => item.Equals(x.Hash));
+                        index = headerList.FindIndex(x => item == x.Hash);
                         if (index >= 0)
                         {
                             // If the biggest height hash is found the lower ones must be the same (skip checking).
@@ -719,7 +719,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 {
                     BlockHeader toAdd = headerList[index++];
                     result.Add(toAdd);
-                    if (stopHash.Equals(toAdd.Hash))
+                    if (stopHash == toAdd.Hash)
                     {
                         break;
                     }

@@ -122,7 +122,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
 
             Digest256 actual = block.ComputeMerkleRoot();
-            if (!block.Header.MerkleRootHash.Equals(actual))
+            if (block.Header.MerkleRootHash != actual)
             {
                 UndoAllUtxos(block);
                 error = "Block has invalid merkle root hash.";

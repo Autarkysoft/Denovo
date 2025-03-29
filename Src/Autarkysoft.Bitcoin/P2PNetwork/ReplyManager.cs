@@ -179,13 +179,13 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
                             int i = nodeStatus.DownloadedBlocks.Count;
                             Debug.Assert(i < nodeStatus.InvsToGet.Count);
 
-                            if (blk.BlockData.Header.Hash.Equals(nodeStatus.InvsToGet[i].Hash))
+                            if (blk.BlockData.Header.Hash == nodeStatus.InvsToGet[i].Hash)
                             {
                                 nodeStatus.DownloadedBlocks.Add(blk.BlockData);
                             }
                             else
                             {
-                                int index = nodeStatus.InvsToGet.FindIndex(x => blk.BlockData.Header.Hash.Equals(x.Hash));
+                                int index = nodeStatus.InvsToGet.FindIndex(x => blk.BlockData.Header.Hash == x.Hash);
                                 if (index < 0)
                                 {
                                     if (fullSettings.Blockchain.State == BlockchainState.Synchronized)

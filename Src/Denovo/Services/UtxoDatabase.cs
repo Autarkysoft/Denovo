@@ -206,7 +206,7 @@ namespace Denovo.Services
             {
                 foreach (var item in coinbaseQueue)
                 {
-                    if (item is not null && item.GetTransactionHash().Equals(hash))
+                    if (item is not null && item.GetTransactionHash() == hash)
                     {
                         return true;
                     }

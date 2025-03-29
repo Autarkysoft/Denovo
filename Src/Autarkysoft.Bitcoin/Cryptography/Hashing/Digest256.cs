@@ -166,10 +166,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public static bool operator >(Digest256 left, Digest256 right) => left.CompareTo(right) > 0;
-        public static bool operator >=(Digest256 left, Digest256 right) => left.CompareTo(right) >= 0;
-        public static bool operator <(Digest256 left, Digest256 right) => left.CompareTo(right) < 0;
-        public static bool operator <=(Digest256 left, Digest256 right) => left.CompareTo(right) <= 0;
+        public static bool operator >(in Digest256 left, in Digest256 right) => left.CompareTo(right) > 0;
+        public static bool operator >=(in Digest256 left, in Digest256 right) => left.CompareTo(right) >= 0;
+        public static bool operator <(in Digest256 left, in Digest256 right) => left.CompareTo(right) < 0;
+        public static bool operator <=(in Digest256 left, in Digest256 right) => left.CompareTo(right) <= 0;
 
 
         public static bool operator ==(in Digest256 left, in Digest256 right)

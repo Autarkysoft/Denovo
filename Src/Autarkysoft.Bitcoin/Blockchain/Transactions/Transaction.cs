@@ -691,7 +691,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
                 throw new ArgumentNullException(nameof(prvTx), "Previous transaction (to spend) can not be null.");
             if (inputIndex < 0 || inputIndex >= TxInList.Length)
                 throw new ArgumentException("Invalid input index.", nameof(inputIndex));
-            if (!TxInList[inputIndex].TxHash.Equals(prvTx.GetTransactionHash()))
+            if (TxInList[inputIndex].TxHash != prvTx.GetTransactionHash())
                 throw new ArgumentException("Wrong previous transaction or index.");
             var prvScr = prvTx.TxOutList[TxInList[inputIndex].Index].PubScript;
             if (!prvScr.TryEvaluate(ScriptEvalMode.Legacy, out IOperation[] prevPubOps, out int opCount, out Errors error))
