@@ -66,7 +66,7 @@ namespace Denovo.ViewModels
                         tx.ComputeTransactionHashes();
 
                         Result = string.Empty;
-                        if (tx.TxInList.Length == 1 && tx.TxInList[0].TxHash.Equals(Digest256.Zero))
+                        if (tx.TxInList.Length == 1 && tx.TxInList[0].TxHash.IsZero)
                         {
                             // Minimal check to guess coinbase transaction
                             UtxoList = Array.Empty<UtxoModel>();

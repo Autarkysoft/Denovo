@@ -144,7 +144,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
                 return false;
             }
 
-            if (!coinbase.TxInList[0].TxHash.Equals(Digest256.Zero) || coinbase.TxInList[0].Index != uint.MaxValue)
+            if (!coinbase.TxInList[0].TxHash.IsZero || coinbase.TxInList[0].Index != uint.MaxValue)
             {
                 error = "Invalid coinbase outpoint.";
                 return false;
