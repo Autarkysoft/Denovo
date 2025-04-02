@@ -25,7 +25,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         private const int WindowA = 5;
         private const int ECMULT_WINDOW_SIZE = 15;
         private const int WINDOW_G = ECMULT_WINDOW_SIZE;
-        // 1 << (w - 2) where w = WINDOW_A = 5
+        /// <summary>
+        ///  1 &#60;&#60; (w - 2) where w = WINDOW_A = 5
+        /// </summary>
         private const int TableSizeWindowA = 8;
 
         // The number of entries a table with precomputed multiples needs to have.
@@ -37,20 +39,27 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // - two non-zero entries in wnaf are separated by at least w-1 zeroes.
         // - the number of set values in wnaf is returned. This number is at most 256, and at most one more
         //   than the number of bits in the (absolute value) of the input.
-        private static unsafe int EcmultWnaf(int[] wnaf, int len, ref Scalar8x32 s, in int w)
+        private static unsafe int EcmultWnaf(int[] wnaf, int len, in Scalar8x32 a, in int w)
         {
             int lastSetBit = -1;
             int bit = 0;
             int sign = 1;
             int carry = 0;
 
+            Debug.Assert(wnaf != null);
             // TODO: remove "len"?
             Debug.Assert(wnaf.Length == len);
-            Debug.Assert(wnaf != null);
             Debug.Assert(0 <= len && len <= 256);
-            Debug.Assert(s != null);
             Debug.Assert(2 <= w && w <= 31);
 
+            for (bit = 0; bit < len; bit++)
+            {
+                wnaf[bit] = 0;
+            }
+
+            Scalar8x32 s = a;
+
+            // Scalar8x32.GetBits(pt, 255, 1);
             if (((s.b7 >> 31) & 1) != 0)
             {
                 s = s.Negate();
@@ -83,10 +92,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 bit += now;
             }
 #if DEBUG
+            int verify_bit = bit;
             Debug.Assert(carry == 0);
-            while (bit < 256)
+            while (verify_bit < 256)
             {
-                Debug.Assert(Scalar8x32.GetBits(pt, bit++, 1) == 0);
+                Debug.Assert(Scalar8x32.GetBits(pt, verify_bit, 1) == 0);
+                verify_bit++;
             }
 #endif
             return lastSetBit + 1;
@@ -127,9 +138,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Point d_ge = new Point(d.x, d.y);
             pre_a[index] = a.ToPointZInv(d.z);
 
-            // TODO: this 2 lines can be simplified
-            PointJacobian ai = pre_a[index].ToPointJacobian();
-            ai = new PointJacobian(ai.x, ai.y, a.z);
+            // secp256k1_gej_set_ge(&ai, &pre_a[0]);
+            // ai.z = a->z;
+#if DEBUG
+            pre_a[index].Verify();
+            PointJacobian tempRes = new PointJacobian(pre_a[index].x, pre_a[index].y, UInt256_10x26.One, pre_a[index].isInfinity);
+            tempRes.Verify();
+#endif
+            PointJacobian ai = new PointJacobian(pre_a[index].x, pre_a[index].y, a.z, pre_a[index].isInfinity);
 
             // pre_a[0] is the point (a.x*C^2, a.y*C^3, a.z*C) which is equvalent to a.
             // Set zr[0] to C, which is the ratio between the omitted z(pre_a[0]) value and a.z.
@@ -148,6 +164,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 #if DEBUG
+        /// <summary>
+        /// Only works in DEBUG
+        /// </summary>
         private static void VerifyTable(int n, int w)
         {
             Debug.Assert(((n) & 1) == 1);
@@ -168,7 +187,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             else
             {
                 Point r = pre[index + ((-n - 1) / 2)];
-                return new Point(r.x, r.y.Negate(1));
+                return new Point(r.x, r.y.Negate(1), r.isInfinity);
             }
         }
 
@@ -204,7 +223,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        private static PointJacobian StraussWnaf(StraussState state, PointJacobian[] a, Scalar8x32[] na, in Scalar8x32 ng)
+        private static PointJacobian StraussWnaf(StraussState state, int num, PointJacobian[] a, Scalar8x32[] na, in Scalar8x32 ng)
         {
             Debug.Assert(a.Length > 0);
             Debug.Assert(a.Length == na.Length);
@@ -220,7 +239,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // NOTE: num (ie. a.Length), np and no are using size_t type which is at least 16 bits.
 
             UInt256_10x26 Z = UInt256_10x26.One;
-            for (int np = 0; np < a.Length; np++)
+            for (int np = 0; np < num; np++)
             {
                 if (na[np].IsZero || a[np].isInfinity)
                 {
@@ -231,8 +250,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Scalar8x32.SplitLambda(out Scalar8x32 na1, out Scalar8x32 naLam, na[np]);
 
                 // Build wnaf representation for na_1 and na_lam
-                state.ps[no].bitsNa1 = EcmultWnaf(state.ps[no].wnafNa1, 129, ref na1, WindowA);
-                state.ps[no].bitsNaLam = EcmultWnaf(state.ps[no].wnafNaLam, 129, ref naLam, WindowA);
+                state.ps[no].bitsNa1 = EcmultWnaf(state.ps[no].wnafNa1, 129, na1, WindowA);
+                state.ps[no].bitsNaLam = EcmultWnaf(state.ps[no].wnafNaLam, 129, naLam, WindowA);
                 Debug.Assert(state.ps[no].bitsNa1 <= 129);
                 Debug.Assert(state.ps[no].bitsNaLam <= 129);
                 if (state.ps[no].bitsNa1 > bits)
@@ -256,9 +275,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 PointJacobian tmp = a[np];
                 if (no != 0)
                 {
-#if DEBUG
-                    Z = Z.NormalizeVar();
-#endif
                     tmp = tmp.Rescale(Z);
                 }
 
@@ -273,7 +289,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             // Bring them to the same Z denominator.
-            Point.TableSetGlobalZ(TableSizeWindowA * no, state.preA, state.aux);
+            if (no != 0)
+            {
+                Point.TableSetGlobalZ(TableSizeWindowA * no, state.preA, state.aux); 
+            }
 
             for (int np = 0; np < no; np++)
             {
@@ -289,8 +308,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 Scalar8x32.Split128(ng, out Scalar8x32 ng_1, out Scalar8x32 ng_128);
 
                 // Build wnaf representation for ng_1 and ng_128
-                bitsNg1 = EcmultWnaf(wnafNg1, 129, ref ng_1, WINDOW_G);
-                bitsNg128 = EcmultWnaf(wnafNg128, 129, ref ng_128, WINDOW_G);
+                bitsNg1 = EcmultWnaf(wnafNg1, 129, ng_1, WINDOW_G);
+                bitsNg128 = EcmultWnaf(wnafNg128, 129, ng_128, WINDOW_G);
                 if (bitsNg1 > bits)
                 {
                     bits = bitsNg1;
@@ -348,10 +367,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             return r;
         }
 
+        /// <summary>
+        /// Double multiply: R = na*A + ng*G
+        /// </summary>
         private PointJacobian ECMult(in PointJacobian a, in Scalar8x32 na, in Scalar8x32 ng)
         {
+            // secp256k1_ecmult
             StraussState state = new StraussState(TableSizeWindowA);
-            return StraussWnaf(state, new PointJacobian[] { a }, new Scalar8x32[] { na }, ng);
+            return StraussWnaf(state, 1, new PointJacobian[] { a }, new Scalar8x32[] { na }, ng);
         }
 
         internal PointJacobian Multiply(in Scalar8x32 k, in Point point)
@@ -532,6 +555,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         public bool Verify(Signature sig, in Point pubkey, in Scalar8x32 hash, bool lowS)
         {
+            // secp256k1_ecdsa_verify
+            // secp256k1_ecdsa_sig_verify
             if (sig.R.IsZero || sig.S.IsZero)
             {
                 return false;

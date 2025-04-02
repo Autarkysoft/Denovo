@@ -338,7 +338,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public static ref readonly UInt256_10x26 PMinusN => ref _pn;
         /// <summary>
-        /// 
+        /// secp256k1_const_beta
         /// </summary>
         public static ref readonly UInt256_10x26 Beta => ref _beta;
 
