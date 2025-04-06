@@ -1319,7 +1319,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="k"></param>
         /// <param name="r1"></param>
         /// <param name="r2"></param>
-        internal static void Split128(in Scalar8x32 k, out Scalar8x32 r1, out Scalar8x32 r2)
+        public static void Split128(in Scalar8x32 k, out Scalar8x32 r1, out Scalar8x32 r2)
         {
             Debug.Assert(GetOverflow(k) == 0);
 

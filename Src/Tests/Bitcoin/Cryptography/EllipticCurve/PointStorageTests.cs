@@ -13,7 +13,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// secp256k1_memcmp_var
         /// </summary>
-        private static uint Libsecp256k1_CmpVar(in PointStorage a, in PointStorage b)
+        internal static uint Libsecp256k1_CmpVar(in PointStorage a, in PointStorage b)
         {
             ReadOnlySpan<uint> p1 = new uint[16]
             {

@@ -141,7 +141,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// testutil_random_ge_test
         /// </summary>
-        private static Point RandomGroupElementTest(TestRNG rng)
+        internal static Point RandomGroupElementTest(TestRNG rng)
         {
             UInt256_10x26 fe;
             Point ge;

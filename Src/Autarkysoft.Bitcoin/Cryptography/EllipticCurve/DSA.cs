@@ -370,7 +370,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Double multiply: R = na*A + ng*G
         /// </summary>
-        private PointJacobian ECMult(in PointJacobian a, in Scalar8x32 na, in Scalar8x32 ng)
+        public PointJacobian ECMult(in PointJacobian a, in Scalar8x32 na, in Scalar8x32 ng)
         {
             // secp256k1_ecmult
             StraussState state = new StraussState(TableSizeWindowA);
