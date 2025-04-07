@@ -67,6 +67,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             uint* pt = stackalloc uint[8] { s.b0, s.b1, s.b2, s.b3, s.b4, s.b5, s.b6, s.b7 };
+            bit = 0;
             while (bit < len)
             {
                 if (Scalar8x32.GetBits(pt, bit, 1) == (uint)carry)
