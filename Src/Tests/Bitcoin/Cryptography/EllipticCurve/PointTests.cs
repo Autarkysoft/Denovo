@@ -11,6 +11,29 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class PointTests
     {
+        // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/group.h#L22
+        internal static Point SECP256K1_GE_CONST(uint a, uint b, uint c, uint d, uint e, uint f, uint g, uint h,
+                                                 uint i, uint j, uint k, uint l, uint m, uint n, uint o, uint p)
+        {
+            return new Point(
+                UInt256_10x26Tests.SECP256K1_FE_CONST(a, b, c, d, e, f, g, h),
+                UInt256_10x26Tests.SECP256K1_FE_CONST(i, j, k, l, m, n, o, p));
+        }
+
+        [Fact]
+        public void ConstTest()
+        {
+            // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/group_impl.h#L38-L43
+            Point actual = SECP256K1_GE_CONST(
+                0x79be667e, 0xf9dcbbac, 0x55a06295, 0xce870b07,
+                0x029bfcdb, 0x2dce28d9, 0x59f2815b, 0x16f81798,
+                0x483ada77, 0x26a3c465, 0x5da4fbfc, 0x0e1108a8,
+                0xfd17b448, 0xa6855419, 0x9c47d08f, 0xfb10d4b8);
+
+            Assert.True(Point.G.Equals(actual));
+        }
+
+
         public static IEnumerable<object[]> GetCtorCases()
         {
             yield return new object[]

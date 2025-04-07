@@ -11,6 +11,24 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class UInt256_10x26Tests
     {
+        // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/field.h#L66
+        internal static UInt256_10x26 SECP256K1_FE_CONST(uint u7, uint u6, uint u5, uint u4, uint u3, uint u2, uint u1, uint u0)
+        {
+            return new UInt256_10x26(u0, u1, u2, u3, u4, u5, u6, u7);
+        }
+
+        [Fact]
+        public void ConstTest()
+        {
+            // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/field.h#L69-L72
+            UInt256_10x26 actual = SECP256K1_FE_CONST(
+                0x7ae96a2bu, 0x657c0710u, 0x6e64479eu, 0xac3434e9u,
+                0x9cf04975u, 0x12f58995u, 0xc1396c28u, 0x719501eeu);
+
+            Assert.True(UInt256_10x26.Beta.Equals(actual));
+        }
+
+
         private static UInt256_10x26 CreateRandom()
         {
             for (int i = 0; i < 3; i++)
@@ -1243,7 +1261,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         public void Libsecp256k1_SqrTest()
         {
             // run_sqr
-            
+
             TestRNG rng = new();
             rng.Init(null);
 

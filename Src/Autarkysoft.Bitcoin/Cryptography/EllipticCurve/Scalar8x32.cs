@@ -230,7 +230,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// The Secp256k1 curve has an endomorphism, where lambda* (x, y) = (beta* x, y), where lambda is:
         /// </summary>
-        internal static ref readonly Scalar8x32 Lambda => ref _lambda;
+        public static ref readonly Scalar8x32 Lambda => ref _lambda;
 
         /// <summary>
         /// Returns if the value is equal to zero

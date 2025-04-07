@@ -454,6 +454,23 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         #region https://github.com/bitcoin-core/secp256k1/blob/77af1da9f631fa622fb5b5895fd27be431432368/src/tests.c#L2126-L2946
 
+        // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/scalar_8x32.h#L17
+        internal static Scalar8x32 SECP256K1_SCALAR_CONST(uint u7, uint u6, uint u5, uint u4, uint u3, uint u2, uint u1, uint u0)
+        {
+            return new Scalar8x32(u0, u1, u2, u3, u4, u5, u6, u7);
+        }
+
+        [Fact]
+        public void ConstTest()
+        {
+            // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/scalar_impl.h#L83-L86
+            Scalar8x32 actual = SECP256K1_SCALAR_CONST(
+                0x5363AD4CU, 0xC05C30E0U, 0xA5261C02U, 0x8812645AU,
+                0x122E22EAU, 0x20816678U, 0xDF02967CU, 0x1B23BD72U);
+
+            Assert.True(Scalar8x32.Lambda.Equals(actual));
+        }
+
         private const int Count = 16;
 
         /// <summary>
