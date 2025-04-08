@@ -474,7 +474,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         private const int Count = 16;
 
         /// <summary>
-        /// random_scalar_order_test
+        /// testutil_random_scalar_order_test
         /// </summary>
         internal static Scalar8x32 CreateRandom(TestRNG rng)
         {
