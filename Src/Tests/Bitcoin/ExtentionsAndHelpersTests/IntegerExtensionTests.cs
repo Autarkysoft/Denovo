@@ -71,7 +71,8 @@ namespace Tests.Bitcoin.ExtentionsAndHelpersTests
         }
 
         [Theory]
-        [InlineData(-1, "Invalid (negative) size.")]
+        [InlineData(-1, "-1 B")]
+        [InlineData(-1024, "-1.00 KB")]
         [InlineData(0, "0 B")]
         [InlineData(1, "1 B")]
         [InlineData(999, "999 B")]

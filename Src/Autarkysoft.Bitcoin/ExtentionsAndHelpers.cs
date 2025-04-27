@@ -466,9 +466,11 @@ namespace Autarkysoft.Bitcoin
         /// <returns>Data size</returns>
         public static string ToDataSize(this long val)
         {
+            string prefix = string.Empty;
             if (val < 0)
             {
-                return "Invalid (negative) size.";
+                val *= -1;
+                prefix = "-";
             }
 
             decimal size = val;
@@ -479,7 +481,8 @@ namespace Autarkysoft.Bitcoin
                 size /= 1024;
             }
 
-            return $"{(index == 0 ? $"{size:n0}" : (size < 10 ? $"{size:n2}" : (size < 100 ? $"{size:n1}" : $"{size:n0}")))}" +
+            return $"{prefix}" +
+                   $"{(index == 0 ? $"{size:n0}" : (size < 10 ? $"{size:n2}" : (size < 100 ? $"{size:n1}" : $"{size:n0}")))}" +
                    $" {SizeSuffix[index]}";
         }
 
