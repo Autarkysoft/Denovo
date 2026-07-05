@@ -26,6 +26,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Arithmetic
         {
             if (Legendre.Symbol(a, p) != 1)
             {
+                result = BigInteger.Zero;
                 return false;
             }
 

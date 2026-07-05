@@ -87,9 +87,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         public bool TryFindY(BigInteger x, byte firstByte, out BigInteger y)
         {
             if (firstByte != 2 && firstByte != 3)
+            {
+                y = BigInteger.Zero;
                 return false;
+            }
+
             if (x.Sign < 1)
+            {
+                y = BigInteger.Zero;
                 return false;
+            }
 
             // Curve.A is zero
             BigInteger right = (BigInteger.Pow(x, 3) + curve.B) % curve.P;
@@ -120,7 +127,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         public bool TryFindYSchnorr(BigInteger x, out BigInteger y)
         {
             if (x.Sign < 1 || x > curve.P)
+            {
+                y = BigInteger.Zero;
                 return false;
+            }
 
             // Curve.A is zero
             BigInteger right = (BigInteger.Pow(x, 3) + curve.B) % curve.P;
@@ -138,6 +148,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         {
             if (bytes == null)
             {
+                result = default;
                 return false;
             }
             else if (bytes.Length == 33 && (bytes[0] == 2 || bytes[0] == 3))
@@ -146,6 +157,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 BigInteger x = xBa.ToBigInt(true, true);
                 if (!TryFindY(x, bytes[0], out BigInteger y))
                 {
+                    result = default;
                     return false;
                 }
                 result = new EllipticCurvePoint(x, y);
@@ -162,6 +174,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 // Hybrid form: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.202.2977&rep=rep1&type=pdf
                 if ((bytes[0] == 6 && !y.IsEven) || (bytes[0] == 7 && y.IsEven))
                 {
+                    result = default;
                     return false;
                 }
 
@@ -170,6 +183,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             }
             else
             {
+                result = default;
                 return false;
             }
         }
@@ -185,6 +199,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
         {
             if (bytes == null || bytes.Length != 32)
             {
+                result = default;
                 return false;
             }
             else
@@ -192,6 +207,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
                 BigInteger x = new BigInteger(bytes, true, true);
                 if (!TryFindY(x, 2, out BigInteger y))
                 {
+                    result = default;
                     return false;
                 }
                 result = new EllipticCurvePoint(x, y);
