@@ -7,14 +7,13 @@ using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Text;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.Hashing
 {
     public class Sha512Tests
     {
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA512", MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), arguments: "SHA512", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHashTest(byte[] message, byte[] expectedHash)
         {
             byte[] actualHash = Sha512.ComputeHash(message);
@@ -66,7 +65,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), parameters: "SHA512", MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetCommonHashCases), arguments: "SHA512", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHashTwiceTest(byte[] message, byte[] expectedHash)
         {
             byte[] actualHash = Sha512.ComputeHashTwice(message);
@@ -88,7 +87,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
 
 
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetNistShortCases), parameters: "Sha512", MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetNistShortCases), arguments: "Sha512", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistShortTest(byte[] message, byte[] expected)
         {
             byte[] actual = Sha512.ComputeHash(message);
@@ -96,7 +95,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetNistLongCases), parameters: "Sha512", MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetNistLongCases), arguments: "Sha512", MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NistLongTest(byte[] message, byte[] expected)
         {
             byte[] actual = Sha512.ComputeHash(message);

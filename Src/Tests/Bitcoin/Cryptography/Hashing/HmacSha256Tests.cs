@@ -134,7 +134,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
 
-        public static TheoryData GetHmacSha_Rfc_Cases()
+        public static TheoryData<byte[], byte[], byte[]> GetHmacSha_Rfc_Cases()
         {
             // Test cases are taken from https://tools.ietf.org/html/rfc4231
             TheoryData<byte[], byte[], byte[]> result = new();
@@ -151,7 +151,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Rfc_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Rfc_Cases), arguments: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_rfc_Test(byte[] msg, byte[] key, byte[] expected)
         {
             using HmacSha256 hmac = new();
@@ -160,7 +160,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Rfc_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Rfc_Cases), arguments: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_rfc_CtorKey_Test(byte[] msg, byte[] key, byte[] expected)
         {
             using HmacSha256 hmac = new(key);
@@ -170,7 +170,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
 
 
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Nist_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Nist_Cases), arguments: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NIST_Test(byte[] msg, byte[] key, byte[] expected, int len, bool truncate)
         {
             using HmacSha256 hmac = new();
@@ -185,7 +185,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         }
 
         [Theory]
-        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Nist_Cases), parameters: 256, MemberType = typeof(HashTestCaseHelper))]
+        [MemberData(nameof(HashTestCaseHelper.GetHmacSha_Nist_Cases), arguments: 256, MemberType = typeof(HashTestCaseHelper))]
         public void ComputeHash_NIST_CtorKey_Test(byte[] msg, byte[] key, byte[] expected, int len, bool truncate)
         {
             using HmacSha256 hmac = new(key);

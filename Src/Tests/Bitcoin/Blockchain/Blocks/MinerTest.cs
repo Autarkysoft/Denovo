@@ -7,6 +7,7 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Blockchain.Blocks;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Tests.Bitcoin.Blockchain.Blocks
@@ -24,7 +25,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         [InlineData(0)] // Max
         [InlineData(1)] // 1 core
         [InlineData(2)] // 2 cores
-        public async void MineTest(int coreCount)
+        public async Task MineTest(int coreCount)
         {
             IBlock blk = GetBlock();
             uint expected = 424342955;
@@ -45,7 +46,7 @@ namespace Tests.Bitcoin.Blockchain.Blocks
         }
 
         [Fact]
-        public async void Mine_CancelTest()
+        public async Task Mine_CancelTest()
         {
             IBlock blk = GetBlock();
             uint initialNonce = blk.Header.Nonce;
