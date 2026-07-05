@@ -45,12 +45,10 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// <exception cref="ArgumentNullException"/>
         /// <param name="capacity"></param>
         /// <param name="c"></param>
-        public NodePool(int capacity, SynchronizationContext c)
+        public NodePool(int capacity, SynchronizationContext? c)
         {
             if (capacity < 0)
                 throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity must be a positive number.");
-            if (c is null)
-                throw new ArgumentNullException(nameof(c));
 
             items = new Node[capacity];
             context = c;
@@ -59,7 +57,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private Node[] items;
         private int size, version;
-        private readonly SynchronizationContext context;
+        private readonly SynchronizationContext? context;
         private readonly object lockObj = new object();
         private SemaphoreSlim monitor = new SemaphoreSlim(1, 1);
 
@@ -129,21 +127,24 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void OnNotifyCollectionReset()
         {
-            monitor.Wait();
-            context.Send(state =>
+            if (context != null)
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
-                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-            }, null);
-            monitor.Release();
+                monitor.Wait();
+                context.Send(state =>
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
+                    CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                }, null);
+                monitor.Release();
+            }
         }
 
         private void OnNotifyItemAdded(Node item, int index)
         {
             monitor.Wait();
             AddRemoveEvent?.Invoke(this, new AddRemoveEventArgs(CollectionAction.Add));
-            context.Send(state =>
+            context?.Send(state =>
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
@@ -156,7 +157,7 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         {
             monitor.Wait();
             AddRemoveEvent?.Invoke(this, new AddRemoveEventArgs(CollectionAction.Remove));
-            context.Send(state =>
+            context?.Send(state =>
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
@@ -167,13 +168,16 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
         private void OnNotifyItemReplaced(Node newItem, Node oldItem, int index)
         {
-            monitor.Wait();
-            context.Send(state =>
+            if (context != null)
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
-                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItem, oldItem, index));
-            }, null);
-            monitor.Release();
+                monitor.Wait();
+                context.Send(state =>
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
+                    CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItem, oldItem, index));
+                }, null);
+                monitor.Release();
+            }
         }
 
 
