@@ -25,10 +25,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
-        public static byte[] ComputeHash(byte[] data)
+        public static byte[] ComputeHash(ReadOnlySpan<byte> data)
         {
+#if NET10_0_OR_GREATER
+            return SHA1.HashData(data);
+#else
             using SHA1 hash = SHA1.Create();
-            return hash.ComputeHash(data);
+            return hash.ComputeHash(data.ToArray());
+#endif
         }
 
         /// <summary>
@@ -42,10 +46,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>The computed hash</returns>
-        public static byte[] ComputeHash(byte[] buffer, int offset, int count)
+        public static byte[] ComputeHash(ReadOnlySpan<byte> buffer, int offset, int count)
         {
+#if NET10_0_OR_GREATER
+            return SHA1.HashData(buffer.Slice(offset, count));
+#else
             using SHA1 hash = SHA1.Create();
-            return hash.ComputeHash(buffer, offset, count);
+            return hash.ComputeHash(buffer.ToArray(), offset, count);
+#endif
         }
     }
 }
