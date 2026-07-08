@@ -202,7 +202,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         /// <inheritdoc/>
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj is null)
                 return 1;
@@ -220,7 +220,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => !(obj is null) && obj is Digest256 d && Equals(d);
+        public override bool Equals(object? obj) => !(obj is null) && obj is Digest256 d && Equals(d);
 
         /// <inheritdoc/>
         public override int GetHashCode()

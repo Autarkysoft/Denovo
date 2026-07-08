@@ -232,7 +232,7 @@ namespace Autarkysoft.Bitcoin
         /// <exception cref="ArgumentException"/>
         /// <param name="obj">The object to compare to this instance.</param>
         /// <returns>-1 if smaller, 0 if equal and 1 if bigger</returns>
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj is null)
                 return 1;
@@ -258,7 +258,7 @@ namespace Autarkysoft.Bitcoin
         /// true if value is an instance of <see cref="LockTime"/> 
         /// and equals the value of this instance; otherwise, false.
         /// </returns>
-        public override bool Equals(object obj) => !(obj is null) && obj is LockTime lt && value == lt.value;
+        public override bool Equals(object? obj) => !(obj is null) && obj is LockTime lt && value == lt.value;
 
         /// <summary>
         /// Returns the hash code for this instance.
