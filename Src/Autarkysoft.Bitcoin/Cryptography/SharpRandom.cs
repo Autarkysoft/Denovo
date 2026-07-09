@@ -19,12 +19,9 @@ namespace Autarkysoft.Bitcoin.Cryptography
         /// </summary>
         public SharpRandom()
         {
-            rng = new RNGCryptoServiceProvider();
         }
         // TODO: add extra entropy to be added correctly to the result. using AES would be a good place to start.
 
-
-        private RNGCryptoServiceProvider rng;
 
 
         /// <inheritdoc/>
@@ -37,7 +34,7 @@ namespace Autarkysoft.Bitcoin.Cryptography
             if (data is null || data.Length == 0)
                 throw new ArgumentNullException(nameof(data), "Data to fill can not be null or empty.");
 
-            rng.GetBytes(data);
+            RandomNumberGenerator.Fill(data);
         }
 
 
@@ -47,10 +44,6 @@ namespace Autarkysoft.Bitcoin.Cryptography
         {
             if (!isDisposed)
             {
-                if (!(rng is null))
-                    rng.Dispose();
-                rng = null;
-
                 isDisposed = true;
             }
         }
