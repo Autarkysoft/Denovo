@@ -304,7 +304,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
             if (hasWitness)
             {
                 // Add SegWit marker
-                stream.Write(new byte[2] { 0x00, 0x01 });
+                stream.Write((byte)0x00);
+                stream.Write((byte)0x01);
             }
 
             CompactInt tinCount = new CompactInt(TxInList.Length);
