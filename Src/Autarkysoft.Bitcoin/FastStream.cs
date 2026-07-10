@@ -65,11 +65,20 @@ namespace Autarkysoft.Bitcoin
             return result;
         }
 
+        /// <summary>
+        /// Returns buffer as a span.
+        /// </summary>
+        /// <returns>A <see cref="ReadOnlySpan{T}"/> containing the buffer.</returns>
+        public ReadOnlySpan<byte> AsSpan()
+        {
+            return buffer.AsSpan(0, position);
+        }
+
 
         internal void CheckAndResize(int extraSize)
         {
             Debug.Assert(extraSize >= 0);
-            Debug.Assert(buffer.Length - position >= 0);
+            Debug.Assert(position >= 0 && position <= buffer.Length);
 
             int toAdd = extraSize - (buffer.Length - position);
             if (toAdd > 0)

@@ -7,7 +7,6 @@ using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin
 {
@@ -65,6 +64,21 @@ namespace Tests.Bitcoin
             byte[] ba2 = stream.ToByteArray();
             stream.Write(2);
             byte[] ba3 = stream.ToByteArray();
+
+            Assert.Equal(Array.Empty<byte>(), ba1);
+            Assert.Equal(new byte[1] { 1 }, ba2);
+            Assert.Equal(new byte[5] { 1, 2, 0, 0, 0 }, ba3);
+        }
+
+        [Fact]
+        public void AsSpanTest()
+        {
+            FastStream stream = new();
+            ReadOnlySpan<byte> ba1 = stream.AsSpan();
+            stream.Write((byte)1);
+            ReadOnlySpan<byte> ba2 = stream.AsSpan();
+            stream.Write(2);
+            ReadOnlySpan<byte> ba3 = stream.AsSpan();
 
             Assert.Equal(Array.Empty<byte>(), ba1);
             Assert.Equal(new byte[1] { 1 }, ba2);
