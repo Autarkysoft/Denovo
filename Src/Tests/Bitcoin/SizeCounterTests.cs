@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin;
 using System;
-using Xunit;
 
 namespace Tests.Bitcoin
 {
@@ -14,7 +13,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void ConstructorTest()
         {
-            var counter = new SizeCounter();
+            SizeCounter counter = new();
             Assert.Equal(0, counter.Size);
         }
 
@@ -23,7 +22,7 @@ namespace Tests.Bitcoin
         [InlineData(11)]
         public void Constructor_WithInitialSizeTest(int size)
         {
-            var counter = new SizeCounter(size);
+            SizeCounter counter = new(size);
             Assert.Equal(size, counter.Size);
         }
 
@@ -36,7 +35,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void ResetTest()
         {
-            var counter = new SizeCounter();
+            SizeCounter counter = new();
             Assert.Equal(0, counter.Size);
 
             counter.Reset();
@@ -49,6 +48,18 @@ namespace Tests.Bitcoin
             Assert.Equal(0, counter.Size);
         }
 
+        [Fact]
+        public void CumulativeTest()
+        {
+            SizeCounter counter = new();
+            counter.Add(1);
+            counter.AddUInt64();
+            counter.AddByte();
+            counter.AddHash160();
+
+            Assert.Equal(30, counter.Size);
+        }
+
         [Theory]
         [InlineData(0, 0, 0)]
         [InlineData(1, 0, 1)]
@@ -56,9 +67,16 @@ namespace Tests.Bitcoin
         [InlineData(1, 5, 6)]
         public void Add_SizeTest(int init, int add, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.Add(add);
             Assert.Equal(expected, counter.Size);
+        }
+
+        [Fact]
+        public void Add_Size_ExceptionTest()
+        {
+            SizeCounter counter = new();
+            Assert.Throws<ArgumentOutOfRangeException>(() => counter.Add(-1));
         }
 
         [Theory]
@@ -76,15 +94,22 @@ namespace Tests.Bitcoin
         [InlineData(3, int.MaxValue)]
         public void AddWithStackIntLengthTest(int init, int add)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddWithStackIntLength(add);
 
-            var si = new StackInt(add);
-            var stream = new FastStream(5);
+            StackInt si = new(add);
+            FastStream stream = new(5);
             si.WriteToStream(stream);
             int expected = stream.GetSize() + add + init;
 
             Assert.Equal(expected, counter.Size);
+        }
+
+        [Fact]
+        public void AddWithStackIntLength_ExceptionTest()
+        {
+            SizeCounter counter = new();
+            Assert.Throws<ArgumentOutOfRangeException>(() => counter.AddWithStackIntLength(-1));
         }
 
         [Theory]
@@ -98,15 +123,22 @@ namespace Tests.Bitcoin
         [InlineData(3, int.MaxValue)]
         public void AddWithCompactIntLengthTest(int init, int add)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddWithCompactIntLength(add);
 
-            var ci = new CompactInt(add);
-            var stream = new FastStream(9);
+            CompactInt ci = new(add);
+            FastStream stream = new(9);
             ci.WriteToStream(stream);
             int expected = stream.GetSize() + add + init;
 
             Assert.Equal(expected, counter.Size);
+        }
+
+        [Fact]
+        public void AddWithCompactIntLength_ExceptionTest()
+        {
+            SizeCounter counter = new();
+            Assert.Throws<ArgumentOutOfRangeException>(() => counter.AddWithCompactIntLength(-1));
         }
 
         [Theory]
@@ -120,15 +152,22 @@ namespace Tests.Bitcoin
         [InlineData(3, int.MaxValue)]
         public void AddCompactIntCountTest(int init, int add)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddCompactIntCount(add);
 
-            var ci = new CompactInt(add);
-            var stream = new FastStream(9);
+            CompactInt ci = new(add);
+            FastStream stream = new(9);
             ci.WriteToStream(stream);
             int expected = stream.GetSize() + init;
 
             Assert.Equal(expected, counter.Size);
+        }
+
+        [Fact]
+        public void AddCompactIntCount_ExceptionTest()
+        {
+            SizeCounter counter = new();
+            Assert.Throws<ArgumentOutOfRangeException>(() => counter.AddCompactIntCount(-1));
         }
 
         [Theory]
@@ -136,7 +175,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 6)]
         public void AddByteTest(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddByte();
             Assert.Equal(expected, counter.Size);
         }
@@ -146,7 +185,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 7)]
         public void AddInt16Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddInt16();
             Assert.Equal(expected, counter.Size);
         }
@@ -156,7 +195,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 9)]
         public void AddInt32Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddInt32();
             Assert.Equal(expected, counter.Size);
         }
@@ -166,7 +205,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 13)]
         public void AddInt64Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddInt64();
             Assert.Equal(expected, counter.Size);
         }
@@ -176,7 +215,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 7)]
         public void AddUInt16Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddUInt16();
             Assert.Equal(expected, counter.Size);
         }
@@ -186,7 +225,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 9)]
         public void AddUInt32Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddUInt32();
             Assert.Equal(expected, counter.Size);
         }
@@ -196,7 +235,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 13)]
         public void AddUInt64Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddUInt64();
             Assert.Equal(expected, counter.Size);
         }
@@ -206,7 +245,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 25)]
         public void AddHash160Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddHash160();
             Assert.Equal(expected, counter.Size);
         }
@@ -216,7 +255,7 @@ namespace Tests.Bitcoin
         [InlineData(5, 37)]
         public void AddHash256Test(int init, int expected)
         {
-            var counter = new SizeCounter(init);
+            SizeCounter counter = new(init);
             counter.AddHash256();
             Assert.Equal(expected, counter.Size);
         }

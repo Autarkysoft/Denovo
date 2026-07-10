@@ -47,22 +47,30 @@ namespace Autarkysoft.Bitcoin
         public void Reset() => Size = 0;
 
         /// <summary>
-        /// Add the given size to this counter
+        /// Add the given size to this counter.
         /// </summary>
-        /// <param name="additionalSize">Size to add (has to be positive, won't be checked)</param>
-        public void Add(int additionalSize) => Size += additionalSize;
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="additionalSize">Size to add (has to be positive)</param>
+        public void Add(int additionalSize)
+        {
+            if (additionalSize < 0)
+                throw new ArgumentOutOfRangeException(nameof(additionalSize), "Size can not be negative.");
+
+            Size += additionalSize;
+        }
 
         /// <summary>
         /// Adds the given size with the size of its preceeding <see cref="StackInt"/> length.
         /// <para/>Useful for objects such as PushDataOp that write data to stream using <see cref="StackInt"/>
         /// ie: <see cref="StackInt"/> size + data
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="additionalSize">Size to add (has to be positive)</param>
         public void AddWithStackIntLength(int additionalSize)
         {
             if (additionalSize < 0)
             {
-                return;
+                throw new ArgumentOutOfRangeException(nameof(additionalSize), "Size can not be negative.");
             }
             if (additionalSize < (int)OP.PushData1) // StackInt is 1 Byte long: size + data
             {
@@ -76,7 +84,7 @@ namespace Autarkysoft.Bitcoin
             {
                 Size += additionalSize + 3;
             }
-            else // additionalSize <= uint.MaxValue -> StackInt is 3 Bytes long: OP_PushData2 + (uint)size + data
+            else // additionalSize <= uint.MaxValue -> StackInt is 5 Bytes long: OP_PushData2 + (uint)size + data
             {
                 Size += additionalSize + 5;
             }
@@ -87,11 +95,15 @@ namespace Autarkysoft.Bitcoin
         /// <para/>Useful for objects such as scripts that write data to stream using <see cref="CompactInt"/>
         /// ie: <see cref="CompactInt"/> size + data
         /// </summary>
-        /// <param name="additionalSize">Size to add (has to be positive, won't be checked)</param>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="additionalSize">Size to add (has to be positive)</param>
         public void AddWithCompactIntLength(int additionalSize)
         {
-            Debug.Assert(additionalSize >= 0);
-            if (additionalSize <= 252) // CompactInt is 1 Byte long
+            if (additionalSize < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(additionalSize), "Size can not be negative.");
+            }
+            else if (additionalSize <= 252) // CompactInt is 1 Byte long
             {
                 Size += additionalSize + 1;
             }
@@ -111,11 +123,15 @@ namespace Autarkysoft.Bitcoin
         /// <para/>Useful for objects such as witness that write data to stream using <see cref="CompactInt"/>
         /// ie: <see cref="CompactInt"/> count + data
         /// </summary>
-        /// <param name="count">Item count (has to be positive, won't be checked)</param>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        /// <param name="count">Item count (has to be positive)</param>
         public void AddCompactIntCount(int count)
         {
-            Debug.Assert(count >= 0);
-            if (count <= 252) // CompactInt is 1 Byte long
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Count can not be negative.");
+            }
+            else if (count <= 252) // CompactInt is 1 Byte long
             {
                 Size++;
             }
