@@ -133,9 +133,9 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         {
             Items = new byte[sigs.Length + 2][]; // OP_0 | Sig1 | sig2 | .... | sig(n) | redeemScript
             Items[0] = Array.Empty<byte>();
-            for (int i = 1; i <= sigs.Length; i++)
+            for (int i = 0; i < sigs.Length; i++)
             {
-                Items[i] = sigs[i].ToByteArray();
+                Items[i + 1] = sigs[i].ToByteArray();
             }
             Items[^1] = redeem.Data;
         }
