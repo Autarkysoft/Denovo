@@ -46,15 +46,12 @@ namespace Tests.Bitcoin.Blockchain
 
         internal void Add(in Digest256 hash, IUtxo output)
         {
-            if (database is null)
-            {
-                database = new Dictionary<Digest256, List<Utxo>>();
-            }
+            database ??= new Dictionary<Digest256, List<Utxo>>();
 
 
-            if (database.ContainsKey(hash))
+            if (database.TryGetValue(hash, out List<Utxo>? value))
             {
-                database[hash].Add(new Utxo(output.Index, output.Amount, output.PubScript));
+                value.Add(new Utxo(output.Index, output.Amount, output.PubScript));
             }
             else
             {
@@ -73,16 +70,20 @@ namespace Tests.Bitcoin.Blockchain
         public IUtxo Find(TxIn tin)
         {
             Assert.NotNull(database);
-            bool b = database.ContainsKey(tin.TxHash);
-            Assert.True(b, "Input not found in database.");
-
-            List<Utxo> ulist = database[tin.TxHash];
-            Utxo utxo = ulist.Find(x => x.Index == tin.Index);
-            if (utxo is not null)
+            if (database.TryGetValue(tin.TxHash, out List<Utxo>? ulist))
             {
-                ulist.Remove(utxo);
+                Utxo? utxo = ulist.Find(x => x.Index == tin.Index);
+                if (utxo is not null)
+                {
+                    ulist.Remove(utxo);
+                }
+                return utxo;
             }
-            return utxo;
+            else
+            {
+                Assert.Fail("Input not found in database.");
+                return null;
+            }
         }
 
 

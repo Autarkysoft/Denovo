@@ -245,13 +245,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public void Insert(byte[] data, int index)
         {
             CheckCall(FuncCallName.Insert);
-            if (insertData == null || !insertData.ContainsKey(index))
+            if (insertData != null && insertData.TryGetValue(index, out byte[]? value))
             {
-                Assert.Fail("Unexpected data was inserted in stack.");
+                Assert.Equal(value, data);
             }
             else
             {
-                Assert.Equal(insertData[index], data);
+                Assert.Fail("Unexpected data was inserted in stack.");
             }
         }
 
@@ -259,13 +259,13 @@ namespace Tests.Bitcoin.Blockchain.Scripts.Operations
         public void Insert(byte[][] data, int index)
         {
             CheckCall(FuncCallName.InsertMulti);
-            if (insertMultiData == null || !insertMultiData.ContainsKey(index))
+            if (insertMultiData != null && insertMultiData.TryGetValue(index, out byte[][]? value))
             {
-                Assert.Fail("Unexpected multiple data was inserted in stack.");
+                Assert.Equal(value, data);
             }
             else
             {
-                Assert.Equal(insertMultiData[index], data);
+                Assert.Fail("Unexpected multiple data was inserted in stack.");
             }
         }
 
