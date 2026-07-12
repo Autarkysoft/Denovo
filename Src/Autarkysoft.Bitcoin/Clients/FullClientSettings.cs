@@ -243,19 +243,15 @@ namespace Autarkysoft.Bitcoin.Clients
                 return false;
             }
 
-            var ping = new Ping();
             try
             {
+                using Ping ping = new Ping();
                 PingReply rep = ping.Send(nodeIP, TimeConstants.MilliSeconds.TenSec);
                 return rep.Status == IPStatus.Success;
             }
             catch (Exception)
             {
                 return false;
-            }
-            finally
-            {
-                ping.Dispose();
             }
         }
 
