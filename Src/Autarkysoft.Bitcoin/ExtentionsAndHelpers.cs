@@ -97,7 +97,7 @@ namespace Autarkysoft.Bitcoin
     public class ByteArrayComparer : IEqualityComparer<byte[]>
     {
         /// <inheritdoc/>
-        public bool Equals(byte[] x, byte[] y)
+        public bool Equals(byte[]? x, byte[]? y)
         {
             return x != null && y != null && ((Span<byte>)x).SequenceEqual(y);
         }
@@ -110,7 +110,7 @@ namespace Autarkysoft.Bitcoin
             int hash = 17;
             foreach (byte b in key)
             {
-                hash = (hash * 31) + b.GetHashCode();
+                hash = (hash * 31) + b;
             }
             return hash;
         }
