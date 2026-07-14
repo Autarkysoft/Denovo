@@ -173,9 +173,9 @@ namespace Autarkysoft.Bitcoin.Clients
                         {
                             byte[] result = new byte[data.Length - NetworkAddressWithTime.Size];
                             int startPos = i * NetworkAddressWithTime.Size;
-                            int EndPos = startPos + NetworkAddressWithTime.Size;
+                            int endPos = startPos + NetworkAddressWithTime.Size;
                             Buffer.BlockCopy(data, 0, result, 0, startPos);
-                            Buffer.BlockCopy(data, EndPos, result, startPos, data.Length - EndPos);
+                            Buffer.BlockCopy(data, endPos, result, startPos, data.Length - endPos);
 
                             FileMan.WriteData(result, NodeAddrs);
                             break;
