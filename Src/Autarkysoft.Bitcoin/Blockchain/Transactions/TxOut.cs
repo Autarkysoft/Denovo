@@ -38,7 +38,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Transactions
         /// <summary>
         /// Minimum size of a TxOut. Amount(8) + CompactInt(1) + Script(0)
         /// </summary>
-        internal int MinSize = sizeof(ulong) + 1;
+        internal const int MinSize = sizeof(ulong) + 1;
 
         private ulong _amount;
         /// <summary>
