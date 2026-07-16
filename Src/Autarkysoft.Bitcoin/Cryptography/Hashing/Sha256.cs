@@ -1425,42 +1425,42 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint CH(uint x, uint y, uint z)
+        private static uint CH(uint x, uint y, uint z)
         {
             // (x & y) ^ ((~x) & z);
             return z ^ (x & (y ^ z)); //TODO: find mathematical proof for this change
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint MAJ(uint x, uint y, uint z)
+        private static uint MAJ(uint x, uint y, uint z)
         {
             // (x & y) ^ (x & z) ^ (y & z);
             return (x & y) | (z & (x | y)); //TODO: find mathematical proof for this change
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint BSIG0(uint x)
+        private static uint BSIG0(uint x)
         {
             // ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22);
             return (x >> 2 | x << 30) ^ (x >> 13 | x << 19) ^ (x >> 22 | x << 10);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint BSIG1(uint x)
+        private static uint BSIG1(uint x)
         {
             // ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25);
             return (x >> 6 | x << 26) ^ (x >> 11 | x << 21) ^ (x >> 25 | x << 7);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint SSIG0(uint x)
+        private static uint SSIG0(uint x)
         {
             // ROTR(x, 7) ^ ROTR(x, 18) ^ (x >> 3);
             return (x >> 7 | x << 25) ^ (x >> 18 | x << 14) ^ (x >> 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint SSIG1(uint x)
+        private static uint SSIG1(uint x)
         {
             // ROTR(x, 17) ^ ROTR(x, 19) ^ (x >> 10);
             return (x >> 17 | x << 15) ^ (x >> 19 | x << 13) ^ (x >> 10);
