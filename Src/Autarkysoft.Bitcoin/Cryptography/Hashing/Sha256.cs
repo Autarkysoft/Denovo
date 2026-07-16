@@ -12,7 +12,7 @@ using System.Text;
 namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
     /// <summary>
-    /// Implementation of 256-bit Secure Hash Algorithm (SHA) base on RFC-6234.
+    /// Implementation of 256-bit Secure Hash Algorithm (SHA) based on RFC-6234.
     /// <para/>Implements <see cref="IDisposable"/>
     /// <para/>https://tools.ietf.org/html/rfc6234
     /// </summary>
@@ -297,7 +297,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     }
                     else
                     {
-                        throw new ArgumentException();
+                        throw new ArgumentException("TapTweak requires 1 or 2 data inputs.", nameof(data));
                     }
                 case "TapSighash":
                     if (data.Length == 1 && data[0] != null && data[0].Length > 0)
@@ -306,7 +306,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     }
                     else
                     {
-                        throw new ArgumentException();
+                        throw new ArgumentException("TapSighash requires exactly one non-empty data input.", nameof(data));
                     }
             }
             usedOptimization = false;
@@ -1055,7 +1055,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                     dataLen -= BlockByteSize;
                 }
 
-                // Copy the reamaining bytes into a blockSize length buffer so that we can loop through it easily:
+                // Copy the remaining bytes into a blockSize length buffer so that we can loop through it easily:
                 Buffer.MemoryCopy(dPt + dIndex, fPt, finalBlock.Length, dataLen);
 
                 // Append 1 bit followed by zeros. Since we only work with bytes, this is 1 whole byte
@@ -1083,7 +1083,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
                 fPt[61] = (byte)(totalLen >> 13);
                 fPt[60] = (byte)(totalLen >> 21);
                 fPt[59] = (byte)(totalLen >> 29);
-                // The remainig 3 bytes are always zero
+                // The remaining 3 bytes are always zero
                 // The remaining 56 bytes are already set
 
                 for (int i = 0, j = 0; i < 16; i++, j += 4)
