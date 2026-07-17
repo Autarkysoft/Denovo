@@ -216,7 +216,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="b">Byte to check</param>
         /// <returns>True if the byte is a push Op; otherwise false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool IsPushOp(byte b) => b >= 0 && b <= (byte)OP._16 && b != (byte)OP.Reserved;
+        protected bool IsPushOp(byte b) => /*b >= 0 &&*/ b <= (byte)OP._16 && b != (byte)OP.Reserved;
 
         /// <summary>
         /// Returns if the given byte is an OP_SuccessX OP code as defined by BIP-342
