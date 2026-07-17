@@ -4,9 +4,9 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin
 {
@@ -16,7 +16,7 @@ namespace Tests.Bitcoin
         public void ConstructorTest()
         {
             byte[] data = { 1, 2, 3 };
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             // Make sure data is NOT cloned (default behavior)
             data[0] = 255;
 
@@ -28,7 +28,7 @@ namespace Tests.Bitcoin
         public void Constructor_ClonedTest()
         {
             byte[] data = { 1, 2, 3 };
-            var stream = new FastStreamReader(data, true);
+            FastStreamReader stream = new(data, true);
             // Make sure data is copied/cloned
             data[0] = 255;
 
@@ -40,7 +40,7 @@ namespace Tests.Bitcoin
         public void Constructor_SubArrayTest()
         {
             byte[] data = { 1, 2, 3, 4, 5 };
-            var stream = new FastStreamReader(data, 1, 3);
+            FastStreamReader stream = new(data, 1, 3);
 
             Helper.ComparePrivateField(stream, "data", new byte[] { 2, 3, 4 });
             Helper.ComparePrivateField(stream, "position", 0);
@@ -58,7 +58,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void CheckRemainingTest()
         {
-            var stream = new FastStreamReader(new byte[5]);
+            FastStreamReader stream = new(new byte[5]);
             Assert.True(stream.CheckRemaining(1));
             Assert.True(stream.CheckRemaining(5));
             Assert.False(stream.CheckRemaining(6));
@@ -72,7 +72,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void GetCurrentIndexTest()
         {
-            var stream = new FastStreamReader(new byte[10]);
+            FastStreamReader stream = new(new byte[10]);
             Assert.Equal(0, stream.GetCurrentIndex());
             _ = stream.TryReadByteArray(3, out _);
             Assert.Equal(3, stream.GetCurrentIndex());
@@ -85,7 +85,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void GetRemainingBytesCountTest()
         {
-            var stream = new FastStreamReader(new byte[10]);
+            FastStreamReader stream = new(new byte[10]);
             Assert.Equal(10, stream.GetRemainingBytesCount());
             _ = stream.TryReadByteArray(2, out _);
             Assert.Equal(8, stream.GetRemainingBytesCount());
@@ -98,7 +98,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void SkipOneByteTest()
         {
-            var stream = new FastStreamReader(new byte[5]);
+            FastStreamReader stream = new(new byte[5]);
             Assert.Equal(0, stream.GetCurrentIndex());
 
             stream.SkipOneByte();
@@ -111,7 +111,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void SkipTest()
         {
-            var stream = new FastStreamReader(new byte[10]);
+            FastStreamReader stream = new(new byte[10]);
             Assert.Equal(0, stream.GetCurrentIndex());
 
             stream.Skip(0);
@@ -141,7 +141,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[2] { 0, 0 }, 3, false)]
         public void TrySkip(byte[] data, int count, bool expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool actual = stream.TrySkip(count);
             Assert.Equal(expected, actual);
         }
@@ -157,7 +157,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 2, 3 }, new byte[] { 2, 3 }, true, false)]
         public void CompareBytesTest(byte[] data, byte[] other, bool skip, bool expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             if (skip)
             {
                 stream.SkipOneByte();
@@ -174,7 +174,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 0, 1, 2, 3 }, new byte[] { 10, 20 }, false, 3)]
         public void FindAndSkipTest(byte[] data, byte[] other, bool expected, int expPos)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool actual = stream.FindAndSkip(other);
             Assert.Equal(expected, actual);
             Helper.ComparePrivateField(stream, "position", expPos);
@@ -183,7 +183,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void ReadByteArrayCheckedTest()
         {
-            var stream = new FastStreamReader(new byte[] { 1, 2, 3, 4, 5, 6 });
+            FastStreamReader stream = new(new byte[] { 1, 2, 3, 4, 5, 6 });
 
             byte[] actual = stream.ReadByteArrayChecked(0);
             byte[] expected = Array.Empty<byte>();
@@ -209,7 +209,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void ReadByteArray32CheckedTest()
         {
-            var stream = new FastStreamReader(Helper.GetBytes(35));
+            FastStreamReader stream = new(Helper.GetBytes(35));
             byte[] actual = stream.ReadByteArray32Checked();
             byte[] expected = Helper.GetBytes(32);
 
@@ -220,7 +220,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadByteArrayTest()
         {
-            var stream = new FastStreamReader(Helper.GetBytes(12));
+            FastStreamReader stream = new(Helper.GetBytes(12));
             bool b = stream.TryReadByteArray(10, out byte[] actual);
             byte[] expected = Helper.GetBytes(10);
 
@@ -232,7 +232,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadByteArray_ZeroTest()
         {
-            var stream = new FastStreamReader(Helper.GetBytes(12));
+            FastStreamReader stream = new(Helper.GetBytes(12));
             bool b = stream.TryReadByteArray(0, out byte[] actual);
             byte[] expected = Array.Empty<byte>();
 
@@ -244,7 +244,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadByteArray_FailTest()
         {
-            var stream = new FastStreamReader(new byte[9]);
+            FastStreamReader stream = new(new byte[9]);
             bool b = stream.TryReadByteArray(10, out byte[] actual);
 
             Assert.False(b);
@@ -278,7 +278,7 @@ namespace Tests.Bitcoin
         [MemberData(nameof(GetCompactReadCases))]
         public void TryReadByteArrayCompactIntTest(byte[] ba, byte[] expected)
         {
-            var stream = new FastStreamReader(ba);
+            FastStreamReader stream = new(ba);
             bool b = stream.TryReadByteArrayCompactInt(out byte[] actual);
 
             Assert.True(b);
@@ -298,7 +298,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 255, 1, 1, 1, 1, 1, 1, 1, 1 })] // Too huge
         public void TryReadByteArrayCompactInt_FailTest(byte[] ba)
         {
-            var stream = new FastStreamReader(ba);
+            FastStreamReader stream = new(ba);
             bool b = stream.TryReadByteArrayCompactInt(out byte[] actual);
 
             Assert.False(b);
@@ -316,7 +316,7 @@ namespace Tests.Bitcoin
         [InlineData(ushort.MaxValue, 3, new byte[] { 253, 255, 255 })]
         public void TryReadSmallCompactIntTest(int expected, int expPos, byte[] ba)
         {
-            var stream = new FastStreamReader(ba);
+            FastStreamReader stream = new(ba);
             bool b = stream.TryReadSmallCompactInt(out int actual);
 
             Assert.True(b);
@@ -336,7 +336,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 255, 255, 255, 255, 255, 255, 255, 255, 255 })] // same as above
         public void TryReadSmallCompactInt_FailTest(byte[] ba)
         {
-            var stream = new FastStreamReader(ba);
+            FastStreamReader stream = new(ba);
             bool b = stream.TryReadSmallCompactInt(out _);
             Assert.False(b);
         }
@@ -344,7 +344,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void ReadByteCheckedTest()
         {
-            var stream = new FastStreamReader(new byte[] { 10, 20, 30 });
+            FastStreamReader stream = new(new byte[] { 10, 20, 30 });
             Helper.ComparePrivateField(stream, "position", 0);
 
             byte b1 = stream.ReadByteChecked();
@@ -363,7 +363,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryPeekByteTest()
         {
-            var stream = new FastStreamReader(new byte[3] { 10, 20, 30 });
+            FastStreamReader stream = new(new byte[3] { 10, 20, 30 });
             bool b = stream.TryPeekByte(out byte res);
 
             Assert.True(b);
@@ -374,7 +374,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadByteTest()
         {
-            var stream = new FastStreamReader(new byte[3] { 10, 20, 30 });
+            FastStreamReader stream = new(new byte[3] { 10, 20, 30 });
             bool b = stream.TryReadByte(out byte res);
 
             Assert.True(b);
@@ -391,7 +391,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[4] { 0x00, 0x00, 0x00, 0x80 }, int.MinValue)]
         public void ReadInt32CheckedTest(byte[] data, int expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             int actual = stream.ReadInt32Checked();
 
             Assert.Equal(expected, actual);
@@ -407,7 +407,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[4] { 0x00, 0x00, 0x00, 0x80 }, int.MinValue)]
         public void TryReadInt32Test(byte[] data, int expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool b = stream.TryReadInt32(out int actual);
 
             Assert.True(b);
@@ -418,7 +418,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadInt32_FailTest()
         {
-            var stream = new FastStreamReader(new byte[3]);
+            FastStreamReader stream = new(new byte[3]);
             bool b = stream.TryReadInt32(out int _);
             Assert.False(b);
         }
@@ -432,7 +432,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 }, long.MinValue)]
         public void ReadInt64CheckedTest(byte[] data, long expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             long actual = stream.ReadInt64Checked();
 
             Assert.Equal(expected, actual);
@@ -448,7 +448,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80 }, long.MinValue)]
         public void TryReadInt64Test(byte[] data, long expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool b = stream.TryReadInt64(out long actual);
 
             Assert.True(b);
@@ -459,7 +459,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadInt64_FailTest()
         {
-            var stream = new FastStreamReader(new byte[7]);
+            FastStreamReader stream = new(new byte[7]);
             bool b = stream.TryReadInt64(out long _);
             Assert.False(b);
         }
@@ -472,7 +472,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[2] { 0xff, 0xff }, ushort.MaxValue)]
         public void ReadUInt16CheckedTest(byte[] data, ushort expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             ushort actual = stream.ReadUInt16Checked();
 
             Assert.Equal(expected, actual);
@@ -486,7 +486,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[2] { 0xff, 0xff }, ushort.MaxValue)]
         public void TryReadUInt16Test(byte[] data, ushort expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool b = stream.TryReadUInt16(out ushort actual);
 
             Assert.True(b);
@@ -497,7 +497,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadUInt16_FailTest()
         {
-            var stream = new FastStreamReader(new byte[1]);
+            FastStreamReader stream = new(new byte[1]);
             bool b = stream.TryReadUInt16(out ushort _);
             Assert.False(b);
         }
@@ -510,7 +510,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[2] { 0xff, 0xff }, ushort.MaxValue)]
         public void ReadUInt16BigEndianCheckedTest(byte[] data, ushort expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             ushort actual = stream.ReadUInt16BigEndianChecked();
 
             Assert.Equal(expected, actual);
@@ -524,7 +524,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[2] { 0xff, 0xff }, ushort.MaxValue)]
         public void TryReadUInt16BigEndianTest(byte[] data, ushort expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool b = stream.TryReadUInt16BigEndian(out ushort actual);
 
             Assert.True(b);
@@ -535,7 +535,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadUInt16BigEndian_FailTest()
         {
-            var stream = new FastStreamReader(new byte[1]);
+            FastStreamReader stream = new(new byte[1]);
             bool b = stream.TryReadUInt16BigEndian(out ushort _);
             Assert.False(b);
         }
@@ -548,7 +548,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[4] { 0xff, 0xff, 0xff, 0xff }, uint.MaxValue)]
         public void ReadUInt32CheckedTest(byte[] data, uint expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             uint actual = stream.ReadUInt32Checked();
 
             Assert.Equal(expected, actual);
@@ -562,7 +562,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[4] { 0xff, 0xff, 0xff, 0xff }, uint.MaxValue)]
         public void TryReadUInt32Test(byte[] data, uint expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool b = stream.TryReadUInt32(out uint actual);
 
             Assert.True(b);
@@ -573,7 +573,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadUInt32_FailTest()
         {
-            var stream = new FastStreamReader(new byte[3]);
+            FastStreamReader stream = new(new byte[3]);
             bool b = stream.TryReadUInt32(out uint _);
             Assert.False(b);
         }
@@ -586,7 +586,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[8] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }, ulong.MaxValue)]
         public void ReadUInt64CheckedTest(byte[] data, ulong expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             ulong actual = stream.ReadUInt64Checked();
 
             Assert.Equal(expected, actual);
@@ -600,7 +600,7 @@ namespace Tests.Bitcoin
         [InlineData(new byte[8] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }, ulong.MaxValue)]
         public void TryReadUInt64Test(byte[] data, ulong expected)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool b = stream.TryReadUInt64(out ulong actual);
 
             Assert.True(b);
@@ -611,7 +611,7 @@ namespace Tests.Bitcoin
         [Fact]
         public void TryReadUInt64_FailTest()
         {
-            var stream = new FastStreamReader(new byte[7]);
+            FastStreamReader stream = new(new byte[7]);
             bool b = stream.TryReadUInt64(out ulong _);
             Assert.False(b);
         }
@@ -629,12 +629,50 @@ namespace Tests.Bitcoin
         [InlineData(new byte[] { 131, 82, 13, 10, 255 }, true, 5377290, 4)] // 131=0b10000011
         public void TryReadDerLengthTest(byte[] data, bool success, int expected, int expPos)
         {
-            var stream = new FastStreamReader(data);
+            FastStreamReader stream = new(data);
             bool b = stream.TryReadDerLength(out int actual);
 
             Assert.Equal(success, b);
             Assert.Equal(expected, actual);
             Helper.ComparePrivateField(stream, "position", expPos);
+        }
+
+
+        public static IEnumerable<TheoryDataRow<byte[], Digest256>> GetDigest256Cases()
+        {
+            yield return new TheoryDataRow<byte[], Digest256>(new byte[32], Digest256.Zero);
+            yield return new TheoryDataRow<byte[], Digest256>(
+                new byte[32]
+                {
+                    0xa6, 0xf4, 0x56, 0x29,
+                    0xc1, 0xa5, 0xc6, 0x49,
+                    0x0b, 0x39, 0x88, 0xe1,
+                    0xe4, 0x18, 0x32, 0xc5,
+                    0xff, 0x29, 0x72, 0x98,
+                    0x9e, 0x5b, 0x96, 0xf0,
+                    0xfa, 0x9b, 0xe2, 0x84,
+                    0x5a, 0x53, 0x64, 0x3d
+                },
+                new Digest256(0x2956f4a6U, 0x49c6a5c1U, 0xe188390bU, 0xc53218e4U, 0x987229ffU, 0xf0965b9eU, 0x84e29bfaU, 0x3d64535aU));
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDigest256Cases))]
+        public void ReadDigest256CheckedTest(byte[] data, Digest256 expected)
+        {
+            FastStreamReader stream = new(data);
+            Digest256 actual = stream.ReadDigest256Checked();
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDigest256Cases))]
+        public void TryReadDigest256Test(byte[] data, Digest256 expected)
+        {
+            FastStreamReader stream = new(data);
+            bool b = stream.TryReadDigest256(out Digest256 actual);
+            Assert.True(b);
+            Assert.Equal(expected, actual);
         }
     }
 }
