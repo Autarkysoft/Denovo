@@ -179,14 +179,14 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             opCount = 0;
             if (Data.Length == 0)
             {
-                result = new IOperation[0];
+                result = Array.Empty<IOperation>();
                 error = Errors.None;
                 return true;
             }
             else if ((mode == ScriptEvalMode.Legacy || mode == ScriptEvalMode.WitnessV0) &&
                      Data.Length > Constants.MaxScriptLength)
             {
-                result = new IOperation[0];
+                result = Array.Empty<IOperation>();
                 error = Errors.ScriptOverflow;
                 return false;
             }
@@ -231,7 +231,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
             (b >= 187 && b <= 254);
 
         /// <summary>
-        /// Reads a single <see cref="IOperation"/> from the given the given stream and adds the result to the given list.
+        /// Reads a single <see cref="IOperation"/> from the given stream and adds the result to the given list.
         /// Return value indicates success.
         /// </summary>
         /// <param name="mode">Script evaluation mode</param>
@@ -239,7 +239,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
         /// <param name="opList">The list to add the result to</param>
         /// <param name="opCount">Number of OPs in the script being read</param>
         /// <param name="opPosition">Position of current OP code (used in CodeSeparatorOp only for Taproot scripts)</param>
-        /// <param name="error">Error message (null if sucessful, otherwise contains information about the failure).</param>
+        /// <param name="error">Error message (null if successful, otherwise contains information about the failure).</param>
         /// <returns>True if reading was successful, false if otherwise.</returns>
         protected bool TryRead(ScriptEvalMode mode, FastStreamReader stream, List<IOperation> opList,
                                ref int opCount, ref uint opPosition, out Errors error)
@@ -397,7 +397,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
 
                             if (currentB != (byte)OP.EndIf)
                             {
-                                error = Errors.MissingOpEndIf; ;
+                                error = Errors.MissingOpEndIf;
                                 return false;
                             }
                             opPosition++; // +1 for OP_EndIf
