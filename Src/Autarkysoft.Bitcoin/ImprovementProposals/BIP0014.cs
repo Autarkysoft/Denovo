@@ -29,7 +29,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         /// [Default value = null]
         /// Additioanl comment (it is best to separate each piece of information with a semicolon).
         /// </param>
-        public BIP0014(string name, Version ver, string comment = null)
+        public BIP0014(string name, Version ver, string? comment = null)
         {
             ClientName = name;
             ClientVersion = ver;
@@ -44,7 +44,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
         public const string ReservedChars = "/:()";
         private const byte Separator = (byte)'/';
 
-        private string _name;
+        private string _name = string.Empty;
         /// <summary>
         /// Name of the client (it can not be null or empty or contain any of the <see cref="ReservedChars"/>)
         /// </summary>
@@ -64,7 +64,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             }
         }
 
-        private Version _ver;
+        private Version _ver = new Version(0, 0);
         /// <summary>
         /// Version of the client (if set to null, verion 0.0 is used instead)
         /// </summary>
@@ -74,12 +74,12 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
             set => _ver = value ?? new Version(0, 0);
         }
 
-        private string _cmt;
+        private string? _cmt;
         /// <summary>
         /// Additional optional comments
         /// </summary>
         /// <exception cref="FormatException"/>
-        public string Comment
+        public string? Comment
         {
             get => _cmt;
             set
@@ -138,7 +138,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 return false;
             }
 
-            string[] parts = bip14EncodedString.Split(new char[] { (char)Separator }, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = bip14EncodedString.Split((char)Separator, StringSplitOptions.RemoveEmptyEntries);
 
             result = new BIP0014[parts.Length];
             for (int i = 0; i < parts.Length; i++)
@@ -170,7 +170,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 string ver = (cmtStart != -1) ?
                     parts[i].Substring(sepIndex + 1, cmtStart - sepIndex - 1) :
                     parts[i].Substring(sepIndex + 1);
-                string comment = (cmtStart != -1) ?
+                string? comment = (cmtStart != -1) ?
                     parts[i].Substring(cmtStart + 1, cmtEnd - cmtStart - 1) :
                     null;
 
