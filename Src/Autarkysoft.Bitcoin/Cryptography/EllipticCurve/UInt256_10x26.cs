@@ -2008,7 +2008,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <remarks>
         /// This method is constant time.
         /// Magnitude of this instance should be at most 1.
-        /// Magnitude of b should be at most 31.
+        /// Magnitude of b should be at most 30.
         /// </remarks>
         /// <param name="b">Other <see cref="UInt256_10x26"/> to compare to (magnitude of at most 31)</param>
         /// <returns>True if the two instances are equal; otherwise false.</returns>
@@ -2018,7 +2018,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Verify();
             b.Verify();
             VerifyMagnitude(magnitude, 1);
-            VerifyMagnitude(b.magnitude, 31);
+            VerifyMagnitude(b.magnitude, 30);
 #endif
             UInt256_10x26 na = Negate(1);
             na += b;
