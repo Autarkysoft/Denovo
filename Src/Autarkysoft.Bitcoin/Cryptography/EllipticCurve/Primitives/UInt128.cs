@@ -82,6 +82,44 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
         }
 
         /// <summary>
+        /// Shifts a value left by a given amount.
+        /// </summary>
+        /// <param name="value">The value that is shifted left by <paramref name="shiftAmount"/>.</param>
+        /// <param name="shiftAmount">The amount by which <paramref name="value"/> is shifted left.</param>
+        /// <returns>The result of shifting value left by <paramref name="shiftAmount"/>.</returns>
+        public static UInt128 operator <<(UInt128 value, int shiftAmount)
+        {
+            // C# automatically masks the shift amount for UInt64 to be 0x3F. So we
+            // need to specially handle things if the 7th bit is set.
+
+            shiftAmount &= 0x7F;
+
+            if ((shiftAmount & 0x40) != 0)
+            {
+                // In the case it is set, we know the entire lower bits must be zero
+                // and so the upper bits are just the lower shifted by the remaining
+                // masked amount
+
+                ulong upper = value.lower << shiftAmount;
+                return new UInt128(upper, 0);
+            }
+            else if (shiftAmount != 0)
+            {
+                // Otherwise we need to shift both upper and lower halves by the masked
+                // amount and then or that with whatever bits were shifted "out" of lower
+
+                ulong lower = value.lower << shiftAmount;
+                ulong upper = (value.upper << shiftAmount) | (value.lower >> (64 - shiftAmount));
+
+                return new UInt128(upper, lower);
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        /// <summary>
         /// Shifts a value right by a given amount.
         /// </summary>
         /// <param name="value">The value that is shifted right by <paramref name="shiftAmount"/>.</param>
@@ -149,6 +187,20 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
         /// <returns>The ones-complement of value.</returns>
         public static UInt128 operator ~(UInt128 value) => new UInt128(~value.upper, ~value.lower);
 
+        /// <summary>Explicitly converts a 128-bit unsigned integer to a <see cref="int" /> value.</summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns><paramref name="value" /> converted to a <see cref="int" />.</returns>
+        public static explicit operator int(UInt128 value) => (int)value.lower;
+
+        /// <summary>Explicitly converts a <see cref="int" /> value to a 128-bit unsigned integer.</summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns><paramref name="value" /> converted to a 128-bit unsigned integer.</returns>
+        public static explicit operator UInt128(int value)
+        {
+            long lower = value;
+            return new UInt128((ulong)(lower >> 63), (ulong)lower);
+        }
+
         /// <summary>
         /// Explicitly converts a 128-bit unsigned integer to a <see cref="ulong" /> value.
         /// </summary>
@@ -162,6 +214,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
         /// <param name="value">The value to convert.</param>
         /// <returns><paramref name="value" /> converted to a 128-bit unsigned integer.</returns>
         public static implicit operator UInt128(ulong value) => new UInt128(0, value);
+
+        /// <summary>
+        /// Explicitly converts a 128-bit unsigned integer to a <see cref="Int128" /> value.
+        /// </summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns><paramref name="value" /> converted to a <see cref="Int128" />.</returns>
+        public static explicit operator Int128(UInt128 value) => new Int128(value.upper, value.lower);
 
         /// <summary>
         /// Compares two values to determine equality.
