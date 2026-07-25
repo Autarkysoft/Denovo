@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.7.12002.237 oobstable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Denovo", "Denovo\Denovo.csproj", "{43D7E8F4-A634-438B-9FBC-E027807920B4}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{1DDA5FD6-3892-4056-9B3F-BD51C97318F1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{E25A03F5-AA96-46BE-88F1-0EF84B57CCBF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenovoTests", "DenovoTests\DenovoTests.csproj", "{73949D98-F132-46DF-80A8-EBCD9B8DD857}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{E25A03F5-AA96-46BE-88F1-0EF84B57CCBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E25A03F5-AA96-46BE-88F1-0EF84B57CCBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E25A03F5-AA96-46BE-88F1-0EF84B57CCBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73949D98-F132-46DF-80A8-EBCD9B8DD857}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73949D98-F132-46DF-80A8-EBCD9B8DD857}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73949D98-F132-46DF-80A8-EBCD9B8DD857}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73949D98-F132-46DF-80A8-EBCD9B8DD857}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

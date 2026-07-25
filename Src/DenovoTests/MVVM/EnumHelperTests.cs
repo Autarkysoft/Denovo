@@ -5,13 +5,10 @@
 
 using Denovo.Models;
 using Denovo.MVVM;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using Xunit;
 
-namespace Tests.Denovo.MVVM
+namespace DenovoTests.MVVM
 {
     public class EnumHelperTests
     {

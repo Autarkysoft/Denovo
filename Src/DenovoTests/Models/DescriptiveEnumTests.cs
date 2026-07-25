@@ -5,9 +5,8 @@
 
 using Denovo.Models;
 using System.ComponentModel;
-using Xunit;
 
-namespace Tests.Denovo.Models
+namespace DenovoTests.Models
 {
     public class DescriptiveEnumTests
     {

@@ -76,7 +76,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Autarkysoft.Bitcoin\Autarkysoft.Bitcoin.csproj" />
-    <ProjectReference Include="..\Denovo\Denovo.csproj" />
   </ItemGroup>
 
 </Project>
