@@ -134,10 +134,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given 32-byte big-endian array.
+        /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given 32-byte big-endian array,
+        /// checking for overflow.
         /// </summary>
+        /// <remarks>
+        /// If <paramref name="ba32"/> is &lt; P, the instance is normalized with magnitude 1;
+        /// otherwise if <paramref name="ba32"/> is &gt;= P, the instance will be made invalid
+        /// (and must not be used without overwriting)
+        /// </remarks>
         /// <param name="ba32">32-byte array</param>
-        /// <param name="isValid"></param>
+        /// <param name="isValid">Returns if it didn't overflow and if the instance is valid (can be used)</param>
         public UInt256_10x26(ReadOnlySpan<byte> ba32, out bool isValid)
         {
             // This is the same as secp256k1_fe_impl_set_b32_limit
@@ -176,7 +182,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #endif
         }
 
-
+        /// <summary>
+        /// Initializes a new instance of <see cref="UInt256_10x26"/> using the given 32-byte big-endian array
+        /// interpreted modulo p.
+        /// </summary>
+        /// <remarks>
+        /// The instance will be <paramref name="ba32"/> (mod p). It will have magnitude 1, and not be normalized.
+        /// </remarks>
+        /// <param name="ba32">32-byte array</param>
         public UInt256_10x26(ReadOnlySpan<byte> ba32)
         {
             // This is the same as secp256k1_fe_impl_set_b32_mod
