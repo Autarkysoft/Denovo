@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.ModInv;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -1094,42 +1095,42 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
         }
 
 
-//        /// <summary>
-//        /// Determine whether this is a square (modulo p).
-//        /// </summary>
-//        /// <returns></returns>
-//        public bool IsSquareVar()
-//        {
-//#if DEBUG
-//            Verify();
-//#endif
-//            bool ret;
-//            UInt256_5x52 tmp = NormalizeVar();
-//            // secp256k1_jacobi64_maybe_var cannot deal with input 0.
-//            if (tmp.IsZero)
-//            {
-//                ret = true;
-//            }
+        /// <summary>
+        /// Determine whether this is a square (modulo p).
+        /// </summary>
+        /// <returns></returns>
+        public bool IsSquareVar()
+        {
+#if DEBUG
+            Verify();
+#endif
+            bool ret;
+            UInt256_5x52 tmp = NormalizeVar();
+            // secp256k1_jacobi64_maybe_var cannot deal with input 0.
+            if (tmp.IsZero)
+            {
+                ret = true;
+            }
 
-//            ModInv64Signed62 s = new ModInv64Signed62(tmp);
-//            int jac = ModInv64.Jacobi64MaybeVar(s, ModInv64ModInfo.FeConstant);
-//            if (jac == 0)
-//            {
-//                // secp256k1_jacobi64_maybe_var failed to compute the Jacobi symbol. Fall back
-//                // to computing a square root. This should be extremely rare with random
-//                // input (except in VERIFY mode, where a lower iteration count is used).
-//                ret = Sqrt(out _);
-//            }
-//            else
-//            {
-//                ret = jac >= 0;
-//            }
-//#if DEBUG
-//            tmp = NormalizeWeak();
-//            Debug.Assert(ret == tmp.Sqrt(out _));
-//#endif
-//            return ret;
-//        }
+            ModInv64Signed62 s = new ModInv64Signed62(tmp);
+            int jac = ModInv64.Jacobi64MaybeVar(s, ModInv64ModInfo.FeConstant);
+            if (jac == 0)
+            {
+                // secp256k1_jacobi64_maybe_var failed to compute the Jacobi symbol. Fall back
+                // to computing a square root. This should be extremely rare with random
+                // input (except in VERIFY mode, where a lower iteration count is used).
+                ret = Sqrt(out _);
+            }
+            else
+            {
+                ret = jac >= 0;
+            }
+#if DEBUG
+            tmp = NormalizeWeak();
+            Debug.Assert(ret == tmp.Sqrt(out _));
+#endif
+            return ret;
+        }
 
 
         /// <summary>
@@ -1373,51 +1374,51 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
         }
 
 
-//        /// <summary>
-//        /// Compute the modular inverse of this field element.
-//        /// </summary>
-//        /// <returns>Modular inverse (normalized)</returns>
-//        public UInt256_5x52 Inverse()
-//        {
-//#if DEBUG
-//            bool input_is_zero = IsZeroNormalized();
-//            Verify();
-//#endif
-//            UInt256_5x52 tmp = Normalize();
-//            ModInv64Signed62 s = new ModInv64Signed62(tmp);
-//            ModInv64.Compute(ref s, ModInv64ModInfo.FeConstant);
-//            UInt256_5x52 r = s.ToUInt256_5x52();
-//#if DEBUG
-//            Debug.Assert(r.IsZeroNormalized() == input_is_zero);
-//            r.Verify();
-//#endif
+        /// <summary>
+        /// Compute the modular inverse of this field element.
+        /// </summary>
+        /// <returns>Modular inverse (normalized)</returns>
+        public UInt256_5x52 Inverse()
+        {
+#if DEBUG
+            bool input_is_zero = IsZeroNormalized();
+            Verify();
+#endif
+            UInt256_5x52 tmp = Normalize();
+            ModInv64Signed62 s = new ModInv64Signed62(tmp);
+            ModInv64.Compute(ref s, ModInv64ModInfo.FeConstant);
+            UInt256_5x52 r = s.ToUInt256_5x52();
+#if DEBUG
+            Debug.Assert(r.IsZeroNormalized() == input_is_zero);
+            r.Verify();
+#endif
 
-//            return r;
-//        }
+            return r;
+        }
 
 
-//        /// <summary>
-//        /// Compute the modular inverse of this field element, without constant-time guarantee.
-//        /// </summary>
-//        /// <returns>Modular inverse (normalized)</returns>
-//        public UInt256_5x52 InverseVar()
-//        {
-//#if DEBUG
-//            bool input_is_zero = IsZeroNormalized();
-//            Verify();
-//#endif
+        /// <summary>
+        /// Compute the modular inverse of this field element, without constant-time guarantee.
+        /// </summary>
+        /// <returns>Modular inverse (normalized)</returns>
+        public UInt256_5x52 InverseVar()
+        {
+#if DEBUG
+            bool input_is_zero = IsZeroNormalized();
+            Verify();
+#endif
 
-//            UInt256_5x52 tmp = NormalizeVar();
-//            ModInv64Signed62 s = new ModInv64Signed62(tmp);
-//            ModInv64.ComputeVar(ref s, ModInv64ModInfo.FeConstant);
-//            UInt256_5x52 r = s.ToUInt256_5x52();
+            UInt256_5x52 tmp = NormalizeVar();
+            ModInv64Signed62 s = new ModInv64Signed62(tmp);
+            ModInv64.ComputeVar(ref s, ModInv64ModInfo.FeConstant);
+            UInt256_5x52 r = s.ToUInt256_5x52();
 
-//#if DEBUG
-//            Debug.Assert(r.IsZeroNormalized() == input_is_zero);
-//            r.Verify();
-//#endif
-//            return r;
-//        }
+#if DEBUG
+            Debug.Assert(r.IsZeroNormalized() == input_is_zero);
+            r.Verify();
+#endif
+            return r;
+        }
 
 
         /// <summary>
