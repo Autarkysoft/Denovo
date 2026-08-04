@@ -24,7 +24,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public Scalar8x32(uint u)
         {
             b0 = u;
-            b1 = 0; b1 = 0; b2 = 0; b3 = 0; b4 = 0; b5 = 0; b6 = 0; b7 = 0;
+            b1 = 0; b2 = 0; b3 = 0; b4 = 0; b5 = 0; b6 = 0; b7 = 0;
             Debug.Assert(Verify());
         }
 
@@ -536,7 +536,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// Access bits (1 &#60; <paramref name="count"/> &#60;= 32) from a scalar.
+        /// Access bits (1 &#60;= <paramref name="count"/> &#60;= 32) from a scalar.
         /// All requested bits must belong to the same 32-bit limb.
         /// </summary>
         /// <param name="pt"></param>
@@ -547,14 +547,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             Debug.Assert(GetOverflow(pt) == 0);
             Debug.Assert(count > 0 && count <= 32);
+            Debug.Assert(offset <= 256 - count);
             Debug.Assert((offset + count - 1) >> 5 == offset >> 5);
 
             return (pt[offset >> 5] >> (offset & 0x1F)) & (0xFFFFFFFF >> (32 - count));
         }
 
         /// <summary>
-        /// Access bits (1 &#60; <paramref name="count"/> &#60;= 32) from a scalar.
-        /// <paramref name="offset"/> + <paramref name="count"/> must be &#60; 256.
+        /// Access bits (1 &#60;= <paramref name="count"/> &#60;= 32) from a scalar.
+        /// <paramref name="offset"/> + <paramref name="count"/> must be &#60;= 256.
         /// Not constant time in offset and count.
         /// </summary>
         /// <param name="pt"></param>
@@ -565,7 +566,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             Debug.Assert(GetOverflow(pt) == 0);
             Debug.Assert(count > 0 && count <= 32);
-            Debug.Assert(offset + count <= 256);
+            Debug.Assert(offset <= 256 - count);
 
             if ((offset + count - 1) >> 5 == offset >> 5)
             {
