@@ -471,7 +471,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.True(Scalar8x32.Lambda.Equals(actual));
         }
 
-        private const int Count = 16;
+        private const int COUNT = 16;
 
         /// <summary>
         /// testutil_random_scalar_order_test
@@ -514,6 +514,77 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         {
             Scalar8x32 num = RandomScalarOrder(rng);
             return num.ToByteArray();
+        }
+
+
+        internal static int Libsecp256k1_MemCmpVar(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
+        {
+            Assert.Equal(a.Length, b.Length);
+            for (int i = 0; i < a.Length; i++)
+            {
+                int diff = a[i] - b[i];
+                if (diff != 0)
+                {
+                    return diff;
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// test_scalar_check_overflow(void)
+        /// </summary>
+        private static void Libsecp256k1_ScalarCheckOverflowTest(TestRNG rng)
+        {
+            Scalar8x32 n_minus_1 = SECP256K1_SCALAR_CONST(
+                0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFEU,
+                0xBAAEDCE6U, 0xAF48A03BU, 0xBFD25E8CU, 0xD0364140U
+            );
+            Scalar8x32 n = SECP256K1_SCALAR_CONST(
+                0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFEU,
+                0xBAAEDCE6U, 0xAF48A03BU, 0xBFD25E8CU, 0xD0364141U
+            );
+            Scalar8x32 n_plus_1 = SECP256K1_SCALAR_CONST(
+                0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFEU,
+                0xBAAEDCE6U, 0xAF48A03BU, 0xBFD25E8CU, 0xD0364142U
+            );
+            Scalar8x32 max = SECP256K1_SCALAR_CONST(
+                0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
+                0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU
+            );
+
+            Scalar8x32 s = new(0);
+            Assert.Equal(0U, s.GetOverflow());
+            Assert.Equal(0U, n_minus_1.GetOverflow());
+            Assert.Equal(1U, n.GetOverflow());
+            Assert.Equal(1U, n_plus_1.GetOverflow());
+            Assert.Equal(1U, max.GetOverflow());
+
+            for (int i = 0; i < 2 * COUNT; i++)
+            {
+                byte[] b32 = new byte[32];
+
+                rng.Rand256(b32);
+
+                // Force top bits to be 0xFF sometimes to ensure we hit overflows
+                if (i % 2 == 0)
+                {
+                    Array.Fill(b32, (byte)0xFF, 0, 16);
+                }
+
+                ReadOnlySpan<byte> secp256k1_group_order_bytes = new byte[32]
+                {
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+                    0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
+                    0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41
+                };
+
+                bool expected_overflow = Libsecp256k1_MemCmpVar(b32, secp256k1_group_order_bytes) >= 0;
+
+                s = new(b32, out bool overflow);
+                Assert.Equal(expected_overflow, overflow);
+            }
         }
 
         // scalar_test(void)
@@ -692,12 +763,14 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             TestRNG rng = new();
             rng.Init(null);
 
-            for (int i = 0; i < 128 * Count; i++)
+            Libsecp256k1_ScalarCheckOverflowTest(rng);
+
+            for (int i = 0; i < 128 * COUNT; i++)
             {
                 ScalarTest(rng);
             }
 
-            for (int i = 0; i < Count; i++)
+            for (int i = 0; i < COUNT; i++)
             {
                 SetB32SeckeyTests(rng);
             }
@@ -1840,7 +1913,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             // test 128*count random inputs; half with testrand256_test, half with testrand256 */
             for (int testrand = 0; testrand <= 1; ++testrand)
             {
-                for (int i = 0; i < 64 * Count; ++i)
+                for (int i = 0; i < 64 * COUNT; ++i)
                 {
                     if (testrand == 0)
                     {
