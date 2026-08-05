@@ -90,7 +90,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             b7 = hPt[0]; b6 = hPt[1]; b5 = hPt[2]; b4 = hPt[3];
             b3 = hPt[4]; b2 = hPt[5]; b1 = hPt[6]; b0 = hPt[7];
-            overflow = CheckOverflow() != 0;
+            overflow = GetOverflow() != 0;
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             b3 = (uint)(hPt[2] >> 32); b2 = (uint)hPt[2];
             b1 = (uint)(hPt[3] >> 32); b0 = (uint)hPt[3];
 
-            overflow = CheckOverflow() != 0;
+            overflow = GetOverflow() != 0;
         }
 
         /// <summary>
@@ -373,10 +373,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         public bool Verify()
         {
-            return CheckOverflow() == 0;
+            return GetOverflow() == 0;
         }
 
-        private uint CheckOverflow()
+        public uint GetOverflow()
         {
             uint yes = 0U;
             uint no = 0U;
