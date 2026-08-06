@@ -41,6 +41,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         //   than the number of bits in the (absolute value) of the input.
         private static unsafe int EcmultWnaf(int[] wnaf, int len, in Scalar8x32 a, in int w)
         {
+            // TODO: int[] wnaf was converted to a sbyte[] in original implementation. Should we do that? it reduces memory usage.
             int lastSetBit = -1;
             int bit = 0;
             int sign = 1;

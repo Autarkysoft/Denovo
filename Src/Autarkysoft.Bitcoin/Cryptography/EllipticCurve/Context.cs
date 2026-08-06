@@ -130,7 +130,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                     //    (https://cryptojedi.org/peter/data/chesrump-20130822.pdf) and
                     //   "Cache Attacks and Countermeasures: the Case of AES", RSA 2006,
                     //    by Dag Arne Osvik, Adi Shamir, and Eran Tromer
-                    //    (https://www.tau.ac.il/~tromer/papers/cache.pdf)
+                    //    (https://eprint.iacr.org/2005/271.pdf)
                     adds = PointStorage.CMov(adds, PrecTable[i][j], j == n_i ? 1U : 0);
                 }
                 Point add = adds.ToPoint();
