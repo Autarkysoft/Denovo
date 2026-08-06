@@ -1080,6 +1080,27 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
 
+        /// <summary>
+        /// run_fe_equal_magnitude_boundaries
+        /// </summary>
+        [Fact]
+        public void Libsecp256k1_EqualMagnitudeBoundariesTest()
+        {
+            TestRNG rng = new();
+            rng.RunXoshiro256ppTests();
+            rng.Init(null);
+
+            UInt256_10x26 a, b;
+            for (int i = 0; i < 100 * COUNT; ++i)
+            {
+                a = RandomFE(rng);
+                b = a;
+                RandomFEMagnitude(ref a, 1, rng);
+                RandomFEMagnitude(ref b, 30, rng);
+                Assert.True(a.Equals(b));
+            }
+        }
+
         [Fact]
         public void Libsecp256k1_FieldMiscTest()
         {
@@ -1353,10 +1374,15 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        private static readonly UInt256_10x26 _m1 = new(0xFFFFFC2E, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF);
+        private static readonly UInt256_10x26 _m1 = SECP256K1_FE_CONST(
+            0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+            0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2E);
         internal static ref readonly UInt256_10x26 Minus_One => ref _m1;
 
 
+        /// <summary>
+        /// test_inverse_field
+        /// </summary>
         // These tests test the following identities:
         //
         // for x==0: 1/x == 0
@@ -1635,12 +1661,13 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             };
         }
 
+        /// <summary>
+        /// run_inverse_tests
+        /// </summary>
         [Theory]
         [MemberData(nameof(GetInvCases))]
         public void Libsecp256k1_InverseTest(in UInt256_10x26 a, in UInt256_10x26 b)
         {
-            // run_inverse_tests
-
             // Test fixed test cases through test_inverse_{scalar,field}, both ways.
             for (int useVar = 0; useVar <= 1; useVar++)
             {
@@ -1651,12 +1678,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
-
+        /// <summary>
+        /// run_inverse_tests
+        /// </summary>
         [Fact]
         public void Libsecp256k1_InverseRandomTest()
         {
-            // run_inverse_tests
-
             UInt256_10x26 x_fe;
             // Test inputs 0..999 and their respective negations.
             byte[] b32 = new byte[32];
