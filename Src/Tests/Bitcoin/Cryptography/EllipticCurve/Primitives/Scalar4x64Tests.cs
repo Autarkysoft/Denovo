@@ -595,10 +595,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
             // Note: Static test vectors is turned into Libsecp256k1_StaticVectorsTest()
         }
 
-        public static IEnumerable<Scalar4x64[]> GetLibsecp256k1_HalfCases()
+        public static IEnumerable<TheoryDataRow<Scalar4x64>> GetLibsecp256k1_HalfCases()
         {
             // Test that halving and doubling roundtrips on some fixed values.
-            yield return new Scalar4x64[]
+            Scalar4x64[] casses = new Scalar4x64[]
             {
                 /* 0 */
                 SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0),
@@ -617,6 +617,11 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
                 /* 2^255 - 1 */
                 SECP256K1_SCALAR_CONST(0x7fffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu, 0xffffffffu),
             };
+
+            foreach (var item in casses)
+            {
+                yield return item;
+            }
         }
         /// <summary>
         /// Extracted from run_scalar_tests
@@ -1683,203 +1688,203 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
             Assert.True(l.IsZero);                          // l == 0
         }
 
-        public static IEnumerable<Scalar4x64[]> GetInvCases()
+        public static IEnumerable<TheoryDataRow<Scalar4x64, Scalar4x64>> GetInvCases()
         {
             // Fixed test cases for scalar inverses: pairs of (x, 1/x) mod n.
-            yield return new Scalar4x64[]
-            {
+            yield return new
+            (
                 // 0 
                 SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0),
                 SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // 1 
                 SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 1),
                 SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 1)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // -1 
                 SECP256K1_SCALAR_CONST(0xffffffff, 0xffffffff, 0xffffffff, 0xfffffffe, 0xbaaedce6, 0xaf48a03b, 0xbfd25e8c, 0xd0364140),
                 SECP256K1_SCALAR_CONST(0xffffffff, 0xffffffff, 0xffffffff, 0xfffffffe, 0xbaaedce6, 0xaf48a03b, 0xbfd25e8c, 0xd0364140)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // 2 
                 SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 2),
                 SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x5d576e73, 0x57a4501d, 0xdfe92f46, 0x681b20a1)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // 2**128 
                 SECP256K1_SCALAR_CONST(0, 0, 0, 1, 0, 0, 0, 0),
                 SECP256K1_SCALAR_CONST(0x50a51ac8, 0x34b9ec24, 0x4b0dff66, 0x5588b13e, 0x9984d5b3, 0xcf80ef0f, 0xd6a23766, 0xa3ee9f22)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // Input known to need 635 divsteps 
                 SECP256K1_SCALAR_CONST(0xcb9f1d35, 0xdd4416c2, 0xcd71bf3f, 0x6365da66, 0x3c9b3376, 0x8feb7ae9, 0x32a5ef60, 0x19199ec3),
                 SECP256K1_SCALAR_CONST(0x1d7c7bba, 0xf1893d53, 0xb834bd09, 0x36b411dc, 0x42c2e42f, 0xec72c428, 0x5e189791, 0x8e9bc708)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // Input known to need 566 divsteps starting with delta=1/2. 
                 SECP256K1_SCALAR_CONST(0x7e3c993d, 0xa4272488, 0xbc015b49, 0x2db54174, 0xd382083a, 0xebe6db35, 0x80f82eff, 0xcd132c72),
                 SECP256K1_SCALAR_CONST(0x086f34a0, 0x3e631f76, 0x77418f28, 0xcc84ac95, 0x6304439d, 0x365db268, 0x312c6ded, 0xd0b934f8)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // Input known to need 565 divsteps starting with delta=1/2. 
                 SECP256K1_SCALAR_CONST(0xbad7e587, 0x3f307859, 0x60d93147, 0x8a18491e, 0xb38a9fd5, 0x254350d3, 0x4b1f0e4b, 0x7dd6edc4),
                 SECP256K1_SCALAR_CONST(0x89f2df26, 0x39e2b041, 0xf19bd876, 0xd039c8ac, 0xc2223add, 0x29c4943e, 0x6632d908, 0x515f467b)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 // Selection of randomly generated inputs that reach low/high d/e values in various configurations. 
                 SECP256K1_SCALAR_CONST(0x1950d757, 0xb37a5809, 0x435059bb, 0x0bb8997e, 0x07e1e3c8, 0x5e5d7d2c, 0x6a0ed8e3, 0xdbde180e),
                 SECP256K1_SCALAR_CONST(0xbf72af9b, 0x750309e2, 0x8dda230b, 0xfe432b93, 0x7e25e475, 0x4388251e, 0x633d894b, 0x3bcb6f8c)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x9bccf4e7, 0xc5a515e3, 0x50637aa9, 0xbb65a13f, 0x391749a1, 0x62de7d4e, 0xf6d7eabb, 0x3cd10ce0),
                 SECP256K1_SCALAR_CONST(0xaf2d5623, 0xb6385a33, 0xcd0365be, 0x5e92a70d, 0x7f09179c, 0x3baaf30f, 0x8f9cc83b, 0x20092f67)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x73a57111, 0xb242952a, 0x5c5dee59, 0xf3be2ace, 0xa30a7659, 0xa46e5f47, 0xd21267b1, 0x39e642c9),
                 SECP256K1_SCALAR_CONST(0xa711df07, 0xcbcf13ef, 0xd61cc6be, 0xbcd058ce, 0xb02cf157, 0x272d4a18, 0x86d0feb3, 0xcd5fa004)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x04884963, 0xce0580b1, 0xba547030, 0x3c691db3, 0x9cd2c84f, 0x24c7cebd, 0x97ebfdba, 0x3e785ec2),
                 SECP256K1_SCALAR_CONST(0xaaaaaf14, 0xd7c99ba7, 0x517ce2c1, 0x78a28b4c, 0x3769a851, 0xe5c5a03d, 0x4cc28f33, 0x0ec4dc5d)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x1679ed49, 0x21f537b1, 0x815cb8ae, 0x9efc511c, 0x5b9fa037, 0x0b0f275e, 0x6c985281, 0x6c4a9905),
                 SECP256K1_SCALAR_CONST(0xb14ac3d5, 0x62b52999, 0xef34ead1, 0xffca4998, 0x0294341a, 0x1f8172aa, 0xea1624f9, 0x302eea62)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x626b37c0, 0xf0057c35, 0xee982f83, 0x452a1fd3, 0xea826506, 0x48b08a9d, 0x1d2c4799, 0x4ad5f6ec),
                 SECP256K1_SCALAR_CONST(0xe38643b7, 0x567bfc2f, 0x5d2f1c15, 0xe327239c, 0x07112443, 0x69509283, 0xfd98e77a, 0xdb71c1e8)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x1850a3a7, 0x759efc56, 0x54f287b2, 0x14d1234b, 0xe263bbc9, 0xcf4d8927, 0xd5f85f27, 0x965bd816),
                 SECP256K1_SCALAR_CONST(0x3b071831, 0xcac9619a, 0xcceb0596, 0xf614d63b, 0x95d0db2f, 0xc6a00901, 0x8eaa2621, 0xabfa0009)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x94ae5d06, 0xa27dc400, 0x487d72be, 0xaa51ebed, 0xe475b5c0, 0xea675ffc, 0xf4df627a, 0xdca4222f),
                 SECP256K1_SCALAR_CONST(0x01b412ed, 0xd7830956, 0x1532537e, 0xe5e3dc99, 0x8fd3930a, 0x54f8d067, 0x32ef5760, 0x594438a5)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x1f24278a, 0xb5bfe374, 0xa328dbbc, 0xebe35f48, 0x6620e009, 0xd58bb1b4, 0xb5a6bf84, 0x8815f63a),
                 SECP256K1_SCALAR_CONST(0xfe928416, 0xca5ba2d3, 0xfde513da, 0x903a60c7, 0x9e58ad8a, 0x8783bee4, 0x083a3843, 0xa608c914)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xdc107d58, 0x274f6330, 0x67dba8bc, 0x26093111, 0x5201dfb8, 0x968ce3f5, 0xf34d1bd4, 0xf2146504),
                 SECP256K1_SCALAR_CONST(0x660cfa90, 0x13c3d93e, 0x7023b1e5, 0xedd09e71, 0x6d9c9d10, 0x7a3d2cdb, 0xdd08edc3, 0xaa78fcfb)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x7cd1e905, 0xc6f02776, 0x2f551cc7, 0x5da61cff, 0x7da05389, 0x1119d5a4, 0x631c7442, 0x894fd4f7),
                 SECP256K1_SCALAR_CONST(0xff20862a, 0x9d3b1a37, 0x1628803b, 0x3004ccae, 0xaa23282a, 0xa89a1109, 0xd94ece5e, 0x181bdc46)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x5b9dade8, 0x23d26c58, 0xcd12d818, 0x25b8ae97, 0x3dea04af, 0xf482c96b, 0xa062f254, 0x9e453640),
                 SECP256K1_SCALAR_CONST(0x50c38800, 0x15fa53f4, 0xbe1e5392, 0x5c9b120a, 0x262c22c7, 0x18fa0816, 0x5f2baab4, 0x8cb5db46)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x11cdaeda, 0x969c464b, 0xef1f4ab0, 0x5b01d22e, 0x656fd098, 0x882bea84, 0x65cdbe7a, 0x0c19ff03),
                 SECP256K1_SCALAR_CONST(0x1968d0fa, 0xac46f103, 0xb55f1f72, 0xb3820bed, 0xec6b359a, 0x4b1ae0ad, 0x7e38e1fb, 0x295ccdfb)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x2c351aa1, 0x26e91589, 0x194f8a1e, 0x06561f66, 0x0cb97b7f, 0x10914454, 0x134d1c03, 0x157266b4),
                 SECP256K1_SCALAR_CONST(0xbe49ada6, 0x92bd8711, 0x41b176c4, 0xa478ba95, 0x14883434, 0x9d1cd6f3, 0xcc4b847d, 0x22af80f5)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x6ba07c6e, 0x13a60edb, 0x6247f5c3, 0x84b5fa56, 0x76fe3ec5, 0x80426395, 0xf65ec2ae, 0x623ba730),
                 SECP256K1_SCALAR_CONST(0x25ac23f7, 0x418cd747, 0x98376f9d, 0x4a11c7bf, 0x24c8ebfe, 0x4c8a8655, 0x345f4f52, 0x1c515595)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x9397a712, 0x8abb6951, 0x2d4a3d54, 0x703b1c2a, 0x0661dca8, 0xd75c9b31, 0xaed4d24b, 0xd2ab2948),
                 SECP256K1_SCALAR_CONST(0xc52e8bef, 0xd55ce3eb, 0x1c897739, 0xeb9fb606, 0x36b9cd57, 0x18c51cc2, 0x6a87489e, 0xffd0dcf3)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xe6a808cc, 0xeb437888, 0xe97798df, 0x4e224e44, 0x7e3b380a, 0x207c1653, 0x889f3212, 0xc6738b6f),
                 SECP256K1_SCALAR_CONST(0x31f9ae13, 0xd1e08b20, 0x757a2e5e, 0x5243a0eb, 0x8ae35f73, 0x19bb6122, 0xb910f26b, 0xda70aa55)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xd0320548, 0xab0effe7, 0xa70779e0, 0x61a347a6, 0xb8c1e010, 0x9d5281f8, 0x2ee588a6, 0x80000000),
                 SECP256K1_SCALAR_CONST(0x1541897e, 0x78195c90, 0x7583dd9e, 0x728b6100, 0xbce8bc6d, 0x7a53b471, 0x5dcd9e45, 0x4425fcaf)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x93d623f1, 0xd45b50b0, 0x796e9186, 0x9eac9407, 0xd30edc20, 0xef6304cf, 0x250494e7, 0xba503de9),
                 SECP256K1_SCALAR_CONST(0x7026d638, 0x1178b548, 0x92043952, 0x3c7fb47c, 0xcd3ea236, 0x31d82b01, 0x612fc387, 0x80b9b957)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xf860ab39, 0x55f5d412, 0xa4d73bcc, 0x3b48bd90, 0xc248ffd3, 0x13ca10be, 0x8fba84cc, 0xdd28d6a3),
                 SECP256K1_SCALAR_CONST(0x5c32fc70, 0xe0b15d67, 0x76694700, 0xfe62be4d, 0xeacdb229, 0x7a4433d9, 0x52155cd0, 0x7649ab59)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x4e41311c, 0x0800af58, 0x7a690a8e, 0xe175c9ba, 0x6981ab73, 0xac532ea8, 0x5c1f5e63, 0x6ac1f189),
                 SECP256K1_SCALAR_CONST(0xfffffff9, 0xd075982c, 0x7fbd3825, 0xc05038a2, 0x4533b91f, 0x94ec5f45, 0xb280b28f, 0x842324dc)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x48e473bf, 0x3555eade, 0xad5d7089, 0x2424c4e4, 0x0a99397c, 0x2dc796d8, 0xb7a43a69, 0xd0364141),
                 SECP256K1_SCALAR_CONST(0x634976b2, 0xa0e47895, 0x1ec38593, 0x266d6fd0, 0x6f602644, 0x9bb762f1, 0x7180c704, 0xe23a4daa)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xbe83878d, 0x3292fc54, 0x26e71c62, 0x556ccedc, 0x7cbb8810, 0x4032a720, 0x34ead589, 0xe4d6bd13),
                 SECP256K1_SCALAR_CONST(0x6cd150ad, 0x25e59d0f, 0x74cbae3d, 0x6377534a, 0x1e6562e8, 0xb71b9d18, 0xe1e5d712, 0x8480abb3)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xcdddf2e5, 0xefc15f88, 0xc9ee06de, 0x8a846ca9, 0x28561581, 0x68daa5fb, 0xd1cf3451, 0xeb1782d0),
                 SECP256K1_SCALAR_CONST(0xffffffd9, 0xed8d2af4, 0x993c865a, 0x23e9681a, 0x3ca3a3dc, 0xe6d5a46e, 0xbd86bd87, 0x61b55c70)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xb6a18f1f, 0x04872df9, 0x08165ec4, 0x319ca19c, 0x6c0359ab, 0x1f7118fb, 0xc2ef8082, 0xca8b7785),
                 SECP256K1_SCALAR_CONST(0xff55b19b, 0x0f1ac78c, 0x0f0c88c2, 0x2358d5ad, 0x5f455e4e, 0x3330b72f, 0x274dc153, 0xffbf272b)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xea4898e5, 0x30eba3e8, 0xcf0e5c3d, 0x06ec6844, 0x01e26fb6, 0x75636225, 0xc5d08f4c, 0x1decafa0),
                 SECP256K1_SCALAR_CONST(0xe5a014a8, 0xe3c4ec1e, 0xea4f9b32, 0xcfc7b386, 0x00630806, 0x12c08d02, 0x6407ccc2, 0xb067d90e)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x70e9aea9, 0x7e933af0, 0x8a23bfab, 0x23e4b772, 0xff951863, 0x5ffcf47d, 0x6bebc918, 0x2ca58265),
                 SECP256K1_SCALAR_CONST(0xf4e00006, 0x81bc6441, 0x4eb6ec02, 0xc194a859, 0x80ad7c48, 0xba4e9afb, 0x8b6bdbe0, 0x989d8f77)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0x3c56c774, 0x46efe6f0, 0xe93618b8, 0xf9b5a846, 0xd247df61, 0x83b1e215, 0x06dc8bcc, 0xeefc1bf5),
                 SECP256K1_SCALAR_CONST(0xfff8937a, 0x2cd9586b, 0x43c25e57, 0xd1cefa7a, 0x9fb91ed3, 0x95b6533d, 0x8ad0de5b, 0xafb93f00)
-            };
-            yield return new Scalar4x64[]
-            {
+            );
+            yield return new
+            (
                 SECP256K1_SCALAR_CONST(0xfb5c2772, 0x5cb30e83, 0xe38264df, 0xe4e3ebf3, 0x392aa92e, 0xa68756a1, 0x51279ac5, 0xb50711a8),
                 SECP256K1_SCALAR_CONST(0x000013af, 0x1105bfe7, 0xa6bbd7fb, 0x3d638f99, 0x3b266b02, 0x072fb8bc, 0x39251130, 0x2e0fd0ea)
-            };
+            );
         }
         /// <summary>
         /// run_inverse_tests
