@@ -342,6 +342,51 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Writes the given <see cref="Scalar4x64"/> to this stream as bytes.
+        /// </summary>
+        /// <param name="scalar">256-bit scalar</param>
+        public void Write(in Scalar4x64 scalar)
+        {
+            CheckAndResize(Scalar4x64.ByteSize);
+
+            buffer[position] = (byte)(scalar.b3 >> 56);
+            buffer[position + 1] = (byte)(scalar.b3 >> 48);
+            buffer[position + 2] = (byte)(scalar.b3 >> 40);
+            buffer[position + 3] = (byte)(scalar.b3 >> 32);
+            buffer[position + 4] = (byte)(scalar.b3 >> 24);
+            buffer[position + 5] = (byte)(scalar.b3 >> 16);
+            buffer[position + 6] = (byte)(scalar.b3 >> 8);
+            buffer[position + 7] = (byte)scalar.b3;
+            buffer[position + 8] = (byte)(scalar.b2 >> 56);
+            buffer[position + 9] = (byte)(scalar.b2 >> 48);
+            buffer[position + 10] = (byte)(scalar.b2 >> 40);
+            buffer[position + 11] = (byte)(scalar.b2 >> 32);
+            buffer[position + 12] = (byte)(scalar.b2 >> 24);
+            buffer[position + 13] = (byte)(scalar.b2 >> 16);
+            buffer[position + 14] = (byte)(scalar.b2 >> 8);
+            buffer[position + 15] = (byte)scalar.b2;
+            buffer[position + 16] = (byte)(scalar.b1 >> 56);
+            buffer[position + 17] = (byte)(scalar.b1 >> 48);
+            buffer[position + 18] = (byte)(scalar.b1 >> 40);
+            buffer[position + 19] = (byte)(scalar.b1 >> 32);
+            buffer[position + 20] = (byte)(scalar.b1 >> 24);
+            buffer[position + 21] = (byte)(scalar.b1 >> 16);
+            buffer[position + 22] = (byte)(scalar.b1 >> 8);
+            buffer[position + 23] = (byte)scalar.b1;
+            buffer[position + 24] = (byte)(scalar.b0 >> 56);
+            buffer[position + 25] = (byte)(scalar.b0 >> 48);
+            buffer[position + 26] = (byte)(scalar.b0 >> 40);
+            buffer[position + 27] = (byte)(scalar.b0 >> 32);
+            buffer[position + 28] = (byte)(scalar.b0 >> 24);
+            buffer[position + 29] = (byte)(scalar.b0 >> 16);
+            buffer[position + 30] = (byte)(scalar.b0 >> 8);
+            buffer[position + 31] = (byte)scalar.b0;
+
+            position += Scalar4x64.ByteSize;
+        }
+
+
+        /// <summary>
         /// Writes the given <see cref="Scalar8x32"/> to this stream as bytes.
         /// </summary>
         /// <param name="scalar">256-bit scalar</param>

@@ -541,6 +541,16 @@ namespace Tests.Bitcoin
         }
         [Theory]
         [MemberData(nameof(GetScalarCases))]
+        public void Write_Scalar4x64Test(byte[] array)
+        {
+            Scalar4x64 scalar = new(array, out bool b);
+            Assert.False(b);
+            FastStream stream = new(32);
+            stream.Write(scalar);
+            Assert.Equal(array, stream.ToByteArray());
+        }
+        [Theory]
+        [MemberData(nameof(GetScalarCases))]
         public void Write_Scalar8x32Test(byte[] array)
         {
             Scalar8x32 scalar = new(array, out bool b);
