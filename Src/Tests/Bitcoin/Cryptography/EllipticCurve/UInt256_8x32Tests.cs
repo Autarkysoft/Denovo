@@ -3,9 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives;
 using System.Collections.Generic;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {

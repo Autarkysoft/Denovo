@@ -3,13 +3,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.ModInv;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
+    // TODO: some helper methods can be used from the ModInv64Tests class
     public class ModInv32Tests
     {
         private const int COUNT = 16;

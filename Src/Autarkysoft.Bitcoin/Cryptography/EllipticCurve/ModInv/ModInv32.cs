@@ -7,7 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
+namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.ModInv
 {
     // TODO: try replacing ModInv32Signed30 with a stackalloc uint[] and just pass the pointer to all methods
     /// <summary>
@@ -16,6 +16,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
     /// <remarks>
     /// https://github.com/bitcoin-core/secp256k1/blob/1a81df826e2a24a1656fc28fc3076b62562216d9/src/modinv32_impl.h
     /// </remarks>
+    [Obsolete("Use ModInv64 instead.")]
     public static class ModInv32
     {
 #if DEBUG

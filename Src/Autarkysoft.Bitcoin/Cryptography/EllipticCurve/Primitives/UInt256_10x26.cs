@@ -3,11 +3,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.ModInv;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
+namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
 {
     /// <summary>
     /// 256-bit unsigned integer used as field elements, implemented using radix-2^26 representation (instead of 2^32)
@@ -21,6 +22,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
     /// <para/>The arithmetic here is all modulo secp256k1 prime
     /// </remarks>
     [DebuggerDisplay("{ToByteArray().ToBase16()}")]
+    [Obsolete("Use UInt256_5x52 instead.")]
     public readonly struct UInt256_10x26
     {
         /// <summary>

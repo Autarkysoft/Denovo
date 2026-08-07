@@ -3,15 +3,17 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.ModInv;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
+namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
 {
     /// <summary>
     /// 256-bit scalar using 8 32-bit limbs using little-endian order
     /// </summary>
+    [Obsolete("Use Scalar4x64 instead.")]
     public readonly struct Scalar8x32 : IEquatable<Scalar8x32>
     {
         /// <summary>

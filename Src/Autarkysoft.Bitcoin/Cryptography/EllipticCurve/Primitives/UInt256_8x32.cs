@@ -3,14 +3,16 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
+namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
 {
     /// <summary>
     /// 256-bit unsigned integer using radix-2^32 representation
     /// </summary>
+    [Obsolete("Use UInt256_4x64 instead.")]
     public readonly struct UInt256_8x32
     {
         /// <summary>

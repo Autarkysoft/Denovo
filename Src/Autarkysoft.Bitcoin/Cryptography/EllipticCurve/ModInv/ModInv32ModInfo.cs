@@ -3,8 +3,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
+using System;
+
+namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.ModInv
 {
+    [Obsolete("Use ModInv64ModInfo instead.")]
     public readonly struct ModInv32ModInfo
     {
         public ModInv32ModInfo(in ModInv32Signed30 mod, uint modinv30)
@@ -33,6 +36,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         internal static ref readonly ModInv32ModInfo FeConstant => ref _feConst;
     }
 
+    [Obsolete]
     internal class ModInv32Trans2x2
     {
         internal ModInv32Trans2x2(uint u, uint v, uint q, uint r)

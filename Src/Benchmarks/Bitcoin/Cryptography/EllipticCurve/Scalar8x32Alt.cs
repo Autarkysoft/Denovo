@@ -550,7 +550,7 @@ namespace Benchmarks.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        public bool Equals(Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Scalar8x32 right)
+        public bool Equals(Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives.Scalar8x32 right)
         {
             return ((b0 ^ right.b0) | (b1 ^ right.b1) | (b2 ^ right.b2) | (b3 ^ right.b3) |
              (b4 ^ right.b4) | (b5 ^ right.b5) | (b6 ^ right.b6) | (b7 ^ right.b7)) == 0;

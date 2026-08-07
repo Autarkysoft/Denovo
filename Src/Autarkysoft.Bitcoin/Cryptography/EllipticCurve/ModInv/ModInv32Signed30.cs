@@ -3,11 +3,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives;
 using System;
 using System.Diagnostics;
 
-namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
+namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.ModInv
 {
+    [Obsolete("Use ModInv64Signed62 instead.")]
     public readonly struct ModInv32Signed30
     {
         public ModInv32Signed30(in Scalar8x32 a)

@@ -6,10 +6,10 @@
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
