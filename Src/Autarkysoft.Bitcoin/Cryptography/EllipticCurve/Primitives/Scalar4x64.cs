@@ -895,6 +895,86 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
 
 
         /// <summary>
+        /// Find r1 and r2 such that r1+r2*lambda = k, where r1 and r2 or their negations are
+        /// maximum 128 bits long (see <see cref="Point.MulLambda"/>).
+        /// </summary>
+        /// <param name="r1"></param>
+        /// <param name="r2"></param>
+        /// <param name="k"></param>
+        internal static void SplitLambda(out Scalar4x64 r1, out Scalar4x64 r2, in Scalar4x64 k)
+        {
+#if DEBUG
+            k.Verify();
+#endif
+            // these *Var calls are constant time since the shift amount is constant
+            Scalar4x64 c1 = MulShiftVar(k, G1, 384);
+            Scalar4x64 c2 = MulShiftVar(k, G2, 384);
+            c1 = c1.Multiply(Minus_b1);
+            c2 = c2.Multiply(Minus_b2);
+            r2 = c1.Add(c2, out _);
+            r1 = r2.Multiply(Lambda);
+            r1 = r1.Negate();
+            r1 = r1.Add(k, out _);
+
+            Debug.Assert(r1.GetOverflow() == 0);
+            Debug.Assert(r2.GetOverflow() == 0);
+#if DEBUG
+            SplitLambdaVerify(r1, r2, k);
+#endif
+        }
+
+#if DEBUG
+        private static void SplitLambdaVerify(in Scalar4x64 r1, in Scalar4x64 r2, in Scalar4x64 k)
+        {
+            // (a1 + a2 + 1)/2 is 0xa2a8918ca85bafe22016d0b917e4dd77
+            Span<byte> k1_bound = new byte[32]
+            {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0xa2, 0xa8, 0x91, 0x8c, 0xa8, 0x5b, 0xaf, 0xe2, 0x20, 0x16, 0xd0, 0xb9, 0x17, 0xe4, 0xdd, 0x77
+            };
+
+            // (-b1 + b2)/2 + 1 is 0x8a65287bd47179fb2be08846cea267ed
+            Span<byte> k2_bound = new byte[32]
+            {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x8a, 0x65, 0x28, 0x7b, 0xd4, 0x71, 0x79, 0xfb, 0x2b, 0xe0, 0x88, 0x46, 0xce, 0xa2, 0x67, 0xed
+            };
+
+            Scalar4x64 s = Lambda.Multiply(r2);
+            s = s.Add(r1, out _);
+
+            Debug.Assert(s.Equals(k));
+
+            s = r1.Negate();
+            Span<byte> buf1 = r1.ToByteArray();
+            Span<byte> buf2 = s.ToByteArray();
+
+            Debug.Assert(MemCmpVar(buf1, k1_bound, 32) < 0 || MemCmpVar(buf2, k1_bound, 32) < 0);
+
+            s = r2.Negate();
+            buf1 = r2.ToByteArray();
+            buf2 = s.ToByteArray();
+
+            Debug.Assert(MemCmpVar(buf1, k2_bound, 32) < 0 || MemCmpVar(buf2, k2_bound, 32) < 0);
+        }
+
+        // https://github.com/bitcoin-core/secp256k1/blob/b314cf28334a91db2fe144d04f86077e2bfd7a25/src/util.h#L212-L228
+        private static int MemCmpVar(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2, int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                int diff = s1[i] - s2[i];
+                if (diff != 0)
+                {
+                    return diff;
+                }
+            }
+            return 0;
+        }
+#endif // DEBUG
+
+
+        /// <summary>
         /// Multiply a scalar with the multiplicative inverse of 2
         /// </summary>
         /// <returns></returns>
