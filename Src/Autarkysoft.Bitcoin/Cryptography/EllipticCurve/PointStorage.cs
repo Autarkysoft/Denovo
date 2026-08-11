@@ -16,30 +16,30 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="PointStorage"/> using the given parameters.
         /// </summary>
-        /// <param name="x26">x coordinate</param>
-        /// <param name="y26">y coordinate</param>
-        public PointStorage(in UInt256_10x26 x26, in UInt256_10x26 y26)
+        /// <param name="x52">x coordinate</param>
+        /// <param name="y52">y coordinate</param>
+        public PointStorage(in UInt256_5x52 x52, in UInt256_5x52 y52)
         {
-            x = x26.Normalize().ToUInt256_8x32();
-            y = y26.Normalize().ToUInt256_8x32();
+            x = x52.Normalize().ToUInt256_4x64();
+            y = y52.Normalize().ToUInt256_4x64();
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="PointStorage"/> using the given parameters.
         /// </summary>
-        /// <param name="x32">x coordinate</param>
-        /// <param name="y32">y coordinate</param>
-        public PointStorage(in UInt256_8x32 x32, in UInt256_8x32 y32)
+        /// <param name="x64">x coordinate</param>
+        /// <param name="y64">y coordinate</param>
+        public PointStorage(in UInt256_4x64 x64, in UInt256_4x64 y64)
         {
-            x = x32;
-            y = y32;
+            x = x64;
+            y = y64;
         }
 
 
         /// <summary>
         /// Coordinates
         /// </summary>
-        public readonly UInt256_8x32 x, y;
+        public readonly UInt256_4x64 x, y;
 
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public Point ToPoint()
         {
             // secp256k1_ge_from_storage
-            Point result = new Point(x.ToUInt256_10x26(), y.ToUInt256_10x26(), false);
+            Point result = new Point(x.ToUInt256_5x52(), y.ToUInt256_5x52(), false);
 #if DEBUG
             result.Verify();
 #endif
@@ -69,8 +69,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public static PointStorage CMov(in PointStorage r, in PointStorage a, uint flag)
         {
             // secp256k1_ge_storage_cmov
-            UInt256_8x32 rx = UInt256_8x32.CMov(r.x, a.x, flag);
-            UInt256_8x32 ry = UInt256_8x32.CMov(r.y, a.y, flag);
+            UInt256_4x64 rx = UInt256_4x64.CMov(r.x, a.x, flag);
+            UInt256_4x64 ry = UInt256_4x64.CMov(r.y, a.y, flag);
             return new PointStorage(rx, ry);
         }
     }

@@ -20,7 +20,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="r">R value</param>
         /// <param name="s">S value</param>
         /// <param name="v">[Default value = 0] Recovery ID, an optional byte created during signing process</param>
-        public Signature(in Scalar8x32 r, in Scalar8x32 s, byte v = 0)
+        public Signature(in Scalar4x64 r, in Scalar4x64 s, byte v = 0)
         {
             R = r;
             S = s;
@@ -33,7 +33,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="r">R value</param>
         /// <param name="s">S value</param>
         /// <param name="sigHash">Signature hash type</param>
-        public Signature(in Scalar8x32 r, in Scalar8x32 s, SigHashType sigHash)
+        public Signature(in Scalar4x64 r, in Scalar4x64 s, SigHashType sigHash)
         {
             R = r;
             S = s;
@@ -48,11 +48,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// The r value in a signature
         /// </summary>
-        public Scalar8x32 R { get; set; }
+        public Scalar4x64 R { get; set; }
         /// <summary>
         /// The s value in a signature
         /// </summary>
-        public Scalar8x32 S { get; set; }
+        public Scalar4x64 S { get; set; }
         /// <summary>
         /// The one byte recovery ID used in fixed length message signatures
         /// </summary>
@@ -64,7 +64,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
 
-        private static bool TryCreateScalar(ReadOnlySpan<byte> ba, out Scalar8x32 res)
+        private static bool TryCreateScalar(ReadOnlySpan<byte> ba, out Scalar4x64 res)
         {
             int start = 0;
             while (start < ba.Length)
@@ -79,14 +79,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             int len = ba.Length - start;
             if (len > 32)
             {
-                res = Scalar8x32.Zero;
+                res = Scalar4x64.Zero;
                 return false;
             }
 
             byte[] temp = new byte[32];
             Buffer.BlockCopy(ba.ToArray(), start, temp, 32 - len, len);
 
-            res = new Scalar8x32(temp, out bool overflow);
+            res = new Scalar4x64(temp, out bool overflow);
             return !overflow;
         }
 
@@ -174,12 +174,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            if (!TryCreateScalar(rBa, out Scalar8x32 r))
+            if (!TryCreateScalar(rBa, out Scalar4x64 r))
             {
                 error = Errors.InvalidDerRFormat;
                 return false;
             }
-            if (!TryCreateScalar(sBa, out Scalar8x32 s))
+            if (!TryCreateScalar(sBa, out Scalar4x64 s))
             {
                 error = Errors.InvalidDerSFormat;
                 return false;
@@ -301,12 +301,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            if (!TryCreateScalar(rBa, out Scalar8x32 r))
+            if (!TryCreateScalar(rBa, out Scalar4x64 r))
             {
                 error = Errors.InvalidDerRFormat;
                 return false;
             }
-            if (!TryCreateScalar(sBa, out Scalar8x32 s))
+            if (!TryCreateScalar(sBa, out Scalar4x64 s))
             {
                 error = Errors.InvalidDerSFormat;
                 return false;
@@ -342,7 +342,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            result = new Signature(new Scalar8x32(data.Slice(1, 32), out _), new Scalar8x32(data.Slice(33, 32), out _), data[0]);
+            result = new Signature(new Scalar4x64(data.Slice(1, 32), out _), new Scalar4x64(data.Slice(33, 32), out _), data[0]);
 
             error = null;
             return true;

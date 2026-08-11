@@ -149,8 +149,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                 dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
             }
 
-            Scalar8x32 hash = new Scalar8x32(dataToSign, out bool overflow);
-            return dsa.VerifySimple(sig, pubKey, hash, ForceLowS);
+            Scalar4x64 hash = new Scalar4x64(dataToSign, out bool overflow);
+            return dsa.Verify(sig, pubKey, hash, ForceLowS);
         }
 
         /// <inheritdoc/>
@@ -214,8 +214,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts.Operations
                     dataToSign = Tx.SerializeForSigning(spendScr, TxInIndex, sig.SigHash);
                 }
 
-                Scalar8x32 hash = new Scalar8x32(dataToSign, out bool overflow);
-                if (dsa.VerifySimple(sig, pubK, hash, ForceLowS))
+                Scalar4x64 hash = new Scalar4x64(dataToSign, out bool overflow);
+                if (dsa.Verify(sig, pubK, hash, ForceLowS))
                 {
                     sigIndex--;
                     m--;

@@ -276,7 +276,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
         /// testutil_random_scalar_order_test
         /// </summary>
         // Don't rename this to ...OrderTest since this is not a Test!
-        private static Scalar4x64 Libsecp256k1_RandomScalarOrderT(TestRNG rng)
+        internal static Scalar4x64 Libsecp256k1_RandomScalarOrderT(TestRNG rng)
         {
             byte[] b32 = new byte[32];
             do

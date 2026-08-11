@@ -18,26 +18,26 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Initializes a new instance of <see cref="Point"/> using the given parameters
         /// with <see cref="isInfinity"/> set to false.
         /// </summary>
-        /// <param name="x26">x coordinate</param>
-        /// <param name="y26">y coordinate</param>
-        public Point(in UInt256_10x26 x26, in UInt256_10x26 y26) : this(x26, y26, false)
+        /// <param name="x52">x coordinate</param>
+        /// <param name="y52">y coordinate</param>
+        public Point(in UInt256_5x52 x52, in UInt256_5x52 y52) : this(x52, y52, false)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of <see cref="Point"/> using the given parameters.
         /// </summary>
-        /// <param name="x26">x coordinate</param>
-        /// <param name="y26">y coordinate</param>
+        /// <param name="x52">x coordinate</param>
+        /// <param name="y52">y coordinate</param>
         /// <param name="infinity">Is point at infinity</param>
-        public Point(in UInt256_10x26 x26, in UInt256_10x26 y26, bool infinity)
+        public Point(in UInt256_5x52 x52, in UInt256_5x52 y52, bool infinity)
         {
 #if DEBUG
-            x26.Verify();
-            y26.Verify();
+            x52.Verify();
+            y52.Verify();
 #endif
-            x = x26;
-            y = y26;
+            x = x52;
+            y = y52;
             isInfinity = infinity;
 #if DEBUG
             Verify();
@@ -52,23 +52,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="x1">x1</param>
         /// <param name="x2">x2</param>
         /// <param name="x3">x3</param>
-        /// <param name="x4">x4</param>
-        /// <param name="x5">x5</param>
-        /// <param name="x6">x6</param>
-        /// <param name="x7">x7</param>
         /// <param name="y0">y0</param>
         /// <param name="y1">y1</param>
         /// <param name="y2">y2</param>
         /// <param name="y3">y3</param>
-        /// <param name="y4">y4</param>
-        /// <param name="y5">y5</param>
-        /// <param name="y6">y6</param>
-        /// <param name="y7">y7</param>
-        public Point(uint x0, uint x1, uint x2, uint x3, uint x4, uint x5, uint x6, uint x7,
-                     uint y0, uint y1, uint y2, uint y3, uint y4, uint y5, uint y6, uint y7)
+        public Point(ulong x0, ulong x1, ulong x2, ulong x3,
+                     ulong y0, ulong y1, ulong y2, ulong y3)
         {
-            x = new UInt256_10x26(x0, x1, x2, x3, x4, x5, x6, x7);
-            y = new UInt256_10x26(y0, y1, y2, y3, y4, y5, y6, y7);
+            x = new UInt256_5x52(x0, x1, x2, x3);
+            y = new UInt256_5x52(y0, y1, y2, y3);
             isInfinity = false;
 #if DEBUG
             Verify();
@@ -84,8 +76,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // secp256k1_ge_from_bytes
             // secp256k1_ge_from_bytes_ext
             Debug.Assert(buffer64.Length == 64);
-            x = new UInt256_10x26(buffer64.Slice(0, 32), out _);
-            y = new UInt256_10x26(buffer64.Slice(32, 32), out _);
+            x = new UInt256_5x52(buffer64.Slice(0, 32), out _);
+            y = new UInt256_5x52(buffer64.Slice(32, 32), out _);
             isInfinity = x.IsZero && y.IsZero;
 #if DEBUG
             Verify();
@@ -96,7 +88,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Coordinates
         /// </summary>
-        public readonly UInt256_10x26 x, y;
+        public readonly UInt256_5x52 x, y;
         /// <summary>
         /// True if this is the point at infinity; otherwise false.
         /// </summary>
@@ -117,8 +109,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // secp256k1_ge_verify
             x.Verify();
             y.Verify();
-            UInt256_10x26.VerifyMagnitude(x.magnitude, MaxXMagnitude);
-            UInt256_10x26.VerifyMagnitude(y.magnitude, MaxYMagnitude);
+            UInt256_5x52.VerifyMagnitude(x.magnitude, MaxXMagnitude);
+            UInt256_5x52.VerifyMagnitude(y.magnitude, MaxYMagnitude);
         }
 #endif
 
@@ -144,15 +136,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         public const byte OddHybridByte = 7;
 
-        private static readonly Point _infinity = new Point(UInt256_10x26.Zero, UInt256_10x26.Zero, true);
+        private static readonly Point _infinity = new Point(UInt256_5x52.Zero, UInt256_5x52.Zero, true);
         /// <summary>
         /// Point at infinity
         /// </summary>
         public static ref readonly Point Infinity => ref _infinity;
 
         private static readonly Point _g = new Point(
-            0x16F81798U, 0x59F2815BU, 0x2DCE28D9U, 0x029BFCDBU, 0xCE870B07U, 0x55A06295U, 0xF9DCBBACU, 0x79BE667EU,
-            0xFB10D4B8U, 0x9C47D08FU, 0xA6855419U, 0xFD17B448U, 0x0E1108A8U, 0x5DA4FBFCU, 0x26A3C465U, 0x483ADA77U);
+            0x59F2815B16F81798U, 0x029BFCDB2DCE28D9U, 0x55A06295CE870B07U, 0x79BE667EF9DCBBACU,
+            0x9C47D08FFB10D4B8U, 0xFD17B448A6855419U, 0x5DA4FBFC0E1108A8U, 0x483ADA7726A3C465U);
         /// <summary>
         /// Secp256k1 curve generator point
         /// </summary>
@@ -167,10 +159,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="isOdd">Whether y is odd or even</param>
         /// <param name="y">Calculated y</param>
         /// <returns>True if y was found; otherwise false.</returns>
-        public static bool TryFindY(in UInt256_10x26 x, bool isOdd, out UInt256_10x26 y)
+        public static bool TryFindY(in UInt256_5x52 x, bool isOdd, out UInt256_5x52 y)
         {
             // x^3 + b (mod p)
-            UInt256_10x26 right = x.Multiply(x.Sqr()) + 7;
+            UInt256_5x52 right = x.Multiply(x.Sqr()) + 7;
             if (!right.Sqrt(out y))
             {
                 return false;
@@ -191,7 +183,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if the conversion is successful; otherwise false.</returns>
         public static bool TryRead(ReadOnlySpan<byte> bytes, out Point result)
         {
-            if (bytes == null || bytes.Length < 33)
+            if (bytes.Length < 33)
             {
                 result = Infinity;
                 return false;
@@ -200,8 +192,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             byte b = bytes[0];
             if (bytes.Length == 33 && (b == EvenByte || b == OddByte))
             {
-                UInt256_10x26 x = new UInt256_10x26(bytes.Slice(1, 32), out bool isValid);
-                if (isValid && TryFindY(x, b == OddByte, out UInt256_10x26 y))
+                UInt256_5x52 x = new UInt256_5x52(bytes.Slice(1, 32), out bool isValid);
+                if (isValid && TryFindY(x, b == OddByte, out UInt256_5x52 y))
                 {
                     result = new Point(x, y);
                     return true;
@@ -209,8 +201,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
             else if (bytes.Length == 65 && (b == UncompressedByte || b == EvenHybridByte || b == OddHybridByte))
             {
-                UInt256_10x26 x = new UInt256_10x26(bytes.Slice(1, 32), out bool isValidX);
-                UInt256_10x26 y = new UInt256_10x26(bytes.Slice(33, 32), out bool isValidY);
+                UInt256_5x52 x = new UInt256_5x52(bytes.Slice(1, 32), out bool isValidX);
+                UInt256_5x52 y = new UInt256_5x52(bytes.Slice(33, 32), out bool isValidY);
                 if (isValidX && isValidY)
                 {
                     if ((b == EvenHybridByte && y.IsOdd) || (b == OddHybridByte && !y.IsOdd))
@@ -231,13 +223,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         public static bool TryReadXOnly(ReadOnlySpan<byte> bytes, out Point result)
         {
-            if (bytes == null || bytes.Length != 32)
+            if (bytes.Length != 32)
             {
                 result = Infinity;
                 return false;
             }
 
-            UInt256_10x26 x = new UInt256_10x26(bytes, out bool isValid);
+            UInt256_5x52 x = new UInt256_5x52(bytes, out bool isValid);
             if (!isValid)
             {
                 result = Infinity;
@@ -258,21 +250,21 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="odd">Is y coordinate odd</param>
         /// <param name="result">Result</param>
         /// <returns>True if y was found; otherwise false.</returns>
-        public static bool TryCreateVar(in UInt256_10x26 x, bool odd, out Point result)
+        public static bool TryCreateVar(in UInt256_5x52 x, bool odd, out Point result)
         {
             // secp256k1_ge_set_xo_var
 #if DEBUG
             x.Verify();
 #endif
             // y^2 = x^3 + 7
-            UInt256_10x26 right = (x.Sqr() * x) + CurveB;
-            if (!right.Sqrt(out UInt256_10x26 y))
+            UInt256_5x52 right = (x.Sqr() * x) + CurveB;
+            if (!right.Sqrt(out UInt256_5x52 y))
             {
                 result = Infinity;
                 return false;
             }
 
-            UInt256_10x26 ry = y.NormalizeVar();
+            UInt256_5x52 ry = y.NormalizeVar();
             if (ry.IsOdd != odd)
             {
                 ry = ry.Negate(1);
@@ -291,7 +283,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         /// <param name="zi"></param>
         /// <returns></returns>
-        internal Point ToPointZInv(in UInt256_10x26 zi)
+        internal Point ToPointZInv(in UInt256_5x52 zi)
         {
             // secp256k1_ge_set_ge_zinv
 #if DEBUG
@@ -299,10 +291,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             zi.Verify();
             Debug.Assert(!isInfinity);
 #endif
-            UInt256_10x26 zi2 = zi.Sqr();
-            UInt256_10x26 zi3 = zi2 * zi;
-            UInt256_10x26 rx = x * zi2;
-            UInt256_10x26 ry = y * zi3;
+            UInt256_5x52 zi2 = zi.Sqr();
+            UInt256_5x52 zi3 = zi2 * zi;
+            UInt256_5x52 rx = x * zi2;
+            UInt256_5x52 ry = y * zi3;
             Point result = new Point(rx, ry, isInfinity);
 #if DEBUG
             result.Verify();
@@ -330,7 +322,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="len"></param>
         /// <param name="a"></param>
         /// <param name="zr"></param>
-        public static void TableSetGlobalZ(int len, Span<Point> a, ReadOnlySpan<UInt256_10x26> zr)
+        public static void TableSetGlobalZ(int len, Span<Point> a, ReadOnlySpan<UInt256_5x52> zr)
         {
             // secp256k1_ge_table_set_globalz
 #if DEBUG
@@ -348,7 +340,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 int i = len - 1;
                 // Ensure all y values are in weak normal form for fast negation of points
                 a[i] = new Point(a[i].x, a[i].y.NormalizeWeak(), a[i].isInfinity);
-                UInt256_10x26 zs = zr[i];
+                UInt256_5x52 zs = zr[i];
 
                 // Work our way backwards, using the z-ratios to scale the x/y values.
                 while (i > 0)
@@ -400,14 +392,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             r[0] = new Point(a[0].z, r[0].y, false);
             for (int i = 1; i < r.Length; i++)
             {
-                UInt256_10x26 rx = r[i - 1].x * a[i].z;
+                UInt256_5x52 rx = r[i - 1].x * a[i].z;
                 r[i] = new Point(rx, r[i].y, false);
             }
-            UInt256_10x26 u = r[^1].x.Inverse();
+            UInt256_5x52 u = r[^1].x.Inverse();
 
             for (int i = r.Length - 1; i > 0; i--)
             {
-                UInt256_10x26 rx = r[i - 1].x * u;
+                UInt256_5x52 rx = r[i - 1].x * u;
                 r[i] = new Point(rx, r[i].y, false);
                 u *= a[i].z;
             }
@@ -464,7 +456,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                     }
                     else
                     {
-                        UInt256_10x26 rx = r[lastI].x * a[i].z;
+                        UInt256_5x52 rx = r[lastI].x * a[i].z;
                         r[i] = new Point(rx, r[i].y, r[i].isInfinity);
                     }
                     lastI = i;
@@ -474,7 +466,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             {
                 return;
             }
-            UInt256_10x26 u = r[lastI].x.InverseVar();
+            UInt256_5x52 u = r[lastI].x.InverseVar();
 
             i = lastI;
             while (i > 0)
@@ -482,7 +474,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 i--;
                 if (!a[i].isInfinity)
                 {
-                    UInt256_10x26 rx = r[i].x * u;
+                    UInt256_5x52 rx = r[i].x * u;
                     r[lastI] = new Point(rx, r[lastI].y, r[lastI].isInfinity);
                     u *= a[lastI].z;
                     lastI = i;
@@ -515,12 +507,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </remarks>
         /// <param name="x">x coordinate</param>
         /// <returns>True if x is a valid coordinate on curve; otherwise false.</returns>
-        public static bool IsOnCurveVar(in UInt256_10x26 x)
+        public static bool IsOnCurveVar(in UInt256_5x52 x)
         {
             // secp256k1_ge_x_on_curve_var
 
             // y^2 = x^3 + 7
-            UInt256_10x26 c = x.Sqr();
+            UInt256_5x52 c = x.Sqr();
             c = c.Multiply(x) + CurveB;
             return c.IsSquareVar();
         }
@@ -534,7 +526,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="xn"></param>
         /// <param name="xd">Must not be zero</param>
         /// <returns></returns>
-        public static bool IsFracOnCurveVar(in UInt256_10x26 xn, in UInt256_10x26 xd)
+        public static bool IsFracOnCurveVar(in UInt256_5x52 xn, in UInt256_5x52 xd)
         {
             // secp256k1_ge_x_frac_on_curve_var
 
@@ -542,8 +534,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // (xn/xd)^3 + 7 is square <=> xd*xn^3 + 7*xd^4 is square (multiplying by xd^4, a square).
             Debug.Assert(!xd.IsZeroNormalizedVar());
 
-            UInt256_10x26 r = xd * xn;      // r = xd*xn
-            UInt256_10x26 t = xn.Sqr();     // t = xn^2
+            UInt256_5x52 r = xd * xn;      // r = xd*xn
+            UInt256_5x52 t = xn.Sqr();     // t = xn^2
             r = r.Multiply(t);              // r = xd*xn^3
             t = xd.Sqr();                   // t = xd^2
             t = t.Sqr();                    // t = xd^4
@@ -574,8 +566,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             // y^2 = x^3 + 7
-            UInt256_10x26 left = y.Sqr();
-            UInt256_10x26 right = (x.Sqr() * x) + CurveB;
+            UInt256_5x52 left = y.Sqr();
+            UInt256_5x52 right = (x.Sqr() * x) + CurveB;
             return left.Equals(right);
         }
 
@@ -590,8 +582,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             Verify();
 #endif
-            UInt256_10x26 yNorm = y.NormalizeWeak();
-            UInt256_10x26 yNeg = yNorm.Negate(1);
+            UInt256_5x52 yNorm = y.NormalizeWeak();
+            UInt256_5x52 yNeg = yNorm.Negate(1);
             Point result = new Point(x, yNeg, isInfinity);
 #if DEBUG
             result.Verify();
@@ -609,7 +601,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             Verify();
 #endif
-            UInt256_10x26 rx = x.Multiply(UInt256_10x26.Beta);
+            UInt256_5x52 rx = x.Multiply(UInt256_5x52.Beta);
             Point r = new Point(rx, y, isInfinity);
 #if DEBUG
             r.Verify();
@@ -625,8 +617,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public Span<byte> ToByteArray(bool compressed)
         {
-            UInt256_10x26 xNorm = x.NormalizeVar();
-            UInt256_10x26 yNorm = y.NormalizeVar();
+            UInt256_5x52 xNorm = x.NormalizeVar();
+            UInt256_5x52 yNorm = y.NormalizeVar();
 
             if (compressed)
             {
@@ -673,7 +665,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             Verify();
 #endif
-            PointJacobian result = new PointJacobian(x, y, UInt256_10x26.One, isInfinity);
+            PointJacobian result = new PointJacobian(x, y, UInt256_5x52.One, isInfinity);
 #if DEBUG
             result.Verify();
 #endif
@@ -721,7 +713,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return true;
             }
 
-            UInt256_10x26 tmp = x.NormalizeWeak();
+            UInt256_5x52 tmp = x.NormalizeWeak();
             if (!tmp.Equals(other.x))
             {
                 return false;

@@ -201,8 +201,8 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                     throw new ArgumentException("Invalid public key");
                 }
                 byte[] dataToSign = tx.SerializeForSigning(redeem.Data, inputIndex, sig.SigHash);
-                Scalar8x32 hash = new Scalar8x32(dataToSign, out bool overflow);
-                if (dsa.VerifySimple(sig, pubK, hash, true))
+                Scalar4x64 hash = new Scalar4x64(dataToSign, out bool overflow);
+                if (dsa.Verify(sig, pubK, hash, true))
                 {
                     pushOps.Insert(insertIndex, new PushDataOp(sig.ToByteArray()));
                     didSetSig = true;
@@ -213,7 +213,7 @@ namespace Autarkysoft.Bitcoin.Blockchain.Scripts
                 {
                     throw new ArgumentException("Invalid signature found in this script.");
                 }
-                if (dsa.VerifySimple(tempSig, pubK, hash, true))
+                if (dsa.Verify(tempSig, pubK, hash, true))
                 {
                     insertIndex--;
                 }

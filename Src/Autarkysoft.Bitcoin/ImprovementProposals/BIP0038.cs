@@ -197,7 +197,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             byte[] factorb = hash.ComputeHashTwice(seedb);
 
-            Scalar8x32 keyValue = new Scalar8x32(passFactor, out _).Multiply(new Scalar8x32(factorb, out _));
+            Scalar4x64 keyValue = new Scalar4x64(passFactor, out _).Multiply(new Scalar4x64(factorb, out _));
             return new PrivateKey(keyValue);
         }
 

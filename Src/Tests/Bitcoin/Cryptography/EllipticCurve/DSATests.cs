@@ -5,6 +5,7 @@
 
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives;
+using Tests.Bitcoin.Cryptography.EllipticCurve.Primitives;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
@@ -32,7 +33,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             // Checking the table's generators are correct is done in run_ecmult_pre_g.
             PointJacobian g2;
             Point p, q, gg;
-            UInt256_10x26 dpx, dpy, dqx, dqy;
+            UInt256_5x52 dpx, dpy, dqx, dqy;
             Assert.True(0 < n);
 
             p = pre_g[0].ToPoint();
@@ -114,20 +115,20 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 0x0eb33439, 0x90216b4f, 0x81063cb6, 0x5f2f7e0f
             );
             // two random initial factors xn and gn
-            Scalar8x32 xn = Scalar8x32Tests.SECP256K1_SCALAR_CONST(
+            Scalar4x64 xn = Scalar4x64Tests.SECP256K1_SCALAR_CONST(
                 0x84cc5452, 0xf7fde1ed, 0xb4d38a8c, 0xe9b1b84c,
                 0xcef31f14, 0x6e569be9, 0x705d357a, 0x42985407
             );
-            Scalar8x32 gn = Scalar8x32Tests.SECP256K1_SCALAR_CONST(
+            Scalar4x64 gn = Scalar4x64Tests.SECP256K1_SCALAR_CONST(
                 0xa1e58d22, 0x553dcd42, 0xb2398062, 0x5d4c57a9,
                 0x6e9323d4, 0x2b3152e5, 0xca2c3990, 0xedc7c9de
             );
             // two small multipliers to be applied to xn and gn in every iteration:
-            Scalar8x32 xf = Scalar8x32Tests.SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0x1337);
-            Scalar8x32 gf = Scalar8x32Tests.SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0x7113);
+            Scalar4x64 xf = Scalar4x64Tests.SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0x1337);
+            Scalar4x64 gf = Scalar4x64Tests.SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0x7113);
             // accumulators with the resulting coefficients to A and G
-            Scalar8x32 ae = Scalar8x32.One;
-            Scalar8x32 ge = Scalar8x32.Zero;
+            Scalar4x64 ae = Scalar4x64.One;
+            Scalar4x64 ge = Scalar4x64.Zero;
             // actual points
             PointJacobian x;
             PointJacobian x2;
@@ -175,15 +176,15 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         private static void TestPointTimesOrder(PointJacobian point, DSA dsa, TestRNG rng)
         {
             // X * (point + G) + (order-X) * (pointer + G) = 0
-            Scalar8x32 x;
-            Scalar8x32 nx;
+            Scalar4x64 x;
+            Scalar4x64 nx;
             PointJacobian res1, res2;
             Point res3;
 
             //byte[] pub = new byte[65];
             //int psize = 65;
 
-            x = Scalar8x32Tests.CreateRandom(rng);
+            x = Scalar4x64Tests.Libsecp256k1_RandomScalarOrderT(rng);
             nx = x.Negate();
 
             res1 = dsa.ECMult(point, x, x);     // calc res1 = x * point + x * G;
@@ -200,13 +201,13 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             //Assert.True(secp256k1_eckey_pubkey_serialize(&res3, pub, &psize, 1) == 0);
 
             // check zero/one edge cases
-            res1 = dsa.ECMult(point, Scalar8x32.Zero, Scalar8x32.Zero);
+            res1 = dsa.ECMult(point, Scalar4x64.Zero, Scalar4x64.Zero);
             res3 = res1.ToPoint();
             Assert.True(res3.isInfinity);
-            res1 = dsa.ECMult(point, Scalar8x32.One, Scalar8x32.Zero);
+            res1 = dsa.ECMult(point, Scalar4x64.One, Scalar4x64.Zero);
             res3 = res1.ToPoint();
             Assert.True(point.EqualsVar(res3));
-            res1 = dsa.ECMult(point, Scalar8x32.Zero, Scalar8x32.One);
+            res1 = dsa.ECMult(point, Scalar4x64.Zero, Scalar4x64.One);
             res3 = res1.ToPoint();
             Assert.True(Point.G.EqualsVar(res3));
         }
@@ -217,42 +218,42 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         // - For a in [-2, -1, 0, 1, 2]:
         //   - For b in [-3, -1, 1, 3]:
         //     - Output (a*LAMBDA + (ORDER+b)/2) % ORDER
-        private readonly static Scalar8x32[] scalars_near_split_bounds = new Scalar8x32[20]
+        private readonly static Scalar4x64[] scalars_near_split_bounds = new Scalar4x64[20]
         {
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6fc),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6fd),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6fe),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6ff),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf7632d),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf7632e),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf7632f),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf76330),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b209f),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b20a0),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b20a1),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b20a2),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede11),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede12),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede13),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede14),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a42),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a43),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a44),
-            Scalar8x32Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a45)
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6fc),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6fd),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6fe),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd938a566, 0x7f479e3e, 0xb5b3c7fa, 0xefdb3749, 0x3aa0585c, 0xc5ea2367, 0xe1b660db, 0x0209e6ff),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf7632d),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf7632e),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf7632f),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x2c9c52b3, 0x3fa3cf1f, 0x5ad9e3fd, 0x77ed9ba5, 0xb294b893, 0x3722e9a5, 0x00e698ca, 0x4cf76330),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b209f),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b20a0),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b20a1),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x7fffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xd576e735, 0x57a4501d, 0xdfe92f46, 0x681b20a2),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede11),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede12),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede13),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0xd363ad4c, 0xc05c30e0, 0xa5261c02, 0x88126459, 0xf85915d7, 0x7825b696, 0xbeebc5c2, 0x833ede14),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a42),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a43),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a44),
+            Scalar4x64Tests.SECP256K1_SCALAR_CONST(0x26c75a99, 0x80b861c1, 0x4a4c3805, 0x1024c8b4, 0x704d760e, 0xe95e7cd3, 0xde1bfdb1, 0xce2c5a45)
         };
 
         /// <summary>
         /// test_ecmult_target
         /// </summary>
-        private static void TestEcmultTarget(in Scalar8x32 target, int mode, DSA dsa, TestRNG rng)
+        private static void TestEcmultTarget(in Scalar4x64 target, int mode, DSA dsa, TestRNG rng)
         {
             // Mode: 0=ecmult_gen, 1=ecmult, 2=ecmult_const
-            Scalar8x32 n1, n2;
+            Scalar4x64 n1, n2;
             Point p;
             PointJacobian pj, p1j, p2j, ptj;
 
             // Generate random n1,n2 such that n1+n2 = -target.
-            n1 = Scalar8x32Tests.CreateRandom(rng);
+            n1 = Scalar4x64Tests.Libsecp256k1_RandomScalarOrderT(rng);
             n2 = n1.Add(target, out _);
             n2 = n2.Negate();
 
@@ -272,9 +273,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
             else if (mode == 1)
             {
-                p1j = dsa.ECMult(pj, n1, Scalar8x32.Zero);
-                p2j = dsa.ECMult(pj, n2, Scalar8x32.Zero);
-                ptj = dsa.ECMult(pj, target, Scalar8x32.Zero);
+                p1j = dsa.ECMult(pj, n1, Scalar4x64.Zero);
+                p2j = dsa.ECMult(pj, n2, Scalar4x64.Zero);
+                ptj = dsa.ECMult(pj, target, Scalar4x64.Zero);
 
                 // TODO: remove following 3 lines if other 2 branches were implemented and uncomment them at the end
                 ptj = ptj.AddVar(p1j, out _);
@@ -323,8 +324,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             TestRNG rng = new();
             rng.Init(null);
 
-            UInt256_10x26 x = UInt256_10x26Tests.SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 2);
-            UInt256_10x26 xr = UInt256_10x26Tests.SECP256K1_FE_CONST(
+            UInt256_5x52 x = UInt256_5x52Tests.SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 2);
+            UInt256_5x52 xr = UInt256_5x52Tests.SECP256K1_FE_CONST(
                 0x7603CB59, 0xB0EF6C63, 0xFE608479, 0x2A0C378C,
                 0xDB3233A8, 0x0F8A9A09, 0xA877DEAD, 0x31B38C45
             );

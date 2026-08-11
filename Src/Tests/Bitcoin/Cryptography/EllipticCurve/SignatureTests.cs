@@ -14,12 +14,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class SignatureTests
     {
-        private static readonly Scalar8x32 _c1 = new(1, 2, 3, 4, 5, 6, 7, 8);
-        private static readonly Scalar8x32 _c2 = new(11, 12, 13, 14, 15, 16, 17, 18);
-        private static readonly Scalar8x32 _one = new(1, 0, 0, 0, 0, 0, 0, 0);
-        public static ref readonly Scalar8x32 C1 => ref _c1;
-        public static ref readonly Scalar8x32 C2 => ref _c2;
-        public static ref readonly Scalar8x32 One => ref _one;
+        private static readonly Scalar4x64 _c1 = new(1, 2, 3, 4);
+        private static readonly Scalar4x64 _c2 = new(5, 6, 7, 8);
+        private static readonly Scalar4x64 _one = new(1, 0, 0, 0);
+        public static ref readonly Scalar4x64 C1 => ref _c1;
+        public static ref readonly Scalar4x64 C2 => ref _c2;
+        public static ref readonly Scalar4x64 One => ref _one;
 
 
         [Fact]
@@ -63,7 +63,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             {
                 // R should have starting 0x00 but it doesn't
                 Helper.HexToBytes("3006"+"020180"+"020101"+"01"),
-                new Scalar8x32(128),
+                new Scalar4x64(128),
                 One,
                 SigHashType.All
             };
@@ -72,7 +72,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 // S should have starting 0x00 but it doesn't
                 Helper.HexToBytes("3006"+"020101"+"020180"+"81"),
                 One,
-                new Scalar8x32(128),
+                new Scalar4x64(128),
                 SigHashType.All | SigHashType.AnyoneCanPay
             };
             yield return new object[]
@@ -86,7 +86,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
         [Theory]
         [MemberData(nameof(GetReadLooseCases))]
-        public void TryReadLooseTest(byte[] data, in Scalar8x32 expR, in Scalar8x32 expS, SigHashType expSH)
+        public void TryReadLooseTest(byte[] data, in Scalar4x64 expR, in Scalar4x64 expS, SigHashType expSH)
         {
             bool b = Signature.TryReadLoose(data, out Signature sig, out Errors error);
 
@@ -98,7 +98,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         }
         [Theory]
         [MemberData(nameof(GetReadStrictCases))]
-        public void TryReadLoose_FromStrictCases_Test(byte[] data, in Scalar8x32 expR, in Scalar8x32 expS, SigHashType expSH)
+        public void TryReadLoose_FromStrictCases_Test(byte[] data, in Scalar4x64 expR, in Scalar4x64 expS, SigHashType expSH)
         {
             // Reading with loose rules must still pass on strict cases
             bool b = Signature.TryReadLoose(data, out Signature sig, out Errors error);
@@ -229,44 +229,44 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             yield return new object[]
             {
                 Helper.HexToBytes("3006"+"020102"+"020103"+"02"),
-                new Scalar8x32(2),
-                new Scalar8x32(3),
+                new Scalar4x64(2),
+                new Scalar4x64(3),
                 SigHashType.None
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3007"+"02017f"+"02020080"+"03"),
-                new Scalar8x32(127),
-                new Scalar8x32(128),
+                new Scalar4x64(127),
+                new Scalar4x64(128),
                 SigHashType.Single
             };
             yield return new object[]
             {
                 Helper.HexToBytes("300a"+"0204008350c4"+"02020081"+"81"),
-                new Scalar8x32(8605892),
-                new Scalar8x32(129),
+                new Scalar4x64(8605892),
+                new Scalar4x64(129),
                 SigHashType.All | SigHashType.AnyoneCanPay
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3046"+"022100ff7353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"+
                     "022100817353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"+"82"),
-                new Scalar8x32(Helper.HexToBytes("ff7353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
-                new Scalar8x32(Helper.HexToBytes("817353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("ff7353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("817353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
                 SigHashType.None | SigHashType.AnyoneCanPay
             };
             yield return new object[]
             {
                 Helper.HexToBytes("3044"+"0220797353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"+
                     "0220117353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"+"83"),
-                new Scalar8x32(Helper.HexToBytes("797353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
-                new Scalar8x32(Helper.HexToBytes("117353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("797353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("117353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
                 SigHashType.Single | SigHashType.AnyoneCanPay
             };
         }
         [Theory]
         [MemberData(nameof(GetReadStrictCases))]
-        public void TryReadStrictTest(byte[] data, in Scalar8x32 expR, in Scalar8x32 expS, SigHashType expSH)
+        public void TryReadStrictTest(byte[] data, in Scalar4x64 expR, in Scalar4x64 expS, SigHashType expSH)
         {
             bool b = Signature.TryReadStrict(data, out Signature sig, out Errors error);
 
@@ -405,7 +405,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         [Theory]
         [MemberData(nameof(GetReadStrictCases))]
-        public void ToByteArrayTest(byte[] expBytes, in Scalar8x32 r, in Scalar8x32 s, SigHashType sh)
+        public void ToByteArrayTest(byte[] expBytes, in Scalar4x64 r, in Scalar4x64 s, SigHashType sh)
         {
             Signature sig = new(r, s, sh);
             byte[] actualBytes = sig.ToByteArray();
@@ -418,7 +418,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             yield return new object[]
             {
                 One,
-                new Scalar8x32(2),
+                new Scalar4x64(2),
                 (byte)2,
                 true,
                 Helper.HexToBytes("21"+"0000000000000000000000000000000000000000000000000000000000000001"+
@@ -426,8 +426,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             };
             yield return new object[]
             {
-                new Scalar8x32(Helper.HexToBytes("797353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
-                new Scalar8x32(Helper.HexToBytes("017353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("797353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("017353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
                 (byte)0,
                 false,
                 Helper.HexToBytes("1b"+"797353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"+
@@ -435,8 +435,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             };
             yield return new object[]
             {
-                new Scalar8x32(Helper.HexToBytes("817353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
-                new Scalar8x32(Helper.HexToBytes("aa7353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("817353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
+                new Scalar4x64(Helper.HexToBytes("aa7353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"), out _),
                 (byte)1,
                 false,
                 Helper.HexToBytes("1c"+"817353b5a071afd330a0c2e2da5cb587a6ff5a1de1b4723933efb751af3fdb9c"+
@@ -447,7 +447,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         [MemberData(nameof(GetSigRecIdCases))]
 #pragma warning disable xUnit1026 // Theory methods should use all of their parameters
 #pragma warning disable IDE0060 // Remove unused parameter
-        public void TryReadWithRecIdTest(in Scalar8x32 r, in Scalar8x32 s, byte v, bool isComp, byte[] toRead)
+        public void TryReadWithRecIdTest(in Scalar4x64 r, in Scalar4x64 s, byte v, bool isComp, byte[] toRead)
 #pragma warning restore IDE0060
 #pragma warning restore xUnit1026
         {
@@ -474,7 +474,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         [Theory]
         [MemberData(nameof(GetSigRecIdCases))]
-        public void ToByteArrayWithRecIdTest(in Scalar8x32 r, in Scalar8x32 s, byte v, bool isComp, byte[] expected)
+        public void ToByteArrayWithRecIdTest(in Scalar4x64 r, in Scalar4x64 s, byte v, bool isComp, byte[] expected)
         {
             Signature sig = new(r, s, v);
             byte[] actual = sig.ToByteArrayWithRecId(isComp);
@@ -484,7 +484,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         [Fact]
         public void ToByteArrayWithRecId_NochangeTest()
         {
-            Signature sig = new(One, new Scalar8x32(2), 164);
+            Signature sig = new(One, new Scalar4x64(2), 164);
             byte[] actual = sig.ToByteArrayWithRecId();
             byte[] expected = Helper.HexToBytes("a4" + "0000000000000000000000000000000000000000000000000000000000000001" +
                                                        "0000000000000000000000000000000000000000000000000000000000000002");
@@ -493,7 +493,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
         [Theory]
         [MemberData(nameof(GetSigRecIdCases))]
-        public void WriteToStreamWithRecIdTest(in Scalar8x32 r, in Scalar8x32 s, byte v, bool isComp, byte[] expected)
+        public void WriteToStreamWithRecIdTest(in Scalar4x64 r, in Scalar4x64 s, byte v, bool isComp, byte[] expected)
         {
             Signature sig = new(r, s, v);
             var stream = new FastStream(65);
@@ -507,7 +507,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         [Fact]
         public void WriteToStreamWithRecId_NochangeTest()
         {
-            Signature sig = new(One, new Scalar8x32(2), 164);
+            Signature sig = new(One, new Scalar4x64(2), 164);
             var stream = new FastStream(65);
             sig.WriteToStreamWithRecId(stream);
             byte[] expected = Helper.HexToBytes("a4" + "0000000000000000000000000000000000000000000000000000000000000001" +

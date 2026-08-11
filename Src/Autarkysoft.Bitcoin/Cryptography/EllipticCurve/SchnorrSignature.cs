@@ -20,7 +20,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="r">R value</param>
         /// <param name="s">S value</param>
         /// <param name="sigHash">Signature hash type</param>
-        public SchnorrSignature(in UInt256_10x26 r, in Scalar8x32 s, SigHashType sigHash)
+        public SchnorrSignature(in UInt256_5x52 r, in Scalar4x64 s, SigHashType sigHash)
         {
             R = r;
             S = s;
@@ -31,11 +31,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// The r value in a signature
         /// </summary>
-        public UInt256_10x26 R { get; set; }
+        public UInt256_5x52 R { get; set; }
         /// <summary>
         /// The s value in a signature
         /// </summary>
-        public Scalar8x32 S { get; set; }
+        public Scalar4x64 S { get; set; }
         /// <summary>
         /// Signature hash type used during transaction signing
         /// </summary>
@@ -54,7 +54,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             // Note that empty signature is accepted as valid in Tapscripts (return true for parsing, false for success),
             // but we handle it in CheckSigTapOp and are strict here.
-            if (data == null || data.Length == 0)
+            if (data.Length == 0)
             {
                 result = null;
                 error = Errors.NullOrEmptyBytes;
@@ -89,7 +89,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            UInt256_10x26 r = new UInt256_10x26(data.Slice(0, 32), out bool valid);
+            UInt256_5x52 r = new UInt256_5x52(data.Slice(0, 32), out bool valid);
             if (!valid)
             {
                 result = null;
@@ -97,7 +97,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 return false;
             }
 
-            Scalar8x32 s = new Scalar8x32(data.Slice(32, 32), out valid);
+            Scalar4x64 s = new Scalar4x64(data.Slice(32, 32), out valid);
             if (valid) // This is overflow not validity
             {
                 result = null;

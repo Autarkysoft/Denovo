@@ -225,8 +225,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
 
             byte[] toSign = tx.SerializeForSigning(pubScrData.ToArray(), index, sig.SigHash);
-            Scalar8x32 hash = new Scalar8x32(toSign, out bool overflow);
-            if (dsa.VerifySimple(sig, pubK, hash, ForceLowS))
+            Scalar4x64 hash = new Scalar4x64(toSign, out bool overflow);
+            if (dsa.Verify(sig, pubK, hash, ForceLowS))
             {
                 error = null;
                 return true;
@@ -276,8 +276,8 @@ namespace Autarkysoft.Bitcoin.Blockchain
             }
 
             byte[] toSign = tx.SerializeForSigningSegWit(scrSer.ConvertP2wpkh(actualHash), index, amount, sig.SigHash);
-            Scalar8x32 hash = new Scalar8x32(toSign, out bool overflow);
-            if (dsa.VerifySimple(sig, pubK, hash, ForceLowS))
+            Scalar4x64 hash = new Scalar4x64(toSign, out bool overflow);
+            if (dsa.Verify(sig, pubK, hash, ForceLowS))
             {
                 error = null;
                 return true;
@@ -395,7 +395,7 @@ namespace Autarkysoft.Bitcoin.Blockchain
 
             // Verify that the output pubkey matches the tweaked internal pubkey, after correcting for parity.
             byte[] t = sha256.ComputeTaggedHash_TapTweak(control.Slice(1, 32), k);
-            Scalar8x32 tweak = new Scalar8x32(t, out bool overflow);
+            Scalar4x64 tweak = new Scalar4x64(t, out bool overflow);
             if (overflow)
             {
                 return false;

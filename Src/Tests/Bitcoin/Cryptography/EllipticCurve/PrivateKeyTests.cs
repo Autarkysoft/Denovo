@@ -43,7 +43,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         [MemberData(nameof(GetConstructorCases))]
         public void Constructor_IntByteScalarTest(BigInteger big, byte[] ba)
         {
-            Scalar8x32 scalar = new(ba, out _);
+            Scalar4x64 scalar = new(ba, out _);
 
             using PrivateKey k1 = new(big);
             using PrivateKey k2 = new(ba);
@@ -278,11 +278,11 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         public void ToScalarTest(string hex)
         {
             byte[] ba = Helper.HexToBytes(hex);
-            Scalar8x32 expected = new(ba, out bool overflow);
+            Scalar4x64 expected = new(ba, out bool overflow);
             Assert.False(overflow);
 
             using PrivateKey key = new(ba);
-            Scalar8x32 actual = key.ToScalar();
+            Scalar4x64 actual = key.ToScalar();
             Assert.Equal(expected, actual);
         }
 

@@ -7,7 +7,6 @@ using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using System;
 using System.Globalization;
 using System.IO;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
@@ -36,23 +35,20 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                     line = line[(count + 1)..];
                 }
 
-                Assert.Equal(expected[7], table[i].x.b0);
-                Assert.Equal(expected[6], table[i].x.b1);
-                Assert.Equal(expected[5], table[i].x.b2);
-                Assert.Equal(expected[4], table[i].x.b3);
-                Assert.Equal(expected[3], table[i].x.b4);
-                Assert.Equal(expected[2], table[i].x.b5);
-                Assert.Equal(expected[1], table[i].x.b6);
-                Assert.Equal(expected[0], table[i].x.b7);
+                //UInt256_4x64 exp = UInt256_4x64Tests.SECP256K1_FE_STORAGE_CONST(expected[0], expected[1], expected[2], expected[3], expected[4], expected[5], expected[6], expected[7]);
+                Point point = PointTests.SECP256K1_GE_CONST(expected[0], expected[1], expected[2], expected[3], expected[4], expected[5], expected[6], expected[7], expected[8], expected[9], expected[10], expected[11], expected[12], expected[13], expected[14], expected[15]);
 
-                Assert.Equal(expected[15], table[i].y.b0);
-                Assert.Equal(expected[14], table[i].y.b1);
-                Assert.Equal(expected[13], table[i].y.b2);
-                Assert.Equal(expected[12], table[i].y.b3);
-                Assert.Equal(expected[11], table[i].y.b4);
-                Assert.Equal(expected[10], table[i].y.b5);
-                Assert.Equal(expected[9], table[i].y.b6);
-                Assert.Equal(expected[8], table[i].y.b7);
+                PointStorage exp = point.ToStorage();
+
+                Assert.Equal(exp.x.b0, table[i].x.b0);
+                Assert.Equal(exp.x.b1, table[i].x.b1);
+                Assert.Equal(exp.x.b2, table[i].x.b2);
+                Assert.Equal(exp.x.b3, table[i].x.b3);
+
+                Assert.Equal(exp.y.b0, table[i].y.b0);
+                Assert.Equal(exp.y.b1, table[i].y.b1);
+                Assert.Equal(exp.y.b2, table[i].y.b2);
+                Assert.Equal(exp.y.b3, table[i].y.b3);
             }
 
             Assert.Equal(PrecomputeEcMult.TableSize, i);

@@ -44,10 +44,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// Initializes a new instance of <see cref="PrivateKey"/> using the given <see cref="Scalar8x32"/>.
+        /// Initializes a new instance of <see cref="PrivateKey"/> using the given <see cref="Scalar4x64"/>.
         /// </summary>
         /// <param name="value">Scalar to use</param>
-        public PrivateKey(in Scalar8x32 value)
+        public PrivateKey(in Scalar4x64 value)
         {
             SetBytes(value.ToByteArray());
         }
@@ -165,7 +165,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             keyBytes = new byte[32];
             key.CopyTo(((Span<byte>)keyBytes).Slice(32 - key.Length, key.Length));
 
-            Scalar8x32 sc = new Scalar8x32(keyBytes, out bool overflow);
+            Scalar4x64 sc = new Scalar4x64(keyBytes, out bool overflow);
             if (sc.IsZero || overflow)
             {
                 throw new ArgumentOutOfRangeException(nameof(key), "Given key value is outside the defined range by the curve.");
@@ -225,10 +225,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// </summary>
         /// <exception cref="ObjectDisposedException"/>
         /// <returns>The <see cref="BigInteger"/> representation of this instance.</returns>
-        public Scalar8x32 ToScalar()
+        public Scalar4x64 ToScalar()
         {
             CheckDisposed();
-            return new Scalar8x32(keyBytes, out _);
+            return new Scalar4x64(keyBytes, out _);
         }
 
 
@@ -241,7 +241,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public Point ToPublicKey(Calc calc)
         {
             CheckDisposed();
-            return calc.MultiplyByG(new Scalar8x32(keyBytes, out _)).ToPoint();
+            return calc.MultiplyByG(new Scalar4x64(keyBytes, out _)).ToPoint();
         }
 
 

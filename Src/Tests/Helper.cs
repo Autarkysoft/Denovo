@@ -153,11 +153,11 @@ namespace Tests
         }
 
 
-        public static readonly Signature ShortSig1 = new(new Scalar8x32(1), new Scalar8x32(2)) { SigHash = SigHashType.All };
+        public static readonly Signature ShortSig1 = new(new Scalar4x64(1), new Scalar4x64(2)) { SigHash = SigHashType.All };
         public static readonly string ShortSig1Hex = "300602010102010201";
         public static readonly byte[] ShortSig1Bytes = HexToBytes(ShortSig1Hex);
 
-        public static readonly Signature ShortSig2 = new(new Scalar8x32(10), new Scalar8x32(20)) { SigHash = SigHashType.Single };
+        public static readonly Signature ShortSig2 = new(new Scalar4x64(10), new Scalar4x64(20)) { SigHash = SigHashType.Single };
         public static readonly string ShortSig2Hex = "300602010a02011403";
         public static readonly byte[] ShortSig2Bytes = HexToBytes(ShortSig2Hex);
 

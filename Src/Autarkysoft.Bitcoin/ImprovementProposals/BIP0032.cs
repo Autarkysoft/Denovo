@@ -353,7 +353,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
 
             // First start deriving the extended keys for each index
             byte[] prevPrvBa = PrvKey.ToBytes();
-            Scalar8x32 prevPrvInt = PrvKey.ToScalar();
+            Scalar4x64 prevPrvInt = PrvKey.ToScalar();
             byte[] prevPubBa = PubKey.ToByteArray(true).ToArray();
             byte[] tempCC = ChainCode;
             byte[] tempLeft;
@@ -372,7 +372,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.WriteBigEndian(index);
                 HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out tempCC);
 
-                Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
+                Scalar4x64 kTemp = new Scalar4x64(tempLeft, out bool overflow);
                 // Note that we throw an exception here if the values were invalid (highly unlikely)
                 // because it is the extended keys, we can't skip anything here.
                 if (kTemp.IsZero || overflow)
@@ -406,7 +406,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                     stream.WriteBigEndian(childIndex);
                     HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out _);
 
-                    Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
+                    Scalar4x64 kTemp = new Scalar4x64(tempLeft, out bool overflow);
                     // Note: we don't throw any exceptions here. We simply ignore invalid values (highly unlikely)
                     // and move on to the next index. The returned value will always be filled with expected number of items.
                     if (kTemp.IsZero || overflow)
@@ -490,7 +490,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.WriteBigEndian(index);
                 HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out tempCC);
 
-                Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
+                Scalar4x64 kTemp = new Scalar4x64(tempLeft, out bool overflow);
                 // Note that we throw an exception here if the values were invalid (highly unlikely)
                 // because it is the extended keys, we can't skip anything here.
                 if (kTemp.IsZero || overflow)
@@ -515,7 +515,7 @@ namespace Autarkysoft.Bitcoin.ImprovementProposals
                 stream.WriteBigEndian(childIndex);
                 HmacAndSplitData(stream.ToByteArray(), tempCC, out tempLeft, out _);
 
-                Scalar8x32 kTemp = new Scalar8x32(tempLeft, out bool overflow);
+                Scalar4x64 kTemp = new Scalar4x64(tempLeft, out bool overflow);
                 // Note: we don't throw any exceptions here. We simply ignore invalid values (highly unlikely)
                 // and move on to the next index. The returned value will always be filled with expected number of items.
                 if (kTemp.IsZero || overflow)

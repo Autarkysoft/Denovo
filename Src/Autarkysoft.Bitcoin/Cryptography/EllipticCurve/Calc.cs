@@ -24,21 +24,16 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
         internal PointStorage[,] prec; /* prec[j][i] = 16^j * i * G + U_i */
 
-        public static readonly Point G = new Point(
-            0x16F81798U, 0x59F2815BU, 0x2DCE28D9U, 0x029BFCDBU, 0xCE870B07U, 0x55A06295U, 0xF9DCBBACU, 0x79BE667EU,
-            0xFB10D4B8U, 0x9C47D08FU, 0xA6855419U, 0xFD17B448U, 0x0E1108A8U, 0x5DA4FBFCU, 0x26A3C465U, 0x483ADA77U);
-
-
         public void ECMultGenContext()
         {
             Span<Point> prec = stackalloc Point[1024];
 
             this.prec = new PointStorage[64, 16];
-            PointJacobian gJ = G.ToPointJacobian();
+            PointJacobian gJ = Point.G.ToPointJacobian();
             /* Construct a group element with no known corresponding scalar (nothing up my sleeve). */
             byte[] ba = Encoding.UTF8.GetBytes("The scalar for this x is unknown");
             Debug.Assert(ba.Length == 32);
-            UInt256_10x26 x = new UInt256_10x26(ba, out bool b);
+            UInt256_5x52 x = new UInt256_5x52(ba, out bool b);
             Debug.Assert(b);
 
             b = Point.TryCreateVar(x, false, out Point nums_ge);
@@ -46,7 +41,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             PointJacobian numsGJ = nums_ge.ToPointJacobian();
             /* Add G to make the bits in x uniformly distributed. */
-            numsGJ = numsGJ.AddVar(G, out _);
+            numsGJ = numsGJ.AddVar(Point.G, out _);
 
 
             /* compute prec. */
@@ -87,98 +82,110 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        public PointJacobian MultiplyByG(in Scalar8x32 a)
+        public unsafe PointJacobian MultiplyByG(in Scalar4x64 a)
         {
             PointStorage adds = default;
             PointJacobian result = PointJacobian.Infinity;
 
-            uint[] temp = new uint[] { a.b0, a.b1, a.b2, a.b3, a.b4, a.b5, a.b6, a.b7 };
-            for (int j = 0, k = 0; j < 64;)
+            ulong* pt = stackalloc ulong[4] { a.b0, a.b1, a.b2, a.b3 };
+            for (int i = 0; i < 64; i++)
             {
-                uint bit = temp[k] & 0x0000000f;
-                for (uint i = 0; i < 16; i++)
+                int n_i = (int)Scalar4x64.GetBitsLimb32(pt, i * 4, 4);
+                for (int j = 0; j < 16; j++)
                 {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
+                    adds = PointStorage.CMov(adds, prec[i, j], j == n_i ? 1U : 0);
                 }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                bit = (temp[k] & 0x000000f0) >> 4;
-                for (uint i = 0; i < 16; i++)
-                {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
-                }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                bit = (temp[k] & 0x00000f00) >> 8;
-                for (uint i = 0; i < 16; i++)
-                {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
-                }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                bit = (temp[k] & 0x0000f000) >> 12;
-                for (uint i = 0; i < 16; i++)
-                {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
-                }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                bit = (temp[k] & 0x000f0000) >> 16;
-                for (uint i = 0; i < 16; i++)
-                {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
-                }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                bit = (temp[k] & 0x00f00000) >> 20;
-                for (uint i = 0; i < 16; i++)
-                {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
-                }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                bit = (temp[k] & 0x0f000000) >> 24;
-                for (uint i = 0; i < 16; i++)
-                {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
-                }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                bit = (temp[k] & 0xf0000000) >> 28;
-                for (uint i = 0; i < 16; i++)
-                {
-                    adds = PointStorage.CMov(adds, prec[j, i], i == bit ? 1U : 0);
-                }
-                result = result.AddVar(adds.ToPoint(), out _);
-                j++;
-
-                k++;
+                Point add = adds.ToPoint();
+                result = result.AddVar(add, out _);
             }
+
+            //ulong[] temp = new ulong[] { a.b0, a.b1, a.b2, a.b3 };
+            //for (int i = 0, k = 0; i < 64;)
+            //{
+            //    uint bit = temp[k] & 0x0000000f;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    bit = (temp[k] & 0x000000f0) >> 4;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    bit = (temp[k] & 0x00000f00) >> 8;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    bit = (temp[k] & 0x0000f000) >> 12;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    bit = (temp[k] & 0x000f0000) >> 16;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    bit = (temp[k] & 0x00f00000) >> 20;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    bit = (temp[k] & 0x0f000000) >> 24;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    bit = (temp[k] & 0xf0000000) >> 28;
+            //    for (uint j = 0; j < 16; j++)
+            //    {
+            //        adds = PointStorage.CMov(adds, prec[i, j], j == bit ? 1U : 0);
+            //    }
+            //    result = result.AddVar(adds.ToPoint(), out _);
+            //    i++;
+
+            //    k++;
+            //}
 
             return result;
         }
 
-        public Span<byte> GetPubkey(in Scalar8x32 priv, bool compressed)
+        public Span<byte> GetPubkey(in Scalar4x64 priv, bool compressed)
         {
             PointJacobian pubJ = MultiplyByG(priv);
             Point pub = pubJ.ToPoint();
             return pub.ToByteArray(compressed);
         }
 
-        public void GetPubkey(in Scalar8x32 priv, out Span<byte> comp, out Span<byte> uncomp)
+        public void GetPubkey(in Scalar4x64 priv, out Span<byte> comp, out Span<byte> uncomp)
         {
             PointJacobian pubJ = MultiplyByG(priv);
             Point pub = pubJ.ToPoint();
 
-            UInt256_10x26 xNorm = pub.x.NormalizeVar();
-            UInt256_10x26 yNorm = pub.y.NormalizeVar();
+            UInt256_5x52 xNorm = pub.x.NormalizeVar();
+            UInt256_5x52 yNorm = pub.y.NormalizeVar();
 
             byte firstByte = yNorm.IsOdd ? (byte)3 : (byte)2;
 
@@ -200,9 +207,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             byte[] data = new byte[32];
             rng.GetBytes(data);
 
-            data = new Sha256().ComputeHash(Encoding.UTF8.GetBytes("foo"));
+            //data = new Sha256().ComputeHash(Encoding.UTF8.GetBytes("foo"));
 
-            Scalar8x32 sec = new Scalar8x32(data, out bool overflow);
+            Scalar4x64 sec = new Scalar4x64(data, out bool overflow);
             Debug.Assert(!overflow);
             PointJacobian pj = MultiplyByG(sec);
             Point p = pj.ToPoint();

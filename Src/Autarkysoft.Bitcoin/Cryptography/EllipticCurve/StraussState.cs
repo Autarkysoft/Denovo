@@ -11,12 +11,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
     {
         public StraussState(int size)
         {
-            aux = new UInt256_10x26[size];
+            aux = new UInt256_5x52[size];
             preA = new Point[size];
             ps = new StraussPointState[1] { new StraussPointState() };
         }
 
-        public StraussState(UInt256_10x26[] aux, Point[] preA, StraussPointState[] ps)
+        public StraussState(UInt256_5x52[] aux, Point[] preA, StraussPointState[] ps)
         {
             this.aux = aux;
             this.preA = preA;
@@ -25,7 +25,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         // aux is used to hold z-ratios, and then used to hold pre_a[i].x * BETA values.
-        public UInt256_10x26[] aux;
+        public UInt256_5x52[] aux;
         public Point[] preA;
         public StraussPointState[] ps;
     }

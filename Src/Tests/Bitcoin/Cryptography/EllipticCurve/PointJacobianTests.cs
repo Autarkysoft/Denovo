@@ -6,6 +6,7 @@
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives;
 using System;
+using Tests.Bitcoin.Cryptography.EllipticCurve.Primitives;
 
 namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
@@ -13,15 +14,15 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
     {
         internal static void AssertEquality(in PointJacobian expected, in PointJacobian actual)
         {
-            UInt256_10x26Tests.AssertEquality(expected.x.Normalize(), actual.x.Normalize());
-            UInt256_10x26Tests.AssertEquality(expected.y.Normalize(), actual.y.Normalize());
-            UInt256_10x26Tests.AssertEquality(expected.z.Normalize(), actual.z.Normalize());
+            UInt256_5x52Tests.AssertEqual(expected.x.Normalize(), actual.x.Normalize());
+            UInt256_5x52Tests.AssertEqual(expected.y.Normalize(), actual.y.Normalize());
+            UInt256_5x52Tests.AssertEqual(expected.z.Normalize(), actual.z.Normalize());
         }
 
         internal static void AssertEquality(in Point expected, in Point actual)
         {
-            UInt256_10x26Tests.AssertEquality(expected.x.Normalize(), actual.x.Normalize());
-            UInt256_10x26Tests.AssertEquality(expected.y.Normalize(), actual.y.Normalize());
+            UInt256_5x52Tests.AssertEqual(expected.x.Normalize(), actual.x.Normalize());
+            UInt256_5x52Tests.AssertEqual(expected.y.Normalize(), actual.y.Normalize());
         }
 
         private static Point CreateRandom()
@@ -29,7 +30,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             for (int i = 0; i < 20; i++)
             {
                 byte[] ba = Helper.CreateRandomBytes(32);
-                UInt256_10x26 x = new(ba, out bool isValid);
+                UInt256_5x52 x = new(ba, out bool isValid);
                 if (isValid && Point.TryCreateVar(x, true, out Point result))
                 {
                     return result;
@@ -38,12 +39,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             throw new Exception("Something is wrong.");
         }
 
-        private static UInt256_10x26 CreateRandomUint()
+        private static UInt256_5x52 CreateRandomUint()
         {
             for (int i = 0; i < 20; i++)
             {
                 byte[] ba = Helper.CreateRandomBytes(32);
-                UInt256_10x26 x = new(ba, out bool isValid);
+                UInt256_5x52 x = new(ba, out bool isValid);
                 if (isValid && !x.IsZero)
                 {
                     return x;
@@ -64,8 +65,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.True(pt2j.EqualsVar(rescaled));
 
             PointJacobian res1 = pt1j.Add(pt2);
-            PointJacobian res2 = pt1j.AddVar(pt2, out UInt256_10x26 rzrA);
-            PointJacobian res3 = pt1j.AddVar(pt2j, out UInt256_10x26 rzrB);
+            PointJacobian res2 = pt1j.AddVar(pt2, out UInt256_5x52 rzrA);
+            PointJacobian res3 = pt1j.AddVar(pt2j, out UInt256_5x52 rzrB);
             PointJacobian res4 = pt1j.AddVar(rescaled, out _);
 
             AssertEquality(res1.ToPoint(), res2.ToPoint());
@@ -73,7 +74,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             AssertEquality(res1.ToPoint(), res4.ToPoint());
             Assert.True(res1.EqualsVar(res4));
 
-            UInt256_10x26Tests.AssertEquality(rzrA.Normalize(), rzrB.Normalize());
+            UInt256_5x52Tests.AssertEqual(rzrA.Normalize(), rzrB.Normalize());
         }
 
 
@@ -82,9 +83,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                                                           uint i, uint j, uint k, uint l, uint m, uint n, uint o, uint p)
         {
             return new PointJacobian(
-                UInt256_10x26Tests.SECP256K1_FE_CONST(a, b, c, d, e, f, g, h),
-                UInt256_10x26Tests.SECP256K1_FE_CONST(i, j, k, l, m, n, o, p),
-                UInt256_10x26Tests.SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 1),
+                UInt256_5x52Tests.SECP256K1_FE_CONST(a, b, c, d, e, f, g, h),
+                UInt256_5x52Tests.SECP256K1_FE_CONST(i, j, k, l, m, n, o, p),
+                UInt256_5x52Tests.SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 1),
                 false);
         }
     }

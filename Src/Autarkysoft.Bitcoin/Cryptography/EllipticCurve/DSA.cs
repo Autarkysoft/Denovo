@@ -40,7 +40,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // - two non-zero entries in wnaf are separated by at least w-1 zeroes.
         // - the number of set values in wnaf is returned. This number is at most 256, and at most one more
         //   than the number of bits in the (absolute value) of the input.
-        private static unsafe int EcmultWnaf(int[] wnaf, int len, in Scalar8x32 a, in int w)
+        private static unsafe int EcmultWnaf(int[] wnaf, int len, in Scalar4x64 a, in int w)
         {
             // TODO: int[] wnaf was converted to a sbyte[] in original implementation. Should we do that? it reduces memory usage.
             int lastSetBit = -1;
@@ -59,20 +59,20 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 wnaf[bit] = 0;
             }
 
-            Scalar8x32 s = a;
+            Scalar4x64 s = a;
 
-            // Scalar8x32.GetBits(pt, 255, 1);
-            if (((s.b7 >> 31) & 1) != 0)
+            // Scalar4x64.GetBits(pt, 255, 1);
+            if (((s.b3 >> 63) & 1) != 0)
             {
                 s = s.Negate();
                 sign = -1;
             }
 
-            uint* pt = stackalloc uint[8] { s.b0, s.b1, s.b2, s.b3, s.b4, s.b5, s.b6, s.b7 };
+            ulong* pt = stackalloc ulong[4] { s.b0, s.b1, s.b2, s.b3 };
             bit = 0;
             while (bit < len)
             {
-                if (Scalar8x32.GetBits(pt, bit, 1) == (uint)carry)
+                if (Scalar4x64.GetBitsLimb32(pt, bit, 1) == (uint)carry)
                 {
                     bit++;
                     continue;
@@ -84,7 +84,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                     now = len - bit;
                 }
 
-                int word = (int)Scalar8x32.GetBitsVar(pt, bit, now) + carry;
+                int word = (int)Scalar4x64.GetBitsVar(pt, bit, now) + carry;
 
                 carry = (word >> (w - 1)) & 1;
                 word -= carry << w;
@@ -99,7 +99,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             Debug.Assert(carry == 0);
             while (verify_bit < 256)
             {
-                Debug.Assert(Scalar8x32.GetBits(pt, verify_bit, 1) == 0);
+                Debug.Assert(Scalar4x64.GetBitsLimb32(pt, verify_bit, 1) == 0);
                 verify_bit++;
             }
 #endif
@@ -120,7 +120,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         //
         // Lastly the zr[0] value, which isn't used above, is set so that:
         // - a.z = z(pre_a[0]) / zr[0]
-        private static void OddMultiplesTable(int n, Point[] pre_a, UInt256_10x26[] zr, int index, ref UInt256_10x26 z, in PointJacobian a)
+        private static void OddMultiplesTable(int n, Point[] pre_a, UInt256_5x52[] zr, int index, ref UInt256_5x52 z, in PointJacobian a)
         {
             Debug.Assert(!a.isInfinity);
 
@@ -145,7 +145,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // ai.z = a->z;
 #if DEBUG
             pre_a[index].Verify();
-            PointJacobian tempRes = new PointJacobian(pre_a[index].x, pre_a[index].y, UInt256_10x26.One, pre_a[index].isInfinity);
+            PointJacobian tempRes = new PointJacobian(pre_a[index].x, pre_a[index].y, UInt256_5x52.One, pre_a[index].isInfinity);
             tempRes.Verify();
 #endif
             PointJacobian ai = new PointJacobian(pre_a[index].x, pre_a[index].y, a.z, pre_a[index].isInfinity);
@@ -194,7 +194,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
-        private static Point TableGetPointLambda(Point[] pre, UInt256_10x26[] x, int index, int n, int w)
+        private static Point TableGetPointLambda(Point[] pre, UInt256_5x52[] x, int index, int n, int w)
         {
 #if DEBUG
             VerifyTable(n, w);
@@ -226,7 +226,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        private static PointJacobian StraussWnaf(StraussState state, int num, PointJacobian[] a, Scalar8x32[] na, in Scalar8x32 ng)
+        private static PointJacobian StraussWnaf(StraussState state, int num, PointJacobian[] a, Scalar4x64[] na, in Scalar4x64 ng)
         {
             Debug.Assert(a.Length > 0);
             Debug.Assert(a.Length == na.Length);
@@ -241,7 +241,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
             // NOTE: num (ie. a.Length), np and no are using size_t type which is at least 16 bits.
 
-            UInt256_10x26 Z = UInt256_10x26.One;
+            UInt256_5x52 Z = UInt256_5x52.One;
             for (int np = 0; np < num; np++)
             {
                 if (na[np].IsZero || a[np].isInfinity)
@@ -250,7 +250,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 }
 
                 // Split na into na_1 and na_lam (where na = na_1 + na_lam*lambda, and na_1 and na_lam are ~128 bit)
-                Scalar8x32.SplitLambda(out Scalar8x32 na1, out Scalar8x32 naLam, na[np]);
+                Scalar4x64.SplitLambda(out Scalar4x64 na1, out Scalar4x64 naLam, na[np]);
 
                 // Build wnaf representation for na_1 and na_lam
                 state.ps[no].bitsNa1 = EcmultWnaf(state.ps[no].wnafNa1, 129, na1, WindowA);
@@ -301,14 +301,14 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             {
                 for (int i = 0; i < TableSizeWindowA; i++)
                 {
-                    state.aux[np * TableSizeWindowA + i] = state.preA[np * TableSizeWindowA + i].x * UInt256_10x26.Beta;
+                    state.aux[np * TableSizeWindowA + i] = state.preA[np * TableSizeWindowA + i].x * UInt256_5x52.Beta;
                 }
             }
 
             if (!ng.IsZero)
             {
                 // split ng into ng_1 and ng_128 (where gn = gn_1 + gn_128*2^128, and gn_1 and gn_128 are ~128 bit)
-                Scalar8x32.Split128(ng, out Scalar8x32 ng_1, out Scalar8x32 ng_128);
+                Scalar4x64.Split128(ng, out Scalar4x64 ng_1, out Scalar4x64 ng_128);
 
                 // Build wnaf representation for ng_1 and ng_128
                 bitsNg1 = EcmultWnaf(wnafNg1, 129, ng_1, WINDOW_G);
@@ -373,19 +373,19 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Double multiply: R = na*A + ng*G
         /// </summary>
-        public PointJacobian ECMult(in PointJacobian a, in Scalar8x32 na, in Scalar8x32 ng)
+        public PointJacobian ECMult(in PointJacobian a, in Scalar4x64 na, in Scalar4x64 ng)
         {
             // secp256k1_ecmult
             StraussState state = new StraussState(TableSizeWindowA);
-            return StraussWnaf(state, 1, new PointJacobian[] { a }, new Scalar8x32[] { na }, ng);
+            return StraussWnaf(state, 1, new PointJacobian[] { a }, new Scalar4x64[] { na }, ng);
         }
 
-        internal PointJacobian Multiply(in Scalar8x32 k, in Point point)
+        internal PointJacobian Multiply(in Scalar4x64 k, in Point point)
         {
             PointJacobian result = PointJacobian.Infinity;
             PointJacobian addend = point.ToPointJacobian();
 
-            Span<uint> temp = new uint[] { k.b0, k.b1, k.b2, k.b3, k.b4, k.b5, k.b6, k.b7 };
+            Span<ulong> temp = new ulong[] { k.b0, k.b1, k.b2, k.b3 };
             while (temp[^1] == 0)
             {
                 temp = temp.Slice(0, temp.Length - 1);
@@ -433,25 +433,25 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="lowR">If true the process fails if R.X had its highest bit set</param>
         /// <param name="sig">Signature (null if process fails)</param>
         /// <returns>True if successful, otherwise false.</returns>
-        public bool TrySign(byte[] hash, Scalar8x32 key, byte[] nonce, bool lowS, bool lowR, out Signature sig)
+        public bool TrySign(byte[] hash, Scalar4x64 key, byte[] nonce, bool lowS, bool lowR, out Signature sig)
         {
-            Scalar8x32 e = new Scalar8x32(hash, out _);
-            Scalar8x32 k = new Scalar8x32(nonce, out bool overflow);
+            Scalar4x64 e = new Scalar4x64(hash, out _);
+            Scalar4x64 k = new Scalar4x64(nonce, out bool overflow);
             // RFC-6979a returns valid values
             Debug.Assert(!overflow && !k.IsZero);
 
             PointJacobian rj = calc.MultiplyByG(k);
             Point rp = rj.ToPoint();
-            Scalar8x32 r = new Scalar8x32(rp.x.Normalize().ToByteArray(), out overflow);
+            Scalar4x64 r = new Scalar4x64(rp.x.Normalize().ToSpan(), out overflow);
 
-            if (r.IsZero || (lowR && (r.b7 & 0b10000000_00000000_00000000_00000000U) != 0))
+            if (r.IsZero || (lowR && (r.b3 & 0x8000000000000000U) != 0))
             {
                 sig = null;
                 return false;
             }
             byte v = (byte)((r.IsHigh ? 2 : 0) | (rp.y.Normalize().IsOdd ? 1 : 0));
 
-            Scalar8x32 s = k.Inverse().Multiply(e.Add(r.Multiply(key), out _));
+            Scalar4x64 s = k.Inverse().Multiply(e.Add(r.Multiply(key), out _));
 
             if (s.IsZero)
             {
@@ -492,10 +492,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <param name="hash">Hash(m) to use for signing</param>
         /// <param name="key">Private key bytes (must be padded to 32 bytes)</param>
         /// <returns>Signature</returns>
-        public Signature Sign(byte[] hash, Scalar8x32 key)
+        public Signature Sign(byte[] hash, Scalar4x64 key)
         {
             using Rfc6979 kGen = new Rfc6979();
-            byte[] nonce = kGen.GetK(hash, key.ToByteArray(), null).ToByteArray(true, true);
+            byte[] nonce = kGen.GetK(hash, key.ToByteArray().ToArray(), null).ToByteArray(true, true);
             if (TrySign(hash, key, Pad32(nonce), true, true, out Signature sig))
             {
                 return sig;
@@ -511,7 +511,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                     extraEntropy[2] = (byte)(count >> 16);
                     extraEntropy[3] = (byte)(count >> 24);
                     count++;
-                    nonce = kGen.GetK(hash, key.ToByteArray(), extraEntropy).ToByteArray(true, true);
+                    nonce = kGen.GetK(hash, key.ToByteArray().ToArray(), extraEntropy).ToByteArray(true, true);
                 } while (!TrySign(hash, key, Pad32(nonce), true, true, out sig));
                 return sig;
             }
@@ -519,44 +519,44 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
 
-        public bool VerifySimple(Signature sig, in Point pubkey, in Scalar8x32 hash, bool lowS)
-        {
-            // Note that Scalar (r and s) is always < N so there is no need to check and reject r/s >= N here
-            if (sig.R.IsZero || sig.S.IsZero)
-            {
-                return false;
-            }
+        //public bool VerifySimple(Signature sig, in Point pubkey, in Scalar4x64 hash, bool lowS)
+        //{
+        //    // Note that Scalar (r and s) is always < N so there is no need to check and reject r/s >= N here
+        //    if (sig.R.IsZero || sig.S.IsZero)
+        //    {
+        //        return false;
+        //    }
 
-            if (sig.S.IsHigh)
-            {
-                if (lowS)
-                {
-                    return false;
-                }
-                else
-                {
-                    sig.S = sig.S.Negate();
-                }
-            }
-            Debug.Assert(!sig.S.IsHigh);
+        //    if (sig.S.IsHigh)
+        //    {
+        //        if (lowS)
+        //        {
+        //            return false;
+        //        }
+        //        else
+        //        {
+        //            sig.S = sig.S.Negate();
+        //        }
+        //    }
+        //    Debug.Assert(!sig.S.IsHigh);
 
-            Scalar8x32 invMod = sig.S.InverseVar();
-            Scalar8x32 u1 = hash.Multiply(invMod);
-            Scalar8x32 u2 = sig.R.Multiply(invMod);
+        //    Scalar4x64 invMod = sig.S.InverseVar();
+        //    Scalar4x64 u1 = hash.Multiply(invMod);
+        //    Scalar4x64 u2 = sig.R.Multiply(invMod);
 
-            Point Rxy = calc.MultiplyByG(u1).AddVar(Multiply(u2, pubkey), out _).ToPoint();
+        //    Point Rxy = calc.MultiplyByG(u1).AddVar(Multiply(u2, pubkey), out _).ToPoint();
 
-            if (Rxy.x.IsZeroNormalizedVar() && Rxy.y.IsZeroNormalizedVar())
-            {
-                return false;
-            }
+        //    if (Rxy.x.IsZeroNormalizedVar() && Rxy.y.IsZeroNormalizedVar())
+        //    {
+        //        return false;
+        //    }
 
-            UInt256_10x26 temp = new UInt256_10x26(sig.R.b0, sig.R.b1, sig.R.b2, sig.R.b3, sig.R.b4, sig.R.b5, sig.R.b6, sig.R.b7);
-            return Rxy.x.Equals(temp);
-        }
+        //    UInt256_5x52 temp = new UInt256_5x52(sig.R.b0, sig.R.b1, sig.R.b2, sig.R.b3);
+        //    return Rxy.x.Equals(temp);
+        //}
 
 
-        public bool Verify(Signature sig, in Point pubkey, in Scalar8x32 hash, bool lowS)
+        public bool Verify(Signature sig, in Point pubkey, in Scalar4x64 hash, bool lowS)
         {
             // secp256k1_ecdsa_verify
             // secp256k1_ecdsa_sig_verify
@@ -577,17 +577,17 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 }
             }
 
-            Scalar8x32 sn = sig.S.InverseVar();
-            Scalar8x32 u1 = sn.Multiply(hash);
-            Scalar8x32 u2 = sn.Multiply(sig.R);
+            Scalar4x64 sn = sig.S.InverseVar();
+            Scalar4x64 u1 = sn.Multiply(hash);
+            Scalar4x64 u2 = sn.Multiply(sig.R);
             PointJacobian pubkeyj = pubkey.ToPointJacobian();
             PointJacobian pr = ECMult(pubkeyj, u2, u1);
             if (pr.isInfinity)
             {
                 return false;
             }
-            byte[] c = sig.R.ToByteArray();
-            UInt256_10x26 xr = new UInt256_10x26(c, out _);
+            Span<byte> c = sig.R.ToByteArray();
+            UInt256_5x52 xr = new UInt256_5x52(c, out _);
 
             // We now have the recomputed R point in pr, and its claimed x coordinate (modulo n)
             //  in xr. Naively, we would extract the x coordinate from pr (requiring a inversion modulo p),
@@ -609,13 +609,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
                 // xr * pr.z^2 mod p == pr.x, so the signature is valid.
                 return true;
             }
-            if (xr.CompareToVar(UInt256_10x26.PMinusN) >= 0)
+            if (xr.CompareToVar(UInt256_5x52.PMinusN) >= 0)
             {
                 // xr + n >= p, so we can skip testing the second case.
                 return false;
             }
 
-            xr += UInt256_10x26.N;
+            xr += UInt256_5x52.N;
             if (pr.EqualsVar(xr))
             {
                 // (xr + n) * pr.z^2 mod p == pr.x, so the signature is valid.
@@ -625,20 +625,20 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
 
-        private Scalar8x32 ComputeSchnorrE(in UInt256_10x26 r, in UInt256_10x26 px, byte[] hash)
+        private Scalar4x64 ComputeSchnorrE(in UInt256_5x52 r, in UInt256_5x52 px, byte[] hash)
         {
             // Compute tagged hash:
             // tagHash = Sha256(tagstring)
             // msg = R.X | P.X | hash
             // return sha256(tagHash | tagHash | msg)
             using Sha256 sha = new Sha256();
-            byte[] temp = sha.ComputeTaggedHash_BIP340_challenge(r.ToByteArray(), px.ToByteArray(), hash);
-            return new Scalar8x32(temp, out _);
+            byte[] temp = sha.ComputeTaggedHash_BIP340_challenge(r.ToSpan(), px.ToSpan(), hash);
+            return new Scalar4x64(temp, out _);
         }
 
         public bool VerifySchnorr(SchnorrSignature sig, in Point pubkey, byte[] hash)
         {
-            Scalar8x32 e = ComputeSchnorrE(sig.R, pubkey.x, hash);
+            Scalar4x64 e = ComputeSchnorrE(sig.R, pubkey.x, hash);
             // rj =  s*G + (-e)*pkj
             e = e.Negate();
             PointJacobian rj = calc.MultiplyByG(sig.S).AddVar(Multiply(e, pubkey), out _);
