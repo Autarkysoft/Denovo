@@ -432,6 +432,56 @@ namespace Autarkysoft.Bitcoin
 
 
         /// <summary>
+        /// Writes the given <see cref="UInt256_5x52"/> to this stream as bytes.
+        /// </summary>
+        /// <param name="val">256-bit value (has to be normalized)</param>
+        public void Write(in UInt256_5x52 val)
+        {
+#if DEBUG
+            val.Verify();
+            Debug.Assert(val.isNormalized);
+#endif
+            // TODO: add a const to UInt256_5x52
+            CheckAndResize(Scalar4x64.ByteSize);
+
+            buffer[position +31] = (byte)val.b0; // 8(0)
+            buffer[position +30] = (byte)(val.b0 >> 8); // 8(8)
+            buffer[position +29] = (byte)(val.b0 >> 16); // 8(16)
+            buffer[position +28] = (byte)(val.b0 >> 24); // 8(24)
+            buffer[position +27] = (byte)(val.b0 >> 32); // 8(32)
+            buffer[position +26] = (byte)(val.b0 >> 40); // 8(40)
+            buffer[position +25] = (byte)((val.b1 << 4) | (val.b0 >> 48)); // 4(0)+4(48)
+            buffer[position +24] = (byte)(val.b1 >> 4); // 8(4)
+            buffer[position +23] = (byte)(val.b1 >> 12); // 8(12)
+            buffer[position +22] = (byte)(val.b1 >> 20); // 8(20)
+            buffer[position +21] = (byte)(val.b1 >> 28); // 8(28)
+            buffer[position +20] = (byte)(val.b1 >> 36); // 8(36)
+            buffer[position +19] = (byte)(val.b1 >> 44); // 8(44)
+            buffer[position +18] = (byte)val.b2; // 8(0)
+            buffer[position +17] = (byte)(val.b2 >> 8); // 8(16-8=8)
+            buffer[position +16] = (byte)(val.b2 >> 16); // 8(24-8=16)
+            buffer[position +15] = (byte)(val.b2 >> 24); // 8(32-8=24)
+            buffer[position +14] = (byte)(val.b2 >> 32); // 8(40-8=32)
+            buffer[position +13] = (byte)(val.b2 >> 40); // 8(48-8=40)
+            buffer[position +12] = (byte)((val.b3 << 4) | (val.b2 >> 48)); // 4(0)+4(52-4=48)
+            buffer[position +11] = (byte)(val.b3 >> 4); // 8(12-8=4)
+            buffer[position +10] = (byte)(val.b3 >> 12); // 8(20-8=12)
+            buffer[position +9] = (byte)(val.b3 >> 20); // 8(28-8=20)
+            buffer[position +8] = (byte)(val.b3 >> 28); // 8(36-8=28)
+            buffer[position +7] = (byte)(val.b3 >> 36); // 8(44-8=36)
+            buffer[position +6] = (byte)(val.b3 >> 44); // 8(52-8=44)
+            buffer[position +5] = (byte)val.b4; // 8(8-8=0)
+            buffer[position +4] = (byte)(val.b4 >> 8); // 8(16-8)
+            buffer[position +3] = (byte)(val.b4 >> 16); // 8(24-8=16)
+            buffer[position +2] = (byte)(val.b4 >> 24); // 8(32-8=24)
+            buffer[position +1] = (byte)(val.b4 >> 32); // 8(40-8=32)
+            buffer[position +0] = (byte)(val.b4 >> 40); // Take 8 bits (rem=48-8=40)
+
+            position += Scalar4x64.ByteSize;
+        }
+
+
+        /// <summary>
         /// Writes the given <see cref="UInt256_10x26"/> to this stream as bytes.
         /// </summary>
         /// <param name="val">256-bit value (has to be normalized)</param>
