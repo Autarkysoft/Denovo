@@ -307,6 +307,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
             }
         }
 
+        /// <summary>
+        /// Only works in DEBUG
+        /// </summary>
         internal static void VerifyMagnitude(int magnitude, int max)
         {
             Debug.Assert(max >= 0);
