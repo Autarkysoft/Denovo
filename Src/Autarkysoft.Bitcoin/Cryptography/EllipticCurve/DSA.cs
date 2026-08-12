@@ -40,7 +40,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         // - two non-zero entries in wnaf are separated by at least w-1 zeroes.
         // - the number of set values in wnaf is returned. This number is at most 256, and at most one more
         //   than the number of bits in the (absolute value) of the input.
-        private static unsafe int EcmultWnaf(int[] wnaf, int len, in Scalar4x64 a, in int w)
+        private static unsafe int EcmultWnaf(int[] wnaf, int len, in Scalar4x64 a, int w)
         {
             // TODO: int[] wnaf was converted to a sbyte[] in original implementation. Should we do that? it reduces memory usage.
             int lastSetBit = -1;
