@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives;
+using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
 
@@ -40,6 +41,14 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
             ulong u3 = ((ulong)d7) << 32 | d6;
 
             return new Scalar4x64(u0, u1, u2, u3);
+        }
+
+        internal static void AssertEqual(in Scalar4x64 expected, in Scalar4x64 actual)
+        {
+            Assert.Equal(expected.b0, actual.b0);
+            Assert.Equal(expected.b1, actual.b1);
+            Assert.Equal(expected.b2, actual.b2);
+            Assert.Equal(expected.b3, actual.b3);
         }
 
 
@@ -89,6 +98,51 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
             Assert.Equal(u1, scalar.b1);
             Assert.Equal(u2, scalar.b2);
             Assert.Equal(u3, scalar.b3);
+        }
+
+        [Fact]
+        public unsafe void Constructor_FromSha256HashStateTest()
+        {
+            Sha256 sha = new();
+            byte[] msg = Helper.HexToBytes("0ad37039e464da588854bd86f75186c39fa21c4a3517bdc945024b5a54637503");
+            byte[] hash = sha.ComputeHash(msg);
+
+            uint[] hashState = new uint[8]
+            {
+                0x0541463A, 0x6A9748E9, 0x66853366, 0xFB17BB2A,
+                0x8AFDC22B, 0xC501F131, 0x0BA1B708, 0x5A64B41A
+            };
+
+            fixed (uint* hPt = &hashState[0])
+            {
+                Scalar4x64 actual = new(hPt, out bool actOf);
+                Scalar4x64 expected = new(hash, out bool expOf);
+
+                Assert.Equal(expOf, actOf);
+                AssertEqual(expected, actual);
+            }
+        }
+
+        [Fact]
+        public unsafe void Constructor_FromSha512HashStateTest()
+        {
+            byte[] msg = Helper.HexToBytes("0ad37039e464da588854bd86f75186c39fa21c4a3517bdc945024b5a54637503");
+            Span<byte> hash = Sha512.ComputeHash(msg);
+
+            ulong[] hashState = new ulong[8]
+            {
+                0x203269F77B0B55CC, 0x3AE94250B5CCB5AD, 0xA897E09070C3E09D, 0xB742D69FD1D3ABD2,
+                0x6CD6FCD9FA86A312, 0xD45586AEA1A858E5, 0xC7F0C07262384FDE, 0xFED4019FE5DEF128
+            };
+
+            fixed (ulong* hPt = &hashState[0])
+            {
+                Scalar4x64 actual = new(hPt, out bool actOf);
+                Scalar4x64 expected = new(hash.Slice(0, 32), out bool expOf);
+
+                Assert.Equal(expOf, actOf);
+                AssertEqual(expected, actual);
+            }
         }
 
         public static IEnumerable<object[]> GetByteCases()

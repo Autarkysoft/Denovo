@@ -64,6 +64,44 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="Scalar4x64"/> using the given pointer
+        /// to a <see cref="Hashing.Sha256.hashState"/>.
+        /// </summary>
+        /// <remarks>
+        /// Useful for micro-optimization to skip allocating a byte array.
+        /// </remarks>
+        /// <param name="hPt"><see cref="Hashing.Sha256.hashState"/> pointer</param>
+        /// <param name="overflow">Returns true if value is bigger than or equal to curve order; otherwise false</param>
+        public unsafe Scalar4x64(uint* hPt, out bool overflow)
+        {
+            b3 = hPt[1] | (ulong)hPt[0] << 32;
+            b2 = hPt[3] | (ulong)hPt[2] << 32;
+            b1 = hPt[5] | (ulong)hPt[4] << 32;
+            b0 = hPt[7] | (ulong)hPt[6] << 32;
+
+            overflow = GetOverflow() != 0;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Scalar4x64"/> using the given pointer
+        /// to a SHA512 hash-state. Only the first 256 bits will be used.
+        /// </summary>
+        /// <remarks>
+        /// Useful for micro-optimization to skip allocating a byte array.
+        /// </remarks>
+        /// <param name="hPt">SHA512 hashState pointer</param>
+        /// <param name="overflow">Returns true if value is bigger than or equal to curve order; otherwise false</param>
+        public unsafe Scalar4x64(ulong* hPt, out bool overflow)
+        {
+            b3 = hPt[0];
+            b2 = hPt[1];
+            b1 = hPt[2];
+            b0 = hPt[3];
+
+            overflow = GetOverflow() != 0;
+        }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="Scalar4x64"/> using the given pointer.
         /// </summary>
         /// <remarks>
@@ -77,7 +115,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
             Verify();
 #endif
         }
-
 
         /// <summary>
         /// Initializes a new instance of <see cref="Scalar4x64"/> using the given pointer to a big-endian array
