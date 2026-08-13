@@ -1,5 +1,14 @@
 ### Next release
-[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.27.0.0...master)
+[Commits since last release](https://github.com/Autarkysoft/Denovo/compare/B0.28.0.0...master)
+
+### Release 0.28.0 (2026-08-13)
+[Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.27.0.0...B0.28.0.0)
+* Add `net10.0` to target frameworks.
+* Introduce new implementations of EC primitives using 64-bit integers.
+* 32-bit implementations of EC primitives are marked obsolete and will be removed in a future version.
+* EC primitives were moved to the `Primitives` namespace and modular inverse to `ModInv` namespace.
+* Implemented (U)Int128 structs to be used for `netstandard2.1` target framework.
+* Lots of new tests, various code improvements, and a handful of bug fixes.
 
 ### Release 0.27.0 (2025-02-08)
 [Full Changelog](https://github.com/Autarkysoft/Denovo/compare/B0.26.0.0...B0.27.0.0)
