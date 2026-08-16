@@ -38,6 +38,9 @@ namespace Benchmarks.Bitcoin.Cryptography.Hashing
         public byte[] System_Sha256() => sysSha.ComputeHash(data);
 
         [Benchmark]
+        public byte[] System_HashData() => SHA256.HashData(data);
+
+        [Benchmark]
         public byte[] Static_Sha256() => StaticSha256.ComputeHash(data);
     }
 }

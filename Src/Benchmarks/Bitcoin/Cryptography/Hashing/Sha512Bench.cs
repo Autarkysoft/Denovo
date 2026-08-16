@@ -33,8 +33,11 @@ namespace Benchmarks.Bitcoin.Cryptography.Hashing
 
         [Benchmark]
         public byte[] System_Sha512() => sysSha.ComputeHash(data);
-        [Benchmark]
 
+        [Benchmark]
+        public byte[] System_HashData() => SHA512.HashData(data);
+
+        [Benchmark]
         public byte[] InstanceSha512()
         {
             using Sha512Instance sha = new();
