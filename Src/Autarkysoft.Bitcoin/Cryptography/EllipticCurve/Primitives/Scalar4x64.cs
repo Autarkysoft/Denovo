@@ -419,7 +419,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
             other.Verify();
 #endif
 
-            ulong* r = stackalloc ulong[8];
+            ulong* r = stackalloc ulong[4];
 
             UInt128 t = new UInt128(0, b0) + new UInt128(0, other.b0);
             r[0] = (ulong)t; t >>= 64;
@@ -1046,7 +1046,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives
 
 #if DEBUG
             // The line above only computed the bottom 64 bits of r->d[3]; redo the computation
-            // in full 128 bits to make sure the top 64 bits are indeed zero. */
+            // in full 128 bits to make sure the top 64 bits are indeed zero.
             t += new UInt128(0, b3 >> 1) + new UInt128(0, NH3 & mask);
             t >>= 64;
             Debug.Assert((ulong)t == 0);
