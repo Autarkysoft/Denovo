@@ -1,9 +1,10 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Tests
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.IO;
@@ -11,12 +12,11 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
+namespace Tests.Bitcoin.Cryptography.OldECC
 {
     /// <summary>
     /// The public part of the key pair
     /// </summary>
-    [Obsolete]
     public class PublicKey
     {
         /// <summary>
@@ -162,7 +162,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
                 Buffer.BlockCopy(xBytes, 0, temp, 32 - xBytes.Length, xBytes.Length);
                 xBytes = temp;
             }
-            byte[] t = sha.ComputeTaggedHash_TapTweak(xBytes);
+            byte[] t = sha.ComputeTaggedHash("TapTweak", out _, xBytes);
             BigInteger tInt = t.ToBigInt(true, true);
             if (tInt >= calc.curve.N)
             {

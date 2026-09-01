@@ -4,10 +4,8 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System.Collections.Generic;
-using Xunit;
+using Tests.Bitcoin.Cryptography.OldECC;
 
 namespace Tests.Bitcoin.Cryptography.Asymmetric.EllipticCurve
 {

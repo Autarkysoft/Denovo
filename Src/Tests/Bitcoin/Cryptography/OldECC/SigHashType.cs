@@ -1,11 +1,11 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Tests
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using System;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
+namespace Tests.Bitcoin.Cryptography.OldECC
 {
     /// <summary>
     /// A single byte added to bitcoin transaction signatures to indicate which parts of the transaction were signed. 
@@ -17,7 +17,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
     /// <remarks>
     /// https://github.com/bitcoin/bitcoin/blob/907d636e5e76bd884a4ca1a1ebd8db68a3e64705/src/script/interpreter.h#L23-L34
     /// </remarks>
-    [Obsolete]
     [Flags]
     public enum SigHashType
     {

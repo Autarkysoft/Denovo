@@ -4,7 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin.Cryptography.EllipticCurve;
 using Autarkysoft.Bitcoin.Encoders;
 using Denovo.Models;
 using Denovo.MVVM;
@@ -153,9 +153,10 @@ namespace Denovo.ViewModels
                 using PrivateKey prv = SelectedKeyEncoding == EncodingNames.Base16 ?
                                        new PrivateKey(Base16.Decode(Key)) :
                                        new PrivateKey(Key);
+                DSA dsa = new();
                 // TODO: change Decrypt to accept byte[] by default
                 byte[] inputBytes = Decode(SelectedInputEncoding, Input);
-                byte[] result = Decode(EncodingNames.UTF8, prv.Decrypt(inputBytes.ToBase64()));
+                byte[] result = Decode(EncodingNames.UTF8, prv.Decrypt(dsa, inputBytes.ToBase64()));
                 Output = Encode(SelectedOutputEncoding, result);
             }
             catch (Exception ex)
@@ -167,44 +168,44 @@ namespace Denovo.ViewModels
 
         public void Encrypt()
         {
-            Error = string.Empty;
-            try
-            {
-                if (string.IsNullOrEmpty(Input))
-                {
-                    Error = "Message is empty";
-                    return;
-                }
+            Error = "Not implemented!";
+            //try
+            //{
+            //    if (string.IsNullOrEmpty(Input))
+            //    {
+            //        Error = "Message is empty";
+            //        return;
+            //    }
 
-                byte[] pubBa = SelectedKeyEncoding switch
-                {
-                    EncodingNames.Base16 => Base16.Decode(Key),
-                    EncodingNames.Base58Check => Base58.DecodeWithChecksum(Key),
-                    _ => null
-                };
+            //    byte[]? pubBa = SelectedKeyEncoding switch
+            //    {
+            //        EncodingNames.Base16 => Base16.Decode(Key),
+            //        EncodingNames.Base58Check => Base58.DecodeWithChecksum(Key),
+            //        _ => null
+            //    };
 
-                if (pubBa == null)
-                {
-                    Error = "Undefined encoding.";
-                }
-                else if (PublicKey.TryRead(pubBa, out PublicKey pub))
-                {
-                    // TODO: change Encrypt to return byte[]
-                    byte[] inputBytes = Decode(SelectedInputEncoding, Input);
-                    byte[] result = Decode(EncodingNames.Base64, pub.Encrypt(Encoding.UTF8.GetString(inputBytes)));
-                    Output = Encode(SelectedOutputEncoding, result);
-                }
-                else
-                {
-                    Output = string.Empty;
-                    Error = "Failed: invalid public key.";
-                }
-            }
-            catch (Exception ex)
-            {
-                Output = string.Empty;
-                Error = $"Failed: {ex.Message}";
-            }
+            //    if (pubBa == null)
+            //    {
+            //        Error = "Undefined encoding.";
+            //    }
+            //    else if (Point.TryRead(pubBa, out Point pub))
+            //    {
+            //        // TODO: change Encrypt to return byte[]
+            //        byte[] inputBytes = Decode(SelectedInputEncoding, Input);
+            //        byte[] result = Decode(EncodingNames.Base64, pub.Encrypt(Encoding.UTF8.GetString(inputBytes)));
+            //        Output = Encode(SelectedOutputEncoding, result);
+            //    }
+            //    else
+            //    {
+            //        Output = string.Empty;
+            //        Error = "Failed: invalid public key.";
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Output = string.Empty;
+            //    Error = $"Failed: {ex.Message}";
+            //}
         }
     }
 }

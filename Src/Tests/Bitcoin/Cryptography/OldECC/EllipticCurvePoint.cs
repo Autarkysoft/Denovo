@@ -1,4 +1,4 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Tests
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
@@ -6,12 +6,11 @@
 using System;
 using System.Numerics;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
+namespace Tests.Bitcoin.Cryptography.OldECC
 {
     /// <summary>
     /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
     /// </summary>
-    [Obsolete]
     public readonly struct EllipticCurvePoint : IEquatable<EllipticCurvePoint>
     {
         /// <summary>

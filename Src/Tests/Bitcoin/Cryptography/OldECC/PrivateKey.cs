@@ -1,24 +1,25 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Tests
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve;
+using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using Autarkysoft.Bitcoin.Encoders;
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs
+namespace Tests.Bitcoin.Cryptography.OldECC
 {
     /// <summary>
     /// Implementation of bitcoin private keys.
     /// Implements <see cref="IDisposable"/>.
     /// </summary>
-    [Obsolete]
     public class PrivateKey : IDisposable
     {
         /// <summary>

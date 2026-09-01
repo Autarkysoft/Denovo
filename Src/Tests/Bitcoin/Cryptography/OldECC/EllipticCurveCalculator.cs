@@ -1,23 +1,22 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Tests
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
-using Autarkysoft.Bitcoin.Cryptography.Arithmetic;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
+using Autarkysoft.Bitcoin;
+using Autarkysoft.Bitcoin.Cryptography;
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
+namespace Tests.Bitcoin.Cryptography.OldECC
 {
     /// <summary>
     /// Implementation of elliptic curve cryptography for secp256k1 curve. 
     /// From basic functions such as EC point multiplication to signing (ECDSA and ECSDSA).
     /// </summary>
-    [Obsolete]
     public class EllipticCurveCalculator
     {
         /// <summary>
@@ -556,7 +555,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             // TODO: change all these BigIntegers to ModUint256 type so that it doesn't need length checks,...!
             byte[] pubBa = new byte[32];
             Buffer.BlockCopy(pba, 0, pubBa, 32 - pba.Length, pba.Length);
-            BigInteger e = sha.ComputeTaggedHash_BIP340_challenge(rba, pubBa, hash).ToBigInt(true, true) % curve.N;
+            BigInteger e = sha.ComputeTaggedHash("BIP0340/challenge", out _, rba, pubBa, hash).ToBigInt(true, true) % curve.N;
             return e;
         }
 
@@ -595,13 +594,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
             do
             {
                 rng.GetBytes(auxRand);
-                auxRand = sha.ComputeTaggedHash_BIP340_aux(auxRand);
+                auxRand = sha.ComputeTaggedHash("BIP0340/aux", out _, auxRand);
                 for (int i = 0; i < auxRand.Length; i++)
                 {
                     key[i] ^= auxRand[i];
                 }
 
-                byte[] kBa = sha.ComputeTaggedHash_BIP340_nonce(key, pubBa, hash);
+                byte[] kBa = sha.ComputeTaggedHash("BIP0340/nonce", out _, key, pubBa, hash);
                 k = kBa.ToBigInt(true, true) % curve.N;
             } while (k == 0);
 

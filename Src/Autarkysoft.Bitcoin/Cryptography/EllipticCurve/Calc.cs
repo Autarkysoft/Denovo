@@ -198,30 +198,5 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             comp[0] = firstByte;
             uncomp.Slice(1, 32).CopyTo(comp[1..]);
         }
-
-
-        // This method is a simple way of checking and debugging the code not an actual test
-        public void Test()
-        {
-            using SharpRandom rng = new SharpRandom();
-            byte[] data = new byte[32];
-            rng.GetBytes(data);
-
-            //data = new Sha256().ComputeHash(Encoding.UTF8.GetBytes("foo"));
-
-            Scalar4x64 sec = new Scalar4x64(data, out bool overflow);
-            Debug.Assert(!overflow);
-            PointJacobian pj = MultiplyByG(sec);
-            Point p = pj.ToPoint();
-
-            Span<byte> final = p.ToByteArray(false);
-
-            string actual = final.ToArray().ToBase16();
-
-            using Asymmetric.KeyPairs.PrivateKey key = new Asymmetric.KeyPairs.PrivateKey(data);
-            string expected = key.ToPublicKey().ToByteArray(false).ToBase16();
-
-            Debug.Assert(actual == expected);
-        }
     }
 }

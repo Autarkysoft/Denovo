@@ -1,18 +1,18 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Tests
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
+using Autarkysoft.Bitcoin;
 using System;
 using System.Numerics;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Asymmetric.EllipticCurve
+namespace Tests.Bitcoin.Cryptography.OldECC
 {
     /// <summary>
     /// Implementation of signatures produced by Elliptic Curve digital signature algorithms (ECDSA and ECSDSA)
     /// holding R and S values.
     /// </summary>
-    [Obsolete]
     public class Signature
     {
         /// <summary>

@@ -5,11 +5,10 @@
 
 using Autarkysoft.Bitcoin;
 using Autarkysoft.Bitcoin.Cryptography;
-using Autarkysoft.Bitcoin.Cryptography.Asymmetric.KeyPairs;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Xunit;
+using Tests.Bitcoin.Cryptography.OldECC;
 
 namespace Tests.Bitcoin.Cryptography.Asymmetric.KeyPairs
 {

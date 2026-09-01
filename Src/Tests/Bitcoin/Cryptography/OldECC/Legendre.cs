@@ -1,4 +1,4 @@
-﻿// Autarkysoft.Bitcoin
+﻿// Autarkysoft Tests
 // Copyright (c) 2020 Autarkysoft
 // Distributed under the MIT software license, see the accompanying
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
@@ -6,13 +6,12 @@
 using System;
 using System.Numerics;
 
-namespace Autarkysoft.Bitcoin.Cryptography.Arithmetic
+namespace Tests.Bitcoin.Cryptography.OldECC
 {
     /// <summary>
     /// Implementation of Legendre symbol
     /// <para/> https://en.wikipedia.org/wiki/Legendre_symbol
     /// </summary>
-    [Obsolete]
     public static class Legendre
     {
         // TODO: benchmark which one is faster, this function or using the following
