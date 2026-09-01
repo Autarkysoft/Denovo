@@ -90,7 +90,11 @@ namespace Autarkysoft.Bitcoin.Blockchain
         /// </summary>
         public const int MaxMissingBlockToGet = 16;
         private const string HeadersFile = "Headers";
+#if NET10_0_OR_GREATER
+        private readonly Lock mainLock = new();
+#else
         private readonly object mainLock = new object();
+#endif
         private readonly NetworkType network;
 
         /// <summary>

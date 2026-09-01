@@ -25,7 +25,11 @@ namespace Autarkysoft.Bitcoin.Cryptography
         }
 
         private Random rng;
+#if NET10_0_OR_GREATER
+        private readonly System.Threading.Lock lockObj = new();
+#else
         private readonly object lockObj = new object();
+#endif
 
         /// <inheritdoc/>
         /// <exception cref="ObjectDisposedException"/>

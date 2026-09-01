@@ -115,7 +115,11 @@ namespace Autarkysoft.Bitcoin.Clients
         /// A list of IP addresses that other peers claimed are ours with the number of times each were received.
         /// </summary>
         public Dictionary<IPAddress, int> localIP = new Dictionary<IPAddress, int>(MaxIpCapacity);
+#if NET10_0_OR_GREATER
+        private readonly Lock ipLock = new();
+#else
         private readonly object ipLock = new object();
+#endif
         private const int MaxIpCapacity = 4;
 
         /// <inheritdoc/>

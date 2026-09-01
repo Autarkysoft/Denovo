@@ -26,7 +26,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
 
 
         private Stack<SocketAsyncEventArgs> pool;
+#if NET10_0_OR_GREATER
+        private readonly System.Threading.Lock lockObj = new();
+#else
         private readonly object lockObj = new object();
+#endif
 
 
         internal int Count => pool.Count;

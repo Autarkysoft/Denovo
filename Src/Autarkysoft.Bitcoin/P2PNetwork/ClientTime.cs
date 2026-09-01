@@ -32,7 +32,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         /// List of time offsets
         /// </summary>
         public readonly List<long> offsetList = new List<long>(Capacity);
+#if NET10_0_OR_GREATER
+        private readonly System.Threading.Lock timelock = new();
+#else
         private readonly object timelock = new object();
+#endif
         private bool removeFirst;
         private long offset;
 

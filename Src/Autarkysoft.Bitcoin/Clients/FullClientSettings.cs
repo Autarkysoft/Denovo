@@ -103,7 +103,11 @@ namespace Autarkysoft.Bitcoin.Clients
                                                         !flags.HasFlag(NodeServiceFlags.NodeNetwork);
 
 
+#if NET10_0_OR_GREATER
+        private readonly System.Threading.Lock addrLock = new();
+#else
         private readonly object addrLock = new object();
+#endif
         private const string NodeAddrs = "NodeAddrs";
 
 

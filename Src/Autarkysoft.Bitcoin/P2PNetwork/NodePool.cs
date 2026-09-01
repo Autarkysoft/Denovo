@@ -58,7 +58,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
         private Node[] items;
         private int size, version;
         private readonly SynchronizationContext? context;
+#if NET10_0_OR_GREATER
+        private readonly Lock lockObj = new();
+#else
         private readonly object lockObj = new object();
+#endif
         private SemaphoreSlim monitor = new SemaphoreSlim(1, 1);
 
         /// <inheritdoc/>

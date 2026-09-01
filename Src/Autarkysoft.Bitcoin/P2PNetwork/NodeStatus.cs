@@ -189,7 +189,11 @@ namespace Autarkysoft.Bitcoin.P2PNetwork
             set => SetField(ref _handShake, value);
         }
 
+#if NET10_0_OR_GREATER
+        private readonly System.Threading.Lock discLock = new();
+#else
         private readonly object discLock = new object();
+#endif
         private bool _isDead = false;
         /// <inheritdoc/>
         public bool IsDisconnected
