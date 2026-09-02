@@ -22,7 +22,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// Computes the hash value for the specified byte array.
         /// </summary>
         /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ObjectDisposedException"/>
         /// <param name="data">The byte array to compute hash for</param>
         /// <returns>The computed hash</returns>
         public static byte[] ComputeHash(ReadOnlySpan<byte> data)
@@ -41,7 +40,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <exception cref="ArgumentException"/>
         /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        /// <exception cref="ObjectDisposedException"/>
         /// <param name="buffer">The byte array to compute hash for</param>
         /// <param name="offset">The offset into the byte array from which to begin using data.</param>
         /// <param name="count">The number of bytes in the array to use as data.</param>
