@@ -7,7 +7,6 @@ using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.Hashing
 {
@@ -69,12 +68,6 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         {
             uint actual = Murmur3.ComputeHash32(data, seed);
             Assert.Equal(expected, actual);
-        }
-
-        [Fact]
-        public void ComputeHash32_ExceptionTest()
-        {
-            Assert.Throws<ArgumentNullException>(() => Murmur3.ComputeHash32(null, 0));
         }
     }
 }

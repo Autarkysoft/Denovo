@@ -15,16 +15,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Computes 32-bit hash of the given data.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <param name="data">Data to hash</param>
         /// <param name="seed">Seed to use</param>
         /// <returns>32-bit unsigned integer (hash result)</returns>
         public static unsafe uint ComputeHash32(ReadOnlySpan<byte> data, uint seed)
         {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data), "Data can not be null.");
-
-
             if (data.Length == 0)
             {
                 uint res = seed ^ (uint)data.Length;
