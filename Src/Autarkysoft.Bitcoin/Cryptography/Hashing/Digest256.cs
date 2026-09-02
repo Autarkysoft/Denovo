@@ -27,13 +27,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Initializes a new instance of <see cref="Digest256"/> using the given byte array.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="ba32">Byte array to use</param>
         public Digest256(ReadOnlySpan<byte> ba32)
         {
-            if (ba32 == null)
-                throw new ArgumentNullException(nameof(ba32));
             if (ba32.Length != 32)
                 throw new ArgumentOutOfRangeException(nameof(ba32), "Byte array must be 32 bytes.");
 
@@ -67,13 +64,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <summary>
         /// Initializes a new instance of <see cref="Digest256"/> using the given UInt32 array.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="u8">UInt32 array</param>
         public Digest256(ReadOnlySpan<uint> u8)
         {
-            if (u8 == null)
-                throw new ArgumentNullException(nameof(u8));
             if (u8.Length != 8)
                 throw new ArgumentOutOfRangeException(nameof(u8), "Array length must be 8.");
 
@@ -129,20 +123,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         /// <returns>256-bit digest</returns>
         public static Digest256 ParseHex(string hex256)
         {
-            if (!Base16.IsValid(hex256))
+            if (!Base16.TryDecodeReverse(hex256, out byte[] result))
                 throw new ArgumentException("Invalid Base-16", nameof(hex256));
-            if (hex256.Length != 64)
-                throw new ArgumentOutOfRangeException(nameof(hex256), "String must contain 64 characters.");
+            if (result.Length != 32)
+                throw new ArgumentOutOfRangeException(nameof(hex256), "Hex value must be 32 bytes.");
 
-            ReadOnlySpan<char> s = hex256.AsSpan();
-            return new Digest256(uint.Parse(s.Slice(56, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(48, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(40, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(32, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(24, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(16, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(8, 8), NumberStyles.HexNumber),
-                                 uint.Parse(s.Slice(0, 8), NumberStyles.HexNumber));
+            return new Digest256(result);
         }
 
         /// <summary>
@@ -165,25 +151,54 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary>
+        /// Compares two values to determine which is greater.
+        /// </summary>
+        /// <param name="left">The value to compare with right.</param>
+        /// <param name="right">The value to compare with left.</param>
+        /// <returns>True if left is greater than right; otherwise, false.</returns>
         public static bool operator >(in Digest256 left, in Digest256 right) => left.CompareTo(right) > 0;
+        /// <summary>
+        /// Compares two values to determine which is greater or equal.
+        /// </summary>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <returns>True if left is greater than or equal to right; otherwise, false.</returns>
         public static bool operator >=(in Digest256 left, in Digest256 right) => left.CompareTo(right) >= 0;
+        /// <summary>
+        /// Compares two values to determine which is less.
+        /// </summary>
+        /// <param name="left">The value to compare with right.</param>
+        /// <param name="right">The value to compare with left.</param>
+        /// <returns>True if left is less than right; otherwise, false.</returns>
         public static bool operator <(in Digest256 left, in Digest256 right) => left.CompareTo(right) < 0;
+        /// <summary>
+        /// Compares two values to determine which is less or equal.
+        /// </summary>
+        /// <param name="left">The value to compare with right.</param>
+        /// <param name="right">The value to compare with left.</param>
+        /// <returns>True if left is less than or equal to right; otherwise, false.</returns>
         public static bool operator <=(in Digest256 left, in Digest256 right) => left.CompareTo(right) <= 0;
 
-
+        /// <summary>
+        /// Returns if the two <see cref="Digest256"/>s are equal to each other
+        /// </summary>
+        /// <param name="left">First <see cref="Digest256"/></param>
+        /// <param name="right">Second <see cref="Digest256"/></param>
+        /// <returns>True if the two <see cref="Digest256"/>s are equal; otherwise false.</returns>
         public static bool operator ==(in Digest256 left, in Digest256 right)
         {
-            return left.b0 == right.b0 && left.b1 == right.b1 && left.b2 == right.b2 && left.b3 == right.b3 &&
-                   left.b4 == right.b4 && left.b5 == right.b5 && left.b6 == right.b6 && left.b7 == right.b7;
+            return (left.b0 ^ right.b0 | left.b1 ^ right.b1 | left.b2 ^ right.b2 | left.b3 ^ right.b3 |
+                    left.b4 ^ right.b4 | left.b5 ^ right.b5 | left.b6 ^ right.b6 | left.b7 ^ right.b7) == 0;
         }
 
-        public static bool operator !=(in Digest256 left, in Digest256 right)
-        {
-            return left.b0 != right.b0 || left.b1 != right.b1 || left.b2 != right.b2 || left.b3 != right.b3 ||
-                   left.b4 != right.b4 || left.b5 != right.b5 || left.b6 != right.b6 || left.b7 != right.b7;
-        }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary>
+        /// Returns if the two <see cref="Digest256"/>s are not equal to each other
+        /// </summary>
+        /// <param name="left">First <see cref="Digest256"/></param>
+        /// <param name="right">Second <see cref="Digest256"/></param>
+        /// <returns>True if the two <see cref="Digest256"/>s are not equal; otherwise false.</returns>
+        public static bool operator !=(in Digest256 left, in Digest256 right) => !(left == right);
 
 
         /// <inheritdoc/>
@@ -213,14 +228,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
         }
 
         /// <inheritdoc/>
-        public bool Equals(Digest256 other)
-        {
-            return b0 == other.b0 && b1 == other.b1 && b2 == other.b2 && b3 == other.b3 &&
-                   b4 == other.b4 && b5 == other.b5 && b6 == other.b6 && b7 == other.b7;
-        }
+        public bool Equals(Digest256 other) => this == other;
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj) => !(obj is null) && obj is Digest256 d && Equals(d);
+        public override bool Equals(object? obj) => !(obj is null) && obj is Digest256 other && this == other;
 
         /// <inheritdoc/>
         public override int GetHashCode()
@@ -237,7 +248,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
             return (int)hash;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Returns the hexadecimal representation of this instance (in reverse).
+        /// </summary>
+        /// <returns>Base-16 encoded representation in reverse order</returns>
         public override string ToString() => $"0x{Base16.EncodeReverse(ToByteArray())}";
     }
 }

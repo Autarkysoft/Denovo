@@ -5,7 +5,6 @@
 
 using Autarkysoft.Bitcoin.Cryptography.Hashing;
 using System;
-using Xunit;
 
 namespace Tests.Bitcoin.Cryptography.Hashing
 {
@@ -32,7 +31,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [InlineData(0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U)]
         [InlineData(1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U)]
         [InlineData(0x834aef36, 0x1a6330a5, 0x3b90bcb9, 0x16285ca0, 0x69bc7eae, 0x28d96a90, 0x34e74d06, 0xcaf5616c)]
-        public unsafe void Constructor_FromUintArrayTest(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7)
+        public void Constructor_FromUintArrayTest(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7)
         {
             uint[] array = new[] { u0, u1, u2, u3, u4, u5, u6, u7 };
             Digest256 hash = new(array);
@@ -50,7 +49,7 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [InlineData(0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U)]
         [InlineData(1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U)]
         [InlineData(0x834aef36, 0x1a6330a5, 0x3b90bcb9, 0x16285ca0, 0x69bc7eae, 0x28d96a90, 0x34e74d06, 0xcaf5616c)]
-        public unsafe void Constructor_FromUintsTest(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7)
+        public void Constructor_FromUintsTest(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7)
         {
             Digest256 hash = new(u0, u1, u2, u3, u4, u5, u6, u7);
             Assert.Equal(u0, hash.b0);
@@ -115,11 +114,11 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [Fact]
         public void ConstructorExceptionTest()
         {
-            byte[] nba = null;
-            uint[] nua = null;
+            byte[]? nba = null;
+            uint[]? nua = null;
 
-            Assert.Throws<ArgumentNullException>(() => new Digest256(nba));
-            Assert.Throws<ArgumentNullException>(() => new Digest256(nua));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Digest256(nba));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Digest256(nua));
 
             Assert.Throws<ArgumentOutOfRangeException>(() => new Digest256(new byte[31]));
             Assert.Throws<ArgumentOutOfRangeException>(() => new Digest256(new byte[33]));
@@ -161,6 +160,8 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         [InlineData(0, 0, 0, 0, 0, 1, 0, 0, false)]
         [InlineData(0, 0, 0, 0, 0, 0, 1, 0, false)]
         [InlineData(0, 0, 0, 0, 0, 0, 0, 1, false)]
+        [InlineData(0, 0, 0, 0, 0, 0, 1, 1, false)]
+        [InlineData(1, 1, 1, 1, 1, 1, 1, 1, false)]
         public void IsZeroTest(uint u0, uint u1, uint u2, uint u3, uint u4, uint u5, uint u6, uint u7, bool expected)
         {
             Digest256 hash = new(u0, u1, u2, u3, u4, u5, u6, u7);
@@ -187,6 +188,14 @@ namespace Tests.Bitcoin.Cryptography.Hashing
             Assert.Equal(array, hash.ToByteArray());
         }
 
-
+        [Fact]
+        public void ParseHexTest()
+        {
+            byte[] ba = Helper.CreateRandomBytes(32);
+            Digest256 hash = new(ba);
+            string hex = hash.ToString(); // Adds 0x
+            Digest256 actual =  Digest256.ParseHex(hex);
+            Assert.True(hash == actual);
+        }
     }
 }
