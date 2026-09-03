@@ -142,7 +142,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
         [InlineData(0, 0)]
         [InlineData(1, 1)]
         [InlineData(100, 1)]
+#pragma warning disable xUnit1026 // Theory methods should use all of their parameters
         public void Constructor_FromUintTest(uint u, int expMagnitude)
+#pragma warning restore xUnit1026
         {
             UInt256_5x52 val = new(u);
             Assert.Equal(u, val.b0);
@@ -175,7 +177,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
         }
         [Theory]
         [MemberData(nameof(GetCtor4ULCases))]
+#pragma warning disable xUnit1026 // Theory methods should use all of their parameters
         public void Constructor_From4ULongsTest(ulong[] arr, ulong[] exp, int expMagnitude)
+#pragma warning restore xUnit1026
         {
             Assert.Equal(4, arr.Length);
             Assert.Equal(5, exp.Length);
@@ -215,7 +219,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
         }
         [Theory]
         [MemberData(nameof(GetCtor5ULCases))]
+#pragma warning disable xUnit1026 // Theory methods should use all of their parameters
         public void Constructor_From5ULongsTest(ulong[] arr, int expMagnitude, bool expNormalize)
+#pragma warning restore xUnit1026
         {
             Assert.Equal(5, arr.Length);
 
@@ -237,7 +243,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve.Primitives
 
         [Theory]
         [MemberData(nameof(GetCtor5ULCases))]
+#pragma warning disable xUnit1026 // Theory methods should use all of their parameters
         public void Constructor_FromULongArrayTest(ulong[] arr, int expMagnitude, bool expNormalize)
+#pragma warning restore xUnit1026
         {
             UInt256_5x52 val = new(arr
 #if DEBUG

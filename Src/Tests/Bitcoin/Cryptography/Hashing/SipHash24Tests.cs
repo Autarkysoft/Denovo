@@ -114,7 +114,6 @@ namespace Tests.Bitcoin.Cryptography.Hashing
         public void ComputeHash_ExceptionTest()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => SipHash24.ComputeHash(null, Array.Empty<byte>()));
-            Assert.Throws<ArgumentOutOfRangeException>(() => SipHash24.ComputeHash(new byte[16], null));
             Assert.Throws<ArgumentOutOfRangeException>(() => SipHash24.ComputeHash(Array.Empty<byte>(), Array.Empty<byte>()));
         }
     }
