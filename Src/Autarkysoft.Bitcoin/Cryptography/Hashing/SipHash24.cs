@@ -11,22 +11,17 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
     /// Implementation of non-cryptographic hash function called SipHash with c=2 and d=4
     /// <para/>https://131002.net/siphash/siphash.pdf
     /// </summary>
-    public sealed class SipHash24
+    public static class SipHash24
     {
         /// <summary>
         /// Computes 64-bit hash of the given data with the given 128-bit key.
         /// </summary>
-        /// <exception cref="ArgumentNullException"/>
         /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="key">Key to use (it must be 128-bits or 16-bytes)</param>
         /// <param name="data">Data to hash</param>
         /// <returns>The 64-bit hash</returns>
-        public unsafe ulong ComputeHash(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)
+        public static unsafe ulong ComputeHash(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)
         {
-            if (data == null)
-                throw new ArgumentNullException(nameof(data), "Data can not be null.");
-            if (key == null)
-                throw new ArgumentNullException(nameof(key), "Key can not be null.");
             if (key.Length != 16)
                 throw new ArgumentOutOfRangeException(nameof(key), "Key length must be 16.");
 
