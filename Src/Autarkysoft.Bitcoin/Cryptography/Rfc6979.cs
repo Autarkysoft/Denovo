@@ -75,14 +75,10 @@ namespace Autarkysoft.Bitcoin.Cryptography
         /// <exception cref="ObjectDisposedException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public unsafe void Init(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> key)
+        public void Init(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> key)
         {
             if (isDisposed)
                 throw new ObjectDisposedException(nameof(Rfc6979));
-            if (hash == null)
-                throw new ArgumentNullException(nameof(hash), "Hash can not be null.");
-            if (key == null)
-                throw new ArgumentNullException(nameof(key), "Key can not be null.");
             if (hash.Length != 32)
                 throw new ArgumentOutOfRangeException(nameof(hash), "Hash length must be 32.");
             if (key.Length != 32)
@@ -100,10 +96,10 @@ namespace Autarkysoft.Bitcoin.Cryptography
             // Step c. Set K = 0x00...00 (32 bytes)
             // Step d. K = HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1))
 
-            Debug.Assert(hash != null && hash.Length == 32);
-            Debug.Assert(key != null && key.Length == 32);
+            Debug.Assert(hash.Length == 32);
+            Debug.Assert(key.Length == 32);
 
-            Scalar8x32 sc = new Scalar8x32(hash, out _);
+            Scalar4x64 sc = new Scalar4x64(hash, out _);
             hash = sc.ToByteArray();
 
             Debug.Assert(hash.Length == 32);
@@ -713,8 +709,8 @@ namespace Autarkysoft.Bitcoin.Cryptography
             int entLen = extraEntropy is null ? 0 : extraEntropy.Length;
             // 97 = 32 + 1 + 32 + 32
             byte[] bytesToHash = new byte[97 + entLen];
-            Scalar8x32 sc = new Scalar8x32(data, out _);
-            byte[] dataBa = sc.ToByteArray();
+            Scalar4x64 sc = new Scalar4x64(data, out _);
+            byte[] dataBa = sc.ToByteArray().ToArray();
 
             Buffer.BlockCopy(v, 0, bytesToHash, 0, 32);
             // Set item at index 32 to 0x00
