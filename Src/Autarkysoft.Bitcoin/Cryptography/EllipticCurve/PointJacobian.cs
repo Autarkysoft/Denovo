@@ -223,20 +223,20 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
              */
 
             // Operations: 7 mul, 5 sqr, 21 add/cmov/half/mul_int/negate/normalize_weak/normalizes_to_zero
-            UInt256_5x52 zz, u1, u2, s1, s2, t, tt, m, n, q, rr;
+            UInt256_5x52 zz, u2, s2, t, tt, m, n, q, rr;
             UInt256_5x52 m_alt, rr_alt;
 
             zz = z.Sqr();               // z = Z1^2
-            u1 = x;                     // u1 = U1 = X1*Z2^2 (GEJ_X_M)
+            // u1 = x;                  // u1 = U1 = X1*Z2^2 (GEJ_X_M)
             u2 = b.x * zz;              // u2 = U2 = X2*Z1^2 (1)
-            s1 = y;                     // s1 = S1 = Y1*Z2^3 (GEJ_X_M)
+            // s1 = y;                  // s1 = S1 = Y1*Z2^3 (GEJ_X_M)
             s2 = b.y * zz;              // s2 = Y2*Z1^2 (1)
             s2 *= z;                    // s2 = S2 = Y2*Z1^3 (1)
-            t = u1 + u2;                // t = T = U1+U2 (GEJ_X_M+1)
-            m = s1 + s2;                // m = M = S1+S2 (GEJ_X_M+1)
+            t = x + u2;                 // t = T = U1+U2 (GEJ_X_M+1)
+            m = y + s2;                 // m = M = S1+S2 (GEJ_X_M+1)
             rr = t.Sqr();               // rr = T^2 (1)
             m_alt = u2.Negate(1);       // Malt = -X2*Z1^2 (2)
-            tt = u1 * m_alt;            // tt = -U1*U2 (1)
+            tt = x * m_alt;             // tt = -U1*U2 (1)
             rr += tt;                   // rr = R = T^2-U1*U2 (2)
             // If lambda = R/M = 0/0 we have a problem (except in the "trivial"
             // case that Z = z1z2 = 0, and this is special-cased later on).
@@ -246,8 +246,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // a nontrivial cube root of one. In either case, an alternate
             // non-indeterminate expression for lambda is (y1 - y2)/(x1 - x2),
             // so we set R/M equal to this.
-            rr_alt = s1 * 2U;               // rr_alt = Y1*Z2^3 - Y2*Z1^3 (GEJ_Y_M*2)
-            m_alt += u1;                    // Malt = X1*Z2^2 - X2*Z1^2 (GEJ_X_M+2)
+            rr_alt = y * 2U;                // rr_alt = Y1*Z2^3 - Y2*Z1^3 (GEJ_Y_M*2)
+            m_alt += x;                     // Malt = X1*Z2^2 - X2*Z1^2 (GEJ_X_M+2)
 
             uint flag = ~degenerate & 1;
             Debug.Assert(flag == (degenerate != 0 ? 0 : 1));
@@ -337,18 +337,18 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             // 8 mul, 3 sqr, 11 add/negate/normalizes_to_zero (ignoring special cases)
-            UInt256_5x52 z12, u1, u2, s1, s2, h, i, h2, h3, t;
+            UInt256_5x52 z12, u2, s2, h, i, h2, h3, t;
 
             z12 = z.Sqr();
-            u1 = x;
+            // u1 = x;
             u2 = b.x * z12;
-            s1 = y;
+            // s1 = y;
             s2 = b.y * z12;
             s2 *= z;
-            h = u1.Negate(MaxXMagnitude);
+            h = x.Negate(MaxXMagnitude);
             h += u2;
             i = s2.Negate(1);
-            i += s1;
+            i += y;
             if (h.IsZeroNormalizedVar())
             {
                 if (i.IsZeroNormalizedVar())
@@ -368,13 +368,13 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             h2 = h.Sqr();
             h2 = h2.Negate(1);
             h3 = h2 * h;
-            t = u1 * h2;
+            t = x * h2;
 
             UInt256_5x52 rx = UInt256_5x52.Add(i.Sqr(), h3, t, t);
 
             t += rx;
             UInt256_5x52 ry = t * i;
-            h3 *= s1;
+            h3 *= y;
             ry += h3;
 
             PointJacobian res = new PointJacobian(rx, ry, rz, false);
@@ -430,17 +430,17 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // for the computation of rx and ry, but not for rz.
 
             // Operations: 9 mul, 3 sqr, 11 add/negate/normalizes_to_zero (ignoring special cases)
-            UInt256_5x52 az, z12, u1, u2, s1, s2, h, i, h2, h3, t;
+            UInt256_5x52 az, z12, u2, s2, h, i, h2, h3, t;
 
             az = z * bzinv;
 
             z12 = az.Sqr();
-            u1 = x;
+            // u1 = x;
             u2 = b.x * z12;
-            s1 = y;
+            // s1 = y;
             s2 = b.y * z12 * az;
-            h = u1.Negate(MaxXMagnitude) + u2;
-            i = s2.Negate(1) + s1;
+            h = x.Negate(MaxXMagnitude) + u2;
+            i = s2.Negate(1) + y;
             if (h.IsZeroNormalizedVar())
             {
                 if (i.IsZeroNormalizedVar())
@@ -458,12 +458,12 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             h2 = h.Sqr();
             h2 = h2.Negate(1);
             h3 = h2 * h;
-            t = u1 * h2;
+            t = x * h2;
 
             rx = UInt256_5x52.Add(i.Sqr(), h3, t, t);
 
             t += rx;
-            ry = (t * i) + (h3 * s1);
+            ry = (t * i) + (h3 * y);
 
             PointJacobian res = new PointJacobian(rx, ry, rz, false);
 #if DEBUG
@@ -495,22 +495,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             //   Z3 = Y1*Z1
 
             // Operations: 3 mul, 4 sqr, 8 add/half/mul_int/negate
-            UInt256_5x52 rz = z * y;     // Z3 = Y1*Z1 (1)
-            UInt256_5x52 s = y.Sqr();    // S = Y1^2 (1)
-            UInt256_5x52 l = x.Sqr();    // L = X1^2 (1)
-            l *= 3;                       // L = 3*X1^2 (3)
-            l = l.Half();                 // L = 3/2*X1^2 (2)
-            UInt256_5x52 t = s.Negate(1);// T = -S (2)
-            t *= x;                       // T = -X1*S (1)
-            UInt256_5x52 rx = l.Sqr();   // X3 = L^2 (1)
+            UInt256_5x52 rz = z * y;        // Z3 = Y1*Z1 (1)
+            UInt256_5x52 s = y.Sqr();       // S = Y1^2 (1)
+            UInt256_5x52 l = x.Sqr();       // L = X1^2 (1)
+            l *= 3;                         // L = 3*X1^2 (3)
+            l = l.Half();                   // L = 3/2*X1^2 (2)
+            UInt256_5x52 t = s.Negate(1);   // T = -S (2)
+            t *= x;                         // T = -X1*S (1)
+            UInt256_5x52 rx = l.Sqr();      // X3 = L^2 (1)
             //rx += t;                      // X3 = L^2 + T (2)
             //rx += t;                      // X3 = L^2 + 2*T (3)
             rx = UInt256_5x52.Add(rx, t, t);
-            s = s.Sqr();                  // S' = S^2 (1)
-            t += rx;                      // T' = X3 + T (4)
-            UInt256_5x52 ry = t * l;     // Y3 = L*(X3 + T) (1)
-            ry += s;                      // Y3 = L*(X3 + T) + S^2 (2)
-            ry = ry.Negate(2);            // Y3 = -(L*(X3 + T) + S^2) (3)
+            s = s.Sqr();                    // S' = S^2 (1)
+            t += rx;                        // T' = X3 + T (4)
+            UInt256_5x52 ry = t * l;        // Y3 = L*(X3 + T) (1)
+            ry += s;                        // Y3 = L*(X3 + T) + S^2 (2)
+            ry = ry.Negate(2);              // Y3 = -(L*(X3 + T) + S^2) (3)
 
             PointJacobian result = new PointJacobian(rx, ry, rz, isInfinity);
 #if DEBUG
@@ -558,10 +558,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
         /// Constant-time
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="a"></param>
+        /// <param name="r">Destination</param>
+        /// <param name="a">Source</param>
         /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
-        /// <returns>Result</returns>
+        /// <returns><paramref name="a"/> if flag was one; otherwise r.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PointJacobian CMov(in PointJacobian r, in PointJacobian a, uint flag)
         {
@@ -569,6 +569,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #if DEBUG
             r.Verify();
             a.Verify();
+            Debug.Assert(flag == 0 || flag == 1);
 #endif
             UInt256_5x52 rx = UInt256_5x52.CMov(r.x, a.x, flag);
             UInt256_5x52 ry = UInt256_5x52.CMov(r.y, a.y, flag);
@@ -584,8 +585,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         }
 
         /// <summary>
-        /// Rescale this jacobian point by <paramref name="s"/> which must be non-zero. Constant-time
+        /// Rescale this jacobian point by <paramref name="s"/> which must be non-zero.
         /// </summary>
+        /// <remarks>
+        /// This method is constant-time.
+        /// </remarks>
         /// <param name="s"></param>
         /// <returns></returns>
         public PointJacobian Rescale(in UInt256_5x52 s)
@@ -598,10 +602,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 #endif
             // Operations: 4 mul, 1 sqr
             UInt256_5x52 zz = s.Sqr();
-            UInt256_5x52 rx = x.Multiply(zz);  // r->x *= s^2
+            UInt256_5x52 rx = x.Multiply(zz);   // r->x *= s^2
             UInt256_5x52 ry = y.Multiply(zz);
             ry = ry.Multiply(s);                // r->y *= s^3
-            UInt256_5x52 rz = z.Multiply(s);   // r->z *= s
+            UInt256_5x52 rz = z.Multiply(s);    // r->z *= s
 
             PointJacobian result = new PointJacobian(rx, ry, rz, isInfinity);
 #if DEBUG

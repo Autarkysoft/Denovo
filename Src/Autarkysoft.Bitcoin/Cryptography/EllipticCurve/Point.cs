@@ -70,12 +70,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Initializes a new instance of <see cref="Point"/> using the given byte array.
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"/>
         /// <param name="buffer64">Buffer to use (must be 64 bytes long)</param>
         public Point(ReadOnlySpan<byte> buffer64)
         {
+            if (buffer64.Length != 64)
+                throw new ArgumentOutOfRangeException(nameof(buffer64), "Buffer length must be 64 bytes.");
+
             // secp256k1_ge_from_bytes
             // secp256k1_ge_from_bytes_ext
-            Debug.Assert(buffer64.Length == 64);
             x = new UInt256_5x52(buffer64.Slice(0, 32), out _);
             y = new UInt256_5x52(buffer64.Slice(32, 32), out _);
             isInfinity = x.IsZero && y.IsZero;
@@ -151,29 +154,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public static ref readonly Point G => ref _g;
 
 
-        /// <summary>
-        /// Calculates y from y^2 = x^3 + ax + b (mod p) by having x and whether y is odd or even.
-        /// Return value indicates success.
-        /// </summary>
-        /// <param name="x">X coordinate</param>
-        /// <param name="isOdd">Whether y is odd or even</param>
-        /// <param name="y">Calculated y</param>
-        /// <returns>True if y was found; otherwise false.</returns>
-        public static bool TryFindY(in UInt256_5x52 x, bool isOdd, out UInt256_5x52 y)
-        {
-            // x^3 + b (mod p)
-            UInt256_5x52 right = x.Multiply(x.Sqr()) + 7;
-            if (!right.Sqrt(out y))
-            {
-                return false;
-            }
-            y = y.NormalizeVar();
-            if (y.IsOdd != isOdd)
-            {
-                y = y.Negate(1);
-            }
-            return true;
-        }
 
         /// <summary>
         /// Converts the given byte array to a <see cref="Point"/>. Return value indicates success.
@@ -183,29 +163,23 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns>True if the conversion is successful; otherwise false.</returns>
         public static bool TryRead(ReadOnlySpan<byte> bytes, out Point result)
         {
-            if (bytes.Length < 33)
-            {
-                result = Infinity;
-                return false;
-            }
+            // secp256k1_ge_parse
 
-            byte b = bytes[0];
-            if (bytes.Length == 33 && (b == EvenByte || b == OddByte))
+            if (bytes.Length == 33 && (bytes[0] == EvenByte || bytes[0] == OddByte))
             {
                 UInt256_5x52 x = new UInt256_5x52(bytes.Slice(1, 32), out bool isValid);
-                if (isValid && TryFindY(x, b == OddByte, out UInt256_5x52 y))
+                if (isValid && TryCreateVar(x, bytes[0] == OddByte, out result))
                 {
-                    result = new Point(x, y);
                     return true;
                 }
             }
-            else if (bytes.Length == 65 && (b == UncompressedByte || b == EvenHybridByte || b == OddHybridByte))
+            else if (bytes.Length == 65 && (bytes[0] == UncompressedByte || bytes[0] == EvenHybridByte || bytes[0] == OddHybridByte))
             {
                 UInt256_5x52 x = new UInt256_5x52(bytes.Slice(1, 32), out bool isValidX);
                 UInt256_5x52 y = new UInt256_5x52(bytes.Slice(33, 32), out bool isValidY);
                 if (isValidX && isValidY)
                 {
-                    if ((b == EvenHybridByte && y.IsOdd) || (b == OddHybridByte && !y.IsOdd))
+                    if ((bytes[0] == EvenHybridByte && y.IsOdd) || (bytes[0] == OddHybridByte && !y.IsOdd))
                     {
                         result = Infinity;
                         return false;
@@ -534,8 +508,8 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             // (xn/xd)^3 + 7 is square <=> xd*xn^3 + 7*xd^4 is square (multiplying by xd^4, a square).
             Debug.Assert(!xd.IsZeroNormalizedVar());
 
-            UInt256_5x52 r = xd * xn;      // r = xd*xn
-            UInt256_5x52 t = xn.Sqr();     // t = xn^2
+            UInt256_5x52 r = xd * xn;       // r = xd*xn
+            UInt256_5x52 t = xn.Sqr();      // t = xn^2
             r = r.Multiply(t);              // r = xd*xn^3
             t = xd.Sqr();                   // t = xd^2
             t = t.Sqr();                    // t = xd^4

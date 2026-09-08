@@ -4,6 +4,7 @@
 // file LICENCE or http://www.opensource.org/licenses/mit-license.php.
 
 using Autarkysoft.Bitcoin.Cryptography.EllipticCurve.Primitives;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
@@ -61,14 +62,15 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// Conditional move. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is true (=1).
         /// Constant-time
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="a"></param>
+        /// <param name="r">Destination</param>
+        /// <param name="a">Source</param>
         /// <param name="flag">Zero or one. Sets <paramref name="r"/> equal to <paramref name="a"/> if flag is one.</param>
-        /// <returns>Result</returns>
+        /// <returns><paramref name="a"/> if flag was one; otherwise r.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PointStorage CMov(in PointStorage r, in PointStorage a, uint flag)
         {
             // secp256k1_ge_storage_cmov
+            Debug.Assert(flag == 0 || flag == 1);
             UInt256_4x64 rx = UInt256_4x64.CMov(r.x, a.x, flag);
             UInt256_4x64 ry = UInt256_4x64.CMov(r.y, a.y, flag);
             return new PointStorage(rx, ry);
