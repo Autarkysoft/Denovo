@@ -9,6 +9,7 @@ using System;
 
 namespace Benchmarks.Bitcoin.Cryptography.EllipticCurve
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     [InProcess]
     [RankColumn]
     public class Scalar8x32_MultiplyBench
@@ -23,13 +24,13 @@ namespace Benchmarks.Bitcoin.Cryptography.EllipticCurve
             rng.NextBytes(ba2);
 
             lib1 = new(ba1, out bool of1);
-            lib2 = new(ba1, out bool of2);
+            lib2 = new(ba2, out bool of2);
             if (of1 || of2)
             {
                 throw new Exception("Unexpected overflow.");
             }
             alt1 = new(ba1);
-            alt2 = new(ba1);
+            alt2 = new(ba2);
 
             Scalar8x32 res1 = lib1.Multiply(lib2);
             Scalar8x32Alt res2 = alt1.Multiply(alt2);
@@ -58,4 +59,5 @@ namespace Benchmarks.Bitcoin.Cryptography.EllipticCurve
         [Benchmark]
         public Scalar8x32Alt AltMult_Inlined() => alt1.Multiply_Inlined(alt2);
     }
+#pragma warning restore CS0618 // Type or member is obsolete
 }
