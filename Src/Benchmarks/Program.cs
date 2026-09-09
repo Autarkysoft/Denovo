@@ -5,6 +5,7 @@
 
 using BenchmarkDotNet.Running;
 using Benchmarks.Bitcoin.Cryptography.EllipticCurve;
+using Benchmarks.Bitcoin.Cryptography.EllipticCurve.Primitives;
 using Benchmarks.Bitcoin.Cryptography.Hashing;
 
 namespace Benchmarks
@@ -13,7 +14,7 @@ namespace Benchmarks
     {
         static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run(typeof(Scalar8x32_MultiplyBench));
+            _ = BenchmarkRunner.Run<Scalar4x64_AddBench>();
             //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
     }
