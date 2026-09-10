@@ -10,7 +10,6 @@ namespace Autarkysoft.Bitcoin.Cryptography.Hashing
 {
     /// <summary>
     /// Implementation of 512-bit Secure Hash Algorithm (SHA) based on RFC-6234.
-    /// <para/>Implements <see cref="IDisposable"/>.
     /// <para/>https://tools.ietf.org/html/rfc6234
     /// </summary>
     public static class Sha512
