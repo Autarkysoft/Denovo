@@ -150,6 +150,7 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             PointJacobian res = new PointJacobian(rx, ry, rz, false);
 #if DEBUG
             res.Verify();
+            rzr.Verify();
 #endif
             return res;
         }
@@ -550,6 +551,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
             }
 
             rzr = y.NormalizeWeak();
+#if DEBUG
+            rzr.Verify();
+#endif
             return Double();
         }
 
