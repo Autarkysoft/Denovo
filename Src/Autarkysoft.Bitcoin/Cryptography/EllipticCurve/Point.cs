@@ -255,6 +255,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// Set result to the affine coordinates of Jacobian point (a.x, a.y, 1/zi).
         /// </summary>
+        /// <remarks>
+        /// This instance must not be infinity.
+        /// </remarks>
         /// <param name="zi"></param>
         /// <returns></returns>
         internal Point ToPointZInv(in UInt256_5x52 zi)
@@ -484,7 +487,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public static bool IsOnCurveVar(in UInt256_5x52 x)
         {
             // secp256k1_ge_x_on_curve_var
-
+#if DEBUG
+            x.Verify();
+#endif
             // y^2 = x^3 + 7
             UInt256_5x52 c = x.Sqr();
             c = c.Multiply(x) + CurveB;
@@ -503,7 +508,10 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         public static bool IsFracOnCurveVar(in UInt256_5x52 xn, in UInt256_5x52 xd)
         {
             // secp256k1_ge_x_frac_on_curve_var
-
+#if DEBUG
+            xn.Verify();
+            xd.Verify();
+#endif
             // We want to determine whether (xn/xd) is on the curve.
             // (xn/xd)^3 + 7 is square <=> xd*xn^3 + 7*xd^4 is square (multiplying by xd^4, a square).
             Debug.Assert(!xd.IsZeroNormalizedVar());
@@ -591,6 +599,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         /// <returns></returns>
         public Span<byte> ToByteArray(bool compressed)
         {
+#if DEBUG
+            Verify();
+#endif
             UInt256_5x52 xNorm = x.NormalizeVar();
             UInt256_5x52 yNorm = y.NormalizeVar();
 
@@ -619,9 +630,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             // secp256k1_ge_to_bytes
             // secp256k1_ge_to_bytes_ext
+#if DEBUG
+            Verify();
             Debug.Assert(buffer.Length == 64);
             Debug.Assert(!isInfinity || (isInfinity && x.IsZero && y.IsZero));
-
+#endif
             // secp256k1_ge_to_storage
             // memcpy(buf, &s, 64);
             x.Normalize().WriteToSpan(buffer);
