@@ -696,8 +696,11 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
         /// <summary>
-        /// Set result to the affine coordinates of Jacobian point (a.x, a.y, 1/zi).
+        /// Set result to the affine coordinates of Jacobian point (a.x, a.y, 1/zi), ignoring a.z.
         /// </summary>
+        /// <remarks>
+        /// This instance must not be infinity.
+        /// </remarks>
         /// <param name="zi"></param>
         /// <returns></returns>
         internal Point ToPointZInv(in UInt256_5x52 zi)
