@@ -155,6 +155,22 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
 
 
 
+        internal static bool TryRead33(ReadOnlySpan<byte> bytes, out Point result)
+        {
+            Debug.Assert(bytes.Length == 33);
+            if (bytes[0] == EvenByte || bytes[0] == OddByte)
+            {
+                UInt256_5x52 x = new UInt256_5x52(bytes.Slice(1, 32), out bool isValid);
+                if (isValid && TryCreateVar(x, bytes[0] == OddByte, out result))
+                {
+                    return true;
+                }
+            }
+
+            result = Infinity;
+            return false;
+        }
+
         /// <summary>
         /// Converts the given byte array to a <see cref="Point"/>. Return value indicates success.
         /// </summary>
@@ -165,13 +181,9 @@ namespace Autarkysoft.Bitcoin.Cryptography.EllipticCurve
         {
             // secp256k1_ge_parse
 
-            if (bytes.Length == 33 && (bytes[0] == EvenByte || bytes[0] == OddByte))
+            if (bytes.Length == 33)
             {
-                UInt256_5x52 x = new UInt256_5x52(bytes.Slice(1, 32), out bool isValid);
-                if (isValid && TryCreateVar(x, bytes[0] == OddByte, out result))
-                {
-                    return true;
-                }
+                return TryRead33(bytes, out result);
             }
             else if (bytes.Length == 65 && (bytes[0] == UncompressedByte || bytes[0] == EvenHybridByte || bytes[0] == OddHybridByte))
             {
