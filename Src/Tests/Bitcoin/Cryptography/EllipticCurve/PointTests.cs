@@ -13,7 +13,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 {
     public class PointTests
     {
-        // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/group.h#L22
+        // https://github.com/bitcoin-core/secp256k1/blob/46db787112beabdb5e17e0dc35680716f1057e7b/src/group.h#L22
         internal static Point SECP256K1_GE_CONST(uint a, uint b, uint c, uint d, uint e, uint f, uint g, uint h,
                                                  uint i, uint j, uint k, uint l, uint m, uint n, uint o, uint p)
         {
@@ -22,21 +22,9 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 UInt256_5x52Tests.SECP256K1_FE_CONST(i, j, k, l, m, n, o, p));
         }
 
-        [Fact]
-        public void ConstTest()
-        {
-            // https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/group_impl.h#L38-L43
-            Point actual = SECP256K1_GE_CONST(
-                0x79be667e, 0xf9dcbbac, 0x55a06295, 0xce870b07,
-                0x029bfcdb, 0x2dce28d9, 0x59f2815b, 0x16f81798,
-                0x483ada77, 0x26a3c465, 0x5da4fbfc, 0x0e1108a8,
-                0xfd17b448, 0xa6855419, 0x9c47d08f, 0xfb10d4b8);
-
-            Assert.True(Point.G.Equals(actual));
-        }
 
 
-        public static IEnumerable<TheoryDataRow<ulong[],ulong[]>> GetCtorCases()
+        public static IEnumerable<TheoryDataRow<ulong[], ulong[]>> GetCtorCases()
         {
             yield return new
             (
@@ -61,6 +49,12 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             UInt256_5x52Tests.AssertEqual(x, pt.x);
             UInt256_5x52Tests.AssertEqual(y, pt.y);
+            Assert.False(pt.isInfinity);
+
+            pt = new(x, y, true);
+            UInt256_5x52Tests.AssertEqual(x, pt.x);
+            UInt256_5x52Tests.AssertEqual(y, pt.y);
+            Assert.True(pt.isInfinity); // This ctor sets the isInfinity field
         }
 
         [Theory]
@@ -75,19 +69,68 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
 
             UInt256_5x52Tests.AssertEqual(x, pt.x);
             UInt256_5x52Tests.AssertEqual(y, pt.y);
+            Assert.False(pt.isInfinity);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetCtorCases))]
+        public void Constructor_FromBytesTest(ulong[] xArr, ulong[] yArr)
+        {
+            UInt256_5x52 x = new(xArr[0], xArr[1], xArr[2], xArr[3]);
+            UInt256_5x52 y = new(yArr[0], yArr[1], yArr[2], yArr[3]);
+            Span<byte> buffer = new byte[64];
+            x.WriteToSpan(buffer);
+            y.WriteToSpan(buffer.Slice(32));
+
+            Point pt = new(buffer);
+
+            UInt256_5x52Tests.AssertEqual(x, pt.x);
+            UInt256_5x52Tests.AssertEqual(y, pt.y);
+            Assert.False(pt.isInfinity);
+        }
+
+        [Fact]
+        public void Constructor_FromBytes_ZeroTest()
+        {
+            Span<byte> buffer = new byte[64];
+            Point pt = new(buffer);
+
+            Assert.True(pt.x.IsZero);
+            Assert.True(pt.y.IsZero);
+            Assert.True(pt.isInfinity);
+        }
+
+        [Fact]
+        public void Constructor_FromBytes_ExceptionTest()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Point(Array.Empty<byte>()));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Point(new byte[32]));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Point(new byte[63]));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Point(new byte[65]));
         }
 
         [Fact]
         public void StaticMemberTest()
         {
-            Assert.True(Point.Infinity.isInfinity);
             Assert.True(Point.Infinity.x.IsZero);
             Assert.True(Point.Infinity.y.IsZero);
+            Assert.True(Point.Infinity.isInfinity);
+
+            // https://github.com/bitcoin-core/secp256k1/blob/46db787112beabdb5e17e0dc35680716f1057e7b/src/group_impl.h#L38-L43
+            Point expected = SECP256K1_GE_CONST(
+                0x79be667e, 0xf9dcbbac, 0x55a06295, 0xce870b07,
+                0x029bfcdb, 0x2dce28d9, 0x59f2815b, 0x16f81798,
+                0x483ada77, 0x26a3c465, 0x5da4fbfc, 0x0e1108a8,
+                0xfd17b448, 0xa6855419, 0x9c47d08f, 0xfb10d4b8);
+
+            UInt256_5x52Tests.AssertEqual(expected.x, Point.G.x);
+            UInt256_5x52Tests.AssertEqual(expected.y, Point.G.y);
+            Assert.False(Point.G.isInfinity);
         }
 
 
 
-        #region https://github.com/bitcoin-core/secp256k1/blob/70f149b9a1bf4ed3266f97774d0ae9577534bf40/src/tests.c#L3626-L4079 + L4113-L4155
+        #region https://github.com/bitcoin-core/secp256k1/blob/46db787112beabdb5e17e0dc35680716f1057e7b/src/tests.c#L3943-L4469
 
         // This covers both Point and PointJacobian tests (ge+gej)
 
