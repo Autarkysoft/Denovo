@@ -390,6 +390,7 @@ namespace Autarkysoft.Bitcoin
         /// Writes the given <see cref="Scalar8x32"/> to this stream as bytes.
         /// </summary>
         /// <param name="scalar">256-bit scalar</param>
+        [Obsolete("Use Scalar4x64 instead.")]
         public void Write(in Scalar8x32 scalar)
         {
             CheckAndResize(Scalar8x32.ByteSize);
@@ -485,6 +486,7 @@ namespace Autarkysoft.Bitcoin
         /// Writes the given <see cref="UInt256_10x26"/> to this stream as bytes.
         /// </summary>
         /// <param name="val">256-bit value (has to be normalized)</param>
+        [Obsolete("Use UInt256_5x52 instead.")]
         public void Write(in UInt256_10x26 val)
         {
 #if DEBUG
