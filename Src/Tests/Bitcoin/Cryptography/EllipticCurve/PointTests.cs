@@ -146,7 +146,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_ge_x_magnitude
         /// </summary>
-        private static void RandomXMagnitude(ref Point ge, TestRNG rng)
+        private static void Libsecp256k1_RandomXMagnitude(ref Point ge, TestRNG rng)
         {
             UInt256_5x52 x = ge.x;
             UInt256_5x52Tests.RandomFEMagnitude(ref x, SECP256K1_GE_X_MAGNITUDE_MAX, rng);
@@ -156,7 +156,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_ge_y_magnitude
         /// </summary>
-        private static void RandomYMagnitude(ref Point ge, TestRNG rng)
+        private static void Libsecp256k1_RandomYMagnitude(ref Point ge, TestRNG rng)
         {
             UInt256_5x52 y = ge.y;
             UInt256_5x52Tests.RandomFEMagnitude(ref y, SECP256K1_GE_Y_MAGNITUDE_MAX, rng);
@@ -166,7 +166,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_gej_x_magnitude
         /// </summary>
-        private static void RandomXMagnitude(ref PointJacobian gej, TestRNG rng)
+        private static void Libsecp256k1_RandomXMagnitude(ref PointJacobian gej, TestRNG rng)
         {
             UInt256_5x52 x = gej.x;
             UInt256_5x52Tests.RandomFEMagnitude(ref x, SECP256K1_GEJ_X_MAGNITUDE_MAX, rng);
@@ -176,7 +176,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_gej_y_magnitude
         /// </summary>
-        private static void RandomYMagnitude(ref PointJacobian gej, TestRNG rng)
+        private static void Libsecp256k1_RandomYMagnitude(ref PointJacobian gej, TestRNG rng)
         {
             UInt256_5x52 y = gej.y;
             UInt256_5x52Tests.RandomFEMagnitude(ref y, SECP256K1_GEJ_Y_MAGNITUDE_MAX, rng);
@@ -186,7 +186,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// random_gej_z_magnitude
         /// </summary>
-        private static void RandomZMagnitude(ref PointJacobian gej, TestRNG rng)
+        private static void Libsecp256k1_RandomZMagnitude(ref PointJacobian gej, TestRNG rng)
         {
             UInt256_5x52 z = gej.z;
             UInt256_5x52Tests.RandomFEMagnitude(ref z, SECP256K1_GEJ_Z_MAGNITUDE_MAX, rng);
@@ -196,7 +196,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// testutil_random_fe_non_zero_test
         /// </summary>
-        private static UInt256_5x52 RandomFENonZeroTest(TestRNG rng)
+        private static UInt256_5x52 Libsecp256k1_RandomFENonZeroTest(TestRNG rng)
         {
             UInt256_5x52 fe;
             do
@@ -209,7 +209,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// testutil_random_ge_test
         /// </summary>
-        internal static Point RandomGroupElementTest(TestRNG rng)
+        internal static Point Libsecp256k1_RandomGET(TestRNG rng)
         {
             UInt256_5x52 fe;
             Point ge;
@@ -230,10 +230,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// testutil_random_ge_jacobian_test
         /// </summary>
-        private static PointJacobian RandomGroupElementJacobianTest(in Point ge, TestRNG rng)
+        private static PointJacobian Libsecp256k1_RandGEJacobianT(in Point ge, TestRNG rng)
         {
             UInt256_5x52 z2, z3;
-            UInt256_5x52 gejz = RandomFENonZeroTest(rng);
+            UInt256_5x52 gejz = Libsecp256k1_RandomFENonZeroTest(rng);
             z2 = gejz.Sqr();
             z3 = z2.Multiply(gejz);
             UInt256_5x52 gejx = ge.x.Multiply(z2);
@@ -244,17 +244,19 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
         /// <summary>
         /// testutil_random_gej_test
         /// </summary>
-        private static PointJacobian RandomGejTest(TestRNG rng)
+        private static PointJacobian Libsecp256k1_RandomGejTest(TestRNG rng)
         {
-            Point ge = RandomGroupElementTest(rng);
-            PointJacobian gej = RandomGroupElementJacobianTest(ge, rng);
+            Point ge = Libsecp256k1_RandomGET(rng);
+            PointJacobian gej = Libsecp256k1_RandGEJacobianT(ge, rng);
             return gej;
         }
 
 
         // This compares jacobian points including their Z, not just their geometric meaning.
-        // gej_xyz_equals_gej
-        private static int Gej_XYZ_EqualsGej(in PointJacobian a, in PointJacobian b)
+        /// <summary>
+        /// gej_xyz_equals_gej
+        /// </summary>
+        private static int Libsecp256k1_Gej_XYZ_EqualsGej(in PointJacobian a, in PointJacobian b)
         {
             PointJacobian a2;
             PointJacobian b2;
@@ -277,8 +279,10 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             return ret;
         }
 
-        // test_ge
-        private static void TestGE(TestRNG rng)
+        /// <summary>
+        /// test_ge
+        /// </summary>
+        private static void Libsecp256k1_TestGE(TestRNG rng)
         {
             int runs = 6;
             // 25 points are used:
@@ -299,7 +303,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             ge[0] = Point.Infinity;
             for (int i = 0; i < runs; i++)
             {
-                Point g = RandomGroupElementTest(rng);
+                Point g = Libsecp256k1_RandomGET(rng);
                 if (i >= runs - 2)
                 {
                     g = ge[1].MulLambda();
@@ -314,21 +318,21 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 ge[3 + 4 * i] = g.Negate();
                 ge[4 + 4 * i] = g.Negate();
                 gej[1 + 4 * i] = ge[1 + 4 * i].ToPointJacobian();
-                gej[2 + 4 * i] = RandomGroupElementJacobianTest(ge[2 + 4 * i], rng);
+                gej[2 + 4 * i] = Libsecp256k1_RandGEJacobianT(ge[2 + 4 * i], rng);
                 gej[3 + 4 * i] = ge[3 + 4 * i].ToPointJacobian();
-                gej[4 + 4 * i] = RandomGroupElementJacobianTest(ge[4 + 4 * i], rng);
+                gej[4 + 4 * i] = Libsecp256k1_RandGEJacobianT(ge[4 + 4 * i], rng);
                 for (int j = 0; j < 4; j++)
                 {
-                    RandomXMagnitude(ref ge[1 + j + 4 * i], rng);
-                    RandomYMagnitude(ref ge[1 + j + 4 * i], rng);
-                    RandomXMagnitude(ref gej[1 + j + 4 * i], rng);
-                    RandomYMagnitude(ref gej[1 + j + 4 * i], rng);
-                    RandomZMagnitude(ref gej[1 + j + 4 * i], rng);
+                    Libsecp256k1_RandomXMagnitude(ref ge[1 + j + 4 * i], rng);
+                    Libsecp256k1_RandomYMagnitude(ref ge[1 + j + 4 * i], rng);
+                    Libsecp256k1_RandomXMagnitude(ref gej[1 + j + 4 * i], rng);
+                    Libsecp256k1_RandomYMagnitude(ref gej[1 + j + 4 * i], rng);
+                    Libsecp256k1_RandomZMagnitude(ref gej[1 + j + 4 * i], rng);
                 }
 
-                for (int j = 0; j < 4; ++j)
+                for (int j = 0; j < 4; j++)
                 {
-                    for (int k = 0; k < 4; ++k)
+                    for (int k = 0; k < 4; k++)
                     {
                         bool expect_equal = (j >> 1) == (k >> 1);
                         Assert.True(ge[1 + j + 4 * i].EqualsVar(ge[1 + k + 4 * i]) == expect_equal);
@@ -340,14 +344,14 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
 
             // Generate random zf, and zfi2 = 1/zf^2, zfi3 = 1/zf^3
-            zf = RandomFENonZeroTest(rng);
+            zf = Libsecp256k1_RandomFENonZeroTest(rng);
             UInt256_5x52Tests.RandomFEMagnitude(ref zf, 8, rng);
             zfi3 = zf.InverseVar();
             zfi2 = zfi3.Sqr();
             zfi3 = zfi3.Multiply(zfi2);
 
             // Generate random r
-            r = RandomFENonZeroTest(rng);
+            r = Libsecp256k1_RandomFENonZeroTest(rng);
 
             for (int i1 = 0; i1 < 1 + 4 * runs; i1++)
             {
@@ -380,8 +384,8 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                         UInt256_5x52 tempy = ge2_zfi.y.Multiply(zfi3);
                         ge2_zfi = new(tempx, tempy, ge2_zfi.isInfinity);
 
-                        RandomXMagnitude(ref ge2_zfi, rng);
-                        RandomYMagnitude(ref ge2_zfi, rng);
+                        Libsecp256k1_RandomXMagnitude(ref ge2_zfi, rng);
+                        Libsecp256k1_RandomYMagnitude(ref ge2_zfi, rng);
                         resj = gej[i1].AddZInvVar(ge2_zfi, zf);
                         Assert.True(resj.EqualsVar(_ref));
                     }
@@ -520,7 +524,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             // Test batch gej -> ge conversion with many infinities.
             for (int i = 0; i < 4 * runs + 1; i++)
             {
-                ge[i] = RandomGroupElementTest(rng);
+                ge[i] = Libsecp256k1_RandomGET(rng);
                 bool odd = ge[i].x.IsOdd;
                 // randomly set half the points to infinity
                 if (odd == (i % 2 == 1)) // odd == i % 2
@@ -551,15 +555,17 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
-        // test_intialized_inf
-        private static void TestIntializedInf(TestRNG rng)
+        /// <summary>
+        /// test_intialized_inf
+        /// </summary>
+        private static void Libsecp256k1_TestIntializedInf(TestRNG rng)
         {
             Point p;
             PointJacobian pj, npj, infj1, infj2, infj3;
             UInt256_5x52 zinv;
 
             // Test that adding P+(-P) results in a fully initialized infinity
-            p = RandomGroupElementTest(rng);
+            p = Libsecp256k1_RandomGET(rng);
             pj = p.ToPointJacobian();
             npj = pj.Negate();
 
@@ -583,64 +589,72 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             Assert.True(infj3.z.IsZero);
         }
 
-        // test_add_neg_y_diff_x
-        //private static void TestAddNegYDiffX()
-        //{
-        //    /* The point of this test is to check that we can add two points
-        //     * whose y-coordinates are negatives of each other but whose x
-        //     * coordinates differ. If the x-coordinates were the same, these
-        //     * points would be negatives of each other and their sum is
-        //     * infinity. This is cool because it "covers up" any degeneracy
-        //     * in the addition algorithm that would cause the xy coordinates
-        //     * of the sum to be wrong (since infinity has no xy coordinates).
-        //     * HOWEVER, if the x-coordinates are different, infinity is the
-        //     * wrong answer, and such degeneracies are exposed. This is the
-        //     * root of https://github.com/bitcoin-core/secp256k1/issues/257
-        //     * which this test is a regression test for.
-        //     *
-        //     * These points were generated in sage as
-        //     *
-        //     * load("secp256k1_params.sage")
-        //     *
-        //     * # random "bad pair"
-        //     * P = C.random_element()
-        //     * Q = -int(LAMBDA) * P
-        //     * print("    P: %x %x" % P.xy())
-        //     * print("    Q: %x %x" % Q.xy())
-        //     * print("P + Q: %x %x" % (P + Q).xy())
-        //     */
-        //    PointJacobian aj = new(
-        //        new UInt256_5x52(0xd58977cb, 0x2f8ec030, 0x05a59614, 0x0643d79f, 0x44238d30, 0x3c543505, 0x0a355af1, 0x8d24cd95),
-        //        new UInt256_5x52(0x9190117d, 0x44e6d2f3, 0xd7681924, 0x4d72c879, 0x0b1293a8, 0x6c0f386d, 0x38093dcd, 0x001e337a),
-        //        UInt256_5x52.One);
-        //    PointJacobian bj = new(
-        //        new UInt256_5x52(0xbf92d2a7, 0xd013bd7b, 0xf19a4ce9, 0x95f6ff75, 0x164a0d86, 0xabd0937d, 0x1f788cd9, 0xc7b74206),
-        //        new UInt256_5x52(0x6e6feab2, 0xbb192d0b, 0x2897e6db, 0xb28d3786, 0xf4ed6c57, 0x93f0c792, 0xc7f6c232, 0xffe1cc85),
-        //        UInt256_5x52.One);
-        //    PointJacobian sumj = new(
-        //        new UInt256_5x52(0x184a8f7a, 0x5c86d390, 0x278625c3, 0xb3d69010, 0x24356027, 0x389a7798, 0x3efdad4c, 0x671a63c0),
-        //        new UInt256_5x52(0xbed8fbbe, 0x8f0d893c, 0x70e95caf, 0xda651801, 0x25071d08, 0x511fd375, 0x2ce01f2b, 0x5f6409c2),
-        //        UInt256_5x52.One);
+        /// <summary>
+        /// test_add_neg_y_diff_x
+        /// </summary>
+        private static void Libsecp256k1_TestAddNegYDiffX()
+        {
+            /* The point of this test is to check that we can add two points
+             * whose y-coordinates are negatives of each other but whose x
+             * coordinates differ. If the x-coordinates were the same, these
+             * points would be negatives of each other and their sum is
+             * infinity. This is cool because it "covers up" any degeneracy
+             * in the addition algorithm that would cause the xy coordinates
+             * of the sum to be wrong (since infinity has no xy coordinates).
+             * HOWEVER, if the x-coordinates are different, infinity is the
+             * wrong answer, and such degeneracies are exposed. This is the
+             * root of https://github.com/bitcoin-core/secp256k1/issues/257
+             * which this test is a regression test for.
+             *
+             * These points were generated in sage as
+             *
+             * load("secp256k1_params.sage")
+             *
+             * # random "bad pair"
+             * P = C.random_element()
+             * Q = -int(LAMBDA) * P
+             * print("    P: %x %x" % P.xy())
+             * print("    Q: %x %x" % Q.xy())
+             * print("P + Q: %x %x" % (P + Q).xy())
+             */
+            PointJacobian aj = PointJacobianTests.SECP256K1_GEJ_CONST(
+                0x8d24cd95, 0x0a355af1, 0x3c543505, 0x44238d30,
+                0x0643d79f, 0x05a59614, 0x2f8ec030, 0xd58977cb,
+                0x001e337a, 0x38093dcd, 0x6c0f386d, 0x0b1293a8,
+                0x4d72c879, 0xd7681924, 0x44e6d2f3, 0x9190117d);
+            PointJacobian bj = PointJacobianTests.SECP256K1_GEJ_CONST(
+                0xc7b74206, 0x1f788cd9, 0xabd0937d, 0x164a0d86,
+                0x95f6ff75, 0xf19a4ce9, 0xd013bd7b, 0xbf92d2a7,
+                0xffe1cc85, 0xc7f6c232, 0x93f0c792, 0xf4ed6c57,
+                0xb28d3786, 0x2897e6db, 0xbb192d0b, 0x6e6feab2);
+            PointJacobian sumj = PointJacobianTests.SECP256K1_GEJ_CONST(
+                0x671a63c0, 0x3efdad4c, 0x389a7798, 0x24356027,
+                0xb3d69010, 0x278625c3, 0x5c86d390, 0x184a8f7a,
+                0x5f6409c2, 0x2ce01f2b, 0x511fd375, 0x25071d08,
+                0xda651801, 0x70e95caf, 0x8f0d893c, 0xbed8fbbe);
 
-        //    Point b;
-        //    PointJacobian resj;
-        //    Point res;
-        //    b = bj.ToPoint();
+            Point b;
+            PointJacobian resj;
+            Point res;
+            b = bj.ToPoint();
 
-        //    resj = aj.AddVar(bj, out _);
-        //    res = resj.ToPoint();
-        //    Assert.True(sumj.EqualsVar(res));
+            resj = aj.AddVar(bj, out _);
+            res = resj.ToPoint();
+            Assert.True(sumj.EqualsVar(res));
 
-        //    resj = aj.Add(b);
-        //    res = resj.ToPoint();
-        //    Assert.True(sumj.EqualsVar(res));
+            resj = aj.Add(b);
+            res = resj.ToPoint();
+            Assert.True(sumj.EqualsVar(res));
 
-        //    resj = aj.AddVar(b, out _);
-        //    res = resj.ToPoint();
-        //    Assert.True(sumj.EqualsVar(res));
-        //}
+            resj = aj.AddVar(b, out _);
+            res = resj.ToPoint();
+            Assert.True(sumj.EqualsVar(res));
+        }
 
-        private static void TestGeBytes(TestRNG rng)
+        /// <summary>
+        /// test_ge_bytes
+        /// </summary>
+        private static void Libsecp256k1_TestGeBytes(TestRNG rng)
         {
             for (int i = 0; i < COUNT + 1; i++)
             {
@@ -653,7 +667,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
                 }
                 else
                 {
-                    p = RandomGroupElementTest(rng);
+                    p = Libsecp256k1_RandomGET(rng);
                 }
 
                 // Note that unlike libsecp256k1 we don't have 2 methods to convert to bytes
@@ -665,39 +679,45 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
+        /// <summary>
+        /// run_ge
+        /// </summary>
         [Fact]
         public void Libsecp256k1_GETest()
         {
-            // run_ge
-
             TestRNG rng = new();
+            rng.RunXoshiro256ppTests();
             rng.Init(null);
 
             for (int i = 0; i < COUNT * 32; i++)
             {
-                TestGE(rng);
+                Libsecp256k1_TestGE(rng);
             }
-            //TestAddNegYDiffX();
-            TestIntializedInf(rng);
-            TestGeBytes(rng);
+            Libsecp256k1_TestAddNegYDiffX();
+            Libsecp256k1_TestIntializedInf(rng);
+            Libsecp256k1_TestGeBytes(rng);
         }
 
-        // test_gej_cmov
-        static void TestGejCmov(in PointJacobian a, in PointJacobian b)
+        /// <summary>
+        /// test_gej_cmov
+        /// </summary>
+        static void Libsecp256k1_TestGejCmov(in PointJacobian a, in PointJacobian b)
         {
             PointJacobian t = a;
             t = PointJacobian.CMov(t, b, 0);
-            Assert.Equal(1, Gej_XYZ_EqualsGej(t, a));
+            Assert.Equal(1, Libsecp256k1_Gej_XYZ_EqualsGej(t, a));
             t = PointJacobian.CMov(t, b, 1);
-            Assert.Equal(1, Gej_XYZ_EqualsGej(t, b));
+            Assert.Equal(1, Libsecp256k1_Gej_XYZ_EqualsGej(t, b));
         }
 
+        /// <summary>
+        /// run_gej
+        /// </summary>
         [Fact]
         public void Libsecp256k1_GejTest()
         {
-            // run_gej
-
             TestRNG rng = new();
+            rng.RunXoshiro256ppTests();
             rng.Init(null);
 
             PointJacobian a, b;
@@ -707,37 +727,39 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             {
                 a = PointJacobian.Infinity;
                 b = PointJacobian.Infinity;
-                TestGejCmov(a, b);
+                Libsecp256k1_TestGejCmov(a, b);
 
-                a = RandomGejTest(rng);
-                TestGejCmov(a, b);
-                TestGejCmov(b, a);
+                a = Libsecp256k1_RandomGejTest(rng);
+                Libsecp256k1_TestGejCmov(a, b);
+                Libsecp256k1_TestGejCmov(b, a);
 
                 b = a;
-                TestGejCmov(a, b);
+                Libsecp256k1_TestGejCmov(a, b);
 
-                b = RandomGejTest(rng);
-                TestGejCmov(a, b);
-                TestGejCmov(b, a);
+                b = Libsecp256k1_RandomGejTest(rng);
+                Libsecp256k1_TestGejCmov(a, b);
+                Libsecp256k1_TestGejCmov(b, a);
             }
 
             // Tests for secp256k1_gej_eq_var
             for (int i = 0; i < COUNT; i++)
             {
                 UInt256_5x52 fe;
-                a = RandomGejTest(rng);
-                b = RandomGejTest(rng);
+                a = Libsecp256k1_RandomGejTest(rng);
+                b = Libsecp256k1_RandomGejTest(rng);
                 Assert.False(a.EqualsVar(b));
 
                 b = a;
-                fe = RandomFENonZeroTest(rng);
+                fe = Libsecp256k1_RandomFENonZeroTest(rng);
                 a = a.Rescale(fe);
                 Assert.True(a.EqualsVar(b));
             }
         }
 
-        // test_group_decompress
-        private static void TestGroupDecompress(in UInt256_5x52 x)
+        /// <summary>
+        /// test_group_decompress
+        /// </summary>
+        private static void Libsecp256k1_TestGroupDecompress(in UInt256_5x52 x)
         {
             // The input itself, normalized.
             UInt256_5x52 fex = x;
@@ -772,16 +794,20 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             }
         }
 
+        /// <summary>
+        /// run_group_decompress
+        /// </summary>
         [Fact]
         public void Libsecp256k1_GroupDecompress()
         {
-            // run_group_decompress
             TestRNG rng = new();
+            rng.RunXoshiro256ppTests();
             rng.Init(null);
+
             for (int i = 0; i < COUNT * 4; i++)
             {
                 UInt256_5x52 fe = UInt256_5x52Tests.RandomFETest(rng);
-                TestGroupDecompress(fe);
+                Libsecp256k1_TestGroupDecompress(fe);
             }
         }
 

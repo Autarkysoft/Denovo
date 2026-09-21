@@ -260,7 +260,7 @@ namespace Tests.Bitcoin.Cryptography.EllipticCurve
             // Generate a random input point.
             //if (mode != 0)
             {
-                p = PointTests.RandomGroupElementTest(rng);
+                p = PointTests.Libsecp256k1_RandomGET(rng);
                 pj = p.ToPointJacobian();
             }
 
