@@ -42,7 +42,7 @@ namespace Autarkysoft.Bitcoin.Clients
         }
 
 
-        private void AllNodes_AddRemoveEvent(object sender, NodePool.AddRemoveEventArgs e)
+        private void AllNodes_AddRemoveEvent(object? sender, NodePool.AddRemoveEventArgs e)
         {
             if (isDisposed)
                 return;
@@ -68,7 +68,7 @@ namespace Autarkysoft.Bitcoin.Clients
         }
 
 
-        private void Connector_ConnectFailureEvent(object sender, IPAddress e)
+        private void Connector_ConnectFailureEvent(object? sender, IPAddress e)
         {
             if (isDisposed)
                 return;
@@ -87,7 +87,7 @@ namespace Autarkysoft.Bitcoin.Clients
         }
 
 
-        private void Blockchain_HeaderSyncEndEvent(object sender, EventArgs e)
+        private void Blockchain_HeaderSyncEndEvent(object? sender, EventArgs e)
         {
             if (isDisposed)
                 return;
@@ -96,7 +96,7 @@ namespace Autarkysoft.Bitcoin.Clients
             ConnectToPeers(Settings.MaxConnectionCount - Settings.AllNodes.Count - inQueue);
         }
 
-        private void Blockchain_BlockSyncEndEvent(object sender, EventArgs e)
+        private void Blockchain_BlockSyncEndEvent(object? sender, EventArgs e)
         {
             if (isDisposed)
                 return;
@@ -108,7 +108,7 @@ namespace Autarkysoft.Bitcoin.Clients
         }
 
 
-        private readonly NodeListener listener;
+        private readonly NodeListener? listener;
         private readonly NodeConnector connector;
         private int inQueue;
 
