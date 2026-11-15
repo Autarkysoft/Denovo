@@ -56,13 +56,13 @@ namespace Denovo.ViewModels
         public NetworkType Network { get; }
         public NodePool AllNodes { get; set; }
 
-        public IClipboard Clipboard { get; set; }
+        public IClipboard? Clipboard { get; set; }
         public IStorageProvider StorageProvider { get; set; }
         public IWindowManager WinMan { get; set; }
         public IDenovoFileManager FileMan { get; set; }
         public bool IsInitialized { get; }
 
-        private IFullClientSettings clientSettings;
+        private FullClientSettings? clientSettings;
 
 
         private void Init(Configuration config)
@@ -100,7 +100,7 @@ namespace Denovo.ViewModels
         }
 
 
-        private void Time_WrongClockEvent(object sender, EventArgs e)
+        private void Time_WrongClockEvent(object? sender, EventArgs e)
         {
             Result = "The computer's clock is possibly wrong.";
         }
@@ -166,20 +166,19 @@ namespace Denovo.ViewModels
             await WinMan.ShowDialog(vm);
         }
 
-        private Node _selNode;
-        public Node SelectedNode
+        public Node? SelectedNode
         {
-            get => _selNode;
+            get;
             set
             {
-                if (SetField(ref _selNode, value))
+                if (SetField(ref field, value))
                 {
                     DisconnectCommand.RaiseCanExecuteChanged();
                 }
             }
         }
 
-        public string MyInfo { get; private set; }
+        public string MyInfo { get; private set; } = string.Empty;
 
         [DependsOnProperty(nameof(SelectedNode))]
         public string PeerInfo => SelectedNode is null ?
@@ -201,14 +200,7 @@ namespace Denovo.ViewModels
             $"Latency: {SelectedNode.NodeStatus.Latency.TotalMilliseconds} ms{Environment.NewLine}" +
             $"Violation: {((NodeStatus)SelectedNode.NodeStatus).Violation}{Environment.NewLine}";
 
-
-
-        private string _res;
-        public string Result
-        {
-            get => _res;
-            set => SetField(ref _res, value);
-        }
+        public string Result { get; set => SetField(ref field, value); } = string.Empty;
 
 
         public BindableCommand DisconnectCommand { get; }
@@ -222,14 +214,10 @@ namespace Denovo.ViewModels
         }
 
 
-        private FullClient fullClient;
+        private FullClient? fullClient;
         public void StartFullClient()
         {
-            if (fullClient is null)
-            {
-                fullClient = new FullClient(clientSettings);
-            }
-
+            fullClient ??= new FullClient(clientSettings);
             fullClient.Start();
         }
 
@@ -244,7 +232,7 @@ namespace Denovo.ViewModels
         {
             get
             {
-                Version ver = Assembly.GetExecutingAssembly().GetName().Version;
+                Version ver = Assembly.GetExecutingAssembly().GetName().Version ?? new Version();
                 string verInfo = "The current version is a showcase of different Bitcoin.Net features and is not " +
                                  "yet a complete bitcoin client.";
                 return $"The current version is {ver.ToString(4)}{Environment.NewLine}{verInfo}";
