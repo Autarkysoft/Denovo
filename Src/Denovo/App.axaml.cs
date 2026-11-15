@@ -65,6 +65,7 @@ namespace Denovo
                 Debug.Assert(desktop.MainWindow is not null);
                 Debug.Assert(desktop.MainWindow.Clipboard is not null);
 
+                vm.Launcher = desktop.MainWindow.Launcher;
                 vm.Clipboard = desktop.MainWindow.Clipboard;
                 vm.StorageProvider = desktop.MainWindow.StorageProvider;
             }

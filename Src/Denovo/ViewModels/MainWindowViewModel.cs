@@ -57,6 +57,7 @@ namespace Denovo.ViewModels
         public NodePool AllNodes { get; set; }
 
         public IClipboard? Clipboard { get; set; }
+        public ILauncher Launcher { get; set; }
         public IStorageProvider StorageProvider { get; set; }
         public IWindowManager WinMan { get; set; }
         public IDenovoFileManager FileMan { get; set; }
@@ -162,7 +163,7 @@ namespace Denovo.ViewModels
 
         public async void OpenAbout()
         {
-            AboutViewModel vm = new();
+            AboutViewModel vm = new(Clipboard, Launcher);
             await WinMan.ShowDialog(vm);
         }
 
